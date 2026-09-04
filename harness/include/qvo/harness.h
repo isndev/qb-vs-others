@@ -167,6 +167,33 @@ std::uint64_t spin_work(std::uint64_t seed, int iterations) noexcept;
 // Prevents the optimizer from deleting a computation whose result is otherwise unused.
 void sink(std::uint64_t value) noexcept;
 
+// ---------------------------------------------------------------------------------------------
+// Worker placement
+// ---------------------------------------------------------------------------------------------
+
+// The CPU set the harness pinned the PROCESS to, in the order the user gave it.
+//
+// An implementation is expected to place its Nth worker thread on `pinned_cpus()[N % size()]`.
+// This exists because process-level pinning alone is NOT an equal starting line: a runtime whose
+// whole design is one worker per core, pinned, is measured without the mechanism it is built on,
+// while a work-stealing pool that never pins is measured exactly as it ships. Handing every
+// framework the same CPU list and asking each to place its own workers is the symmetric setting.
+//
+// All three frameworks compared here can do it, through their own public APIs:
+//   qb           CoreInitializer::setAffinity(qb::CoreIdSet{cpu})
+//   CAF          caf::thread_hook::thread_started(thread_owner::scheduler)
+//   SObjectizer  a custom so_5::disp::abstract_work_thread_factory_t
+// Empty when the run was started with --no-pin.
+const std::vector<int> &pinned_cpus() noexcept;
+
+// Pins the CALLING thread to one CPU. Returns false when the platform refuses, and never reports
+// success for a pin that did not happen -- the failure mode qb's own documentation records on
+// Apple Silicon, and the one that would silently invalidate every number here.
+bool pin_this_thread(int cpu) noexcept;
+
+// True when this platform has real per-thread pinning at all.
+bool thread_pinning_supported() noexcept;
+
 }  // namespace qvo
 
 #endif  // QVO_HARNESS_H

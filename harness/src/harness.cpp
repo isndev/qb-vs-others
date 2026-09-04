@@ -270,6 +270,41 @@ double Watch::work_ns() const noexcept {
 
 namespace {
 std::atomic<std::uint64_t> g_sink{0};
+std::vector<int>           g_pinned_cpus;
+}  // namespace
+
+const std::vector<int> &pinned_cpus() noexcept { return g_pinned_cpus; }
+
+bool thread_pinning_supported() noexcept {
+#if defined(_WIN32) || defined(__linux__)
+    return true;
+#else
+    // macOS has no pthread_setaffinity_np, and the THREAD_AFFINITY_POLICY shim qb documents is a
+    // grouping hint that arm64 does not implement at all. Reporting true here would commit the
+    // exact defect this harness refuses: a pin that reports success and does not happen.
+    return false;
+#endif
+}
+
+bool pin_this_thread(int cpu) noexcept {
+#if defined(_WIN32)
+    if (cpu < 0 || cpu >= 64) return false;
+    const DWORD_PTR mask = DWORD_PTR{1} << cpu;
+    // Returns the PREVIOUS mask; 0 means the call failed.
+    return SetThreadAffinityMask(GetCurrentThread(), mask) != 0;
+#elif defined(__linux__)
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    CPU_SET(cpu, &set);
+    if (pthread_setaffinity_np(pthread_self(), sizeof(set), &set) != 0) return false;
+    cpu_set_t got;
+    CPU_ZERO(&got);
+    if (pthread_getaffinity_np(pthread_self(), sizeof(got), &got) != 0) return false;
+    return CPU_ISSET(cpu, &got) && CPU_COUNT(&got) == 1;
+#else
+    (void) cpu;
+    return false;
+#endif
 }
 
 void sink(std::uint64_t value) noexcept { g_sink.fetch_add(value, std::memory_order_relaxed); }
@@ -340,7 +375,8 @@ int run(int argc, char **argv, Spec spec, Body body) {
             fatal("CPU pinning was requested and could not be verified (" + why
                   + "). Refusing to produce a number that a hybrid CPU would make meaningless. "
                     "Pass --no-pin to measure anyway; the result is then marked pinned:false.");
-        pin.applied = true;
+        pin.applied   = true;
+        g_pinned_cpus = pin.cpus;
     }
 
     std::string pin_repr;
@@ -431,6 +467,8 @@ int run(int argc, char **argv, Spec spec, Body body) {
 
     j << "  \"pinned\": " << (pin.applied ? "true" : "false") << ",\n";
     j << "  \"cpus\": " << quoted(pin_repr) << ",\n";
+    j << "  \"thread_pinning_supported\": " << (thread_pinning_supported() ? "true" : "false")
+      << ",\n";
 
     j << "  \"env\": {\n";
     j << "    \"host\": " << quoted(host_name()) << ",\n";

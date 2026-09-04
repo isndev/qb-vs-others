@@ -1,0 +1,40 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/ping-pong",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 6535945399557740267,
+  "expected_messages": 2000000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "messages": 1000000, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-09-04T01:38:22Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw std::thread + an independently written bounded SPSC ring, busy-spinning; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. It has no supervision, no addressing, no dynamic actor lifetime, no mailbox fairness and no backpressure. It exists to bound how much of each framework's cost is inherent to the workload rather than to the framework", "cores=1 is one thread passing each message through a real queue in both directions -- the floor for single-threaded dispatch, not a bare assignment", "the two threads are pinned one per CPU from the harness's set, exactly as every framework's workers are -- a floating floor would move every ratio computed against it", "wait=1 is two threads busy-spinning on SPSC rings; wait=0 is two threads parked on condition variables. Both floors exist so that neither column of the spin/park axis is published without one"],
+  "failures": [],
+  "work_ns": [321915500.0, 469997600.0, 315203800.0, 376220200.0, 382343000.0, 329125100.0, 334575700.0, 397848500.0, 315715300.0],
+  "total_ns": [322014000.0, 470091600.0, 315300300.0, 376321300.0, 382435400.0, 329217000.0, 334674100.0, 397944500.0, 315814300.0],
+  "outside_window_ns": [98500.0, 94000.0, 96500.0, 101100.0, 92400.0, 91900.0, 98400.0, 96000.0, 99000.0],
+  "summary": {
+    "work_min": 315203800.0,
+    "work_p50": 334575700.0,
+    "work_p99": 464225672.0,
+    "work_iqr": 60427500.0
+  }
+}

@@ -65,6 +65,17 @@ struct Ball {
     std::uint64_t seq{0};
 };
 
+// The floor gets the SAME placement as the frameworks.
+//
+// qb pins its VirtualCores, CAF pins its scheduler workers through a thread_hook and SObjectizer
+// pins its work threads through a factory. A floor left floating on the process mask while every
+// framework is pinned is measured under different conditions -- and since the floor is what every
+// framework's number is divided by, that would move every published ratio.
+inline void place(std::size_t worker_index) {
+    const auto &cpus = qvo::pinned_cpus();
+    if (!cpus.empty()) qvo::pin_this_thread(cpus[worker_index % cpus.size()]);
+}
+
 // The parked counterpart of the ring: a mutex + condition variable handoff, which is what every
 // framework's wait=0 configuration reduces to underneath. It is here so that the floor exists on
 // BOTH sides of the spin/park axis -- a floor that only exists for spinning would let the parked
@@ -102,14 +113,29 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     std::uint64_t acc       = 0;
     std::uint64_t delivered = 0;
 
+    place(0);  // the calling thread plays the ping role
+
     if (cores <= 1) {
-        // One thread, both roles. There is no communication left to pay for: this is the cost of
-        // the workload itself, and it is the number every framework's single-core figure should be
-        // read against. It is reported as a floor, never as a comparable "framework".
+        // One thread, both roles, but the message still goes THROUGH A QUEUE.
+        //
+        // An earlier version of this branch just copied the value and called it a pong. That is
+        // the cost of the arithmetic and nothing else -- it measured 0.55 ns per round trip and
+        // would have made every framework look 200x worse than a floor that was not doing the
+        // job. A single-core actor framework still enqueues, dequeues and dispatches; the floor
+        // for that is a real queue, not an assignment.
+        SpscRing<Ball, 1024> mailbox;
+
         watch.start();
         for (std::uint64_t seq = rounds; seq-- > 0;) {
-            const Ball out{seq};
-            const Ball back = out;  // the "pong": the peer hands the same value back
+            // ping -> pong
+            while (!mailbox.try_push(Ball{seq})) { /* unreachable at depth 1 */ }
+            Ball inbound{};
+            while (!mailbox.try_pop(inbound)) { /* unreachable */ }
+            // pong -> ping
+            while (!mailbox.try_push(inbound)) { /* unreachable */ }
+            Ball back{};
+            while (!mailbox.try_pop(back)) { /* unreachable */ }
+
             acc += qvo::mix(back.seq);
             delivered += 2;
         }
@@ -123,6 +149,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         CvSlot to_ping_slot;
 
         std::thread pong([&] {
+            place(1);
             for (;;) {
                 const Ball b = to_pong_slot.take();
                 to_ping_slot.put(b);
@@ -152,6 +179,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     std::atomic<bool>    running{true};
 
     std::thread pong([&] {
+        place(1);
         Ball b{};
         while (running.load(std::memory_order_relaxed)) {
             if (to_pong.try_pop(b))
@@ -199,7 +227,10 @@ int main(int argc, char **argv) {
         "THIS IS NOT A FRAMEWORK. It has no supervision, no addressing, no dynamic actor "
         "lifetime, no mailbox fairness and no backpressure. It exists to bound how much of each "
         "framework's cost is inherent to the workload rather than to the framework",
-        "cores=1 removes communication entirely and measures the workload alone",
+        "cores=1 is one thread passing each message through a real queue in both directions -- "
+        "the floor for single-threaded dispatch, not a bare assignment",
+        "the two threads are pinned one per CPU from the harness's set, exactly as every "
+        "framework's workers are -- a floating floor would move every ratio computed against it",
         "wait=1 is two threads busy-spinning on SPSC rings; wait=0 is two threads parked on "
         "condition variables. Both floors exist so that neither column of the spin/park axis is "
         "published without one"};

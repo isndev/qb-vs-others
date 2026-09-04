@@ -15,6 +15,8 @@
 
 #include <qvospec/savina/ping-pong.h>
 
+#include "../so_support.h"
+
 #include <so_5/all.hpp>
 
 #include <chrono>
@@ -107,37 +109,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     Sink sink;
 
     so_5::launch([&](so_5::environment_t &env) {
-        // The spin/park lever, SObjectizer's half.
-        //
-        // A dispatcher's MPSC queue takes a lock factory. `combined_lock_factory(d)` spins for `d`
-        // before falling back to a mutex; `simple_lock_factory()` is mutex + condition variable
-        // only. Read from dev/so_5/disp/mpsc_queue_traits/pub.hpp of the pinned SObjectizer.
-        // A spin budget far longer than any single round trip is this framework's way of spelling
-        // busy-spin, and it is what makes qb's setLatency(0) a comparable setting.
-        auto tune = [spin](auto &q) {
-            if (spin)
-                q.lock_factory(so_5::disp::mpsc_queue_traits::combined_lock_factory(
-                    std::chrono::seconds{10}));
-            else
-                q.lock_factory(so_5::disp::mpsc_queue_traits::simple_lock_factory());
-        };
-
-        so_5::disp_binder_shptr_t binder;
-        if (cores >= 2) {
-            // active_obj: one work thread per agent -- SObjectizer's nearest equivalent to qb
-            // placing each actor on its own VirtualCore.
-            binder = so_5::disp::active_obj::make_dispatcher(
-                         env, "qvo-ao",
-                         so_5::disp::active_obj::disp_params_t{}.tune_queue_params(tune))
-                         .binder();
-        } else {
-            binder = so_5::disp::one_thread::make_dispatcher(
-                         env, "qvo-ot",
-                         so_5::disp::one_thread::disp_params_t{}.tune_queue_params(tune))
-                         .binder();
-        }
-
-        env.introduce_coop(std::move(binder), [&](so_5::coop_t &coop) {
+        // Dispatcher choice, queue lock (spin/park) and per-work-thread pinning all come from
+        // qvoso::make_binder, shared by every SObjectizer benchmark here.
+        env.introduce_coop(qvoso::make_binder(env, cores, spin), [&](so_5::coop_t &coop) {
             auto *ponger = coop.make_agent<ponger_t>();
             auto *pinger = coop.make_agent<pinger_t>(ponger->so_direct_mbox(), rounds,
                                                      std::ref(watch), std::ref(sink));
@@ -162,12 +136,7 @@ int main(int argc, char **argv) {
     spec.idiom_note        = "agent_t subclasses on their DIRECT mboxes (faster than the samples' "
                              "shared mbox), messages derived from so_5::message_t, active_obj "
                              "dispatcher for cores>=2 and one_thread below it";
-    spec.caveats           = {
-        "cores>=2 uses the active_obj dispatcher (one thread per agent); cores=1 uses one_thread. "
-        "SObjectizer has no notion of pinning an agent to a specific CPU, so 'cores' is a thread "
-        "budget as it is for CAF, not a placement as it is for qb",
-        "wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached within a "
-        "round trip); wait=0 maps to simple_lock_factory (mutex + condition variable)"};
+    spec.caveats           = qvoso::caveats();
 
     return qvo::run(argc, argv, std::move(spec), savina_ping_pong_sobjectizer::body);
 }

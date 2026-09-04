@@ -12,7 +12,7 @@
 
 #include <qvospec/savina/ping-pong.h>
 
-#include <cstdlib>
+#include "../qb_support.h"
 
 #include <qb/actor.h>
 #include <qb/main.h>
@@ -93,32 +93,19 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const auto cores  = static_cast<int>(p.get("cores"));
     const bool spin   = p.get("wait") != 0;
 
-    // The spin/park lever, applied identically in every framework's adapter.
-    //
-    // `setLatency(0)` makes a VirtualCore busy-spin; a non-zero value makes it park on a
-    // condition variable for AT MOST that long -- Main.h's Mailbox::notify() signals the cv on
-    // every enqueue, so a message still wakes the core immediately. The interval is therefore an
-    // idle cap, not an added per-message latency, which is what makes it the honest counterpart
-    // of CAF's parking scheduler and SObjectizer's simple_lock_factory rather than a handicap.
-    // The park interval is NOT a guess either. `QVO_QB_PARK_US` lets docs/TUNING.md sweep it the
-    // same way CAF's work-stealing knobs are swept, and the default below is the winner of that
-    // sweep. Symmetry is the point: a repository that tunes its competitor's park setting while
-    // leaving its own at an arbitrary value has rigged the axis in the other direction.
-    std::chrono::microseconds park{1000};
-    if (const char *v = std::getenv("QVO_QB_PARK_US"))
-        park = std::chrono::microseconds{std::strtoull(v, nullptr, 10)};
-
-    const qb::duration latency = spin ? qb::duration::zero() : qb::duration{park};
-
     Sink sink;
     {
         qb::Main engine;
 
-        engine.core(0).setLatency(latency);
+        // Placement and spin/park both come from qvoqb::configure_core, shared by every qb
+        // benchmark here. It pins each VirtualCore to one CPU of the harness's set -- the
+        // mechanism qb is built on, and the one an earlier revision of this file accidentally
+        // switched off by pinning only the process.
+        qvoqb::configure_core(engine, 0, spin);
         engine.addActor<PongActor>(0);
 
         const int ping_core = (cores >= 2) ? 1 : 0;
-        if (ping_core != 0) engine.core(ping_core).setLatency(latency);
+        if (ping_core != 0) qvoqb::configure_core(engine, ping_core, spin);
         engine.addActor<PingActor>(ping_core, rounds, std::ref(watch), std::ref(sink));
 
         engine.start();
@@ -140,12 +127,7 @@ int main(int argc, char **argv) {
     spec.idiom_source      = "qb/tests/core/benchmark/messaging/ping-pong-latency.cpp";
     spec.idiom_note        = "send<> hot path, require<>() bootstrap, busy-spin cores -- qb's own "
                              "benchmark idiom";
-    spec.caveats           = {
-        "qb requires an explicit core per actor; 'cores' maps to that placement directly, whereas "
-        "pool-based frameworks are only given a thread budget. This is an architectural "
-        "difference in qb's favour on this workload, not a tuning advantage",
-        "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a 1 ms park "
-        "cap on a cv that is signalled on every enqueue"};
+    spec.caveats           = qvoqb::caveats();
 
     return qvo::run(argc, argv, std::move(spec), savina_ping_pong_qb::body);
 }

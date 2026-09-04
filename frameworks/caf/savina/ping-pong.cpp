@@ -17,6 +17,8 @@
 
 #include <qvospec/savina/ping-pong.h>
 
+#include "../caf_support.h"
+
 #include <caf/actor.hpp>
 #include <caf/actor_system.hpp>
 #include <caf/actor_system_config.hpp>
@@ -105,54 +107,14 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
 
     Sink sink;
     {
+        // Worker budget, spin/park profile and per-worker pinning all come from
+        // qvocaf::configure, shared by every CAF benchmark here, so CAF gets the same CPU set and
+        // the same placement qb gets rather than a floating pool.
         caf::actor_system_config cfg;
-
-        // The key is `caf.scheduler.max-threads`, read from the source of the pinned CAF
-        // (libcaf_core/caf/scheduler.cpp: `get_or(cfg, "caf.scheduler.max-threads", ...)`), not
-        // from memory or a web page.
-        //
-        // This matters more than it looks: CAF's default worker count comes from
-        // hardware_concurrency, which on Windows ignores the process affinity mask. A silently
-        // mistyped key would leave CAF spawning 24 workers onto the 2 CPUs the harness pinned --
-        // a self-inflicted handicap that would look like a CAF result.
-        cfg.set("caf.scheduler.max-threads", cores);
-
-        // The spin/park lever, CAF's half.
-        //
-        // CAF's work-stealing workers poll aggressively, then moderately, then sleep. Keys read
-        // from libcaf_core/caf/scheduler.cpp of the pinned CAF, lines 58-74. Raising the
-        // aggressive budget high enough that a worker never leaves that phase is CAF's own way of
-        // spelling "busy-spin", and it is what makes qb's setLatency(0) a comparable setting
-        // rather than an unearned head start.
-        // The exact spin profile is NOT guessed. `QVO_CAF_AGGRESSIVE_POLL` and
-        // `QVO_CAF_STEAL_INTERVAL` exist so that docs/TUNING.md can sweep CAF's documented knobs
-        // and record which profile is genuinely fastest, rather than this repository picking one
-        // that happens to make its own framework look better. The defaults below are the winner
-        // of that sweep; the sweep itself is reproducible and its table is published.
-        if (spin) {
-            auto env_or = [](const char *name, std::size_t fallback) -> std::size_t {
-                if (const char *v = std::getenv(name)) return std::strtoull(v, nullptr, 10);
-                return fallback;
-            };
-            cfg.set("caf.work-stealing.aggressive-poll-attempts",
-                    env_or("QVO_CAF_AGGRESSIVE_POLL", 100));
-            cfg.set("caf.work-stealing.aggressive-steal-interval",
-                    env_or("QVO_CAF_STEAL_INTERVAL", 10));
-        }
+        qvocaf::configure(cfg, cores, spin);
 
         caf::actor_system sys{cfg};
-
-        // Read it back. A settings dictionary accepts any key, so the write proves nothing on its
-        // own; this asserts the value is present under the exact name the scheduler reads.
-        const auto effective = caf::get_or(sys.config(), "caf.scheduler.max-threads", std::size_t{0});
-        if (effective != cores) {
-            std::fprintf(stderr,
-                         "qvo: CAF worker budget did not take effect (asked %zu, config reports "
-                         "%zu). Refusing to report a number measured under a thread budget that "
-                         "is not the one every other framework was given.\n",
-                         cores, effective);
-            std::exit(2);
-        }
+        qvocaf::assert_budget(sys, cores);
 
         auto pong = sys.spawn(pong_fun);
         sys.spawn(ping_fun, pong, rounds, &watch, &sink);
@@ -179,15 +141,7 @@ int main(int argc, char **argv) {
                              "dancing_kirby.cpp + caf/stateful_actor.hpp";
     spec.idiom_note        = "function-based behaviors, stateful_actor for the cached peer, bare "
                              "uint64_t on the hot path, one handshake outside the window";
-    spec.caveats           = {
-        "CAF's scheduler is a work-stealing thread pool; 'cores' is a thread BUDGET, not a "
-        "placement. qb is given the same number of threads but also decides which actor runs on "
-        "which one -- an architectural difference, not a tuning one",
-        "wait=1 raises caf.work-stealing.aggressive-poll-attempts so workers never leave the "
-        "aggressive polling phase (CAF's spelling of busy-spin); wait=0 leaves CAF's shipped "
-        "defaults. Both values are always measured and always published",
-        "CAF 1.1.0 builds itself at C++17 (its own CMake sets the standard); qb and the harness "
-        "are C++20"};
+    spec.caveats           = qvocaf::caveats();
 
     return qvo::run(argc, argv, std::move(spec), savina_ping_pong_caf::body);
 }
