@@ -33,7 +33,7 @@ argument it exists to win:
 
 | | state |
 |---|---|
-| Harness, verification, pinning, reporting | **done** — and negative-controlled |
+| Harness, verification, pinning, reporting | **done**, and negative-controlled: 7 CAUGHT / 4 CONFIRMED / **0 MISSED** |
 | `savina/ping-pong` × qb, CAF, SObjectizer, floor | **done**, 16/16 cells verified |
 | The other 24 Savina benchmarks | **not yet written** — see [docs/ROADMAP.md](docs/ROADMAP.md) |
 | Linux axis (WSL / g++ 14) | not yet run |

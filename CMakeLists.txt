@@ -111,4 +111,20 @@ foreach(_fw IN LISTS QVO_ENABLED_FRAMEWORKS)
     add_subdirectory(frameworks/${_fw})
 endforeach()
 
+# -------------------------------------------------------------------------------------------
+# The negative control's subject
+# -------------------------------------------------------------------------------------------
+#
+# Named `qvoctl-` and NOT declared through qvo_add_benchmark, so tools/run.py -- which discovers
+# binaries whose name begins with `qvo-` -- cannot find it. A planted defect must never be able to
+# reach a published table.
+option(QVO_BUILD_CONTROLS "Build the negative-control subject" ON)
+if(QVO_BUILD_CONTROLS)
+    add_executable(qvoctl-control-subject tools/control/control-subject.cpp)
+    target_link_libraries(qvoctl-control-subject PRIVATE qvo-harness)
+    set_target_properties(qvoctl-control-subject PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "controls")
+endif()
+
 qvo_report_configuration()

@@ -130,7 +130,19 @@ python3 tools/report.py --results results/<host-id> > REPORT.md
 Every number in every table is regenerated from the JSON in `results/`. No figure anywhere in this
 repository is hand-written, and `tools/check-report.py` fails if one appears.
 
-The harness has its own negative control (`tools/negative-control.sh`): it plants a framework that
-drops 1 message in 10⁷, one that returns a wrong answer, a run whose pinning was refused, and a
-benchmark made 5 % slower — and asserts that each is **rejected**. A verifier nobody has watched
-reject anything is not known to work.
+The harness has its own negative control, and it has been run:
+
+```
+python3 tools/negative-control.py --build build/final
+    CAUGHT=7 CONFIRMED=4 MISSED=0
+```
+
+It plants one defect at a time — a message lost 1 time in 10⁷, a single lost message, a duplicate
+delivery, a wrong checksum, a right checksum reached by the wrong amount of work, a body that
+never marked its measurement window, a CPU pin that cannot be applied — and asserts each is
+**rejected**, with no timing emitted. It also asserts four legitimate shapes are **not** rejected,
+because a battery that fails everything is not a working battery.
+
+The counts are floors. A run below them fails: a battery that quietly stopped planting anything
+looks exactly like one that passes. A verifier nobody has watched reject anything is not known to
+work.

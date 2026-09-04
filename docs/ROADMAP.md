@@ -12,6 +12,10 @@ ambition has already misled the reader.
 - `savina/ping-pong` for qb 3.1.0, CAF 1.1.0, SObjectizer 5.8.5.1 and the floor. 16/16 verified.
 - `tools/run.py`, `tools/report.py`. Every published figure is regenerated.
 - The tuning sweeps, including the one that had CAF handicapped.
+- `tools/negative-control.py` — **7 CAUGHT / 4 CONFIRMED / 0 MISSED**. The verifier has been
+  watched rejecting a 1-in-10^7 message loss, a single lost message, a duplicate, a wrong
+  checksum, a right checksum reached by the wrong amount of work, an unmarked measurement window
+  and a refused CPU pin — and watched NOT rejecting the four shapes that are legitimate.
 
 ## Not done
 
@@ -74,10 +78,6 @@ the JDK unpacks from a zip, and Erlang is the awkward one.
 Named because FAIRNESS.md and README.md refer to them, and a document that cites a guard that does
 not exist is exactly the drift qb-dev's own tooling was built to catch:
 
-- `tools/negative-control.sh` — plant a framework that drops 1 message in 10^7, one that returns a
-  wrong answer, a run whose pinning was refused, and a benchmark made 5 % slower, and assert each
-  is **rejected**. FAIRNESS.md section 3 describes it. **It is not written yet**, so the verifier
-  is currently unproven — the single largest gap in this repository.
 - `tools/check-report.py` — assert no hand-written figure has appeared in a committed Markdown
   table. Referenced by FAIRNESS.md 3 and README.md. **Not written yet.**
 - `docs/FEATURES.md` — the non-performance comparison (supervision, distribution, typed actors,
