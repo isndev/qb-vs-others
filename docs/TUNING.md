@@ -178,3 +178,37 @@ and SObjectizer's `simple_lock` (27.7 µs) sit on that floor; nothing in either 
 measured there, only the hypervisor. The row is published because the protocol says every cell
 is, and it is flagged so that nobody quotes it. A native Linux run is the open item; until it
 exists, the Linux park comparison is unmeasured.
+
+## 7. The qb performance audit this benchmark triggered
+
+§5 explained the collapse. The same instrumented branch (`perf/mailbox-lost-wakeup`, local, three
+WIP commits, env-driven `QVO_QB_*` knobs) was then used to price every fixed cost on qb's hot
+path, on both platforms, so that the fix list is measured rather than guessed. Every figure is a
+p50 over 7 repetitions of 1 000 000 round trips, `savina/ping-pong`, CPUs 0 and 2. "Win" is MSVC
+19.51, "Linux" is WSL2 g++ 14.2. The per-primitive costs come from a standalone micro-benchmark
+compiled with the same flags (`system_clock::now` 19 / 30 ns Win / Linux, `ev_run(EVRUN_NOWAIT)`
+on an idle wepoll / epoll loop 370 / 300 ns, `cv.notify_all()` with no waiter 2 / 1 ns,
+`SpinLock` 5 ns, `std::mutex` 12 / 2 ns).
+
+| axis | what the engine does today | measured effect | verdict |
+|---|---|---|---|
+| **A. park policy** | spin credit = *events* seen last pass; a 1-event/pass workload parks after 2–3 empty passes | 2c-park 10.7 µs (Win) / 27.6 µs (WSL2) → **323 / 282 ns** with a 100-pass idle floor, = the spin figure | **dominant, fix first** |
+| **B. lost wakeup** | `Mailbox::wait()` = `cv.wait_for` with no predicate; `notify()` without the mutex | Win: each loss = ~13 ms (MSVC ms-ceiling + 15.6 ms tick), 50–95 % of wait time; Linux: bounded 1 ms, ~5 % | **correctness defect**, fix with A |
+| **C. `notify()` per event** | producer notifies on every cross-core enqueue | 1–2 ns when nobody waits | negligible; keep, gate on a `_waiting` flag when B lands |
+| **D. wall clock per pass** | `wall_now()` every loop pass (19 / 30 ns) | 1c: 124 → 93 ns (Win), 101 → 75 (Linux) reading it every 64 passes = **−25 %**; 2c: 0 alone, 232 → 209 ns on top of F (Linux) | worth taking; cadence or `steady_clock` |
+| **E. io poll per pass** | `listener::run(EVRUN_NOWAIT)` runs every pass once *any* coroutine scheduler exists, even with zero watchers | 1c: 124 → **694** (Win), 101 → **739** (Linux), 5.6–7.3× slower; 2c: 408 → 645, 271 → 594. A gate on `size() \|\| has_deferred()` (still draining deferred + `run_ready`) restores the figures | **large, hits any app that ever `co_await`ed**; also the ~300–380 ns/pass floor of any app with one watcher |
+| **F. spsc producer re-reads `read_index_`** | one remote cache-line read per hop | 2c-spin 404 → **290** ns (Win, −28 %), 281 → **232** (Linux, −17 %); 1c unchanged | take; mirror it on the consumer side |
+| **G. copies per hop** | event → pipe → mpsc ring → `consume_all` scratch → dispatch | analysed, not isolated; an in-place `consume_all(func)` exists in `mpsc.h` | minor, after F |
+| **H. SpinLock on the send path** | — | the indexed `enqueue(index, …)` used by `SharedCoreCommunication::send` takes **no** lock; the lock is only on the round-robin variants | **retired** — not a cost |
+| **I. router double lookup** | `flat_hash` by EventId → virtual resolve → `flat_hash` by ActorId → fn ptr | analysed: ~15–20 of the ~37 ns a same-core hop costs; both ids are dense (`_type_id_counter`, `ServiceId`) so direct tables are feasible | measure next; medium |
+
+Two shapes to keep in mind when reading the table. A remote cache-line read on this machine costs
+60–110 ns, and it is the unit everything at two cores is priced in: the instrumentation's own
+enqueue-counter snapshot (one such read per pass) is what puts the instrumented 2c-spin at 404 ns
+against the shipped 332 — the same phenomenon as F, in the other direction. And an `epoll_wait` /
+wepoll poll costs 300–380 ns whether or not anything is registered, which is why E is a per-pass
+tax and not a per-event one: on a 1-core ping-pong it is paid twice per round trip.
+
+**With A + D + F, qb's 2-core spin ping-pong on Linux measures 209 ns against a 209 ns raw-thread
+floor** — within the spread, the framework costs nothing above the two cache-line crossings the
+problem requires. That is the figure the fixes are aiming at; it is not yet the figure qb ships.
