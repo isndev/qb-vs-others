@@ -20,6 +20,7 @@ here was re-taken with the shipped build measured in the same session).
 | `ab-axis-I/{L,I}/` | axis I alone against L, interleaved, 9 repetitions: 1c cells −4…−24 %, counting 2c **+42 %** (30.6 → 43.5 spin, 31.7 → 44.5 park) — the regression that became axis M |
 | `ab-axis-IM/{L1,IM1,L2,IM2}/` | L against I + M, four passes interleaved, 9 repetitions each; the best-of-pass table in `docs/TUNING.md` §7 "Axes I and M" |
 | `M-f5c20eeb-shipped-3.1.0/`, `M-f5c20eeb/` | v3.1.0 then the branch at `f5c20eeb`, same session, 9 repetitions + 2 warmup: the current README.md candidate grid (`M-f5c20eeb/`) and its shipped control |
+| `burst-sweep/` | counting 1c-spin against the burst size: `qb__counting-1c-spin-<N>.json` for N = 2 k … 4 M (20.6 / 29.9 / 25.0 / 28.3 / 32.8 / 25.3 / 25.7 ns), `shipped-3.1.0__`, `caf__`, `sobjectizer__`, `baseline__` at 30 k and 1 M. `docs/TUNING.md` §9.11 and §9.12 |
 
 `docs/TUNING.md` §7 is the reading guide (§8.2 for the `idlespin*` files, which are an experiment on the branch, not a configuration). These are NOT merged into the published tables until
 the branch ships.

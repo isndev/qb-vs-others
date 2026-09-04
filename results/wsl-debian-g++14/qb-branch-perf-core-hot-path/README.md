@@ -18,6 +18,7 @@ untouched, so every figure here was re-taken with the shipped build measured in 
 | `idlespin-default__2c-park.json` | the same session's control at the default floor: **211.7** ns (207.9–228.7) |
 | `L-ba051409/` | the branch at `ba051409` (axis L), all five benchmarks × 4 configurations, 5 repetitions + 1 warmup; the previous README.md candidate grid |
 | `M-f5c20eeb-shipped-3.1.0/`, `M-f5c20eeb/` | v3.1.0 then the branch at `f5c20eeb`, same session, 5 repetitions + 1 warmup: the current README.md candidate grid (`M-f5c20eeb/`) and its shipped control. The axis-I / I+M A/B was run on the Windows host only (`results/desktop-b67osn6-win-msvc/qb-branch-perf-core-hot-path/ab-axis-*`); here the branch went straight from L to I + M |
+| `burst-sweep/` | counting 1c-spin against the burst size: `qb__counting-1c-spin-<N>.json` for N = 2 k … 4 M (**6.5** / 8.0 / 8.5 / 12.5 / 31.8 / 35.2 / 38.8 ns — the cliff between 100 k and 300 k is the pipe leaving the cache), `shipped-3.1.0__` (37.0 / 42.6), `caf__` (113 / 119), `sobjectizer__` (94 / 106), `baseline__` (2.9 / 3.0) at 30 k and 1 M. `docs/TUNING.md` §9.11 |
 
 `docs/TUNING.md` §7 is the reading guide (§8.2 for the `idlespin*` files, which are an experiment on the branch, not a configuration). These are NOT merged into the published tables until
 the branch ships.

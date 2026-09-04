@@ -60,6 +60,36 @@ ambition has already misled the reader.
 
 ## Not done
 
+### The qb branch — the 3.2.0 pipeline, in order
+
+Everything performance-side is aimed at qb **3.2.0** (a minor: the 2c-park collapse is a
+user-reachable defect, and the branch changes no observable behaviour). All of it is local
+until the two platforms this host cannot see have run it; nothing on qb or qev is pushed.
+
+1. **Record and re-read** — done at each step: `docs/TUNING.md` §7 and §9 carry every axis with
+   its A/B, the shipped control of the same session beside every candidate grid, and the burst
+   sweep (§9.11) that says what the one-core cell measures.
+2. **`perf/event-pipe-segmented`** — the pipe's growth (§9.11) on a branch of its own, off
+   `perf/core-hot-path`, A/B'd against it on both hosts with the burst sweep as the instrument
+   and the five-benchmark grid as the regression check; suites on MSVC and g++ (release,
+   ASan+UBSan, TSan) before any number is quoted. The `Pipe.h:118` contract is retired by it, so
+   its pinning test (`PipeAllocatorContract.*`) turns into the opposite assertion.
+3. **macOS + Linux** — before the merge, on the maintainer's macOS: the full suite (`release`,
+   `sanitize`, `sanitize-thread`) and qb's own `dev/bench` gate against
+   `baseline/macos-arm64.json`, which is the instrument for the axis-K fence on arm64; on the
+   self-hosted `qb-vm-linux-arm64` runner: this repository's matrix, native, which is also the
+   first non-hypervisor park floor. Neither exists yet as a run.
+4. **Merge as 3.2.0, in lockstep** — qb + qbm-\* + qb-examples on one train, qev **5.1.0** with
+   it (axis E needs `ev_active_count()`, which lives in the 22 shared files the identity guard
+   checks); the root's citation sweep (`cite-digest.baseline`, `llm-guard.baseline`, `.cursor/`,
+   the Factbook — already drifted by the branch, uncommitted) lands in the same commit as the
+   pointer bump, or `verify.sh` is red in between.
+5. **After the merge** — §9.12 (clang-cl on Windows, compiler vs OS on the dispatch gap); the
+   SObjectizer spin-budget sweep (§4, adapter-side); the placement paragraph in `qb.llm.md`
+   that closes 9.4 by design and the `send<>` sentence that closes 9.6; and 9.2, the 32-byte
+   bucket, as a measured 4.0 experiment on top of the segmented pipe.
+
+
 ### The other 20 Savina benchmarks
 
 Five of the suite's twenty-five are measured — the round trip, the fan-in, the ring, the fan-out

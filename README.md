@@ -263,6 +263,16 @@ the four-pass interleaved A/B in `ab-axis-IM/` puts the two builds at 260–284 
 thread-ring at 2 cores on WSL2 is 123 ns against CAF's 140, a 12 % margin; and fork-join at
 two cores spinning on WSL2 (50 → 54 ns) is inside the run-to-run spread of that cell.
 
+One more thing the one-core cells measure, found after these grids were taken and recorded as
+`docs/TUNING.md` §9.11: a handler that pushes a million events stages all of them in one
+growable pipe, and that pipe's growth — doubling, with a copy of everything it holds and
+fresh pages from the kernel every time — is most of a one-core cell at 1 M on g++. Swept
+along the burst size, the branch's same-core dispatch is **8.5 ns** at 30 000 messages
+(shipped 3.1.0: 37, CAF 113, SObjectizer 94) and 35 at 1 M; CAF and SObjectizer are flat.
+The 1 M protocol stays — it is the Savina figure and every framework runs it — but read the
+one-core rows as a cold 64-MB burst through the engine, not as its dispatch cost. The fix
+(a segmented pipe that copies nothing) is the branch after this one.
+
 ## Running it
 
 ```powershell
