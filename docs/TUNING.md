@@ -42,6 +42,14 @@ FAIRNESS.md 1.1 and is not negotiable — **a knob is swept before a number usin
 CAF's shipped defaults are the fastest thing measured here, so the adapter leaves them alone for
 `wait=0` and uses `poll=100, steal=10` for `wait=1`. Both columns are published.
 
+**Correction (2026-09-04): `poll=100, steal=10` IS CAF's shipped default** —
+`libcaf_core/caf/defaults.hpp` sets `aggressive-poll-attempts = 100` and
+`aggressive-steal-interval = 10`. The `wait=1` column therefore re-measures the `wait=0`
+configuration, and the 584.1-vs-531.0 gap in the table above is run-to-run spread, not a knob.
+"CAF barely moves" (README point 3) is partly this: one of its two columns is a no-op. A genuine
+CAF spin profile would have to raise `aggressive-poll-attempts` well above 100 without the
+steal-interval collapse of the first guess; that sweep is an open item in ROADMAP.md.
+
 ## 2. qb park interval — the same treatment, applied to the author's own framework
 
 Tuning the competitor's knob while leaving your own at an arbitrary value rigs the axis just as
@@ -120,3 +128,53 @@ $env:QVO_QB_PARK_US = "50"
 .\build\final\bin\qvo-qb-savina-ping-pong.exe --repetitions 3 --warmup 1 --cpus 0,2 `
     --param messages=1000000 --param cores=2 --param wait=0
 ```
+
+## 5. qb's parked mode — the root cause, found by instrumenting qb rather than the benchmark
+
+§2 stopped at "the cost is in the wake-up path". The wake-up path was then instrumented
+(qb branch `perf/mailbox-lost-wakeup`, local, env-driven `QVO_QB_*` knobs — not merged) and
+measured on both platforms, 300 000–1 000 000 round trips, `cores=2, wait=0`:
+
+| | Windows / MSVC 19.51 | WSL2 Debian 13 / g++ 14.2 |
+|---|---:|---:|
+| shipped 3.1.0 | 10.7 µs | 27.6 µs (floor: 26.6 µs) |
+| fix A: race-free `Mailbox::wait()`/`notify()` | 720 ns | 26.6 µs |
+| fix A + 100 idle passes before parking | **323 ns** | **282 ns** |
+| spin (`wait=1`), for reference | 332 ns | 283 ns |
+
+Two defects, and their weight differs by platform:
+
+1. **The park policy is the dominant cost everywhere.** `VirtualCore` refills its spin credit
+   from the *number of events* seen on the previous pass, so on a ping-pong — one event per pass —
+   the core parks after two or three empty passes. Every hop then pays a full OS park + wake:
+   ~13 µs on WSL2 (virtualised IPI), ~2–5 µs on native Linux, ~300 ns on Windows when the wake is
+   not lost. CAF polls ~600 times before it sleeps; SObjectizer's `combined_lock` spins for a
+   budget first. qb has no time-based idle floor at all.
+2. **`Mailbox::wait()` loses wakeups.** It is `cv.wait_for(lk, latency)` with **no predicate**, and
+   `notify()` is `notify_all()` **without taking the mutex**, so an enqueue that lands between the
+   consumer's empty `consume_all` and its registration on the condition variable is never seen and
+   the core sleeps the full `latency`. On Linux that is a bounded 1 ms stall (measured 246–293
+   stalls per 300k messages, ~5 % of wait time). On Windows MSVC's `wait_for` rounds up to whole
+   milliseconds and lands on the 15.6 ms scheduler tick, so each lost wakeup costs ~13 ms —
+   measured 48–2849 per 300k messages, **50–95 % of all wait time**. Sub-millisecond `setLatency`
+   values are meaningless on Windows for the same reason.
+
+Both fixes are engine changes, not adapter changes, and the published tables stay at the shipped
+3.1.0 until they land. The methodology point stands on its own: **the benchmark found the
+defect, but only instrumenting the framework found the cause** — no sweep of the adapter's knob
+(§2) could have, because the knob was not where the cost was.
+
+## 6. The Linux axis — what WSL2 can and cannot measure
+
+`results/wsl-debian-g++14/` is the full 16-cell matrix under WSL2 (Debian 13, g++ 14.2,
+`-O3 -DNDEBUG`, CPUs 0 and 2, 5 repetitions). Three things carry over from Windows unchanged:
+qb leads on one core (100 ns vs SObjectizer 147–170 ns, CAF 285–287 ns); at two cores spinning
+qb and CAF are within noise of each other (283 vs 290 ns) above a 209 ns floor; and CAF's four
+cells are one figure (285–291 ns), because it never crosses a core (§1, README point 3).
+
+What does NOT carry over is the park row: **the floor itself is 26.6 µs per round trip.** WSL2 is a
+Hyper-V guest and a futex wake of a thread parked on another vCPU is a virtualised IPI. qb (27.6 µs)
+and SObjectizer's `simple_lock` (27.7 µs) sit on that floor; nothing in either framework is
+measured there, only the hypervisor. The row is published because the protocol says every cell
+is, and it is flagged so that nobody quotes it. A native Linux run is the open item; until it
+exists, the Linux park comparison is unmeasured.

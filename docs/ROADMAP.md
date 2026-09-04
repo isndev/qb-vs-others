@@ -51,11 +51,19 @@ the harness does not have.
 
 ### The Linux axis
 
-WSL Debian 13 with g++ 14.2 is available on this host and has not been run. Two things make it
-worth doing rather than optional: CAF and SObjectizer are primarily developed and tested on Linux,
-and Linux has real `sched_setaffinity` topology introspection where Windows needed an assumption
-(`tools/run.py:default_cpus`). Blocker: none for qb/CAF/SObjectizer — `sudo` needs a password on
-this host, but nothing in the C++ path requires root.
+**WSL2 Debian 13 / g++ 14.2 is run** — 16/16 cells verified, `results/wsl-debian-g++14/`, read
+with `docs/TUNING.md` §6: the 2-core park row measures the hypervisor's ~13 µs futex wake, not the
+frameworks (the raw condition-variable floor is 26.6 µs there). Two things remain:
+
+- **Native Linux.** The same matrix on bare metal or a non-nested VM, where a futex wake is
+  2–5 µs and the park row becomes a framework measurement. Nothing in the C++ path needs root.
+- **Two CAF coherence fixes** found while reading the CAF adapter against CAF's source
+  (TUNING.md §1 correction, README point 3): the `wait=1` profile equals CAF's shipped defaults,
+  so CAF needs a *real* spin profile (a sweep of `aggressive-poll-attempts` above 100 at a fixed,
+  non-degenerate steal interval), and CAF's `cores=2` ping-pong never crosses a core
+  (`worker::delay` prepends to the sender's own queue), so an honest cross-core CAF cell needs
+  the receiver forced onto the other worker — or the table has to say that CAF's 2-core figure is
+  a 1-core figure.
 
 ### Seastar
 

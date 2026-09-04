@@ -82,7 +82,7 @@ macro(_qvo_declare_caf)
     set(CAF_ENABLE_EXCEPTIONS     ON  CACHE BOOL "" FORCE)
 
     if(QVO_CAF_SOURCE_DIR)
-        FetchContent_Declare(caf SOURCE_DIR "${QVO_CAF_SOURCE_DIR}")
+        FetchContent_Declare(caf SOURCE_DIR "${QVO_CAF_SOURCE_DIR}" DOWNLOAD_COMMAND "")
     else()
         FetchContent_Declare(caf
             GIT_REPOSITORY https://github.com/actor-framework/actor-framework.git
@@ -102,7 +102,7 @@ macro(_qvo_declare_sobjectizer)
 
     if(QVO_SOBJECTIZER_SOURCE_DIR)
         FetchContent_Declare(sobjectizer SOURCE_DIR "${QVO_SOBJECTIZER_SOURCE_DIR}"
-                             SOURCE_SUBDIR dev)
+                             DOWNLOAD_COMMAND "" SOURCE_SUBDIR dev)
     else()
         FetchContent_Declare(sobjectizer
             GIT_REPOSITORY https://github.com/stiffstream/sobjectizer.git

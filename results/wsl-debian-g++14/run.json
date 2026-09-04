@@ -1,0 +1,106 @@
+{
+  "schema": "qvo/run/1",
+  "host": "DESKTOP-B67OSN6",
+  "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+  "cpus": "0,2",
+  "repetitions": 5,
+  "warmup": 1,
+  "cells": [
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    }
+  ]
+}
