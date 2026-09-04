@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/fork-join",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 16648013738289302308,
+  "expected_messages": 600060,
+  "work_unit": "message",
+  "work_units": 600000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 60, "cores": 1, "messages": 10000, "wait": 0, "work": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-09-04T18:05:38Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md (push = ordered) + the counting adapter",
+    "note": "push<> job stream into per-core pipes; master on VirtualCore 0, worker w on core w % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "worker w lives on VirtualCore w % cores, fixed before start: qb does not balance load, so with cores=2 the master's own core runs half the workers AND the master's dispatch loop while the other core runs the other half -- see benchmarks/savina/fork-join.md"],
+  "failures": [],
+  "work_ns": [25333200.0, 25224200.0, 23809800.0, 25183200.0, 26083000.0, 24785000.0, 25698100.0, 23816400.0, 23006700.0],
+  "total_ns": [27518100.0, 60983400.0, 40707600.0, 30808100.0, 41941200.0, 57132000.0, 28050000.0, 31693400.0, 53329900.0],
+  "outside_window_ns": [2184900.0, 35759200.0, 16897800.0, 5624900.0, 15858200.0, 32347000.0, 2351900.0, 7877000.0, 30323200.0],
+  "summary": {
+    "work_min": 23006700.0,
+    "work_p50": 25183200.0,
+    "work_p99": 26052208.0,
+    "work_iqr": 1516800.0
+  }
+}

@@ -16,6 +16,10 @@ here was re-taken with the shipped build measured in the same session).
 | `ab-nofence__2c-spin-{1,2,3}.json` / `ab-fence__*` | the axis-K A/B, interleaved: 307 / 296 / 309 ns without the spin-mode fence, 263 / 259 / 262 with it |
 | `idlespin0__2c-park.json`, `idlespin0__1c-park.json` | the branch with `QVO_QB_IDLE_SPIN_US=0` — the core blocks on its first idle pass, as v3.1.0 does, but through the branch's race-free handshake: 2c-park **385.5** ns (294.6–421.7), 1c-park 84.7. Not 10 µs: at ping-pong cadence the reply lands inside the `WaitOnAddress` handshake window and the wait returns without sleeping (`docs/TUNING.md` §8.2) |
 | `idlespin-default__2c-park.json` | the same session's control at the default 50 µs floor: **258.8** ns (254.7–263.5), the published branch figure reproduced |
+| `L-ba051409/` | the branch at `ba051409` (axis L), all five benchmarks × 4 configurations, 9 repetitions + 2 warmup; the previous README.md candidate grid |
+| `ab-axis-I/{L,I}/` | axis I alone against L, interleaved, 9 repetitions: 1c cells −4…−24 %, counting 2c **+42 %** (30.6 → 43.5 spin, 31.7 → 44.5 park) — the regression that became axis M |
+| `ab-axis-IM/{L1,IM1,L2,IM2}/` | L against I + M, four passes interleaved, 9 repetitions each; the best-of-pass table in `docs/TUNING.md` §7 "Axes I and M" |
+| `M-f5c20eeb-shipped-3.1.0/`, `M-f5c20eeb/` | v3.1.0 then the branch at `f5c20eeb`, same session, 9 repetitions + 2 warmup: the current README.md candidate grid (`M-f5c20eeb/`) and its shipped control |
 
 `docs/TUNING.md` §7 is the reading guide (§8.2 for the `idlespin*` files, which are an experiment on the branch, not a configuration). These are NOT merged into the published tables until
 the branch ships.

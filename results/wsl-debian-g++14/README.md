@@ -16,7 +16,8 @@ brought to single-session provenance framework by framework. qb is the shipped v
 |---|---|
 | `savina-ping-pong/` | **20 cells** — 18 verified + 2 declared `n/a` (`caf-detached` has no spin mode). |
 | `savina-counting/`, `savina-thread-ring/`, `savina-fork-join/`, `savina-big/` | **16 cells** each, all verified; `caf-detached` declares itself omitted from these four (`frameworks/caf-detached/CMakeLists.txt`). |
-| `qb-branch-perf-core-hot-path/L-ba051409/` | **the candidate**: qb at `perf/core-hot-path` `ba051409` (six commits over 3.1.0) through the same adapters, all five benchmarks — README.md's `framework=qb` grid for this host. |
+| `qb-branch-perf-core-hot-path/M-f5c20eeb/` | **the candidate**: qb at `perf/core-hot-path` `f5c20eeb` (eight commits over 3.1.0, axes I and M included) through the same adapters, all five benchmarks, 5 repetitions — README.md's `framework=qb` grid for this host. `M-f5c20eeb-shipped-3.1.0/` beside it is v3.1.0 measured minutes earlier in the same session, the control. |
+| `qb-branch-perf-core-hot-path/L-ba051409/` | the previous candidate (`ba051409`, six commits, before axes I and M), same protocol; kept for the L → M deltas in `docs/TUNING.md` §7. Its thread-ring 1c cells (48 / 50.5) and the current candidate's (37 / 48) are the spread that subsection records for the g++ ring. |
 | `qb-branch-perf-core-hot-path/` (the loose files) | earlier side experiments at `39992047`, NOT rendered by the report: the four ping-pong cells with the shipped build beside them, the axis-K A/B, the `idlespin*` files (§8.2). |
 
 **Caveat that applies to every `2c-park` cell of a benchmark that crosses a core per message:**

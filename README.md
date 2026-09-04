@@ -215,42 +215,53 @@ Seven things in those tables are worth more than the ranking:
    248–294 vs 134–280).
 6. **The narrowest margin is the ring, and it names qb's own cost.** thread-ring is one hop per
    message with nothing to batch; qb 3.1.0's 63 ns per hop on one core is only 1.13× (WSL2) to
-   1.45× (Windows) faster than SObjectizer and 7–22× the floor, and the branch's 51 ns is what removing the out-of-line accessors and the
-   accounting on that path is worth. Every qb-side finding from these five benchmarks — what
+   1.45× (Windows) faster than SObjectizer and 7–22× the floor; the branch's 43–46 ns on Windows
+   and 37–48 ns on WSL2 (a spread the ring shows between runs there, spin and park alike) is
+   what removing the out-of-line accessors, the two hash lookups per dispatch and the
+   per-event publish on that path is worth. Every qb-side finding from these five benchmarks — what
    it costs, where, and what was done about it — is in [docs/TUNING.md §9](docs/TUNING.md).
 7. **The candidate branch is measured for all five, on both hosts, and read the same way.** qb
-   at `perf/core-hot-path` (`ba051409`, six commits over 3.1.0), through the same adapters,
-   after the shipped build in the same session; the shipped figures are the `qb` items above.
+   at `perf/core-hot-path` (`f5c20eeb`, eight commits over 3.1.0), through the same adapters,
+   after a shipped build measured in the same session (`M-f5c20eeb-shipped-3.1.0/` beside each
+   grid); the `qb` items above are the published shipped run, and the two agree within the
+   spread (Windows ping-pong 2c-park 4.23 µs there, 6.62 µs in the same-session control — a
+   collapsed cell has no stable figure, which is the point of the branch).
 
 <!-- the two grids below are the candidate branch; check-report verifies them against their own directory -->
-The candidate on Windows (`results/desktop-b67osn6-win-msvc/qb-branch-perf-core-hot-path/L-ba051409/`):
+The candidate on Windows (`results/desktop-b67osn6-win-msvc/qb-branch-perf-core-hot-path/M-f5c20eeb/`):
 
-<!-- check-report: results/desktop-b67osn6-win-msvc/qb-branch-perf-core-hot-path/L-ba051409 framework=qb -->
+<!-- check-report: results/desktop-b67osn6-win-msvc/qb-branch-perf-core-hot-path/M-f5c20eeb framework=qb -->
 | benchmark | 1 core, spin | 1 core, park | 2 cores, spin | 2 cores, park |
 |---|---|---|---|---|
-| ping-pong | 85 ns | 89 ns | 254 ns | 278 ns |
-| counting | 27 ns | 29 ns | 31 ns | 31 ns |
-| thread-ring | 51 ns | 51 ns | 133 ns | 145 ns |
-| fork-join | 38 ns | 38 ns | 44 ns | 40 ns |
-| big | 31 ns | 31 ns | 30 ns | 30 ns |
+| ping-pong | 77 ns | 78 ns | 277 ns | 266 ns |
+| counting | 25 ns | 26 ns | 28 ns | 28 ns |
+| thread-ring | 46 ns | 43 ns | 146 ns | 135 ns |
+| fork-join | 35 ns | 35 ns | 40 ns | 36 ns |
+| big | 24 ns | 24 ns | 27 ns | 27 ns |
 
-The candidate on WSL2 (`results/wsl-debian-g++14/qb-branch-perf-core-hot-path/L-ba051409/`):
+The candidate on WSL2 (`results/wsl-debian-g++14/qb-branch-perf-core-hot-path/M-f5c20eeb/`):
 
-<!-- check-report: results/wsl-debian-g++14/qb-branch-perf-core-hot-path/L-ba051409 framework=qb -->
+<!-- check-report: results/wsl-debian-g++14/qb-branch-perf-core-hot-path/M-f5c20eeb framework=qb -->
 | benchmark | 1 core, spin | 1 core, park | 2 cores, spin | 2 cores, park |
 |---|---|---|---|---|
-| ping-pong | 72 ns | 71 ns | 225 ns | 242 ns |
-| counting | 41 ns | 41 ns | 46 ns | 47 ns |
-| thread-ring | 48 ns | 51 ns | 131 ns | 130 ns |
-| fork-join | 68 ns | 64 ns | 55 ns | 45 ns |
-| big | 31 ns | 34 ns | 31 ns | 29 ns |
+| ping-pong | 69 ns | 67 ns | 234 ns | 214 ns |
+| counting | 35 ns | 34 ns | 43 ns | 44 ns |
+| thread-ring | 37 ns | 48 ns | 123 ns | 130 ns |
+| fork-join | 65 ns | 59 ns | 54 ns | 45 ns |
+| big | 25 ns | 26 ns | 23 ns | 23 ns |
 
-Against the shipped rows above: the two 2c-park collapses are gone (ping-pong 4.23 µs → 278 ns
-on Windows, 26.78 µs → 242 ns on WSL2; thread-ring bimodal → 145 ns and 13.41 µs → 130 ns) and
-every one-core cell on Windows is 7–25 % cheaper (ping-pong 112 → 85 ns, ring 63 → 51 ns,
-counting 29 → 27 ns). Two cells to read with care: thread-ring at 2 cores on WSL2 is 131 ns
-against CAF's 140 — a 7 % margin, read it as level — and fork-join on WSL2 at one core
-(67 → 68 ns) is inside the run-to-run spread.
+Against the shipped rows above: the two 2c-park collapses are gone (ping-pong 4.23 µs → 266 ns
+on Windows, 26.78 µs → 214 ns on WSL2; thread-ring bimodal → 135 ns and 13.41 µs → 130 ns),
+every one-core cell is 15–42 % cheaper on both compilers (Windows ping-pong 112 → 77 ns,
+ring 63 → 43–46, counting 29 → 25, big 36 → 24; WSL2 ping-pong 98 → 67–69, ring 63 → 37–48,
+counting 44 → 34–35, big 38 → 25–26), and the three shapes with parallelism are 10–30 %
+cheaper at two cores as well (Windows counting 34 → 28, big 32 → 27; WSL2 big 29 → 23). Cells
+to read with care: the two `2c-spin` cells that cross a core per message (ping-pong, ring)
+carry a ±15 % intra-run spread on Windows (this document's ping-pong 2c-spin repetitions run
+252–311 ns, the previous candidate's 234–335), so 277 vs 254 ns is level, not a regression —
+the four-pass interleaved A/B in `ab-axis-IM/` puts the two builds at 260–284 vs 261–267 ns;
+thread-ring at 2 cores on WSL2 is 123 ns against CAF's 140, a 12 % margin; and fork-join at
+two cores spinning on WSL2 (50 → 54 ns) is inside the run-to-run spread of that cell.
 
 ## Running it
 

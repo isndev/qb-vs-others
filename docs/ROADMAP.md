@@ -15,8 +15,11 @@ ambition has already misled the reader.
   the reason in `frameworks/caf-detached/CMakeLists.txt`): **84 cells per platform, 82 verified
   + 2 `n/a`**, both platforms measured in one quiet session each on 2026-09-04, with the
   candidate qb branch measured through the same adapters minutes after the shipped build (the
-  20-cell grids under `results/*/qb-branch-perf-core-hot-path/L-ba051409/`). Every qb-side cost
-  the four new shapes exposed is in `docs/TUNING.md` §9.
+  20-cell grids under `results/*/qb-branch-perf-core-hot-path/M-f5c20eeb/`, with the
+  same-session shipped control beside each; `L-ba051409/` is the previous candidate, kept).
+  Every qb-side cost the four new shapes exposed is in `docs/TUNING.md` §9, and the one
+  the candidate itself exposed — a dispatch made fast enough to flip the cross-core pipe
+  into a per-event publish regime — is 9.10, fixed on the same branch.
 - **The two CAF coherence defects, closed** (`docs/TUNING.md` §1.1 and §8). The spin-knob sweep
   was run on both axes — poll budget 100 → 10⁶ at fixed steal interval, steal interval 1 → 10⁶ at
   fixed budget; ten documents in `results/desktop-b67osn6-win-msvc/caf-spin-sweep/` — and no
@@ -122,12 +125,14 @@ the JDK unpacks from a zip, and Erlang is the awkward one.
 
 - **`docs/TUNING.md` is not figure-checked.** `check-report.py` deliberately parses README.md
   only: TUNING's numbers come from side experiments (`caf-spin-sweep/`, the `ab-*` and
-  `idlespin*` documents, `L-ba051409/`) that are not cells of a published table, and a guard
+  `idlespin*` documents, `L-ba051409/`, `ab-axis-I/`, `ab-axis-IM/`) that are not cells of a
+  published table, and a guard
   that pretended to verify them would verify nothing. Each subsection names the directory its
   numbers came from; a marker grammar for "this figure is `<document>.summary.work_p50 /
   work_units`" would close it and has not been written.
 - **The qb-side findings in `docs/TUNING.md` §9 are not tied to a qb commit.** A finding that
-  names `VirtualCore.cpp:199` is true of qb 3.1.0 and of the branch at `ba051409`; nothing here
-  re-checks the citation when either moves. qb-dev's `llm-guard.py` does exactly that for its own
+  names `VirtualCore.cpp:199` is true of qb 3.1.0 and of the branch at `ba051409`, and already
+  false of the branch at `f5c20eeb` (axis M moved `__flush_all__`; §9 says so in prose, which
+  is all it can do); nothing here re-checks the citation when either moves. qb-dev's `llm-guard.py` does exactly that for its own
   docs and does not read this repository.
 - **A footprint probe.** See "Actor creation cost and memory footprint".
