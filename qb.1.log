@@ -1,0 +1,88 @@
+[2026-09-04 01:19:12.999713][WARN][38820][__init__:447] set thread affinity failed
+[2026-09-04 01:19:12.999714][INFO][38820][registerEvent:697] Actor(1.1) subscribed to struct qb::KillEvent
+[2026-09-04 01:19:12.999764][INFO][38820][registerEvent:697] Actor(1.1) subscribed to struct qb::SignalEvent
+[2026-09-04 01:19:12.999768][INFO][38820][registerEvent:697] Actor(1.1) subscribed to struct qb::UnregisterCallbackEvent
+[2026-09-04 01:19:12.999769][INFO][38820][registerEvent:697] Actor(1.1) subscribed to struct qb::PingEvent
+[2026-09-04 01:19:12.999771][INFO][38820][registerEvent:697] Actor(1.1) subscribed to struct qb::RequireEvent
+[2026-09-04 01:19:12.999775][INFO][38820][appendActor:875] New Actor[class savina_ping_pong_qb::PingActor](1.1)
+[2026-09-04 01:19:12.999777][INFO][38820][registerEvent:697] Actor(1.1) subscribed to struct qb::RequireEvent
+[2026-09-04 01:19:12.999780][INFO][38820][registerEvent:697] Actor(1.1) subscribed to struct savina_ping_pong_qb::Ball
+[2026-09-04 01:19:13.001457][INFO][36916][registerEvent:697] Actor(0.1) subscribed to struct qb::KillEvent
+[2026-09-04 01:19:13.001459][INFO][36916][registerEvent:697] Actor(0.1) subscribed to struct qb::SignalEvent
+[2026-09-04 01:19:13.001460][INFO][36916][registerEvent:697] Actor(0.1) subscribed to struct qb::UnregisterCallbackEvent
+[2026-09-04 01:19:13.001461][INFO][36916][registerEvent:697] Actor(0.1) subscribed to struct qb::PingEvent
+[2026-09-04 01:19:13.001462][INFO][36916][registerEvent:697] Actor(0.1) subscribed to struct qb::RequireEvent
+[2026-09-04 01:19:13.001465][INFO][36916][appendActor:875] New Actor[class savina_ping_pong_qb::PongActor](0.1)
+[2026-09-04 01:19:13.001466][INFO][36916][registerEvent:697] Actor(0.1) subscribed to struct savina_ping_pong_qb::Ball
+[2026-09-04 01:19:13.001470][INFO][36916][__workflow__:644] VirtualCore(0).id(36916) Init Success 1 actor(s)
+[2026-09-04 01:19:13.001478][INFO][38820][__workflow__:644] VirtualCore(1).id(38820) Init Success 1 actor(s)
+[2026-09-04 01:19:18.074686][INFO][36916][removeActor:916] Delete Actor[class savina_ping_pong_qb::PongActor](0.1)
+[2026-09-04 01:19:18.074697][INFO][36916][__workflow__:796] VirtualCore(0).id(36916) Stopped normally
+[2026-09-04 01:19:18.074791][INFO][38820][removeActor:916] Delete Actor[class savina_ping_pong_qb::PingActor](1.1)
+[2026-09-04 01:19:18.074793][INFO][38820][__workflow__:796] VirtualCore(1).id(38820) Stopped normally
+[2026-09-04 01:19:18.075337][WARN][38060][__init__:447] set thread affinity failed
+[2026-09-04 01:19:18.075338][INFO][38060][registerEvent:697] Actor(1.1) subscribed to struct qb::KillEvent
+[2026-09-04 01:19:18.075344][INFO][38060][registerEvent:697] Actor(1.1) subscribed to struct qb::SignalEvent
+[2026-09-04 01:19:18.075346][INFO][38060][registerEvent:697] Actor(1.1) subscribed to struct qb::UnregisterCallbackEvent
+[2026-09-04 01:19:18.075347][INFO][38060][registerEvent:697] Actor(1.1) subscribed to struct qb::PingEvent
+[2026-09-04 01:19:18.075348][INFO][38060][registerEvent:697] Actor(1.1) subscribed to struct qb::RequireEvent
+[2026-09-04 01:19:18.075349][INFO][38060][appendActor:875] New Actor[class savina_ping_pong_qb::PingActor](1.1)
+[2026-09-04 01:19:18.075351][INFO][38060][registerEvent:697] Actor(1.1) subscribed to struct qb::RequireEvent
+[2026-09-04 01:19:18.075352][INFO][38060][registerEvent:697] Actor(1.1) subscribed to struct savina_ping_pong_qb::Ball
+[2026-09-04 01:19:18.077773][INFO][33308][registerEvent:697] Actor(0.1) subscribed to struct qb::KillEvent
+[2026-09-04 01:19:18.077778][INFO][33308][registerEvent:697] Actor(0.1) subscribed to struct qb::SignalEvent
+[2026-09-04 01:19:18.077779][INFO][33308][registerEvent:697] Actor(0.1) subscribed to struct qb::UnregisterCallbackEvent
+[2026-09-04 01:19:18.077779][INFO][33308][registerEvent:697] Actor(0.1) subscribed to struct qb::PingEvent
+[2026-09-04 01:19:18.077780][INFO][33308][registerEvent:697] Actor(0.1) subscribed to struct qb::RequireEvent
+[2026-09-04 01:19:18.077781][INFO][33308][appendActor:875] New Actor[class savina_ping_pong_qb::PongActor](0.1)
+[2026-09-04 01:19:18.077783][INFO][33308][registerEvent:697] Actor(0.1) subscribed to struct savina_ping_pong_qb::Ball
+[2026-09-04 01:19:18.077784][INFO][33308][__workflow__:644] VirtualCore(0).id(33308) Init Success 1 actor(s)
+[2026-09-04 01:19:18.077787][INFO][38060][__workflow__:644] VirtualCore(1).id(38060) Init Success 1 actor(s)
+[2026-09-04 01:19:23.255567][INFO][38060][removeActor:916] Delete Actor[class savina_ping_pong_qb::PingActor](1.1)
+[2026-09-04 01:19:23.255578][INFO][38060][__workflow__:796] VirtualCore(1).id(38060) Stopped normally
+[2026-09-04 01:19:23.255652][INFO][33308][removeActor:916] Delete Actor[class savina_ping_pong_qb::PongActor](0.1)
+[2026-09-04 01:19:23.255654][INFO][33308][__workflow__:796] VirtualCore(0).id(33308) Stopped normally
+[2026-09-04 01:19:23.256210][WARN][22508][__init__:447] set thread affinity failed
+[2026-09-04 01:19:23.256211][INFO][22508][registerEvent:697] Actor(1.1) subscribed to struct qb::KillEvent
+[2026-09-04 01:19:23.256217][INFO][22508][registerEvent:697] Actor(1.1) subscribed to struct qb::SignalEvent
+[2026-09-04 01:19:23.256218][INFO][22508][registerEvent:697] Actor(1.1) subscribed to struct qb::UnregisterCallbackEvent
+[2026-09-04 01:19:23.256220][INFO][22508][registerEvent:697] Actor(1.1) subscribed to struct qb::PingEvent
+[2026-09-04 01:19:23.256221][INFO][22508][registerEvent:697] Actor(1.1) subscribed to struct qb::RequireEvent
+[2026-09-04 01:19:23.256223][INFO][22508][appendActor:875] New Actor[class savina_ping_pong_qb::PingActor](1.1)
+[2026-09-04 01:19:23.256224][INFO][22508][registerEvent:697] Actor(1.1) subscribed to struct qb::RequireEvent
+[2026-09-04 01:19:23.256225][INFO][22508][registerEvent:697] Actor(1.1) subscribed to struct savina_ping_pong_qb::Ball
+[2026-09-04 01:19:23.259307][INFO][30480][registerEvent:697] Actor(0.1) subscribed to struct qb::KillEvent
+[2026-09-04 01:19:23.259310][INFO][30480][registerEvent:697] Actor(0.1) subscribed to struct qb::SignalEvent
+[2026-09-04 01:19:23.259310][INFO][30480][registerEvent:697] Actor(0.1) subscribed to struct qb::UnregisterCallbackEvent
+[2026-09-04 01:19:23.259311][INFO][30480][registerEvent:697] Actor(0.1) subscribed to struct qb::PingEvent
+[2026-09-04 01:19:23.259312][INFO][30480][registerEvent:697] Actor(0.1) subscribed to struct qb::RequireEvent
+[2026-09-04 01:19:23.259313][INFO][30480][appendActor:875] New Actor[class savina_ping_pong_qb::PongActor](0.1)
+[2026-09-04 01:19:23.259314][INFO][30480][registerEvent:697] Actor(0.1) subscribed to struct savina_ping_pong_qb::Ball
+[2026-09-04 01:19:23.259315][INFO][30480][__workflow__:644] VirtualCore(0).id(30480) Init Success 1 actor(s)
+[2026-09-04 01:19:23.259318][INFO][22508][__workflow__:644] VirtualCore(1).id(22508) Init Success 1 actor(s)
+[2026-09-04 01:19:28.452582][INFO][30480][removeActor:916] Delete Actor[class savina_ping_pong_qb::PongActor](0.1)
+[2026-09-04 01:19:28.452592][INFO][30480][__workflow__:796] VirtualCore(0).id(30480) Stopped normally
+[2026-09-04 01:19:28.452684][INFO][22508][removeActor:916] Delete Actor[class savina_ping_pong_qb::PingActor](1.1)
+[2026-09-04 01:19:28.452687][INFO][22508][__workflow__:796] VirtualCore(1).id(22508) Stopped normally
+[2026-09-04 01:19:28.455332][WARN][41600][__init__:447] set thread affinity failed
+[2026-09-04 01:19:28.455333][INFO][41600][registerEvent:697] Actor(1.1) subscribed to struct qb::KillEvent
+[2026-09-04 01:19:28.455341][INFO][41600][registerEvent:697] Actor(1.1) subscribed to struct qb::SignalEvent
+[2026-09-04 01:19:28.455342][INFO][41600][registerEvent:697] Actor(1.1) subscribed to struct qb::UnregisterCallbackEvent
+[2026-09-04 01:19:28.455343][INFO][41600][registerEvent:697] Actor(1.1) subscribed to struct qb::PingEvent
+[2026-09-04 01:19:28.455344][INFO][41600][registerEvent:697] Actor(1.1) subscribed to struct qb::RequireEvent
+[2026-09-04 01:19:28.455345][INFO][41600][appendActor:875] New Actor[class savina_ping_pong_qb::PingActor](1.1)
+[2026-09-04 01:19:28.455347][INFO][41600][registerEvent:697] Actor(1.1) subscribed to struct qb::RequireEvent
+[2026-09-04 01:19:28.455348][INFO][41600][registerEvent:697] Actor(1.1) subscribed to struct savina_ping_pong_qb::Ball
+[2026-09-04 01:19:28.458330][INFO][41140][registerEvent:697] Actor(0.1) subscribed to struct qb::KillEvent
+[2026-09-04 01:19:28.458339][INFO][41140][registerEvent:697] Actor(0.1) subscribed to struct qb::SignalEvent
+[2026-09-04 01:19:28.458340][INFO][41140][registerEvent:697] Actor(0.1) subscribed to struct qb::UnregisterCallbackEvent
+[2026-09-04 01:19:28.458341][INFO][41140][registerEvent:697] Actor(0.1) subscribed to struct qb::PingEvent
+[2026-09-04 01:19:28.458342][INFO][41140][registerEvent:697] Actor(0.1) subscribed to struct qb::RequireEvent
+[2026-09-04 01:19:28.458345][INFO][41140][appendActor:875] New Actor[class savina_ping_pong_qb::PongActor](0.1)
+[2026-09-04 01:19:28.458347][INFO][41140][registerEvent:697] Actor(0.1) subscribed to struct savina_ping_pong_qb::Ball
+[2026-09-04 01:19:28.458349][INFO][41140][__workflow__:644] VirtualCore(0).id(41140) Init Success 1 actor(s)
+[2026-09-04 01:19:28.458546][INFO][41600][__workflow__:644] VirtualCore(1).id(41600) Init Success 1 actor(s)
+[2026-09-04 01:19:33.634203][INFO][41600][removeActor:916] Delete Actor[class savina_ping_pong_qb::PingActor](1.1)
+[2026-09-04 01:19:33.634214][INFO][41600][__workflow__:796] VirtualCore(1).id(41600) Stopped normally
+[2026-09-04 01:19:33.634295][INFO][41140][removeActor:916] Delete Actor[class savina_ping_pong_qb::PongActor](0.1)
+[2026-09-04 01:19:33.634297][INFO][41140][__workflow__:796] VirtualCore(0).id(41140) Stopped normally

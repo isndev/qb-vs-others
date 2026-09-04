@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "qb-vs-others",
+  "version-string": "0.1.0",
+  "description": "Cross-framework actor benchmark harness: qb vs CAF vs SObjectizer vs a raw-thread floor",
+  "builtin-baseline": "a900048467b8199f82c31411e0f1597c267fdada",
+  "dependencies": [
+    "caf",
+    "sobjectizer",
+    "benchmark",
+    "openssl",
+    "zlib",
+    "nlohmann-json"
+  ]
+}
