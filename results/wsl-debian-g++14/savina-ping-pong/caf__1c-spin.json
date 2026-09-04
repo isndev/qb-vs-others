@@ -6,6 +6,8 @@
   "verified": true,
   "expected_checksum": 6535945399557740267,
   "expected_messages": 2000000,
+  "work_unit": "round trip",
+  "work_units": 1000000,
   "repetitions": 5,
   "warmup": 1,
   "params": {"cores": 1, "messages": 1000000, "wait": 1},
@@ -20,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T14:21:36Z"
+    "utc": "2026-09-04T15:57:17Z"
   },
   "idiom": {
     "source": "CAF 1.1.0 examples/hello_world.cpp + examples/message_passing/dancing_kirby.cpp + caf/stateful_actor.hpp",
@@ -28,13 +30,13 @@
   },
   "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them, which qb's actors cannot do. That is an architectural difference, and it cuts both ways: stealing costs on a two-actor ping-pong and pays on an unbalanced fan-out", "wait=1 and wait=0 are the SAME configuration for CAF on this benchmark -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10). The sweep in docs/TUNING.md section 1 found every more aggressive profile SLOWER, because on a ping-pong the receiver runs on the sender's worker and polling harder only makes the idle worker steal it; CAF's fastest ping-pong is the one where nothing ever crosses a core. The cross-core figure is the caf-detached row", "in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on one thread and never pays a cross-core hand-off; read this row as CAF's best-case locality, and caf-detached as its cross-core cost", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship"],
   "failures": [],
-  "work_ns": [276590489.0, 274142036.0, 274943934.0, 275776378.0, 273254972.0],
-  "total_ns": [276986684.0, 274640409.0, 275527027.0, 276306516.0, 273613906.0],
-  "outside_window_ns": [396195.0, 498373.0, 583093.0, 530138.0, 358934.0],
+  "work_ns": [290694994.0, 286042659.0, 276666331.0, 283699174.0, 276807794.0],
+  "total_ns": [291149937.0, 286469930.0, 277559214.0, 284215688.0, 277828058.0],
+  "outside_window_ns": [454943.0, 427271.0, 892883.0, 516514.0, 1020264.0],
   "summary": {
-    "work_min": 273254972.0,
-    "work_p50": 274943934.0,
-    "work_p99": 276557924.6,
-    "work_iqr": 1634342.0
+    "work_min": 276666331.0,
+    "work_p50": 283699174.0,
+    "work_p99": 290508900.6,
+    "work_iqr": 9234865.0
   }
 }

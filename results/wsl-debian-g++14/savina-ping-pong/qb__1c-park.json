@@ -6,6 +6,8 @@
   "verified": true,
   "expected_checksum": 6535945399557740267,
   "expected_messages": 2000000,
+  "work_unit": "round trip",
+  "work_units": 1000000,
   "repetitions": 5,
   "warmup": 1,
   "params": {"cores": 1, "messages": 1000000, "wait": 0},
@@ -20,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T14:51:41Z"
+    "utc": "2026-09-04T16:03:18Z"
   },
   "idiom": {
     "source": "qb/tests/core/benchmark/messaging/ping-pong-latency.cpp",
@@ -28,13 +30,13 @@
   },
   "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction"],
   "failures": [],
-  "work_ns": [97756710.0, 97802163.0, 97781244.0, 97082726.0, 98174307.0],
-  "total_ns": [98100435.0, 98040182.0, 98022803.0, 97356858.0, 98434052.0],
-  "outside_window_ns": [343725.0, 238019.0, 241559.0, 274132.0, 259745.0],
+  "work_ns": [97509191.0, 96444183.0, 98604886.0, 101136399.0, 100698934.0],
+  "total_ns": [97817465.0, 96682492.0, 99016366.0, 101490670.0, 100986474.0],
+  "outside_window_ns": [308274.0, 238309.0, 411480.0, 354271.0, 287540.0],
   "summary": {
-    "work_min": 97082726.0,
-    "work_p50": 97781244.0,
-    "work_p99": 98159421.2,
-    "work_iqr": 45453.0
+    "work_min": 96444183.0,
+    "work_p50": 98604886.0,
+    "work_p99": 101118900.4,
+    "work_iqr": 3189743.0
   }
 }

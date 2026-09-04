@@ -12,97 +12,24 @@
 
 #include <qvospec/savina/ping-pong.h>
 
+#include "../baseline_support.h"
+
 #include <atomic>
-#include <condition_variable>
-#include <cstddef>
-#include <mutex>
-#include <new>
 #include <thread>
-#include <vector>
 
 namespace savina_ping_pong_baseline {
 
 using namespace qvospec::savina::ping_pong;
 
-#if defined(__cpp_lib_hardware_interference_size)
-constexpr std::size_t kCacheLine = std::hardware_destructive_interference_size;
-#else
-constexpr std::size_t kCacheLine = 64;
-#endif
-
-// A textbook bounded single-producer/single-consumer ring. Head and tail sit on separate cache
-// lines; the producer never reads the consumer's cursor except to check fullness, and vice versa.
-template <typename T, std::size_t N>
-class SpscRing {
-    static_assert((N & (N - 1)) == 0, "capacity must be a power of two");
-
-public:
-    bool try_push(T value) noexcept {
-        const auto head = _head.load(std::memory_order_relaxed);
-        const auto next = head + 1;
-        if (next - _tail.load(std::memory_order_acquire) > N) return false;
-        _slots[head & (N - 1)] = value;
-        _head.store(next, std::memory_order_release);
-        return true;
-    }
-
-    bool try_pop(T &out) noexcept {
-        const auto tail = _tail.load(std::memory_order_relaxed);
-        if (tail == _head.load(std::memory_order_acquire)) return false;
-        out = _slots[tail & (N - 1)];
-        _tail.store(tail + 1, std::memory_order_release);
-        return true;
-    }
-
-private:
-    alignas(kCacheLine) std::atomic<std::uint64_t> _head{0};
-    alignas(kCacheLine) std::atomic<std::uint64_t> _tail{0};
-    alignas(kCacheLine) T _slots[N]{};
-};
+// The ring, the parked slot and the placement live in ../baseline_support.h, shared with the
+// many-actor floors -- one ring for every floor, so none can drift from the others.
+using qvobase::CvSlot;
+using qvobase::place;
+using qvobase::SpscRing;
 
 // The message. Deliberately the same shape as the frameworks' events: one 64-bit payload.
 struct Ball {
     std::uint64_t seq{0};
-};
-
-// The floor gets the SAME placement as the frameworks.
-//
-// qb pins its VirtualCores, CAF pins its scheduler workers through a thread_hook and SObjectizer
-// pins its work threads through a factory. A floor left floating on the process mask while every
-// framework is pinned is measured under different conditions -- and since the floor is what every
-// framework's number is divided by, that would move every published ratio.
-inline void place(std::size_t worker_index) {
-    const auto &cpus = qvo::pinned_cpus();
-    if (!cpus.empty()) qvo::pin_this_thread(cpus[worker_index % cpus.size()]);
-}
-
-// The parked counterpart of the ring: a mutex + condition variable handoff, which is what every
-// framework's wait=0 configuration reduces to underneath. It is here so that the floor exists on
-// BOTH sides of the spin/park axis -- a floor that only exists for spinning would let the parked
-// column be read against nothing.
-class CvSlot {
-public:
-    void put(Ball b) {
-        {
-            std::lock_guard<std::mutex> lk(_m);
-            _value = b;
-            _full  = true;
-        }
-        _cv.notify_one();
-    }
-
-    Ball take() {
-        std::unique_lock<std::mutex> lk(_m);
-        _cv.wait(lk, [this] { return _full; });
-        _full = false;
-        return _value;
-    }
-
-private:
-    std::mutex              _m;
-    std::condition_variable _cv;
-    Ball                    _value{};
-    bool                    _full{false};
 };
 
 qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
@@ -145,8 +72,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
 
     if (!spin) {
         // Two threads, parked on condition variables.
-        CvSlot to_pong_slot;
-        CvSlot to_ping_slot;
+        CvSlot<Ball> to_pong_slot;
+        CvSlot<Ball> to_ping_slot;
 
         std::thread pong([&] {
             place(1);

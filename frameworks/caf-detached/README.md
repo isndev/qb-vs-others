@@ -54,6 +54,21 @@ row with a note not to quote the median; it also refuses to claim an ordering ag
 cell. The published `caf-detached` 2c-park is therefore read as **"~1 µs or ~10.6 µs on Windows,
 ~3.5 µs or ~26 µs on WSL2"**, and never as one number.
 
+## Only ping-pong is mirrored, on purpose
+
+This directory's `savina/` holds one file. The other four Savina benchmarks (`counting`,
+`thread-ring`, `fork-join`, `big`) are **not** given a detached row, and the reason is the one the
+row exists for: `caf::detached` is CAF's placement primitive for *one actor that deserves a
+thread*, and the variant borrows it to make a two-actor exchange cross a core. On a hundred ring
+actors, sixty workers or a hundred and twenty all-to-all actors it would create that many OS
+threads over two CPUs, and the cell would measure the kernel's scheduler switching between them —
+a configuration CAF's own documentation steers away from and nobody would deploy. `counting` has
+only two actors, but its question (single-producer mailbox throughput) is answered by the pool row
+at `cores=2`: the producer never yields its worker while it streams, so the idle worker steals
+the counter and the mailbox between them is a real cross-thread queue for the whole window; the
+detached row would add nothing but a second number to explain. The plain `caf` row is the right idiomatic figure for all four, and the per-benchmark
+docs under `benchmarks/savina/` say what its scheduler does with the same two-CPU budget.
+
 ## What was tried before this and why it was not enough
 
 The first attempt at "CAF cross-core" was a spin profile on the pool

@@ -182,7 +182,43 @@ inline void assert_pins_took() {
     }
 }
 
-inline std::vector<std::string> caveats() {
+// Which caveat list a benchmark carries. Ping-pong has a caf-detached row to point at for its
+// cross-core figure; every other benchmark does not -- the detached variant is mirrored for
+// ping-pong only, because one private thread per actor at 60-120 actors would measure the OS
+// scheduler, not CAF (frameworks/caf-detached/README.md) -- so their pool-locality note has to
+// stand on its own.
+enum class Shape { ping_pong, other };
+
+inline std::vector<std::string> caveats(Shape shape = Shape::ping_pong) {
+    if (shape == Shape::other) {
+        std::vector<std::string> c;
+        if (poll_override() || steal_override())
+            c.emplace_back("SWEEP DOCUMENT, NOT A TABLE CELL: caf.work-stealing.aggressive-poll-attempts=" +
+                           std::to_string(poll_override().value_or(100)) +
+                           " aggressive-steal-interval=" + std::to_string(steal_override().value_or(10)) +
+                           " were overridden through QVO_CAF_AGGRESSIVE_POLL / QVO_CAF_STEAL_INTERVAL "
+                           "(docs/TUNING.md section 1.1); CAF's shipped defaults are 100 / 10");
+        c.insert(c.end(), {
+            "CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are "
+            "pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF "
+            "still steals across them and places every runnable actor dynamically, which qb's "
+            "statically placed actors cannot do -- a scheduler that balances against one that "
+            "does not is part of what this cell measures",
+            "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults "
+            "(aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md "
+            "section 1 found every more aggressive profile slower and no profile was invented for "
+            "this benchmark",
+            "in the work-stealing pool an actor made ready by a message sent from a worker is "
+            "prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one "
+            "thread until the other worker steals; how many hops cross a core is the scheduler's "
+            "decision, not the adapter's, and is not reported",
+            "no caf-detached row for this benchmark: one private thread per actor at this actor "
+            "count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)",
+            "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the "
+            "harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does "
+            "not ship"});
+        return c;
+    }
     if (kDetached)
         return {
             "every actor is spawned caf::detached: one OS thread per actor, pinned one per CPU "

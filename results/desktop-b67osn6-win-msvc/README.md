@@ -1,20 +1,25 @@
 # desktop-b67osn6-win-msvc
 
 Windows 11 (10.0.26100), MSVC 19.51 (VS 2026), `/O2 /DNDEBUG`, i9-12900K, pinned to CPUs 0 and 2
-(two P-cores), **9 repetitions + 2 warmup**, 1 000 000 round trips per repetition. Every cell of
-`savina-ping-pong/` was measured in ONE quiet session on 2026-09-04 (14:20–14:40 UTC) — no build,
-no test suite and no WSL measurement running anywhere on the host — so all 20 cells share their
-provenance; `run.json` records `merged_partial_runs` because the session was driven as five
-`--only <framework>` runs that `tools/run.py` merged, and it refuses a merge whose host, CPU set or
-repetition count differs.
+(two P-cores), **9 repetitions + 2 warmup**. Every one of the **84 cells** across the five
+`savina-*/` directories was measured in ONE quiet session on 2026-09-04 (16:09–16:18 UTC) — no
+build, no test suite and no WSL measurement running anywhere on the host (the WSL2 session ended
+at 16:05 UTC) — and the candidate qb branch's 20 cells followed at 16:17–16:18 UTC in the same
+session, so shipped and branch share their provenance. `run.json` records `merged_partial_runs`
+because the session was driven as `--only <framework>` runs that `tools/run.py` merged; it
+refuses a merge whose host, CPU set or repetition count differs.
 
-`docs/TUNING.md` is the reading guide: §1.1 for CAF's two columns, §5/§7 for qb's park cell, §8
-for `caf-detached` and the idle-floor experiment.
+`REPORT.md` beside this file is `tools/report.py`'s render of this directory and
+`tools/check-report.py` fails if it drifts from the JSON. `docs/TUNING.md` is the reading guide:
+§1.1 for CAF's two columns, §5/§7 for qb's park cell, §8 for `caf-detached` and the idle-floor
+experiment, §9 for what the four newer shapes say about qb.
 
 | directory | what |
 |---|---|
-| `savina-ping-pong/` | the published table — 4 configurations × {`baseline`, `qb` 3.1.0, `caf` 1.1.0, `caf-detached`, `sobjectizer` 5.8.5.1}: **18 verified + 2 `n/a`** (`caf-detached` has no spin mode; harness exit 3, reason in the document). `qb` is the shipped v3.1.0 (`eac739ff`, `git archive`d and built apart from the branch). The `caf-detached` 2c-park cell is **bimodal** (2 of 9 repetitions at ~0.93 µs, 7 at ~10.58 µs) and the report says so. |
-| `qb-branch-perf-core-hot-path/` | side experiment: qb's local branch measured through the unmodified adapter, shipped build beside it, plus the axis-K A/B and the `idlespin*` floor experiment. Not rendered by `report.py` (its own README says why). |
+| `savina-ping-pong/` | 4 configurations × {`baseline`, `qb` 3.1.0, `caf` 1.1.0, `caf-detached`, `sobjectizer` 5.8.5.1}: **18 verified + 2 `n/a`** (`caf-detached` has no spin mode; harness exit 3, reason in the document). `qb` is the shipped v3.1.0 (`eac739ff`, `git archive`d and built apart from the branch). The `caf-detached` 2c-park cell is **bimodal** (4 of 9 repetitions at ~1.0–1.5 µs, 5 at ~10.6 µs) and the report says so; so is shipped qb's 2c-park on `thread-ring` below. |
+| `savina-counting/`, `savina-thread-ring/`, `savina-fork-join/`, `savina-big/` | the same 4 configurations × {`baseline`, `qb`, `caf`, `sobjectizer`}: **16 verified** each, no `n/a` (`caf-detached` declares itself omitted from these four in its `CMakeLists.txt`). Shipped qb's `thread-ring` 2c-park is **bimodal** — 2 of 9 at ~0.5–0.7 µs per hop, 7 at 2.0–3.6 µs — the §5 collapse on a ring. |
+| `qb-branch-perf-core-hot-path/L-ba051409/` | **the candidate**: qb at `perf/core-hot-path` `ba051409` (six commits over 3.1.0, axis L included) through the unmodified adapters, all five benchmarks, same session — the `framework=qb` grid README.md carries and `check-report.py` verifies. |
+| `qb-branch-perf-core-hot-path/` (the loose files) | earlier side experiments on the branch at `39992047`: the four ping-pong cells with the shipped build beside them, the axis-K A/B and the `idlespin*` floor experiment. Not rendered by `report.py` (its own README says why). |
 | `caf-spin-sweep/` | side experiment: the ten-point sweep of CAF's two work-stealing knobs that established `wait=1` ≡ `wait=0` for CAF. Not rendered. |
 
 Toolchain provenance is in every document's `env` object; `tools/report.py` prints it once per

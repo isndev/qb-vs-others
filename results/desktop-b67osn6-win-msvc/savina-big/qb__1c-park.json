@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/big",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 17612934045731492923,
+  "expected_messages": 4800240,
+  "work_unit": "round trip",
+  "work_units": 2400000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 120, "cores": 1, "pings": 20000, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-09-04T16:16:17Z"
+  },
+  "idiom": {
+    "source": "the ping-pong adapter (reply() recycling) + qb/llm/qb.llm.md",
+    "note": "one Ping event per round trip, answered in place with reply(); actor a on VirtualCore a % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "actor a lives on VirtualCore a % cores, fixed before start: no load balancing, and with cores=2 each core's inbound queue is written by the ~60 actors of the other core"],
+  "failures": [],
+  "work_ns": [89294600.0, 83038000.0, 91760000.0, 85894200.0, 86342900.0, 91217800.0, 83231000.0, 91799100.0, 87549400.0],
+  "total_ns": [121337100.0, 84731600.0, 113128400.0, 87838600.0, 108056200.0, 103923000.0, 98401900.0, 93663700.0, 113621100.0],
+  "outside_window_ns": [32042500.0, 1693600.0, 21368400.0, 1944400.0, 21713300.0, 12705200.0, 15170900.0, 1864600.0, 26071700.0],
+  "summary": {
+    "work_min": 83038000.0,
+    "work_p50": 87549400.0,
+    "work_p99": 91795972.0,
+    "work_iqr": 5323600.0
+  }
+}

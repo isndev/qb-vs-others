@@ -6,6 +6,8 @@
   "verified": true,
   "expected_checksum": 6535945399557740267,
   "expected_messages": 2000000,
+  "work_unit": "round trip",
+  "work_units": 1000000,
   "repetitions": 5,
   "warmup": 1,
   "params": {"cores": 2, "messages": 1000000, "wait": 1},
@@ -20,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T14:46:17Z"
+    "utc": "2026-09-04T15:57:44Z"
   },
   "idiom": {
     "source": "SObjectizer 5.8.5.1 dev/sample/so_5/ping_pong{,_minimal}/main.cpp",
@@ -28,13 +30,13 @@
   },
   "caveats": ["cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating", "wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose"],
   "failures": [],
-  "work_ns": [638523286.0, 634358713.0, 631748817.0, 639656445.0, 665137426.0],
-  "total_ns": [639000527.0, 634836795.0, 632260839.0, 640161817.0, 665785508.0],
-  "outside_window_ns": [477241.0, 478082.0, 512022.0, 505372.0, 648082.0],
+  "work_ns": [627281574.0, 629803764.0, 628189048.0, 639164621.0, 669620761.0],
+  "total_ns": [627753780.0, 630466444.0, 628690728.0, 639631931.0, 670116609.0],
+  "outside_window_ns": [472206.0, 662680.0, 501680.0, 467310.0, 495848.0],
   "summary": {
-    "work_min": 631748817.0,
-    "work_p50": 638523286.0,
-    "work_p99": 664118186.8,
-    "work_iqr": 5297732.0
+    "work_min": 627281574.0,
+    "work_p50": 629803764.0,
+    "work_p99": 668402515.4,
+    "work_iqr": 10975573.0
   }
 }

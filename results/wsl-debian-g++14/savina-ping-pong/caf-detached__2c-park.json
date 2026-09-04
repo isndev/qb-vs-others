@@ -6,6 +6,8 @@
   "verified": true,
   "expected_checksum": 6535945399557740267,
   "expected_messages": 2000000,
+  "work_unit": "round trip",
+  "work_units": 1000000,
   "repetitions": 5,
   "warmup": 1,
   "params": {"cores": 2, "messages": 1000000, "wait": 0},
@@ -20,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T14:21:10Z"
+    "utc": "2026-09-04T15:56:28Z"
   },
   "idiom": {
     "source": "CAF 1.1.0 examples/hello_world.cpp + examples/message_passing/dancing_kirby.cpp + caf/stateful_actor.hpp",
@@ -28,13 +30,13 @@
   },
   "caveats": ["every actor is spawned caf::detached: one OS thread per actor, pinned one per CPU from the harness's set through caf::thread_hook (thread_owner::pool), parked on a condition variable between messages. This is CAF's own placement primitive and the only way to make its ping-pong cross a core: in the work-stealing pool the receiver runs on the sender's worker (worker::delay prepends to the sender's queue), so the plain caf row never pays a cross-core hop. Read the two rows together", "a detached actor has no spin profile, so this variant reports wait=1 as not applicable rather than measuring a pool configuration under a detached label", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship"],
   "failures": [],
-  "work_ns": [26045088180.0, 4067144336.0, 3913818993.0, 3458912308.0, 25435694661.0],
-  "total_ns": [26045768348.0, 4067846084.0, 3914432471.0, 3459614783.0, 25436153035.0],
-  "outside_window_ns": [680168.0, 701748.0, 613478.0, 702475.0, 458374.0],
+  "work_ns": [25809550284.0, 25839093684.0, 25806929482.0, 25810148662.0, 3631151948.0],
+  "total_ns": [25810209116.0, 25839639754.0, 25807558121.0, 25810997977.0, 3632041873.0],
+  "outside_window_ns": [658832.0, 546070.0, 628639.0, 849315.0, 889925.0],
   "summary": {
-    "work_min": 3458912308.0,
-    "work_p50": 4067144336.0,
-    "work_p99": 26020712439.2,
-    "work_iqr": 21521875668.0
+    "work_min": 3631151948.0,
+    "work_p50": 25809550284.0,
+    "work_p99": 25837935883.1,
+    "work_iqr": 3219180.0
   }
 }

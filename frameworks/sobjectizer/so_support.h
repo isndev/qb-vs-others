@@ -108,6 +108,65 @@ inline so_5::disp_binder_shptr_t make_binder(so_5::environment_t &env, int cores
     return so_5::disp::one_thread::make_dispatcher(env, "qvo-ot", std::move(params)).binder();
 }
 
+// The many-agent binder: a thread_pool of exactly `cores` work threads.
+//
+// active_obj gives every agent a thread, which is the right mirror of qb's "one actor, one
+// VirtualCore" on a two-actor ping-pong and the wrong one at 60-120 agents, where it would run
+// 60-120 threads against a 2-CPU budget and measure the OS scheduler. SObjectizer's shipped
+// answer for that shape is thread_pool (dev/so_5/disp/thread_pool/pub.hpp): `thread_count(cores)`
+// pinned threads and, with `fifo_t::individual`, one demand queue PER AGENT so agents of the
+// same coop run concurrently on different threads -- the cooperation FIFO default would serialise
+// the whole coop onto one thread and turn the 2-core cell into the 1-core one.
+// `max_demands_at_once` is left at SObjectizer's shipped default (4): it is the batching knob
+// CAF spells max-throughput=300 and qb spells "drain the pipe", and it is not tuned here.
+// The pool's queue is MPMC, so its lock factory is the mpmc namespace's, not the mpsc one
+// tune_queue() uses -- same two policies, same 10 s spin budget.
+template <typename QueueParams>
+void tune_pool_queue(QueueParams &q, bool spin) {
+    if (spin)
+        q.lock_factory(
+            so_5::disp::mpmc_queue_traits::combined_lock_factory(std::chrono::seconds{10}));
+    else
+        q.lock_factory(so_5::disp::mpmc_queue_traits::simple_lock_factory());
+}
+
+inline so_5::disp_binder_shptr_t make_pool_binder(so_5::environment_t &env, int cores,
+                                                  bool spin) {
+    auto factory = std::make_shared<PinningThreadFactory>(qvo::pinned_cpus());
+
+    if (cores >= 2) {
+        so_5::disp::thread_pool::disp_params_t params;
+        params.thread_count(static_cast<std::size_t>(cores));
+        params.tune_queue_params([spin](auto &q) { tune_pool_queue(q, spin); });
+        params.work_thread_factory(factory);
+        return so_5::disp::thread_pool::make_dispatcher(env, "qvo-tp", std::move(params))
+            .binder(so_5::disp::thread_pool::bind_params_t{}.fifo(
+                so_5::disp::thread_pool::fifo_t::individual));
+    }
+
+    so_5::disp::one_thread::disp_params_t params;
+    params.tune_queue_params([spin](auto &q) { tune_queue(q, spin); });
+    params.work_thread_factory(factory);
+    return so_5::disp::one_thread::make_dispatcher(env, "qvo-ot", std::move(params)).binder();
+}
+
+inline std::vector<std::string> pool_caveats() {
+    return {
+        "cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and "
+        "fifo_t::individual (one demand queue per agent, agents of one coop free to run on "
+        "different threads); cores=1 uses one_thread. The work threads are pinned one per CPU "
+        "from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t",
+        "the pool places agents dynamically: which thread runs a given agent's next demand is "
+        "the dispatcher's decision, so how many hand-offs cross a core is not fixed and not "
+        "reported, where qb's cell fixes actor a on core a % cores",
+        "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside "
+        "a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)",
+        "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells "
+        "max-throughput=300 and qb spells draining the pipe; it was not tuned",
+        "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the "
+        "framework's own fast path"};
+}
+
 inline std::vector<std::string> caveats() {
     return {
         "cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses "

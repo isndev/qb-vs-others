@@ -6,6 +6,8 @@
   "verified": true,
   "expected_checksum": 6535945399557740267,
   "expected_messages": 2000000,
+  "work_unit": "round trip",
+  "work_units": 1000000,
   "repetitions": 9,
   "warmup": 2,
   "params": {"cores": 2, "messages": 1000000, "wait": 0},
@@ -20,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-04T14:34:39Z"
+    "utc": "2026-09-04T16:17:12Z"
   },
   "idiom": {
     "source": "qb/tests/core/benchmark/messaging/ping-pong-latency.cpp",
@@ -28,13 +30,13 @@
   },
   "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction"],
   "failures": [],
-  "work_ns": [2716936200.0, 3320987200.0, 3020291400.0, 5056175800.0, 5221569900.0, 6945430800.0, 4554682100.0, 6272354100.0, 5016589200.0],
-  "total_ns": [2731442600.0, 3328732400.0, 3026055100.0, 5056735200.0, 5229027100.0, 6951160000.0, 4555256700.0, 6284394000.0, 5017230300.0],
-  "outside_window_ns": [14506400.0, 7745200.0, 5763700.0, 559400.0, 7457200.0, 5729200.0, 574600.0, 12039900.0, 641100.0],
+  "work_ns": [6598143400.0, 3844572200.0, 5381549000.0, 3903186600.0, 4225532300.0, 4107543200.0, 4371283200.0, 4129463800.0, 5568651300.0],
+  "total_ns": [6604018000.0, 3850325100.0, 5382045000.0, 3910851000.0, 4237018700.0, 4111678700.0, 4376744300.0, 4130070300.0, 5571637900.0],
+  "outside_window_ns": [5874600.0, 5752900.0, 496000.0, 7664400.0, 11486400.0, 4135500.0, 5461100.0, 606500.0, 2986600.0],
   "summary": {
-    "work_min": 2716936200.0,
-    "work_p50": 5016589200.0,
-    "work_p99": 6891584664.0,
-    "work_iqr": 1900582700.0
+    "work_min": 3844572200.0,
+    "work_p50": 4225532300.0,
+    "work_p99": 6515784032.0,
+    "work_iqr": 1274005800.0
   }
 }
