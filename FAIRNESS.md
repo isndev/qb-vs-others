@@ -23,8 +23,9 @@ So in this repository **every benchmark computes an answer, and the answer is as
 delivered, compared against a value computed independently of any framework. A framework that
 drops one message in ten million fails the run and produces **no timing at all**.
 
-This is `harness/include/qvo/verdict.h`, and it is not optional: a benchmark that never reaches a
-`qvo::verify()` call is reported as `unverified` and excluded from every table.
+This is `qvo::Spec::expected` in `harness/include/qvo/harness.h`, and it is not optional: `qvo::run`
+refuses to start a benchmark that declares no `expected()`, and a body that never marks its
+measurement window is reported `unverified` and excluded from every table.
 
 ## 1. The seven mechanisms
 
@@ -34,10 +35,10 @@ Every implementation carries a header block naming the framework document, examp
 modelled on:
 
 ```
-// @framework     caf 1.1.0
-// @idiom-source  CAF manual, "Message Passing" — actor-framework.org/docs (accessed 2026-09-04)
-// @idiom-note    Uses the blocking-free event-based idiom the manual leads with. A typed-actor
-//                variant is in alt/ and is reported alongside.
+// @framework     sobjectizer 5.8.5.1
+// @idiom-source  dev/sample/so_5/ping_pong{,_minimal}/main.cpp -- SObjectizer's OWN samples
+// @idiom-note    DEVIATION, in SObjectizer's favour: both shipped samples route through one
+//                SHARED mbox. This uses each agent's DIRECT mbox, the framework's fast path.
 ```
 
 The rule this encodes: **qb's implementation may not be the only tuned one.** Where a framework
@@ -47,7 +48,9 @@ reported, and the *faster* one is what enters the comparison table.
 ### 1.2 A floor, not just a field
 
 `frameworks/baseline/` is not an actor framework. It is the same workload written with raw
-`std::thread` and a bounded MPSC queue, doing the minimum the benchmark's semantics allow.
+`std::thread` and a hand-written bounded SPSC ring, doing the minimum the benchmark's semantics
+allow. The ring is written *here* rather than taken from qb's `lockfree::spsc`: a floor that
+belongs to a contestant is not a floor.
 
 It exists so that "qb is 3× faster than X" cannot be reported without also reporting "and the
 floor is 2× faster than qb". Without a floor, a table in which every framework is slow reads as a
@@ -123,12 +126,14 @@ Stated up front, because a benchmark's honest limits are load-bearing and are us
 ## 3. Reproducing, and disagreeing
 
 ```sh
-python3 tools/run.py --all --repetitions 11 --out results/<host-id>
+python3 tools/run.py --build build/final --out results/<host-id> --repetitions 9 --cpus 0,2
 python3 tools/report.py --results results/<host-id> > REPORT.md
 ```
 
-Every number in every table is regenerated from the JSON in `results/`. No figure anywhere in this
-repository is hand-written, and `tools/check-report.py` fails if one appears.
+Every number in `REPORT.md` is regenerated from the JSON in `results/`. The figures quoted in
+`README.md` and `docs/TUNING.md` are transcribed by hand from those runs, and **nothing yet
+checks that they still match** — `tools/check-report.py` is named in `docs/ROADMAP.md` as not
+written. Until it exists, `REPORT.md` is the authority and the prose is a summary of it.
 
 The harness has its own negative control, and it has been run:
 
