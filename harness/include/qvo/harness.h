@@ -117,6 +117,16 @@ struct Spec {
     // Optional: framework-free expected message count. 0 means "not asserted".
     std::function<std::uint64_t(const Params &)> expected_messages;
 
+    // The unit the report divides a repetition's wall time by, so a figure stays comparable
+    // across parameter values and across benchmarks: "round trip" for a ping-pong, "hop" for a
+    // ring, "message" for a fan-out. `work_units` returns how many of them one repetition
+    // performs. Both are written into the JSON and read back by tools/report.py; a benchmark
+    // that declares neither is reported per message when expected_messages is set, else per
+    // repetition. The pair is declared ONCE, in the benchmark's spec header, so every framework's
+    // document carries the same denominator -- the report never guesses one from the name.
+    std::string work_unit;
+    std::function<std::uint64_t(const Params &)> work_units;
+
     // Machine-readable caveats -- anything that could not be held equal across frameworks for
     // this benchmark. Rendered in the report NEXT TO the number it affects (FAIRNESS.md 1.3).
     std::vector<std::string> caveats;
@@ -135,6 +145,12 @@ using Body = std::function<Answer(const Params &, Watch &)>;
 // Parses the CLI, applies and VERIFIES CPU affinity, runs warmup + repetitions, verifies each
 // answer, and emits one JSON document. Returns 0 only if every repetition verified.
 //
+// Exit codes -- tools/run.py reads them, so they are a contract:
+//   0  every repetition verified
+//   1  ran, but at least one repetition FAILED verification (a wrong checksum is a defect)
+//   2  fatal: bad CLI, pin refused, no expected(), cannot write the output
+//   3  NOT APPLICABLE: the body called qvo::not_applicable() -- see below
+//
 // CLI:
 //   --repetitions N     measured repetitions (default 5)
 //   --warmup N          unmeasured warmup repetitions (default 1)
@@ -144,6 +160,21 @@ using Body = std::function<Answer(const Params &, Watch &)>;
 //   --out FILE          JSON destination (default: stdout)
 //   --describe          print the spec as JSON and exit without running
 int run(int argc, char **argv, Spec spec, Body body);
+
+// Declares that this framework cannot express the configuration it was asked to run, and says
+// why. The harness writes a result document carrying the reason (`verified:false`,
+// `not_applicable:"<reason>"`, no timings) and exits 3, which tools/run.py reports as `n/a`
+// rather than as a failure and tools/report.py renders next to the row.
+//
+// This is a third verdict, deliberately distinct from both others. A cell that is quietly
+// omitted reads as "not measured" and invites the reader to assume the best; a cell filled by
+// measuring a DIFFERENT configuration under this label is worse. The known case: an adapter that
+// runs every actor on a private thread parked on a condition variable (CAF's `detached`) has no
+// spin mode to switch on, so its `wait=1` cell is neither a measurement nor a failure.
+//
+// Call it from the body, before the workload window, when the Params name a configuration the
+// adapter has no honest counterpart for. It never returns.
+[[noreturn]] void not_applicable(const std::string &reason);
 
 // ---------------------------------------------------------------------------------------------
 // Small helpers usable from inside an implementation

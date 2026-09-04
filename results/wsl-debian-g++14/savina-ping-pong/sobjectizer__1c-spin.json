@@ -20,7 +20,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T02:38:00Z"
+    "utc": "2026-09-04T14:48:57Z"
   },
   "idiom": {
     "source": "SObjectizer 5.8.5.1 dev/sample/so_5/ping_pong{,_minimal}/main.cpp",
@@ -28,13 +28,13 @@
   },
   "caveats": ["cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating", "wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose"],
   "failures": [],
-  "work_ns": [147490338.0, 147542377.0, 144683968.0, 146839716.0, 147420145.0],
-  "total_ns": [147833435.0, 147921942.0, 145332914.0, 147328862.0, 147801978.0],
-  "outside_window_ns": [343097.0, 379565.0, 648946.0, 489146.0, 381833.0],
+  "work_ns": [145471406.0, 143771278.0, 143264140.0, 143616795.0, 143832820.0],
+  "total_ns": [145927122.0, 144355896.0, 143556845.0, 143898247.0, 144249197.0],
+  "outside_window_ns": [455716.0, 584618.0, 292705.0, 281452.0, 416377.0],
   "summary": {
-    "work_min": 144683968.0,
-    "work_p50": 147420145.0,
-    "work_p99": 147540295.4,
-    "work_iqr": 650622.0
+    "work_min": 143264140.0,
+    "work_p50": 143771278.0,
+    "work_p99": 145405862.6,
+    "work_iqr": 216025.0
   }
 }

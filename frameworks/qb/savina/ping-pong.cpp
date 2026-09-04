@@ -124,6 +124,8 @@ int main(int argc, char **argv) {
     spec.params            = qvospec::savina::ping_pong::params();
     spec.expected          = qvospec::savina::ping_pong::expected;
     spec.expected_messages = qvospec::savina::ping_pong::expected_messages;
+    spec.work_unit         = qvospec::savina::ping_pong::kWorkUnit;
+    spec.work_units        = qvospec::savina::ping_pong::work_units;
     spec.idiom_source      = "qb/tests/core/benchmark/messaging/ping-pong-latency.cpp";
     spec.idiom_note        = "send<> hot path, require<>() bootstrap, busy-spin cores -- qb's own "
                              "benchmark idiom";

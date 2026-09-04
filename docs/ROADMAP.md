@@ -9,7 +9,26 @@ ambition has already misled the reader.
 - Build discipline: all frameworks from source, one flag set, pinned refs matching qb-dev's own
   vcpkg baseline.
 - Worker placement through each framework's own public API.
-- `savina/ping-pong` for qb 3.1.0, CAF 1.1.0, SObjectizer 5.8.5.1 and the floor. 16/16 verified.
+- `savina/ping-pong` for qb 3.1.0, CAF 1.1.0, SObjectizer 5.8.5.1 and the floor — plus the
+  `caf-detached` variant (CAF's only cross-core placement) — 18 verified + 2 `n/a` cells per
+  platform, both platforms re-measured in one quiet session each on 2026-09-04.
+- **The two CAF coherence defects, closed** (`docs/TUNING.md` §1.1 and §8). The spin-knob sweep
+  was run on both axes — poll budget 100 → 10⁶ at fixed steal interval, steal interval 1 → 10⁶ at
+  fixed budget; ten documents in `results/desktop-b67osn6-win-msvc/caf-spin-sweep/` — and no
+  profile beat CAF's shipped defaults, so the adapter now declares `wait=1` ≡ `wait=0` in its
+  caveats instead of pretending a second column. The cross-core question is answered by
+  `frameworks/caf-detached/` through `caf::detached`, CAF's own placement primitive, with its
+  spin cells reported as **not applicable** (a third harness verdict, exit 3) rather than invented.
+  What that cell revealed — a bistable ~1 µs / ~10.6 µs (Windows) and ~3.5 µs / ~26 µs (WSL2)
+  park cost — made `tools/report.py` grow a bimodality detector that prints both modes and
+  refuses to rank against such a cell.
+- The harness records its toolchain (`env`) in every document, the n/a ones included; `run.py`
+  merges a filtered re-run into the manifest and refuses to merge across hosts, CPU sets or
+  repetition counts; `report.py` skips side-experiment directories by name and treats two
+  documents for one cell as a hard stop.
+- The qb park-cost experiment behind `QVO_QB_IDLE_SPIN_US` (`docs/TUNING.md` §8): the branch's
+  idle-spin floor forced to 0 on both platforms, which is the only way to make a qb ping-pong
+  actually block, and the measurement of what it then pays.
 - `tools/run.py`, `tools/report.py`. Every published figure is regenerated.
 - The tuning sweeps, including the one that had CAF handicapped.
 - `tools/negative-control.py` — **7 CAUGHT / 4 CONFIRMED / 0 MISSED**. The verifier has been
@@ -51,19 +70,19 @@ the harness does not have.
 
 ### The Linux axis
 
-**WSL2 Debian 13 / g++ 14.2 is run** — 16/16 cells verified, `results/wsl-debian-g++14/`, read
-with `docs/TUNING.md` §6: the 2-core park row measures the hypervisor's ~13 µs futex wake, not the
-frameworks (the raw condition-variable floor is 26.6 µs there). Two things remain:
+**WSL2 Debian 13 / g++ 14.2 is run** — 20 cells, 18 verified + 2 `n/a`, `results/wsl-debian-g++14/`,
+re-measured in one quiet session on 2026-09-04; read with `docs/TUNING.md` §6 and §8: the 2-core
+park row measures the hypervisor's ~12 µs futex wake, not the frameworks (the raw
+condition-variable floor is 25.1 µs there). Two things remain:
 
 - **Native Linux.** The same matrix on bare metal or a non-nested VM, where a futex wake is
   2–5 µs and the park row becomes a framework measurement. Nothing in the C++ path needs root.
-- **Two CAF coherence fixes** found while reading the CAF adapter against CAF's source
-  (TUNING.md §1 correction, README point 3): the `wait=1` profile equals CAF's shipped defaults,
-  so CAF needs a *real* spin profile (a sweep of `aggressive-poll-attempts` above 100 at a fixed,
-  non-degenerate steal interval), and CAF's `cores=2` ping-pong never crosses a core
-  (`worker::delay` prepends to the sender's own queue), so an honest cross-core CAF cell needs
-  the receiver forced onto the other worker — or the table has to say that CAF's 2-core figure is
-  a 1-core figure.
+- **The bistable cross-core park, traced.** `caf-detached` 2c-park, and the qb branch at idle
+  floor 0 on Windows, each show two stable modes per repetition (Done, above, has the numbers).
+  The fast mode is *consistent with* a phase lock where every message lands before its receiver
+  reaches the futex / `WaitOnAddress` sleep; that is an inference from timings. A trace (ETW on
+  Windows, `perf sched` on Linux) that counts actual sleeps per repetition is what would turn it
+  into a finding, and it has not been taken.
 
 ### Seastar
 

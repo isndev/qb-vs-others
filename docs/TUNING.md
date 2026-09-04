@@ -46,9 +46,42 @@ CAF's shipped defaults are the fastest thing measured here, so the adapter leave
 `libcaf_core/caf/defaults.hpp` sets `aggressive-poll-attempts = 100` and
 `aggressive-steal-interval = 10`. The `wait=1` column therefore re-measures the `wait=0`
 configuration, and the 584.1-vs-531.0 gap in the table above is run-to-run spread, not a knob.
-"CAF barely moves" (README point 3) is partly this: one of its two columns is a no-op. A genuine
-CAF spin profile would have to raise `aggressive-poll-attempts` well above 100 without the
-steal-interval collapse of the first guess; that sweep is an open item in ROADMAP.md.
+"CAF barely moves" (README point 3) is partly this: one of its two columns is a no-op.
+
+### 1.1 The sweep that settles it (2026-09-04, Windows/MSVC, quiet host, 2c, 5 reps + 2 warmup)
+
+The open item was "raise `aggressive-poll-attempts` well above 100 without the steal-interval
+collapse of the first guess". Done, on the two knobs independently. Documents and the script are
+in `results/desktop-b67osn6-win-msvc/caf-spin-sweep/`; ns per round trip, p50 [min, max]:
+
+| `aggressive-poll-attempts` | `aggressive-steal-interval` | ns/round trip |
+|---:|---:|---:|
+| **100 (default)** | **10 (default)** | **493.4** [487, 529] |
+| 1 000 | 10 | 533.8 [503, 544] |
+| 10 000 | 10 | 718.8 [640, 781] |
+| 100 000 | 10 | 730.0 [718, 853] |
+| 1 000 000 | 10 | 752.1 [732, 894] |
+| 10 000 | 1 | 754.4 [704, 1072] |
+| 10 000 | 100 | 534.2 [516, 540] |
+| 10 000 | 1 000 | 490.4 [488, 496] |
+| 1 000 000 | 1 000 000 | 495.3 [492, 529] |
+| 100 (default), re-run last | 10 (default) | 495.0 [490, 498] |
+
+Read the two axes separately. **Polling harder never helps**: at any steal interval, raising the
+poll budget is neutral at best (steal ≥ 1 000: 490–495 ns whether the budget is 100 or a
+million). **Stealing more often is what costs**: at a fixed budget of 10 000 polls, steal-interval
+1 → 754 ns, 100 → 534, 1 000 → 490. The mechanism is in §1's opening paragraph and in
+`frameworks/caf/caf_support.h`: on a two-actor ping-pong the receiver is `delay()`ed onto the
+SENDER's worker, so the only thing an aggressively polling idle worker can find is a steal — and
+a steal moves the actor to the other core, which is the one transfer CAF's placement was avoiding.
+CAF's fastest ping-pong is the one where nothing ever crosses a core, and its defaults already
+produce it.
+
+**Consequence for the tables.** There is no honest CAF spin profile faster than the defaults, so
+the adapter runs `wait=1` and `wait=0` as the SAME configuration and says so in its caveats; the
+two CAF columns are one number, deliberately, and "CAF barely moves" is retired as a claim. The
+question the reader actually has — what does CAF pay when its two actors DO sit on two cores —
+is answered by the `caf-detached` row (§8), not by any pool knob.
 
 ## 2. qb park interval — the same treatment, applied to the author's own framework
 
@@ -262,8 +295,95 @@ gdb attached to the 24 threads. The barrier now spins 1024 times and then yields
 the signal variant 61 s → 2 s, release unchanged. It is in the same commit as A + B because a
 ping-pong benchmark never starts 24 cores and would never have seen it.
 
-Still open, in order: a native Linux run (the park floor here is the hypervisor's, §6); a real CAF
-spin profile and a forced cross-core CAF cell (README point 3); axis I; arm64, where the fence
-of axis K is a `dmb ish` whose cost and benefit are both unmeasured — qb's own `dev/bench` gate on
-macOS is the instrument for that.
+Still open, in order: a native Linux run (the park floor here is the hypervisor's, §6); axis I;
+arm64, where the fence of axis K is a `dmb ish` whose cost and benefit are both unmeasured — qb's
+own `dev/bench` gate on macOS is the instrument for that. The CAF spin profile and the cross-core
+CAF cell that used to head this list are closed by §1.1 and §8.
+
+## 8. What crossing a core and sleeping actually costs — the `caf-detached` row and qb's idle floor
+
+§1.1 left one question standing: CAF's `cores=2` ping-pong never crosses a core, so what does CAF
+pay when its two actors DO sit on two cores? And §7's branch figures raised its mirror image: the
+branch's 259 / 208 ns park cell is the cell of a core that keeps polling for 50 µs after its last
+event (`CoreInitializer::setIdleSpin`, default `kDefaultIdleSpin`), and a ping-pong reply lands
+within a microsecond, so that floor never expires and the "park" cell is a polling figure. Neither
+table said what a qb actor pays when it genuinely sleeps. This section measures both, on both
+platforms, in the same quiet session as the published tables (2026-09-04).
+
+### 8.1 `caf-detached`: CAF's own cross-core placement
+
+`frameworks/caf-detached/` spawns every actor `caf::detached` — one OS thread per actor, pinned
+one per CPU through the same `thread_hook`, parked on a condition variable between messages
+(`caf/detail/private_thread.cpp`, `await()` is an unconditional `cv_.wait()`). It is the only
+placement primitive CAF's public API has, so it is the only honest way to force the hop; its two
+spin cells are reported as **not applicable** (harness exit 3, reason in the JSON), because a
+private thread has no spin mode and a number invented for the cell would be a pool measurement
+under a detached label.
+
+| cell | Windows / MSVC 19.51, per round trip | WSL2 g++ 14.2 |
+|---|---:|---:|
+| `caf-detached` 1c-park | 10.61 µs | 3.5 µs |
+| `caf-detached` 2c-park | **10.57 µs — bimodal**: 2 of 9 repetitions at ~0.93 µs, 7 at ~10.58 µs | **4.07 µs — bimodal**: 3 of 5 at ~3.9 µs, 2 at ~25.7 µs (5 of 5 slow on the previous run) |
+| `caf` (pool) 2c-park, for scale | 487 ns | 283 ns |
+| `baseline` cv floor 2c-park | 435 ns (a single `notify` + `WaitOnAddress` wake at this cadence stays fast) | 25.1 µs |
+
+Two readings. First, the 1c-park cell: on Windows a detached actor pays ~10.6 µs even on ONE
+core, because the sender's thread must be descheduled before the receiver's can run, and that is
+a full scheduler round trip — the same-core CAF pool cell is 481 ns. On WSL2 the same handoff is
+3.5 µs. Second, the 2c-park cell is **bistable**, and on both platforms: a repetition of a million
+round trips lands in one of two modes and stays there for its whole 10 s. The slow mode is the OS
+cost of waking a thread parked on another core, and it is the same figure every framework that
+truly blocks measures here — qb 3.1.0's 2c-park (5–7.6 µs Windows, ~27 µs WSL2), SObjectizer's
+`simple_lock` (1.06 µs Windows, where its own spin-then-park hybrid keeps it fast; ~26 µs WSL2),
+the raw condition-variable floor on WSL2. The fast mode costs what the same-core handoff costs,
+which is consistent with the two threads locking into a phase where each message arrives before
+its receiver reaches the futex / `WaitOnAddress` sleep, so the wait is signalled every time but
+never slept on — an inference from timings, not a trace (ROADMAP.md names the trace that would
+settle it). `tools/report.py` splits a sample at any gap wider than 2×, prints both modes under
+the row, and refuses to claim an ordering against a bimodal cell; the README tables carry that
+marker. The number to quote is "~1 µs or ~10.6 µs" — never the median, which is whichever mode won
+the coin toss that run.
+
+### 8.2 qb's idle-spin floor forced to zero — the cost of a qb actor that really sleeps
+
+`QVO_QB_IDLE_SPIN_US` (`frameworks/qb/qb_support.h`) overrides the branch's idle-spin floor when
+`wait=0`; on shipped 3.1.0, which has no such knob, the adapter reports the cell **not applicable**
+rather than measuring the default under an experiment's label, and any document measured under the
+override carries a caveat saying it is not qb's configuration. Branch `perf/core-hot-path` @
+`39992047`, 7 repetitions + 2 warmup, CPUs 0 and 2, per round trip:
+
+| cell | Windows / MSVC 19.51 | WSL2 g++ 14.2 |
+|---|---:|---:|
+| 2c-park, floor **default (50 µs)** | 259 ns (255–263) | 212 ns (208–229) |
+| 2c-park, floor **0** — the core blocks on every idle pass | **386 ns (295–422)** | **25.8 µs (25.67–26.10)** |
+| 1c-park, floor 0 | 85 ns (84–86) | 74 ns (72–74) |
+
+The two platforms answer differently, and both answers matter for qb:
+
+- **On WSL2 the floor is the whole story.** At 0, every reply finds the receiver already asleep
+  and pays the hypervisor's futex wake: 25.8 µs, indistinguishable from the raw cv floor and from
+  shipped 3.1.0. The branch's 208 ns park cell on Linux is therefore bought entirely by the 50 µs
+  floor; the park handshake itself (§5's fixed `Mailbox::wait()`) does not catch the reply. That is
+  the expected shape — a futex sleep is entered in well under a microsecond — and it means a qb
+  actor on Linux whose traffic has real gaps > 50 µs pays the OS wake on every such gap, exactly
+  like everyone else. What the branch changed is that it no longer pays it on gaps of 1 µs.
+- **On Windows the handshake absorbs it.** At floor 0 the cell is 295–422 ns, not 10 µs: the
+  `WaitOnAddress`-based park takes long enough to enter, relative to a ~150 ns reply, that the
+  reply lands inside the handshake window and the wait returns without sleeping. The floor then
+  buys 386 → 259 ns — a third, not a hundredfold. This is also why the Windows `caf-detached` and
+  `baseline` cells sit at the fast end more often than WSL2's: the OS side of the phase lock is
+  easier to hit. It means a Windows measurement of "qb's park cost" at ping-pong cadence is a
+  measurement of the handshake, and the only way to see the OS wake from qb on Windows is a
+  workload with real idle gaps — which is what the next benchmarks (`counting`, `thread-ring`,
+  `fork-join`, `big`) introduce.
+- **The 1c-park cell does not care** (85 / 74 ns at floor 0, equal to the default): a single
+  core never idles between the two halves of a round trip, so the floor never arms.
+
+**The qb finding to carry forward** (Huly QB-42): the branch's park cell is a real improvement
+over 3.1.0 — on Linux it moves the threshold at which a qb actor starts paying the OS wake from
+"the first idle pass" to "50 µs of idleness", and on Windows it additionally shortens the handshake
+enough that a sub-microsecond reply is caught — but a cross-core park that actually sleeps costs
+what the OS charges, ~10.6 µs on Windows and ~26 µs under WSL2's hypervisor, for qb as for CAF and
+SObjectizer. No framework in this table beats the floor once it sleeps; the differences are in how
+long each one refuses to.
 

@@ -14,6 +14,8 @@ untouched, so every figure here was re-taken with the shipped build measured in 
 | `qb__*.json` | the branch: p50 1c-spin **74.7** ns, 1c-park **73.7**, 2c-spin **205.9**, 2c-park **207.6** |
 | `shipped-3.1.0__*.json` | v3.1.0 (`eac739ff`), same session: 98.1 / 98.4 / 275.1 / 26 459 |
 | `ab-nofence__2c-spin-{1,2,3}.json` / `ab-fence__*` | the axis-K A/B, interleaved: 204 / 219 / 208 ns without the spin-mode fence (worst runs 236 / 295 / 211), 206 / 206 / 208 with it (worst 210 / 208 / 215) |
+| `idlespin0__2c-park.json`, `idlespin0__1c-park.json` | the branch with `QVO_QB_IDLE_SPIN_US=0` — the core blocks on its first idle pass, as v3.1.0 does: 2c-park **25 796** ns (25 672–26 096), every repetition, no bimodality — the hypervisor's futex wake and nothing else, indistinguishable from shipped 3.1.0 and from the raw cv floor; 1c-park 73.5, unchanged. On Linux the 50 µs floor IS the branch's park gain (`docs/TUNING.md` §8.2) |
+| `idlespin-default__2c-park.json` | the same session's control at the default floor: **211.7** ns (207.9–228.7) |
 
-`docs/TUNING.md` §7 is the reading guide. These are NOT merged into the published tables until
+`docs/TUNING.md` §7 is the reading guide (§8.2 for the `idlespin*` files, which are an experiment on the branch, not a configuration). These are NOT merged into the published tables until
 the branch ships.

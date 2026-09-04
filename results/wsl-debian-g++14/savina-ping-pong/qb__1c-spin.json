@@ -20,7 +20,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T03:02:43Z"
+    "utc": "2026-09-04T14:51:40Z"
   },
   "idiom": {
     "source": "qb/tests/core/benchmark/messaging/ping-pong-latency.cpp",
@@ -28,13 +28,13 @@
   },
   "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction"],
   "failures": [],
-  "work_ns": [99225332.0, 98900381.0, 99954400.0, 99610333.0, 100080782.0],
-  "total_ns": [99565065.0, 99251536.0, 100248520.0, 99869504.0, 100392538.0],
-  "outside_window_ns": [339733.0, 351155.0, 294120.0, 259171.0, 311756.0],
+  "work_ns": [100737746.0, 101397003.0, 98189486.0, 98209745.0, 100084495.0],
+  "total_ns": [100982257.0, 101657761.0, 98454599.0, 98509886.0, 100638765.0],
+  "outside_window_ns": [244511.0, 260758.0, 265113.0, 300141.0, 554270.0],
   "summary": {
-    "work_min": 98900381.0,
-    "work_p50": 99610333.0,
-    "work_p99": 100075726.7,
-    "work_iqr": 729068.0
+    "work_min": 98189486.0,
+    "work_p50": 100084495.0,
+    "work_p99": 101370632.7,
+    "work_iqr": 2528001.0
   }
 }

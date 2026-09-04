@@ -66,6 +66,13 @@ inline std::uint64_t expected(const qvo::Params &p) {
 }
 
 // One ping and one pong per round trip.
+// The report divides by this: one round trip is two messages, so a per-round-trip figure is
+// what every ping-pong publication quotes and what the floor's per-hop cost doubles to.
+inline constexpr const char *kWorkUnit = "round trip";
+inline std::uint64_t work_units(const qvo::Params &p) {
+    return static_cast<std::uint64_t>(p.get("messages"));
+}
+
 inline std::uint64_t expected_messages(const qvo::Params &p) {
     return 2ull * static_cast<std::uint64_t>(p.get("messages"));
 }

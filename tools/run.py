@@ -154,7 +154,7 @@ def main() -> int:
         "cells": [],
     }
 
-    total = failed = 0
+    total = failed = not_applicable = 0
     for framework, benchmark, exe in cells:
         if only and framework not in only:
             continue
@@ -188,6 +188,25 @@ def main() -> int:
                                           "config": cfg_name, "status": "timeout"})
                 continue
 
+            # Exit 3 is the harness's third verdict (harness.h: qvo::not_applicable): the adapter
+            # cannot express this configuration and wrote a document saying why. It is neither a
+            # defect nor a pass, so it is counted on its own line and never hidden in `failed`.
+            if r.returncode == 3 and dest.exists():
+                doc = json.loads(dest.read_text())
+                why = doc.get("not_applicable") or "no reason recorded"
+                if not doc.get("not_applicable"):
+                    # A 3 without a reason is a contract violation, not a verdict.
+                    failed += 1
+                    print(f"  {label} FAILED rc=3 without a not_applicable reason")
+                    manifest["cells"].append({"benchmark": benchmark, "framework": framework,
+                                              "config": cfg_name, "status": "failed"})
+                    continue
+                not_applicable += 1
+                print(f"  {label} n/a  ({why[:70]}{'...' if len(why) > 70 else ''})")
+                manifest["cells"].append({"benchmark": benchmark, "framework": framework,
+                                          "config": cfg_name, "status": "n/a", "reason": why})
+                continue
+
             if r.returncode != 0 or not dest.exists():
                 failed += 1
                 tail = (r.stderr or r.stdout).strip().splitlines()[-3:]
@@ -208,8 +227,31 @@ def main() -> int:
                                       "config": cfg_name,
                                       "status": "ok" if ok else "unverified"})
 
-    (args.out / "run.json").write_text(json.dumps(manifest, indent=2))
-    print(f"\nrun.py: {total} cells, {failed} not verified -> {args.out}")
+    # A filtered run (--only / --benchmark / --config) is a partial re-measurement into a results
+    # directory that already describes a whole field, and overwriting its manifest would erase
+    # the cells that were not re-run. Merge instead -- but only under the SAME conditions: a
+    # partial run on another host, CPU set or repetition count is a different experiment, and
+    # mixing it into an existing table is exactly the kind of quiet edit this tool exists to
+    # make impossible. Refuse loudly rather than merge.
+    rj = args.out / "run.json"
+    if rj.exists() and (only or benches or cfg_filter):
+        prev = json.loads(rj.read_text())
+        for key in ("host", "platform", "cpus", "repetitions", "warmup"):
+            if prev.get(key) != manifest[key]:
+                sys.exit(f"run.py: refusing to merge into {rj}: {key} differs "
+                         f"({prev.get(key)!r} recorded, {manifest[key]!r} now). A partial "
+                         "re-run must repeat the recorded conditions, or go to a new --out.")
+        rerun = {(c["benchmark"], c["framework"], c["config"]) for c in manifest["cells"]}
+        kept = [c for c in prev.get("cells", [])
+                if (c["benchmark"], c["framework"], c["config"]) not in rerun]
+        manifest["cells"] = kept + manifest["cells"]
+        manifest["merged_partial_runs"] = prev.get("merged_partial_runs", 0) + 1
+    # newline="\n": text mode on Windows would write CRLF, and a manifest is the same bytes on
+    # every host or it is two manifests.
+    with open(rj, "w", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps(manifest, indent=2) + "\n")
+    print(f"\nrun.py: {total} cells, {failed} not verified, {not_applicable} not applicable "
+          f"-> {args.out}")
     return 1 if failed else 0
 
 

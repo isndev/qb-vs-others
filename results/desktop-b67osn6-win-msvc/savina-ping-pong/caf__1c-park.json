@@ -20,21 +20,21 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-04T01:34:54Z"
+    "utc": "2026-09-04T14:19:18Z"
   },
   "idiom": {
     "source": "CAF 1.1.0 examples/hello_world.cpp + examples/message_passing/dancing_kirby.cpp + caf/stateful_actor.hpp",
     "note": "function-based behaviors, stateful_actor for the cached peer, bare uint64_t on the hot path, one handshake outside the window"
   },
-  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them, which qb's actors cannot do. That is an architectural difference, and it cuts both ways: stealing costs on a two-actor ping-pong and pays on an unbalanced fan-out", "wait=1 raises caf.work-stealing.aggressive-poll-attempts (CAF's spelling of busy-spin) to the profile that measured fastest in docs/TUNING.md; wait=0 leaves CAF's shipped defaults, which on ping-pong are FASTER than any spin profile tried", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship"],
+  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them, which qb's actors cannot do. That is an architectural difference, and it cuts both ways: stealing costs on a two-actor ping-pong and pays on an unbalanced fan-out", "wait=1 and wait=0 are the SAME configuration for CAF on this benchmark -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10). The sweep in docs/TUNING.md section 1 found every more aggressive profile SLOWER, because on a ping-pong the receiver runs on the sender's worker and polling harder only makes the idle worker steal it; CAF's fastest ping-pong is the one where nothing ever crosses a core. The cross-core figure is the caf-detached row", "in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on one thread and never pays a cross-core hand-off; read this row as CAF's best-case locality, and caf-detached as its cross-core cost", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship"],
   "failures": [],
-  "work_ns": [494149700.0, 499480100.0, 515181000.0, 521489400.0, 514220900.0, 508119400.0, 505832700.0, 510660700.0, 524275200.0],
-  "total_ns": [494581400.0, 499855500.0, 515540200.0, 521967600.0, 514557200.0, 508713300.0, 506287000.0, 511067000.0, 524780300.0],
-  "outside_window_ns": [431700.0, 375400.0, 359200.0, 478200.0, 336300.0, 593900.0, 454300.0, 406300.0, 505100.0],
+  "work_ns": [480545800.0, 475326300.0, 479770700.0, 479202200.0, 482156600.0, 479528700.0, 491127500.0, 484616900.0, 480792400.0],
+  "total_ns": [481151800.0, 475754300.0, 480556000.0, 479602600.0, 482506900.0, 480149800.0, 491745400.0, 484950100.0, 484374800.0],
+  "outside_window_ns": [606000.0, 428000.0, 785300.0, 400400.0, 350300.0, 621100.0, 617900.0, 333200.0, 3582400.0],
   "summary": {
-    "work_min": 494149700.0,
-    "work_p50": 510660700.0,
-    "work_p99": 524052336.0,
-    "work_iqr": 9348300.0
+    "work_min": 475326300.0,
+    "work_p50": 480545800.0,
+    "work_p99": 490606652.0,
+    "work_iqr": 2627900.0
   }
 }

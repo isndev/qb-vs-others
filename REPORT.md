@@ -19,6 +19,7 @@ Read [FAIRNESS.md](../FAIRNESS.md) before reading any table below. In particular
 |---|---|
 | `baseline` | in-tree *(not a framework — the floor)* |
 | `caf` | 1.1.0 |
+| `caf-detached` | 1.1.0 |
 | `qb` | 3.1.0 |
 | `sobjectizer` | 5.8.5.1 |
 
@@ -28,15 +29,16 @@ Read [FAIRNESS.md](../FAIRNESS.md) before reading any table below. In particular
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 120.49 ms | 120 ns | 2.01 ms | 122.27 ms |
-| `sobjectizer` | yes | 228.29 ms | 228 ns | 3.93 ms | 236.52 ms |
-| `caf` | yes | 510.66 ms | 511 ns | 9.35 ms | 524.05 ms |
+| `qb` | yes | 115.49 ms | 115 ns | 1.81 ms | 117.68 ms |
+| `sobjectizer` | yes | 215.16 ms | 215 ns | 6.77 ms | 240.44 ms |
+| `caf` | yes | 480.55 ms | 481 ns | 2.63 ms | 490.61 ms |
+| `caf-detached` | yes | 10,609.80 ms | 10.61 us | 29.72 ms | 10,666.08 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 1.80 ms | 2 ns | 148.10 us | 2.24 ms |
+| `baseline` *(floor)* | yes | 1.70 ms | 2 ns | 35.70 us | 2.50 ms |
 
-`qb` is **1.89x** faster than `sobjectizer` in this configuration.
+`qb` is **1.86x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **66.83x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **67.76x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -44,9 +46,12 @@ The fastest framework costs **66.83x the floor** — that multiple is what being
 - *(baseline)* cores=1 is one thread passing each message through a real queue in both directions -- the floor for single-threaded dispatch, not a bare assignment
 - *(baseline)* the two threads are pinned one per CPU from the harness's set, exactly as every framework's workers are -- a floating floor would move every ratio computed against it
 - *(baseline)* wait=1 is two threads busy-spinning on SPSC rings; wait=0 is two threads parked on condition variables. Both floors exist so that neither column of the spin/park axis is published without one
+- *(caf-detached)* every actor is spawned caf::detached: one OS thread per actor, pinned one per CPU from the harness's set through caf::thread_hook (thread_owner::pool), parked on a condition variable between messages. This is CAF's own placement primitive and the only way to make its ping-pong cross a core: in the work-stealing pool the receiver runs on the sender's worker (worker::delay prepends to the sender's queue), so the plain caf row never pays a cross-core hop. Read the two rows together
+- *(caf-detached)* a detached actor has no spin profile, so this variant reports wait=1 as not applicable rather than measuring a pool configuration under a detached label
+- *(caf, caf-detached)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
 - *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them, which qb's actors cannot do. That is an architectural difference, and it cuts both ways: stealing costs on a two-actor ping-pong and pays on an unbalanced fan-out
-- *(caf)* wait=1 raises caf.work-stealing.aggressive-poll-attempts (CAF's spelling of busy-spin) to the profile that measured fastest in docs/TUNING.md; wait=0 leaves CAF's shipped defaults, which on ping-pong are FASTER than any spin profile tried
-- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF on this benchmark -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10). The sweep in docs/TUNING.md section 1 found every more aggressive profile SLOWER, because on a ping-pong the receiver runs on the sender's worker and polling harder only makes the idle worker steal it; CAF's fastest ping-pong is the one where nothing ever crosses a core. The cross-core figure is the caf-detached row
+- *(caf)* in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on one thread and never pays a cross-core hand-off; read this row as CAF's best-case locality, and caf-detached as its cross-core cost
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
 - *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
@@ -60,15 +65,17 @@ The fastest framework costs **66.83x the floor** — that multiple is what being
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 117.25 ms | 117 ns | 2.70 ms | 120.73 ms |
-| `sobjectizer` | yes | 201.97 ms | 202 ns | 8.55 ms | 211.07 ms |
-| `caf` | yes | 510.78 ms | 511 ns | 3.82 ms | 516.97 ms |
+| `qb` | yes | 114.32 ms | 114 ns | 1.02 ms | 122.57 ms |
+| `sobjectizer` | yes | 182.44 ms | 182 ns | 1.71 ms | 192.78 ms |
+| `caf` | yes | 483.16 ms | 483 ns | 7.74 ms | 495.48 ms |
+| `caf-detached` | n/a | — | — | — | — |
+| | <sub>caf::detached actors park on a condition variable between messages (caf/detail/private_thread.cpp); CAF has no spin mode for a private thread, so wait=1 has no honest counterpart here -- read the caf row for CAF's spin profile and this row for its cross-core park cost</sub> | | | | |
 | | | | | | |
-| `baseline` *(floor)* | yes | 1.84 ms | 2 ns | 186.00 us | 2.27 ms |
+| `baseline` *(floor)* | yes | 1.70 ms | 2 ns | 1.30 us | 2.10 ms |
 
-`qb` is **1.72x** faster than `sobjectizer` in this configuration.
+`qb` is **1.60x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **63.82x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **67.09x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -76,9 +83,12 @@ The fastest framework costs **63.82x the floor** — that multiple is what being
 - *(baseline)* cores=1 is one thread passing each message through a real queue in both directions -- the floor for single-threaded dispatch, not a bare assignment
 - *(baseline)* the two threads are pinned one per CPU from the harness's set, exactly as every framework's workers are -- a floating floor would move every ratio computed against it
 - *(baseline)* wait=1 is two threads busy-spinning on SPSC rings; wait=0 is two threads parked on condition variables. Both floors exist so that neither column of the spin/park axis is published without one
+- *(caf-detached)* every actor is spawned caf::detached: one OS thread per actor, pinned one per CPU from the harness's set through caf::thread_hook (thread_owner::pool), parked on a condition variable between messages. This is CAF's own placement primitive and the only way to make its ping-pong cross a core: in the work-stealing pool the receiver runs on the sender's worker (worker::delay prepends to the sender's queue), so the plain caf row never pays a cross-core hop. Read the two rows together
+- *(caf-detached)* a detached actor has no spin profile, so this variant reports wait=1 as not applicable rather than measuring a pool configuration under a detached label
+- *(caf, caf-detached)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
 - *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them, which qb's actors cannot do. That is an architectural difference, and it cuts both ways: stealing costs on a two-actor ping-pong and pays on an unbalanced fan-out
-- *(caf)* wait=1 raises caf.work-stealing.aggressive-poll-attempts (CAF's spelling of busy-spin) to the profile that measured fastest in docs/TUNING.md; wait=0 leaves CAF's shipped defaults, which on ping-pong are FASTER than any spin profile tried
-- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF on this benchmark -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10). The sweep in docs/TUNING.md section 1 found every more aggressive profile SLOWER, because on a ping-pong the receiver runs on the sender's worker and polling harder only makes the idle worker steal it; CAF's fastest ping-pong is the one where nothing ever crosses a core. The cross-core figure is the caf-detached row
+- *(caf)* in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on one thread and never pays a cross-core hand-off; read this row as CAF's best-case locality, and caf-detached as its cross-core cost
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
 - *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
@@ -92,15 +102,17 @@ The fastest framework costs **63.82x the floor** — that multiple is what being
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `caf` | yes | 510.55 ms | 511 ns | 7.22 ms | 520.28 ms |
-| `sobjectizer` | yes | 1,542.27 ms | 1.54 us | 279.11 ms | 1,728.19 ms |
-| `qb` | yes | 10,706.60 ms | 10.71 us | 6,518.57 ms | 22,041.59 ms |
+| `caf` | yes | 487.36 ms | 487 ns | 4.95 ms | 499.41 ms |
+| `sobjectizer` | yes | 1,057.78 ms | 1.06 us | 192.73 ms | 1,253.21 ms |
+| `qb` | yes | 5,016.59 ms | 5.02 us | 1,900.58 ms | 6,891.58 ms |
+| `caf-detached` | yes | 10,573.90 ms | 10.57 us | 28.09 ms | 10,603.49 ms |
+| | <sub>**bimodal**: 2 of 9 repetitions at ~932 ns per round trip, 7 at ~10.58 us. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
 | | | | | | |
-| `baseline` *(floor)* | yes | 334.58 ms | 335 ns | 60.43 ms | 464.23 ms |
+| `baseline` *(floor)* | yes | 434.81 ms | 435 ns | 52.53 ms | 553.68 ms |
 
-`caf` is **3.02x** faster than `sobjectizer` in this configuration.
+`caf` is **2.17x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.53x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **1.12x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -108,9 +120,12 @@ The fastest framework costs **1.53x the floor** — that multiple is what being 
 - *(baseline)* cores=1 is one thread passing each message through a real queue in both directions -- the floor for single-threaded dispatch, not a bare assignment
 - *(baseline)* the two threads are pinned one per CPU from the harness's set, exactly as every framework's workers are -- a floating floor would move every ratio computed against it
 - *(baseline)* wait=1 is two threads busy-spinning on SPSC rings; wait=0 is two threads parked on condition variables. Both floors exist so that neither column of the spin/park axis is published without one
+- *(caf-detached)* every actor is spawned caf::detached: one OS thread per actor, pinned one per CPU from the harness's set through caf::thread_hook (thread_owner::pool), parked on a condition variable between messages. This is CAF's own placement primitive and the only way to make its ping-pong cross a core: in the work-stealing pool the receiver runs on the sender's worker (worker::delay prepends to the sender's queue), so the plain caf row never pays a cross-core hop. Read the two rows together
+- *(caf-detached)* a detached actor has no spin profile, so this variant reports wait=1 as not applicable rather than measuring a pool configuration under a detached label
+- *(caf, caf-detached)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
 - *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them, which qb's actors cannot do. That is an architectural difference, and it cuts both ways: stealing costs on a two-actor ping-pong and pays on an unbalanced fan-out
-- *(caf)* wait=1 raises caf.work-stealing.aggressive-poll-attempts (CAF's spelling of busy-spin) to the profile that measured fastest in docs/TUNING.md; wait=0 leaves CAF's shipped defaults, which on ping-pong are FASTER than any spin profile tried
-- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF on this benchmark -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10). The sweep in docs/TUNING.md section 1 found every more aggressive profile SLOWER, because on a ping-pong the receiver runs on the sender's worker and polling harder only makes the idle worker steal it; CAF's fastest ping-pong is the one where nothing ever crosses a core. The cross-core figure is the caf-detached row
+- *(caf)* in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on one thread and never pays a cross-core hand-off; read this row as CAF's best-case locality, and caf-detached as its cross-core cost
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
 - *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
@@ -124,15 +139,17 @@ The fastest framework costs **1.53x the floor** — that multiple is what being 
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 331.78 ms | 332 ns | 23.07 ms | 352.07 ms |
-| `caf` | yes | 507.65 ms | 508 ns | 11.67 ms | 521.04 ms |
-| `sobjectizer` | yes | 910.64 ms | 911 ns | 27.22 ms | 1,005.25 ms |
+| `qb` | yes | 303.82 ms | 304 ns | 5.89 ms | 319.15 ms |
+| `caf` | yes | 489.83 ms | 490 ns | 13.03 ms | 513.63 ms |
+| `sobjectizer` | yes | 931.25 ms | 931 ns | 90.24 ms | 1,000.42 ms |
+| `caf-detached` | n/a | — | — | — | — |
+| | <sub>caf::detached actors park on a condition variable between messages (caf/detail/private_thread.cpp); CAF has no spin mode for a private thread, so wait=1 has no honest counterpart here -- read the caf row for CAF's spin profile and this row for its cross-core park cost</sub> | | | | |
 | | | | | | |
-| `baseline` *(floor)* | yes | 203.20 ms | 203 ns | 11.37 ms | 214.82 ms |
+| `baseline` *(floor)* | yes | 192.95 ms | 193 ns | 2.79 ms | 207.53 ms |
 
-`qb` is **1.53x** faster than `caf` in this configuration.
+`qb` is **1.61x** faster than `caf` in this configuration.
 
-The fastest framework costs **1.63x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **1.57x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -140,9 +157,12 @@ The fastest framework costs **1.63x the floor** — that multiple is what being 
 - *(baseline)* cores=1 is one thread passing each message through a real queue in both directions -- the floor for single-threaded dispatch, not a bare assignment
 - *(baseline)* the two threads are pinned one per CPU from the harness's set, exactly as every framework's workers are -- a floating floor would move every ratio computed against it
 - *(baseline)* wait=1 is two threads busy-spinning on SPSC rings; wait=0 is two threads parked on condition variables. Both floors exist so that neither column of the spin/park axis is published without one
+- *(caf-detached)* every actor is spawned caf::detached: one OS thread per actor, pinned one per CPU from the harness's set through caf::thread_hook (thread_owner::pool), parked on a condition variable between messages. This is CAF's own placement primitive and the only way to make its ping-pong cross a core: in the work-stealing pool the receiver runs on the sender's worker (worker::delay prepends to the sender's queue), so the plain caf row never pays a cross-core hop. Read the two rows together
+- *(caf-detached)* a detached actor has no spin profile, so this variant reports wait=1 as not applicable rather than measuring a pool configuration under a detached label
+- *(caf, caf-detached)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
 - *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them, which qb's actors cannot do. That is an architectural difference, and it cuts both ways: stealing costs on a two-actor ping-pong and pays on an unbalanced fan-out
-- *(caf)* wait=1 raises caf.work-stealing.aggressive-poll-attempts (CAF's spelling of busy-spin) to the profile that measured fastest in docs/TUNING.md; wait=0 leaves CAF's shipped defaults, which on ping-pong are FASTER than any spin profile tried
-- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF on this benchmark -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10). The sweep in docs/TUNING.md section 1 found every more aggressive profile SLOWER, because on a ping-pong the receiver runs on the sender's worker and polling harder only makes the idle worker steal it; CAF's fastest ping-pong is the one where nothing ever crosses a core. The cross-core figure is the caf-detached row
+- *(caf)* in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on one thread and never pays a cross-core hand-off; read this row as CAF's best-case locality, and caf-detached as its cross-core cost
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
 - *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction

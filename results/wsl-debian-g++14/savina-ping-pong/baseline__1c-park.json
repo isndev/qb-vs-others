@@ -20,7 +20,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T02:32:09Z"
+    "utc": "2026-09-04T14:46:13Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -28,13 +28,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. It has no supervision, no addressing, no dynamic actor lifetime, no mailbox fairness and no backpressure. It exists to bound how much of each framework's cost is inherent to the workload rather than to the framework", "cores=1 is one thread passing each message through a real queue in both directions -- the floor for single-threaded dispatch, not a bare assignment", "the two threads are pinned one per CPU from the harness's set, exactly as every framework's workers are -- a floating floor would move every ratio computed against it", "wait=1 is two threads busy-spinning on SPSC rings; wait=0 is two threads parked on condition variables. Both floors exist so that neither column of the spin/park axis is published without one"],
   "failures": [],
-  "work_ns": [1671963.0, 1633891.0, 1661408.0, 1638645.0, 1638347.0],
-  "total_ns": [1673346.0, 1635080.0, 1662175.0, 1639671.0, 1639403.0],
-  "outside_window_ns": [1383.0, 1189.0, 767.0, 1026.0, 1056.0],
+  "work_ns": [1628489.0, 1608451.0, 1609208.0, 1611810.0, 1607898.0],
+  "total_ns": [1629899.0, 1609686.0, 1616132.0, 1613058.0, 1609420.0],
+  "outside_window_ns": [1410.0, 1235.0, 6924.0, 1248.0, 1522.0],
   "summary": {
-    "work_min": 1633891.0,
-    "work_p50": 1638645.0,
-    "work_p99": 1671540.8,
-    "work_iqr": 23061.0
+    "work_min": 1607898.0,
+    "work_p50": 1609208.0,
+    "work_p99": 1627821.8,
+    "work_iqr": 3359.0
   }
 }

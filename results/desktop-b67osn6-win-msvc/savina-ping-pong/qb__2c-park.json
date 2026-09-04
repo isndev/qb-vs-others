@@ -20,7 +20,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-04T01:37:01Z"
+    "utc": "2026-09-04T14:34:39Z"
   },
   "idiom": {
     "source": "qb/tests/core/benchmark/messaging/ping-pong-latency.cpp",
@@ -28,13 +28,13 @@
   },
   "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction"],
   "failures": [],
-  "work_ns": [22466867000.0, 6946801700.0, 8543139700.0, 5369681700.0, 17150865800.0, 10882259600.0, 13751059300.0, 7232492600.0, 10706598400.0],
-  "total_ns": [22467492900.0, 6950900400.0, 8549413400.0, 5377236600.0, 17155453400.0, 10888202200.0, 13765328000.0, 7238112300.0, 10714868200.0],
-  "outside_window_ns": [625900.0, 4098700.0, 6273700.0, 7554900.0, 4587600.0, 5942600.0, 14268700.0, 5619700.0, 8269800.0],
+  "work_ns": [2716936200.0, 3320987200.0, 3020291400.0, 5056175800.0, 5221569900.0, 6945430800.0, 4554682100.0, 6272354100.0, 5016589200.0],
+  "total_ns": [2731442600.0, 3328732400.0, 3026055100.0, 5056735200.0, 5229027100.0, 6951160000.0, 4555256700.0, 6284394000.0, 5017230300.0],
+  "outside_window_ns": [14506400.0, 7745200.0, 5763700.0, 559400.0, 7457200.0, 5729200.0, 574600.0, 12039900.0, 641100.0],
   "summary": {
-    "work_min": 5369681700.0,
-    "work_p50": 10706598400.0,
-    "work_p99": 22041586904.0,
-    "work_iqr": 6518566700.0
+    "work_min": 2716936200.0,
+    "work_p50": 5016589200.0,
+    "work_p99": 6891584664.0,
+    "work_iqr": 1900582700.0
   }
 }

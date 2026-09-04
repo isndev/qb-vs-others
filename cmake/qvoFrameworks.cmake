@@ -92,6 +92,12 @@ macro(_qvo_declare_caf)
     FetchContent_MakeAvailable(caf)
     set(QVO_CAF_VERSION "${QVO_CAF_REF}" CACHE INTERNAL "" FORCE)
     _qvo_enable(caf)
+    # The detached variant is the same CAF at the same ref, spawned differently -- see
+    # frameworks/caf-detached/README.md. It is a second FRAMEWORK row rather than a knob because
+    # a knob is a per-run choice nobody can see in the table, and this one changes what the
+    # "2 cores" column means.
+    set(QVO_CAF_DETACHED_VERSION "${QVO_CAF_REF}" CACHE INTERNAL "" FORCE)
+    _qvo_enable(caf-detached)
 endmacro()
 
 macro(_qvo_declare_sobjectizer)
@@ -165,6 +171,7 @@ function(qvo_report_configuration)
     message(STATUS "  opt flags  : ${QVO_OPT_FLAGS}")
     foreach(_fw IN LISTS QVO_ENABLED_FRAMEWORKS)
         string(TOUPPER ${_fw} _FW)
+        string(REPLACE "-" "_" _FW "${_FW}")
         message(STATUS "  framework  : ${_fw} ${QVO_${_FW}_VERSION}")
     endforeach()
     foreach(_s IN LISTS QVO_SKIPPED_FRAMEWORKS)

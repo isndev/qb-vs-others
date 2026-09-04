@@ -1,0 +1,10 @@
+poll100-steal10        verified=True p50=  493.4  min=  487.2  max=  529.1
+poll1e3-steal10        verified=True p50=  533.8  min=  503.0  max=  543.7
+poll1e4-steal10        verified=True p50=  718.8  min=  640.1  max=  780.9
+poll1e5-steal10        verified=True p50=  730.0  min=  717.7  max=  852.8
+poll1e6-steal10        verified=True p50=  752.1  min=  731.7  max=  893.6
+poll1e4-steal1         verified=True p50=  754.4  min=  703.6  max= 1072.2
+poll1e4-steal100       verified=True p50=  534.2  min=  515.6  max=  540.4
+poll1e4-steal1e3       verified=True p50=  490.4  min=  487.6  max=  495.7
+poll1e6-steal1e6       verified=True p50=  495.3  min=  491.8  max=  529.2
+poll100-steal10-b      verified=True p50=  495.0  min=  490.4  max=  498.3

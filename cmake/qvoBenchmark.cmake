@@ -52,7 +52,15 @@ function(qvo_add_benchmark)
     add_executable(${_target} "${A_SOURCE}")
     target_link_libraries(${_target} PRIVATE qvo-harness ${A_LIBS})
 
+    # `caf-detached` -> QVO_CAF_DETACHED_VERSION: a hyphen is legal in a CMake variable name but
+    # not in the macro a framework's version is spelled through, so it is normalised here once.
     string(TOUPPER ${A_FRAMEWORK} _FW)
+    string(REPLACE "-" "_" _FW "${_FW}")
+    if(NOT DEFINED QVO_${_FW}_VERSION)
+        message(FATAL_ERROR
+            "qvo_add_benchmark: framework '${A_FRAMEWORK}' has no QVO_${_FW}_VERSION -- declare "
+            "it in cmake/qvoFrameworks.cmake; a result JSON without a version is not attributable.")
+    endif()
     target_compile_definitions(${_target} PRIVATE
         QVO_BENCHMARK_ID="${_bench_id}"
         QVO_FRAMEWORK_ID="${A_FRAMEWORK}"
@@ -86,11 +94,12 @@ endfunction()
 # is caught by tools/check-results.py, which cross-checks the built roster against the spec set in
 # BOTH directions.
 function(qvo_add_all_benchmarks)
-    cmake_parse_arguments(A "" "FRAMEWORK" "SUITES;LIBS" ${ARGN})
+    cmake_parse_arguments(A "" "FRAMEWORK" "SUITES;LIBS;DEFINES" ${ARGN})
     foreach(_suite IN LISTS A_SUITES)
         file(GLOB _srcs CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${_suite}/*.cpp")
         foreach(_src IN LISTS _srcs)
-            qvo_add_benchmark(SOURCE "${_src}" FRAMEWORK "${A_FRAMEWORK}" LIBS ${A_LIBS})
+            qvo_add_benchmark(SOURCE "${_src}" FRAMEWORK "${A_FRAMEWORK}" LIBS ${A_LIBS}
+                              DEFINES ${A_DEFINES})
         endforeach()
     endforeach()
 endfunction()

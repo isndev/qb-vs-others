@@ -42,6 +42,13 @@ namespace {
     std::exit(2);
 }
 
+// Carries the reason from qvo::not_applicable() back to run(), which owns the output document.
+// An exception rather than a global: the body is the only place it can be raised from, run() is
+// the only place it is caught, and nothing between the two has to know it exists.
+struct NotApplicable {
+    std::string reason;
+};
+
 // -------------------------------------------------------------------------------------------
 // JSON emission
 //
@@ -208,6 +215,23 @@ std::string iso_utc_now() {
     char buf[32];
     std::strftime(buf, sizeof buf, "%Y-%m-%dT%H:%M:%SZ", &tm);
     return buf;
+}
+
+// The `env` object of a result document: which binary, on which host, produced it. Shared by the
+// measured document and the not-applicable one, so a cell that declined still says what toolchain
+// declined it -- report.py groups the field by this object, and a document without it shows up as
+// a second, nameless toolchain.
+void write_env(std::ostream &j) {
+    j << "  \"env\": {\n";
+    j << "    \"host\": " << quoted(host_name()) << ",\n";
+    j << "    \"os\": " << quoted(os_name()) << ",\n";
+    j << "    \"logical_cpus\": " << logical_cpu_count() << ",\n";
+    j << "    \"compiler\": " << quoted(QVO_COMPILER) << ",\n";
+    j << "    \"compiler_version\": " << quoted(QVO_COMPILER_VERSION) << ",\n";
+    j << "    \"build_type\": " << quoted(QVO_BUILD_TYPE) << ",\n";
+    j << "    \"cxx_flags\": " << quoted(QVO_CXX_FLAGS) << ",\n";
+    j << "    \"utc\": " << quoted(iso_utc_now()) << "\n";
+    j << "  },\n";
 }
 
 // -------------------------------------------------------------------------------------------
@@ -398,6 +422,9 @@ int run(int argc, char **argv, Spec spec, Body body) {
 
     if (!spec.expected)
         fatal("benchmark " + spec.benchmark + " declares no expected() -- see FAIRNESS.md section 0");
+    if (spec.work_unit.empty() != !spec.work_units)
+        fatal("benchmark " + spec.benchmark +
+              " declares work_unit without work_units or the reverse -- both or neither");
 
     const std::uint64_t want          = spec.expected(params);
     const std::uint64_t want_messages = spec.expected_messages ? spec.expected_messages(params) : 0;
@@ -409,7 +436,50 @@ int run(int argc, char **argv, Spec spec, Body body) {
     for (int rep = 0; rep < all_reps; ++rep) {
         Watch w;
         auto  t_begin = clock::now();
-        Answer got    = body(params, w);
+        Answer got;
+        try {
+            got = body(params, w);
+        } catch (const NotApplicable &na) {
+            // The body declined the configuration. Emit a document with the reason and no
+            // timings, so the cell exists in the results and the report can say why it is
+            // empty; exit 3 so run.py tells it apart from a defect (1) and a harness error (2).
+            std::ostringstream j;
+            j << "{\n";
+            j << "  \"schema\": \"qvo/result/1\",\n";
+            j << "  \"benchmark\": " << quoted(spec.benchmark) << ",\n";
+            j << "  \"framework\": " << quoted(spec.framework) << ",\n";
+            j << "  \"framework_version\": " << quoted(spec.framework_version) << ",\n";
+            j << "  \"verified\": false,\n";
+            j << "  \"not_applicable\": " << quoted(na.reason) << ",\n";
+            j << "  \"params\": {";
+            {
+                bool first = true;
+                for (const auto &kv : params.all()) {
+                    j << (first ? "" : ", ") << quoted(kv.first) << ": " << kv.second;
+                    first = false;
+                }
+            }
+            j << "},\n";
+            write_env(j);
+            j << "  \"caveats\": [";
+            for (std::size_t i = 0; i < spec.caveats.size(); ++i)
+                j << (i ? ", " : "") << quoted(spec.caveats[i]);
+            j << "],\n";
+            j << "  \"work_ns\": [],\n";
+            j << "  \"summary\": {}\n";
+            j << "}\n";
+            const std::string doc = j.str();
+            if (out_path.empty()) {
+                std::cout << doc;
+            } else {
+                std::ofstream f(out_path, std::ios::binary);
+                if (!f) fatal("cannot write " + out_path);
+                f << doc;
+            }
+            std::fprintf(stderr, "qvo: %s/%s NOT APPLICABLE: %s\n", spec.framework.c_str(),
+                         spec.benchmark.c_str(), na.reason.c_str());
+            return 3;
+        }
         auto  t_end   = clock::now();
 
         if (got.checksum != want) {
@@ -452,6 +522,10 @@ int run(int argc, char **argv, Spec spec, Body body) {
     j << "  \"verified\": " << (ok ? "true" : "false") << ",\n";
     j << "  \"expected_checksum\": " << want << ",\n";
     j << "  \"expected_messages\": " << want_messages << ",\n";
+    if (spec.work_units) {
+        j << "  \"work_unit\": " << quoted(spec.work_unit) << ",\n";
+        j << "  \"work_units\": " << spec.work_units(params) << ",\n";
+    }
     j << "  \"repetitions\": " << repetitions << ",\n";
     j << "  \"warmup\": " << warmup << ",\n";
 
@@ -470,16 +544,7 @@ int run(int argc, char **argv, Spec spec, Body body) {
     j << "  \"thread_pinning_supported\": " << (thread_pinning_supported() ? "true" : "false")
       << ",\n";
 
-    j << "  \"env\": {\n";
-    j << "    \"host\": " << quoted(host_name()) << ",\n";
-    j << "    \"os\": " << quoted(os_name()) << ",\n";
-    j << "    \"logical_cpus\": " << logical_cpu_count() << ",\n";
-    j << "    \"compiler\": " << quoted(QVO_COMPILER) << ",\n";
-    j << "    \"compiler_version\": " << quoted(QVO_COMPILER_VERSION) << ",\n";
-    j << "    \"build_type\": " << quoted(QVO_BUILD_TYPE) << ",\n";
-    j << "    \"cxx_flags\": " << quoted(QVO_CXX_FLAGS) << ",\n";
-    j << "    \"utc\": " << quoted(iso_utc_now()) << "\n";
-    j << "  },\n";
+    write_env(j);
 
     j << "  \"idiom\": {\n";
     j << "    \"source\": " << quoted(spec.idiom_source) << ",\n";
@@ -537,6 +602,10 @@ int run(int argc, char **argv, Spec spec, Body body) {
         return 1;
     }
     return 0;
+}
+
+void not_applicable(const std::string &reason) {
+    throw NotApplicable{reason};
 }
 
 }  // namespace qvo

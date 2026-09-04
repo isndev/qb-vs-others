@@ -20,7 +20,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-04T01:37:36Z"
+    "utc": "2026-09-04T14:35:09Z"
   },
   "idiom": {
     "source": "SObjectizer 5.8.5.1 dev/sample/so_5/ping_pong{,_minimal}/main.cpp",
@@ -28,13 +28,13 @@
   },
   "caveats": ["cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating", "wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose"],
   "failures": [],
-  "work_ns": [219779500.0, 225180200.0, 228290400.0, 228463300.0, 226950100.0, 236836200.0, 232889600.0, 225032300.0, 229106600.0],
-  "total_ns": [220224400.0, 225690000.0, 228662100.0, 228817300.0, 227288300.0, 237240900.0, 233257000.0, 225367100.0, 229584700.0],
-  "outside_window_ns": [444900.0, 509800.0, 371700.0, 354000.0, 338200.0, 404700.0, 367400.0, 334800.0, 478100.0],
+  "work_ns": [240738500.0, 237027200.0, 220060000.0, 213287200.0, 215164400.0, 217701400.0, 212734000.0, 213915400.0, 211653500.0],
+  "total_ns": [241090500.0, 237342700.0, 220352000.0, 213593600.0, 215554100.0, 225009400.0, 213494600.0, 214550900.0, 212286800.0],
+  "outside_window_ns": [352000.0, 315500.0, 292000.0, 306400.0, 389700.0, 7308000.0, 760600.0, 635500.0, 633300.0],
   "summary": {
-    "work_min": 219779500.0,
-    "work_p50": 228290400.0,
-    "work_p99": 236520472.0,
-    "work_iqr": 3926400.0
+    "work_min": 211653500.0,
+    "work_p50": 215164400.0,
+    "work_p99": 240441596.0,
+    "work_iqr": 6772800.0
   }
 }

@@ -11,6 +11,8 @@
 
 #include <chrono>
 #include <cstdlib>
+#include <optional>
+#include <string>
 
 #include <qb/main.h>
 #include <qb/system/cpu.h>
@@ -25,6 +27,48 @@ inline std::chrono::microseconds park_interval() {
     if (const char *v = std::getenv("QVO_QB_PARK_US"))
         return std::chrono::microseconds{std::strtoull(v, nullptr, 10)};
     return std::chrono::microseconds{1000};
+}
+
+// The idle-spin floor -- how long a parked-mode core keeps polling after its last event before
+// it blocks -- when `wait=0`, in microseconds, or nothing when the environment says nothing.
+//
+// This knob exists in qb only from the `perf/core-hot-path` work (`CoreInitializer::setIdleSpin`,
+// default 50 us); v3.1.0 parks on the first idle pass and has no such setting. It is exposed here
+// for ONE measurement docs/TUNING.md section 8 needs: with the floor at its default, a qb
+// ping-pong in park mode never actually blocks (a reply lands within a microsecond, the floor is
+// fifty), so its "park" cell is a polling figure and not the cost of an OS park + wake. Setting
+// `QVO_QB_IDLE_SPIN_US=0` makes the core block on every idle pass -- the same deal a
+// caf::detached actor or the raw-thread cv floor gets -- and measures what a qb actor pays when
+// it genuinely sleeps. It is not a published configuration; the published `wait=0` column is
+// qb's default, exactly as CAF's and SObjectizer's columns are theirs.
+inline std::optional<std::chrono::microseconds> idle_spin_override() {
+    if (const char *v = std::getenv("QVO_QB_IDLE_SPIN_US"))
+        return std::chrono::microseconds{std::strtoull(v, nullptr, 10)};
+    return std::nullopt;
+}
+
+// True when the qb this binary is built against has the idle-spin knob at all. Detected from the
+// API rather than from a version macro: the knob is on an unreleased branch, and a version number
+// would either lie about the branch or lie about the next release.
+template <typename Core>
+concept HasIdleSpin = requires(Core &c, std::chrono::microseconds us) { c.setIdleSpin(us); };
+
+// A template so that the branch without the knob is DISCARDED rather than compiled: in a
+// non-template `if constexpr`, the false branch still has to name a member that exists.
+template <typename Core>
+void apply_idle_spin(Core &core, std::chrono::microseconds floor) {
+    if constexpr (HasIdleSpin<Core>) {
+        core.setIdleSpin(qb::duration{floor});
+    } else {
+        // Asked for a knob this qb does not have. Measuring the default under a label that says
+        // otherwise is the one thing worse than no number -- harness.h, not_applicable.
+        (void)core;
+        (void)floor;
+        qvo::not_applicable("QVO_QB_IDLE_SPIN_US is set, but this qb (" QVO_FRAMEWORK_VERSION
+                            ") has no CoreInitializer::setIdleSpin -- the idle-spin floor exists "
+                            "only on the perf/core-hot-path work; v3.1.0 parks on the first idle "
+                            "pass unconditionally");
+    }
 }
 
 // Configures VirtualCore `index` and returns it ready for actors.
@@ -42,6 +86,8 @@ inline void configure_core(qb::Main &engine, int index, bool spin) {
     auto &core = engine.core(static_cast<qb::CoreId>(index));
 
     core.setLatency(spin ? qb::duration::zero() : qb::duration{park_interval()});
+
+    if (const auto floor = idle_spin_override(); floor && !spin) apply_idle_spin(core, *floor);
 
     const auto &cpus = qvo::pinned_cpus();
     if (cpus.empty()) {
@@ -65,6 +111,12 @@ inline std::vector<std::string> caveats() {
         "startup, outside the measured window, but its thread shares the pinned CPU set. This is "
         "left ON deliberately: turning it off would improve qb's figure and no other framework "
         "gets an equivalent subtraction"};
+    if (const auto floor = idle_spin_override())
+        c.emplace_back("QVO_QB_IDLE_SPIN_US=" + std::to_string(floor->count()) +
+                       ": the parked-mode idle-spin floor was OVERRIDDEN from qb's default. This "
+                       "is a docs/TUNING.md section 8 experiment (what a qb actor pays when it "
+                       "genuinely blocks), not qb's shipped configuration, and it must not be "
+                       "read beside the other frameworks' default columns");
     if (!qb::CPU::ThreadPinningSupported())
         c.emplace_back("THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() "
                        "is false, so the placement above did not happen and the figure is not "

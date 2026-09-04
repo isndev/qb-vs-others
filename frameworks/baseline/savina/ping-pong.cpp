@@ -220,6 +220,8 @@ int main(int argc, char **argv) {
     spec.params            = qvospec::savina::ping_pong::params();
     spec.expected          = qvospec::savina::ping_pong::expected;
     spec.expected_messages = qvospec::savina::ping_pong::expected_messages;
+    spec.work_unit         = qvospec::savina::ping_pong::kWorkUnit;
+    spec.work_units        = qvospec::savina::ping_pong::work_units;
     spec.idiom_source      = "none -- hand-written floor";
     spec.idiom_note        = "raw std::thread + an independently written bounded SPSC ring, "
                              "busy-spinning; not an actor framework and not ranked as one";

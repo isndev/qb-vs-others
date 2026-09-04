@@ -104,6 +104,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const auto rounds = static_cast<std::uint64_t>(p.get("messages"));
     const auto cores  = static_cast<std::size_t>(p.get("cores"));
     const bool spin   = p.get("wait") != 0;
+    qvocaf::refuse_spin_if_detached(spin);
 
     Sink sink;
     {
@@ -116,9 +117,12 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         caf::actor_system sys{cfg};
         qvocaf::assert_budget(sys, cores);
 
-        auto pong = sys.spawn(pong_fun);
-        sys.spawn(ping_fun, pong, rounds, &watch, &sink);
+        // Pool or detached per BINARY (qvocaf::kSpawnOptions): the caf-detached variant builds
+        // this same file with every actor on a private thread -- see caf_support.h for why.
+        auto pong = sys.spawn<qvocaf::kSpawnOptions>(pong_fun);
+        sys.spawn<qvocaf::kSpawnOptions>(ping_fun, pong, rounds, &watch, &sink);
         sys.await_all_actors_done();
+        qvocaf::assert_pins_took();
     }
     return qvo::Answer{sink.checksum, sink.messages};
 }
@@ -137,6 +141,8 @@ int main(int argc, char **argv) {
     spec.params            = qvospec::savina::ping_pong::params();
     spec.expected          = qvospec::savina::ping_pong::expected;
     spec.expected_messages = qvospec::savina::ping_pong::expected_messages;
+    spec.work_unit         = qvospec::savina::ping_pong::kWorkUnit;
+    spec.work_units        = qvospec::savina::ping_pong::work_units;
     spec.idiom_source      = "CAF 1.1.0 examples/hello_world.cpp + examples/message_passing/"
                              "dancing_kirby.cpp + caf/stateful_actor.hpp";
     spec.idiom_note        = "function-based behaviors, stateful_actor for the cached peer, bare "
