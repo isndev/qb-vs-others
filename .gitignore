@@ -2,3 +2,6 @@ build/
 vcpkg_installed/
 __pycache__/
 *.pyc
+
+# stray qb log files written by a run into the repo root
+qb.*.log
