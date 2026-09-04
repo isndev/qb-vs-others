@@ -9,9 +9,14 @@ ambition has already misled the reader.
 - Build discipline: all frameworks from source, one flag set, pinned refs matching qb-dev's own
   vcpkg baseline.
 - Worker placement through each framework's own public API.
-- `savina/ping-pong` for qb 3.1.0, CAF 1.1.0, SObjectizer 5.8.5.1 and the floor — plus the
-  `caf-detached` variant (CAF's only cross-core placement) — 18 verified + 2 `n/a` cells per
-  platform, both platforms re-measured in one quiet session each on 2026-09-04.
+- **Five Savina benchmarks** — `savina/ping-pong`, `counting`, `thread-ring`, `fork-join`,
+  `big` — for qb 3.1.0, CAF 1.1.0, SObjectizer 5.8.5.1 and the floor, plus the `caf-detached`
+  variant on ping-pong (CAF's only cross-core placement; the other four declare it omitted with
+  the reason in `frameworks/caf-detached/CMakeLists.txt`): **84 cells per platform, 82 verified
+  + 2 `n/a`**, both platforms measured in one quiet session each on 2026-09-04, with the
+  candidate qb branch measured through the same adapters minutes after the shipped build (the
+  20-cell grids under `results/*/qb-branch-perf-core-hot-path/L-ba051409/`). Every qb-side cost
+  the four new shapes exposed is in `docs/TUNING.md` §9.
 - **The two CAF coherence defects, closed** (`docs/TUNING.md` §1.1 and §8). The spin-knob sweep
   was run on both axes — poll budget 100 → 10⁶ at fixed steal interval, steal interval 1 → 10⁶ at
   fixed budget; ten documents in `results/desktop-b67osn6-win-msvc/caf-spin-sweep/` — and no
@@ -35,30 +40,42 @@ ambition has already misled the reader.
   watched rejecting a 1-in-10^7 message loss, a single lost message, a duplicate, a wrong
   checksum, a right checksum reached by the wrong amount of work, an unmarked measurement window
   and a refused CPU pin — and watched NOT rejecting the four shapes that are legitimate.
+- **The document guards**, and their battery. `tools/check-roster.py`: every spec has an adapter
+  in every framework or a declared omission with a reason, every adapter binds to exactly its
+  spec, every spec has its page, and — given a results directory — every roster cell has a
+  document and every document is a roster cell. `tools/check-report.py`: every `REPORT.md` is
+  byte-identical to `report.py`'s render of its directory, and every figure in a marked README
+  table (`<!-- check-report: <dir> ... -->`, including the one-framework `framework=qb` grids
+  of the candidate branch) equals the JSON it summarises, to `report.py`'s own formatting and
+  its own ratio. `tools/guards-negative-control.py` plants a defect at a time in a sandbox copy
+  and hashes the real checkout before and after: **33 CAUGHT / 3 CONFIRMED / 0 MISSED**. Its
+  first full run found two of its own controls planting nothing (one written for a `N.NN ns`
+  the renderer never emits) and one guard answering "inconclusive" where a named results
+  directory that does not exist is a finding — all three fixed before the figure was recorded.
+- `docs/FEATURES.md` — the non-performance comparison, every claim cited `path:line` into the
+  three source trees, with the eight things qb should be honest about at the end.
 
 ## Not done
 
-### The other 24 Savina benchmarks
+### The other 20 Savina benchmarks
 
-`savina/ping-pong` is one of the suite's twenty-five, and the least representative: it has no
-parallelism, no fan-in, no dynamic actor creation and no contention. The ones that would change
-the picture most, roughly in order of what they would teach:
+Five of the suite's twenty-five are measured — the round trip, the fan-in, the ring, the fan-out
+and the all-to-all. None of the five creates an actor after start-up, blocks on a rendezvous or
+carries a pipeline. The ones that would change the picture most, roughly in order of what they
+would teach:
 
-| benchmark | what it adds that ping-pong cannot show |
+| benchmark | what it adds that the five cannot show |
 |---|---|
-| `thread-ring` | many actors, one token — scheduling fairness and hand-off cost at scale |
-| `counting` | pure fan-in to a single mailbox — the contention case |
-| `fork-join` | fan-out with no reply — cheapest possible dispatch |
 | `chameneos` | rendezvous through a shared broker — mailbox contention with state |
-| `big` | all-to-all — the quadratic messaging case |
-| `fib` / `nqueens` / `a-star` | dynamic actor creation and destruction, which ping-pong never exercises |
+| `fib` / `nqueens` / `a-star` | dynamic actor creation and destruction, which none of the five exercises |
 | `bank-transaction` | request/response with a reply promise |
 | `philosophers` / `barber` / `smokers` | blocking-shaped coordination |
 | `radixsort` / `sieve` / `trapezoid` | pipelines and data-parallel shapes |
 
 Each needs one spec header in `benchmarks/specs/qvospec/savina/` and one implementation per
-framework. The per-framework support headers (`frameworks/<fw>/*_support.h`) exist so that
-placement and spin/park do not have to be re-decided twenty-four more times.
+framework — `check-roster.py` refuses a framework missing from one. The per-framework support
+headers (`frameworks/<fw>/*_support.h`) exist so that placement and spin/park do not have to be
+re-decided twenty more times.
 
 ### Actor creation cost and memory footprint
 
@@ -70,10 +87,11 @@ the harness does not have.
 
 ### The Linux axis
 
-**WSL2 Debian 13 / g++ 14.2 is run** — 20 cells, 18 verified + 2 `n/a`, `results/wsl-debian-g++14/`,
-re-measured in one quiet session on 2026-09-04; read with `docs/TUNING.md` §6 and §8: the 2-core
-park row measures the hypervisor's ~12 µs futex wake, not the frameworks (the raw
-condition-variable floor is 25.1 µs there). Two things remain:
+**WSL2 Debian 13 / g++ 14.2 is run** — 84 cells, 82 verified + 2 `n/a`, `results/wsl-debian-g++14/`,
+measured in one quiet session on 2026-09-04; read with `docs/TUNING.md` §6, §8 and §9: the 2-core
+park rows of the two benchmarks that cross a core per message measure the hypervisor's ~12 µs
+futex wake, not the frameworks (the raw condition-variable floor is 25.47 µs per ping-pong round
+trip and 13.01 µs per ring hop there). Two things remain:
 
 - **Native Linux.** The same matrix on bare metal or a non-nested VM, where a futex wake is
   2–5 µs and the park row becomes a framework measurement. Nothing in the C++ path needs root.
@@ -100,15 +118,16 @@ does the language that invented this model cost", not "is qb faster than CAF". N
 runtimes is installed on this host; Rust and .NET install per-user without administrator rights,
 the JDK unpacks from a zip, and Erlang is the awkward one.
 
-### Guards this repository promises and does not yet have
+### Guards this repository still does not have
 
-Named because FAIRNESS.md and README.md refer to them, and a document that cites a guard that does
-not exist is exactly the drift qb-dev's own tooling was built to catch:
-
-- `tools/check-report.py` — assert no hand-written figure has appeared in a committed Markdown
-  table. Referenced by FAIRNESS.md 3 and README.md. **Not written yet.**
-- `docs/FEATURES.md` — the non-performance comparison (supervision, distribution, typed actors,
-  message priorities, delivery filters, maturity), where qb does not lead everywhere. Referenced
-  by FAIRNESS.md 2. **Not written yet.**
-- A roster cross-check: every spec header has an implementation in every framework, in both
-  directions. Nothing currently notices a framework silently missing from a benchmark.
+- **`docs/TUNING.md` is not figure-checked.** `check-report.py` deliberately parses README.md
+  only: TUNING's numbers come from side experiments (`caf-spin-sweep/`, the `ab-*` and
+  `idlespin*` documents, `L-ba051409/`) that are not cells of a published table, and a guard
+  that pretended to verify them would verify nothing. Each subsection names the directory its
+  numbers came from; a marker grammar for "this figure is `<document>.summary.work_p50 /
+  work_units`" would close it and has not been written.
+- **The qb-side findings in `docs/TUNING.md` §9 are not tied to a qb commit.** A finding that
+  names `VirtualCore.cpp:199` is true of qb 3.1.0 and of the branch at `ba051409`; nothing here
+  re-checks the citation when either moves. qb-dev's `llm-guard.py` does exactly that for its own
+  docs and does not read this repository.
+- **A footprint probe.** See "Actor creation cost and memory footprint".

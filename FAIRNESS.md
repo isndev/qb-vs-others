@@ -142,9 +142,15 @@ python3 tools/report.py --results results/<host-id> > REPORT.md
 ```
 
 Every number in `REPORT.md` is regenerated from the JSON in `results/`. The figures quoted in
-`README.md` and `docs/TUNING.md` are transcribed by hand from those runs, and **nothing yet
-checks that they still match** — `tools/check-report.py` is named in `docs/ROADMAP.md` as not
-written. Until it exists, `REPORT.md` is the authority and the prose is a summary of it.
+`README.md` are transcribed from those runs, and `tools/check-report.py` **checks that they
+still match**: every `REPORT.md` must be byte-identical to `report.py`'s render of its
+directory, and every table in `README.md` that follows a `<!-- check-report: <dir> ... -->`
+marker is re-derived from the JSON, cell by cell, to the renderer's own formatting and its own
+ratio — a figure that is right to the wrong number of decimals is a finding. The figures in
+`docs/TUNING.md` are **not** checked, by design: they come from side experiments that are not
+cells of a published table, each subsection names the directory they came from, and
+`docs/ROADMAP.md` records the gap. `tools/check-roster.py` closes the other silence — a
+framework missing from a benchmark, or a results document that no roster cell explains.
 
 The harness has its own negative control, and it has been run:
 
@@ -158,6 +164,14 @@ delivery, a wrong checksum, a right checksum reached by the wrong amount of work
 never marked its measurement window, a CPU pin that cannot be applied — and asserts each is
 **rejected**, with no timing emitted. It also asserts four legitimate shapes are **not** rejected,
 because a battery that fails everything is not a working battery.
+
+The two document guards have theirs, and it plants in a sandbox copy while hashing the real
+checkout before and after:
+
+```
+python3 tools/guards-negative-control.py
+    CAUGHT=33 CONFIRMED=3 MISSED=0
+```
 
 The counts are floors. A run below them fails: a battery that quietly stopped planting anything
 looks exactly like one that passes. A verifier nobody has watched reject anything is not known to

@@ -9,7 +9,8 @@ repository's first numbers wrong.
 
 Measured on: i9-12900K, Windows 11, MSVC 19.51.36256, `/O2 /Ob2 /DNDEBUG`, pinned to CPUs 0 and 2,
 `savina/ping-pong` at 1 000 000 round trips, 3 repetitions + 1 warmup. Figures are ns per round
-trip, median.
+trip, median. §9 is the exception: it is the four benchmarks added on 2026-09-04, on both
+platforms, and says so.
 
 ---
 
@@ -144,9 +145,10 @@ doing the thing this whole document exists to prevent.
   qb's number is conservative in this respect. Unmeasured.
 - **CAF builds itself at C++17**; qb and the harness are C++20. Forcing CAF to C++20 would measure
   a build CAF does not ship. Whether it would be faster is unmeasured.
-- **SObjectizer's `active_obj` vs `thread_pool` dispatchers** — only `active_obj` and `one_thread`
-  are exercised. A thread-pool dispatcher may suit the fan-in benchmarks better and has not been
-  tried.
+- **SObjectizer's spin budget.** The two-agent benchmarks run `active_obj` (one work thread per
+  agent) and the many-agent ones a `thread_pool` of `cores` threads with `fifo_t::individual`
+  (`so_support.h`); both spell "spin" as `combined_lock_factory(10 s)`. That budget was chosen,
+  not swept, and §9 records two cells where the spin lock is slower than the plain one.
 - **Allocators** are the system allocator for all three. No framework here bundles its own, so
   nothing needed flagging, but this has not been re-checked per benchmark.
 
@@ -237,6 +239,7 @@ on an idle wepoll / epoll loop 370 / 300 ns, `cv.notify_all()` with no waiter 2 
 | **H. SpinLock on the send path** | — | the indexed `enqueue(index, …)` used by `SharedCoreCommunication::send` takes **no** lock; the lock is only on the round-robin variants | **retired** — not a cost |
 | **K. store-buffer drain on the publish** | `notify()` returned before its fence at latency 0, so a spin-mode enqueue reached the polling peer only when the producer's store buffer drained on its own | 2c-**park** beat 2c-**spin** on BOTH platforms; fencing in spin mode too, interleaved A/B on a quiet host (3 pairs × 7 reps): Win 2c-spin 296–309 → **259–263** ns (park 256–272); WSL2 p50 a wash, 204–219 → 205–208, but the worst run 295 → 215; 1c and a 1M-event bulk push unchanged (18.6 M msg/s) | **taken** — one fence per cross-core publish; commit `39992047` on the branch |
 | **I. router double lookup** | `flat_hash` by EventId → virtual resolve → `flat_hash` by ActorId → fn ptr | analysed: ~15–20 of the ~37 ns a same-core hop costs; both ids are dense (`_type_id_counter`, `ServiceId`) so direct tables are feasible | measure next; medium |
+| **L. out-of-line accessors on the per-event path** | `ActorId`'s constructors, `operator uint32_t`, `sid()`/`index()`/`is_broadcast()`/`is_valid()`, `Actor::is_alive()`, `CoreSet::resolve()`, `VirtualCore::__getPipe__()` defined in the archive, called from `Actor::push<T>` / the dispatch trampoline instantiated in the USER's TU — a call into the archive for a two-field load, opaque without LTO | found by `perf` on the four §9 benchmarks (WSL2): `ActorId(uint32_t)` + `is_broadcast` + `operator uint32_t` ~10 % of the counting profile, `is_alive` + `resolve` ~5 % more; in-class, 3-rep min: counting 1c 43.5 → 39.2, fork-join 2c 59.3 → 42.1, big 1c 31.6 → 25.2 ns | **taken** — commit `ba051409`; no behaviour change, three readme citations move with it |
 
 Two shapes to keep in mind when reading the table. A remote cache-line read on this machine costs
 60–110 ns, and it is the unit everything at two cores is priced in: the instrumentation's own
@@ -251,8 +254,9 @@ problem requires. That is the figure the fixes are aiming at; it is not yet the 
 
 ### With the branch
 
-The fixes landed on a local qb branch, `perf/core-hot-path` (five commits over v3.1.0: F, E, D,
-then A + B in one commit together with a start-barrier fix found on the way — below — and K). The
+The fixes landed on a local qb branch, `perf/core-hot-path` (six commits over v3.1.0: F, E, D,
+then A + B in one commit together with a start-barrier fix found on the way — below — K, and L,
+which the four §9 benchmarks found after this subsection was measured). The
 four qb cells were re-measured through the **unmodified adapter**, same protocol as the published
 tables (7 repetitions of 1 000 000 round trips, CPUs 0 and 2, p50 with min–max), **with the
 shipped v3.1.0 build measured in the same session** rather than quoted from the README:
@@ -264,8 +268,15 @@ shipped v3.1.0 build measured in the same session** rather than quoted from the 
 | 2c-spin | 315 → **262** ns (236–278) | 275 → **206** ns (202–208) |
 | 2c-park | 7.6 µs → **259** ns (252–291) | 26.5 µs → **208** ns (201–217) |
 
-Every checksum verified. The park row is now a framework figure on both platforms — 29× on
-Windows, 127× on WSL2 — below CAF's 511 / 291 ns, which never crosses a core — and the two
+Every checksum verified. (This table is the branch at `39992047`, before axis L; the 2026-09-04
+re-measurement of all five benchmarks — shipped and branch at `ba051409` in one session, 9
+repetitions on Windows, 5 on WSL2 — is the pair of grids in README.md and the one `check-report.py`
+verifies. Its ping-pong cells, 85 / 89 / 254 / 278 ns on Windows and 72 / 71 / 225 / 242 ns on
+WSL2, are the figures to quote; the 2c-park cells there are 20–30 ns above this table's because
+the shipped and branch runs alternated on a host running the other three frameworks' cells in
+between, a spread this document's own §7 caution predicts.) The park row is now a framework
+figure on both platforms — 29× on Windows, 127× on WSL2 — below CAF's 511 / 291 ns, which never
+crosses a core — and the two
 two-core cells are now one figure: before axis K the park cell was *below* the spin cell on both
 platforms, which is what exposed it. The 1-core figures are the axes D + E alone. On WSL2 the
 branch's 2c-spin sits at the 209 ns raw-thread floor measured above.
@@ -387,3 +398,43 @@ what the OS charges, ~10.6 µs on Windows and ~26 µs under WSL2's hypervisor, f
 SObjectizer. No framework in this table beats the floor once it sleeps; the differences are in how
 long each one refuses to.
 
+## 9. What four more shapes said about qb — counting, thread-ring, fork-join, big
+
+The ping-pong axes of §7 were found on a two-actor round trip, which exercises one pipe in each
+direction and nothing else. On 2026-09-04 the four Savina benchmarks that add fan-in, a ring, a
+fan-out and an all-to-all were measured for every framework on both platforms — 84 cells per
+host, shipped qb 3.1.0 and the branch at `ba051409` through the same adapters in the same quiet
+session, 9 repetitions on Windows and 5 on WSL2, checksums verified on every cell. The ranking is
+README.md's business; this section is the list of **qb-side costs** those four shapes exposed,
+each with where it is, what it measures and what was done. Figures are ns per unit of work
+(message, hop, message, round trip), p50, Windows / WSL2, shipped → branch unless stated.
+
+| # | finding | where | measured | state |
+|---|---|---|---|---|
+| **9.1** | **Same-core dispatch costs ~27–30 ns on MSVC and ~40 ns on g++ against a 3 ns floor.** `counting` at one core is the purest measurement of it: one producer, one consumer, no core crossing, no reply — the cell is `push<>` + pipe + `consume_all` + route, and nothing else. | `VirtualCore.cpp:199` (`_router.route`), `system/event/router.h:471` (`_registered_events.at(id)->resolve`), `router.h:169` (the second `unordered_map` by handler id), `VirtualCore.cpp:224` (`consume_all`) | 1c-spin: 29.4 → **27.4** / 44.6 → **40.8**; floor 3.2 / 2.8 | axis L took 2–4 ns; the rest is **axis I** (two hash lookups + a virtual resolve, ~15–20 ns) and 9.2. Still open |
+| **9.2** | **Every event is at least one 64-byte bucket, copied twice.** `QB_LOCKFREE_EVENT_BUCKET_BYTES` is the cache-line size, so a 16-byte payload is relocated as 64 bytes into the pipe and 64 bytes out of the ring into the `consume_all` scratch before dispatch. At 1 M messages that is 128 MB of memcpy per cell for a benchmark whose data is 16 MB. | `utility/prefix.h:68`, `Event.h:473` (`bucket_size * QB_LOCKFREE_EVENT_BUCKET_BYTES`), `VirtualCore.cpp:224` | not isolated — it is inside 9.1's 27 ns; the g++/MSVC gap (40 vs 27) is the one hint, g++'s `memcpy` of a 64-byte aligned block being the slower of the two here | **open**; a sub-cache-line bucket for small events changes the ABI fingerprint (`abi.h`) and is a major-version change |
+| **9.3** | **The out-of-line accessors — axis L.** Found by `perf` on these four, not on ping-pong, because a ring or a fan-out spends a larger share of its time in `push<T>` and the trampoline than a two-actor exchange does. | the §7 row | counting 1c 29.4 → 27.4 / 44.6 → 40.8; thread-ring 1c 62.9 → **51.0** / 62.5 → **48.0**; big 1c 36.2 → **31.3** / 37.4 → **31.0**; fork-join 2c-park 42.2 → 40.0 / 57.1 → **44.6** | **taken**, `ba051409` |
+| **9.4** | **A ring crosses a core on every hop, and qb has no way to not.** `thread-ring` places actor i on VirtualCore i % cores, so at cores=2 every hop is a cross-core hop: 172 / 173 ns shipped against 63 / 62 ns on one core. CAF runs the receiver on the sender's worker (`worker::delay` → `queue.prepend`) and measures the same 236 / 140 ns at one core and two. qb's placement is static — an actor lives where it was built — so the framework cannot pull a ring onto one core; only the application can, by building it there. | `frameworks/qb/savina/thread-ring.cpp` (placement), `Actor.h:1068` (`forward`) | 2c-spin: 172.4 → **132.6** / 172.6 → **131.0** (floor 109.9 / 114.4, CAF 238.6 / 140.4); 1c: 62.9 → 51.0 / 62.5 → 48.0 | the branch closes 2c to 1.2× the floor; the remaining gap to CAF on WSL2 (131 vs 140, level within spread) is placement, not dispatch. **Open as a design question**: a `push<>` whose destination shares no core with the sender could migrate an actor with no other traffic, and qb has no such policy |
+| **9.5** | **The 2c-park collapse is on every cross-core-per-message shape, on both platforms.** §5 found it on ping-pong; the ring shows it bimodal on Windows — a repetition lands at ~565 ns or ~3.02 µs per hop and stays there (median 2446.5) — and on the hypervisor's floor on WSL2 (13 409 ns per hop, floor 13 008). counting, fork-join and big do NOT collapse (shipped 2c-park 33.0 / 42.2 / 33.2 on Windows) because a funnel or a fan-out never lets the consumer's pipe run dry. | §5 (`Mailbox::wait()`), §8.2 (the idle floor) | thread-ring 2c-park: 2446.5 → **145.0** / 13 409 → **130.0**; ping-pong 2c-park: 4225.5 → **278.3** / 26 780 → **241.5** | **taken** on the branch (A + B + K); the WSL2 figure is bought by the 50 µs idle floor, §8.2 |
+| **9.6** | **`send<>` is not faster than `push<>` on the all-to-all.** The eager cross-core variant was expected to win on `big` (one request in flight per actor, so nothing to batch) and measured slower: WSL2 3-rep min, send 26.1 / 25.9 / 26.2 against push 24.9 / 25.8 / 25.1 ns per round trip (1c-spin / 2c-spin / 2c-park). With 120 actors on two cores, the per-(core, core) pipe flush still carries a batch, and `send<>` gives that up for nothing. | `frameworks/qb/savina/big.cpp:61` (the comment carries the figures), `qb/llm/qb.llm.md` (`push` = ordered) | see left | recorded in the adapter; the `send<>` documentation should say when it wins (a single event with real idle behind it), which it does not |
+| **9.7** | **qb sits BELOW the raw-thread floor on the three shapes with parallelism, and the floor is why.** At two cores, counting 33.1 vs floor 42.3, fork-join 42.2 vs 48.5, big 33.2 vs 60.4 on Windows; the floor's SPSC ring pays one remote cache-line crossing per message, qb's staging pipe moves a batch per flush. This is the batching of `__getPipe__()` doing its job and is the strongest argument these four make for the engine — the report prints it as "below the floor" rather than as a ratio. | `VirtualCore.h` (`__getPipe__`), `Main.h:354` (`MaxRingEvents`) | 2c-spin counting 33.1 / 46.3, fork-join 46.0 / 58.4, big 30.8 / 32.8 (floors 42.3 / 23.7, 38.2 / 28.5, 43.3 / 25.4) | nothing to do; note the WSL2 floor is BELOW qb on counting and fork-join (23.7 / 28.5) — g++'s SPSC ring is cheaper and 9.2 is the suspect |
+| **9.8** | **fork-join at one core costs 1.4–1.6× counting at one core, and the difference is not isolated.** Same producer, same `push<>`, same core; the only change is 60 destinations instead of one, so 60 handler-map entries and 60 actors' state instead of one hot line. | `router.h:169` (`_subscribed_handlers` by handler id), `Actor.h` (`is_alive` on delivery) | 1c-spin 42.5 → 37.9 / 67.0 → 67.9 against counting 29.4 → 27.4 / 44.6 → 40.8; the branch's 2c-park gain on WSL2 (57.1 → 44.6) did not appear at one core | **open** — the first candidate is the per-destination `unordered_map` lookup missing its cache with 60 live keys; a direct table indexed by `ActorId::index()` (axis I) is the experiment |
+| **9.9** | **Windows 2c-park was the shipped engine's worst cell on every shape that crosses a core per message**, and on ping-pong it was worse than SObjectizer's `simple_lock` (4225.5 vs 1034.6) and 8.6× CAF; shipped 3.1.0 in park mode was, on this host, the slowest actor framework in the table for a cross-core round trip. | §5 | ping-pong 2c-park 4225.5 → 278.3; thread-ring 2446.5 → 145.0 | **taken**; the single most user-visible finding of the suite and the reason the branch exists |
+
+Two things the four benchmarks did NOT find, stated so the list is read as complete rather than
+selective. There is no fan-in contention cost: `counting` at two cores is 33 / 46 ns shipped and
+the consumer's `consume_all` never contends, because a qb mailbox is one MPSC ring with one
+consumer and the producer's own core-local pipe — the "single hot mailbox" the Savina authors
+built the benchmark to stress does not exist in this engine. And there is no per-actor cost at
+120 actors: `big` at 30–33 ns per round trip, two messages, is the cheapest per-message cell in
+the suite on both platforms, below the floor at two cores, and unchanged from 120 actors' worth
+of `unordered_map` entries to 2's.
+
+**SObjectizer's spin lock is slower than its plain lock on Windows at two cores on the ring and
+the fan-out** (thread-ring 481.9 vs 473.9, fork-join 289.1 vs 268.4) while faster on counting
+and big (289.4 vs 307.6, 378.0 vs 443.3). It is a note for `frameworks/sobjectizer/`, not a qb
+finding: the many-agent adapters run a `thread_pool` of `cores` pinned work threads with
+`fifo_t::individual` (`so_support.h` `make_pool_binder`, so a hundred agents are not a hundred
+threads against two CPUs), and the spin half is `combined_lock_factory(10 s)` against
+`simple_lock_factory()` — a sweep of that budget like §1.1's has not been run and is an open
+question in §4.
