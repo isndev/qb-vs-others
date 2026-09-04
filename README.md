@@ -85,9 +85,14 @@ Four things in that table are worth more than the ranking:
    thing this repository has produced so far. It is now **explained and reproduced** —
    [docs/TUNING.md §5](docs/TUNING.md): qb parks after two or three empty passes because its
    spin credit counts events rather than time, and its `Mailbox::wait()` has a lost-wakeup race
-   that MSVC's millisecond `wait_for` turns into ~13 ms stalls. Two prototype changes bring the
-   cell to ~320 ns (Windows) / ~280 ns (Linux), the spin figure, on the local qb branch
-   `perf/mailbox-lost-wakeup`; the tables above stay at the shipped 3.1.0 until that lands.
+   that MSVC's millisecond `wait_for` turns into ~13 ms stalls. It is now **fixed** on the local
+   qb branch `perf/core-hot-path` — a race-free park handshake, a time-based idle-spin floor and
+   a store-buffer-draining fence on every cross-core publish — and re-measured through this
+   unmodified adapter on a quiet host with the shipped build beside it: **259 ns (Windows) /
+   208 ns (Linux)** against 7.6 µs / 26.5 µs, below CAF's 511 / 291 and level with qb's own spin
+   cell ([docs/TUNING.md §7, "With the branch"](docs/TUNING.md); raw runs under
+   `results/*/qb-branch-perf-core-hot-path/`). The tables above stay at the shipped 3.1.0 until
+   that branch ships.
 3. **CAF barely moves — and two reasons why are defects in THIS repository, not properties of
    CAF.** 508–511 ns across all four configurations (285–291 on Linux). First, CAF's `wait=1`
    profile (`aggressive-poll-attempts=100, steal-interval=10`) turned out to be CAF's **own

@@ -82,6 +82,17 @@ pinning was **requested and silently refused** is discarded rather than reported
 failure mode, not a hypothetical: qb's own documentation records `setAffinity` returning success
 on Apple Silicon while doing nothing at all.
 
+Pinning is necessary and not sufficient: **the host must be quiet, and this was measured rather
+than assumed.** A pass over qb's `perf/core-hot-path` branch taken while a build and a test suite
+ran on the other cores moved the two-core cells by 20–30 % (Windows 2c-spin 319 → 262 ns, WSL2
+270 → 206) and the one-core cells by under 7 % — the one-core cell never leaves its core, the
+two-core cell is priced in remote cache-line reads, and a busy sibling core is what perturbs those
+(on WSL2 the pinned vCPUs land on whichever host cores the hypervisor picks, so "other cores" is
+the whole machine). The rule that follows: a number is published only from a run with nothing
+else executing on the host, and a comparison is published only from **shipped and candidate
+measured in the same session** — a figure quoted from an earlier table is not a control.
+`docs/TUNING.md` §7 "With the branch" is the record of the pass that taught this.
+
 ### 1.5 Distributions, never a single number
 
 A benchmark reports **all samples**. The report renders median, IQR, min and p99, and a difference

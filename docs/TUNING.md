@@ -141,6 +141,7 @@ measured on both platforms, 300 000–1 000 000 round trips, `cores=2, wait=0`:
 | fix A: race-free `Mailbox::wait()`/`notify()` | 720 ns | 26.6 µs |
 | fix A + 100 idle passes before parking | **323 ns** | **282 ns** |
 | spin (`wait=1`), for reference | 332 ns | 283 ns |
+| **qb branch `perf/core-hot-path`** (A + B + D + E + F + K, the real fix, 7 repetitions, quiet host; shipped re-measured beside it: 7.6 µs / 26.5 µs) | **259 ns** | **208 ns** |
 
 Two defects, and their weight differs by platform:
 
@@ -160,7 +161,8 @@ Two defects, and their weight differs by platform:
    values are meaningless on Windows for the same reason.
 
 Both fixes are engine changes, not adapter changes, and the published tables stay at the shipped
-3.1.0 until they land. The methodology point stands on its own: **the benchmark found the
+3.1.0 until they land — the last row is the branch that carries them (§7, "with the branch"),
+measured through the unmodified adapter, and it is what the next qb release will ship. The methodology point stands on its own: **the benchmark found the
 defect, but only instrumenting the framework found the cause** — no sweep of the adapter's knob
 (§2) could have, because the knob was not where the cost was.
 
@@ -200,6 +202,7 @@ on an idle wepoll / epoll loop 370 / 300 ns, `cv.notify_all()` with no waiter 2 
 | **F. spsc producer re-reads `read_index_`** | one remote cache-line read per hop | 2c-spin 404 → **290** ns (Win, −28 %), 281 → **232** (Linux, −17 %); 1c unchanged | take; mirror it on the consumer side |
 | **G. copies per hop** | event → pipe → mpsc ring → `consume_all` scratch → dispatch | analysed, not isolated; an in-place `consume_all(func)` exists in `mpsc.h` | minor, after F |
 | **H. SpinLock on the send path** | — | the indexed `enqueue(index, …)` used by `SharedCoreCommunication::send` takes **no** lock; the lock is only on the round-robin variants | **retired** — not a cost |
+| **K. store-buffer drain on the publish** | `notify()` returned before its fence at latency 0, so a spin-mode enqueue reached the polling peer only when the producer's store buffer drained on its own | 2c-**park** beat 2c-**spin** on BOTH platforms; fencing in spin mode too, interleaved A/B on a quiet host (3 pairs × 7 reps): Win 2c-spin 296–309 → **259–263** ns (park 256–272); WSL2 p50 a wash, 204–219 → 205–208, but the worst run 295 → 215; 1c and a 1M-event bulk push unchanged (18.6 M msg/s) | **taken** — one fence per cross-core publish; commit `39992047` on the branch |
 | **I. router double lookup** | `flat_hash` by EventId → virtual resolve → `flat_hash` by ActorId → fn ptr | analysed: ~15–20 of the ~37 ns a same-core hop costs; both ids are dense (`_type_id_counter`, `ServiceId`) so direct tables are feasible | measure next; medium |
 
 Two shapes to keep in mind when reading the table. A remote cache-line read on this machine costs
@@ -212,3 +215,55 @@ tax and not a per-event one: on a 1-core ping-pong it is paid twice per round tr
 **With A + D + F, qb's 2-core spin ping-pong on Linux measures 209 ns against a 209 ns raw-thread
 floor** — within the spread, the framework costs nothing above the two cache-line crossings the
 problem requires. That is the figure the fixes are aiming at; it is not yet the figure qb ships.
+
+### With the branch
+
+The fixes landed on a local qb branch, `perf/core-hot-path` (five commits over v3.1.0: F, E, D,
+then A + B in one commit together with a start-barrier fix found on the way — below — and K). The
+four qb cells were re-measured through the **unmodified adapter**, same protocol as the published
+tables (7 repetitions of 1 000 000 round trips, CPUs 0 and 2, p50 with min–max), **with the
+shipped v3.1.0 build measured in the same session** rather than quoted from the README:
+
+| cell | Windows / MSVC 19.51 — shipped 3.1.0 → branch | WSL2 g++ 14.2 — shipped → branch |
+|---|---:|---:|
+| 1c-spin | 114 → **90** ns (88–90) | 98 → **75** ns (74–75) |
+| 1c-park | 114 → **89** ns (88–91) | 98 → **74** ns (73.5–74) |
+| 2c-spin | 315 → **262** ns (236–278) | 275 → **206** ns (202–208) |
+| 2c-park | 7.6 µs → **259** ns (252–291) | 26.5 µs → **208** ns (201–217) |
+
+Every checksum verified. The park row is now a framework figure on both platforms — 29× on
+Windows, 127× on WSL2 — below CAF's 511 / 291 ns, which never crosses a core — and the two
+two-core cells are now one figure: before axis K the park cell was *below* the spin cell on both
+platforms, which is what exposed it. The 1-core figures are the axes D + E alone. On WSL2 the
+branch's 2c-spin sits at the 209 ns raw-thread floor measured above.
+
+**The first pass over this branch was taken on a loaded host, and the two-core cells moved by
+20–30 % because of it** — Windows 2c-spin 319 → 262 and WSL2 270 → 206 between that pass and this
+one, with the one-core cells within 7 % (96 → 90, 75.5 → 75). Same binaries, same protocol; the
+difference was a build and a test suite running on the other cores (WSL2's pinned vCPUs 0 and 2
+land on whichever host cores the hypervisor picks). The one-core cell cannot see it because it
+never leaves its core; the two-core cell is priced in remote cache-line reads, and those are what
+a busy sibling core perturbs. Every figure in this subsection and in the two
+`qb-branch-perf-core-hot-path/` result directories is from the quiet re-run, shipped and branch
+side by side; the published tables (§2, 5 repetitions) were taken under the same caution and are
+consistent with the shipped column here (Windows 332 / 10.7 µs vs 315 / 7.6 µs; WSL2 283 / 27.6 µs
+vs 275 / 26.5 µs). `FAIRNESS.md` §1.4 carries the rule now.
+
+Two things the branch's own test suites say, because a benchmark that only measures the fast path
+is the trap this document exists to avoid. On Windows the release suite passes 367/367 with 0
+warnings; on WSL2 the release, ASan+UBSan and **TSan** suites pass 186/186 each. The TSan run is
+the one that found something: `MainLifecycle.StopMultiCoreGracefulNoError` hung past its 600 s
+timeout — **at v3.1.0 too**, so not a regression of the branch. `Main::__wait__all__cores__ready()`
+and `Main::start(true)`'s wait were pure spins; with `hardware_concurrency()` cores (24 here —
+WSL2 ignores `taskset` and cgroup quotas for that value) the last core to initialise is starved by
+23 waiting peers, and under TSan the 23 acquire loads hold the sanitizer's atomics lock in read
+mode so the 24th core's `fetch_add` never gets in: a hang at ANY `taskset` width, diagnosed with
+gdb attached to the 24 threads. The barrier now spins 1024 times and then yields: 2 s under TSan,
+the signal variant 61 s → 2 s, release unchanged. It is in the same commit as A + B because a
+ping-pong benchmark never starts 24 cores and would never have seen it.
+
+Still open, in order: a native Linux run (the park floor here is the hypervisor's, §6); a real CAF
+spin profile and a forced cross-core CAF cell (README point 3); axis I; arm64, where the fence
+of axis K is a `dmb ish` whose cost and benefit are both unmeasured — qb's own `dev/bench` gate on
+macOS is the instrument for that.
+
