@@ -39,6 +39,7 @@ argument it exists to win:
 | Feature comparison, cited to the three sources | [docs/FEATURES.md](docs/FEATURES.md) |
 | The other 20 Savina benchmarks | **not yet written** — see [docs/ROADMAP.md](docs/ROADMAP.md) |
 | Linux axis (WSL2 Debian 13 / g++ 14.2) | **run**, the same 84 cells — with the WSL2 caveat below; native Linux not yet |
+| macOS axis (Apple M4 Pro / AppleClang 21, arm64) | **run**, the same 84 cells — **unpinned** (macOS has no verified affinity API; every document says `pinned:false`); the candidate branch measured beside shipped 3.1.0 in the same session, `docs/TUNING.md` §9.13 |
 | Seastar | not yet — Linux-only, and its dependencies need root on this host |
 | Cross-language references (Erlang, Pekko, Actix, Orleans) | not yet |
 
@@ -282,6 +283,60 @@ The one-core cells now measure the dispatch, not a cold burst: swept along the b
 Savina 1 M against 35.0 / 25.8 for `f5c20eeb`, 43 / 30 for shipped 3.1.0, 115–185 for CAF and
 91–143 for SObjectizer, over a 2.8–3.0 ns floor. The 1 M protocol stays — it is the Savina
 figure and every framework runs it — and it is no longer a caveat.
+
+The same 84 cells on macOS — Apple M4 Pro (10 P + 4 E cores), macOS 26.6, AppleClang 21.0.0, `-O3 -DNDEBUG`, **unpinned**, 7 repetitions + 2 warmup, one quiet session on 2026-09-05 (`results/macbook-m4pro-macos-clang21/`). macOS has no verified CPU affinity API, so the harness was run with `--no-pin` and every document carries `pinned:false` — the qb rows here are the shipped v3.1.0 (`eac739ff`); the candidate's grids sit beside them in `qb-branch-perf-event-pipe-segmented/`, read in `docs/TUNING.md` §9.13:
+
+`savina/ping-pong` — 1 000 000 round trips, two actors; per round trip:
+
+<!-- check-report: results/macbook-m4pro-macos-clang21 benchmark=savina/ping-pong -->
+| configuration | fastest | second | floor | the rest |
+|---|---|---|---|---|
+| 1 core, spin | **qb 87 ns** | SObjectizer 135 ns | 4 ns | CAF 263 ns · qb 1.55× |
+| 1 core, park | **qb 84 ns** | SObjectizer 151 ns | 4 ns | CAF 261 ns · CAF-detached 6.15 µs · qb 1.80× |
+| 2 cores, spin | **qb 247 ns** | CAF 416 ns | 181 ns | SObjectizer 729 ns · qb 1.69× |
+| 2 cores, park | **CAF 381 ns** | SObjectizer 5.61 µs | **4.62 µs** | CAF-detached 6.13 µs · qb 6.85 µs · CAF 14.75× |
+
+`savina/counting` — 1 000 000 messages from a producer into one counter, then one retrieve; per message:
+
+<!-- check-report: results/macbook-m4pro-macos-clang21 benchmark=savina/counting -->
+| configuration | fastest | second | floor | the rest |
+|---|---|---|---|---|
+| 1 core, spin | **qb 11 ns** | SObjectizer 64 ns | 4 ns | CAF 73 ns · qb 5.77× |
+| 1 core, park | **qb 11 ns** | SObjectizer 67 ns | 4 ns | CAF 72 ns · qb 6.08× |
+| 2 cores, spin | **qb 21 ns** | CAF 140 ns | **65 ns** | SObjectizer 215 ns · qb 6.70× |
+| 2 cores, park | **qb 52 ns** | CAF 124 ns | 39 ns | SObjectizer 155 ns · qb 2.39× |
+
+`savina/thread-ring` — 100 actors in a ring, a token making 1 000 000 hops; per hop:
+
+<!-- check-report: results/macbook-m4pro-macos-clang21 benchmark=savina/thread-ring -->
+| configuration | fastest | second | floor | the rest |
+|---|---|---|---|---|
+| 1 core, spin | **qb 43 ns** | SObjectizer 57 ns | 5 ns | CAF 122 ns · qb 1.32× |
+| 1 core, park | **qb 43 ns** | SObjectizer 65 ns | 5 ns | CAF 123 ns · qb 1.52× |
+| 2 cores, spin | **qb 126 ns** | CAF 178 ns | 90 ns | SObjectizer 337 ns · qb 1.41× |
+| 2 cores, park | **SObjectizer 170 ns** | CAF 173 ns | **2.49 µs** | qb 3.39 µs · **no measurable difference** SObjectizer/CAF |
+
+`savina/fork-join` — 10 000 messages fanned out to each of 60 workers, 600 000 in all, each worker acknowledged once at the end; per message:
+
+<!-- check-report: results/macbook-m4pro-macos-clang21 benchmark=savina/fork-join -->
+| configuration | fastest | second | floor | the rest |
+|---|---|---|---|---|
+| 1 core, spin | **qb 13 ns** | SObjectizer 45 ns | **33 ns** | CAF 146 ns · qb 3.52× |
+| 1 core, park | **qb 13 ns** | SObjectizer 49 ns | **34 ns** | CAF 148 ns · qb 3.80× |
+| 2 cores, spin | **qb 15 ns** | CAF 117 ns | **27 ns** | SObjectizer 262 ns · qb 7.95× |
+| 2 cores, park | **qb 22 ns** | CAF 110 ns | 21 ns | SObjectizer 203 ns · qb 5.10× |
+
+`savina/big` — 120 actors each sending 20 000 pings to random peers, every ping answered; per round trip (2 400 000 of them):
+
+<!-- check-report: results/macbook-m4pro-macos-clang21 benchmark=savina/big -->
+| configuration | fastest | second | floor | the rest |
+|---|---|---|---|---|
+| 1 core, spin | **qb 24 ns** | SObjectizer 174 ns | 5 ns | CAF 258 ns · qb 7.35× |
+| 1 core, park | **qb 24 ns** | SObjectizer 181 ns | 6 ns | CAF 257 ns · qb 7.65× |
+| 2 cores, spin | **qb 25 ns** | CAF 381 ns | **36 ns** | SObjectizer 392 ns · qb 15.26× |
+| 2 cores, park | **qb 24 ns** | SObjectizer 373 ns | **38 ns** | CAF 386 ns · qb 15.23× |
+
+The **2 cores, park** column measures macOS's condition-variable wake, not a framework: the raw floor is **4.62 µs per ping-pong round trip** (`baseline__2c-park`), shipped qb 3.1.0 6.85 µs, SObjectizer 5.61 µs, `caf-detached` 6.13 µs — the pooled `caf` row (381 ns) is below that floor because it never crosses a core. The candidate branch's park handshake (axes A/B/C) brings qb's cell to ~210 ns on this host; see §9.13.
 
 ## Running it
 

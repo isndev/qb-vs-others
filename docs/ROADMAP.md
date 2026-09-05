@@ -82,7 +82,11 @@ until the two platforms this host cannot see have run it; nothing on qb or qev i
    `sanitize`, `sanitize-thread`) and qb's own `dev/bench` gate against
    `baseline/macos-arm64.json`, which is the instrument for the axis-K fence on arm64; on the
    self-hosted `qb-vm-linux-arm64` runner: this repository's matrix, native, which is also the
-   first non-hypervisor park floor. Neither exists yet as a run.
+   first non-hypervisor park floor. **macOS ran on 2026-09-05** (`results/macbook-m4pro-macos-clang21/`,
+   TUNING §9.13): every superproject preset at its floor, `dev/bench` PASS with the one gated
+   engine metric +94.9 %, the grids and censuses in the candidate's favour, one residual
+   (ping-pong 2c-park, +12 % across three instruments, distributions overlapping), the axis-K fence
+   without measurable effect on `dmb ish`. Native Linux is the run that does not exist yet.
 4. **Merge as 3.2.0, in lockstep** — qb + qbm-\* + qb-examples on one train, qev **5.1.0** with
    it (axis E needs `ev_active_count()`, which lives in the 22 shared files the identity guard
    checks); the root's citation sweep (`cite-digest.baseline`, `llm-guard.baseline`, `.cursor/`,

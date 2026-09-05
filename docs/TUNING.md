@@ -308,16 +308,16 @@ gdb attached to the 24 threads. The barrier now spins 1024 times and then yields
 the signal variant 61 s → 2 s, release unchanged. It is in the same commit as A + B because a
 ping-pong benchmark never starts 24 cores and would never have seen it.
 
-Still open, in order: a native Linux run (the park floor here is the hypervisor's, §6) and arm64,
-where the fence of axis K is a `dmb ish` whose cost and benefit are both unmeasured — the
-self-hosted `qb-vm-linux-arm64` runner answers both at once, and qb's own `dev/bench` gate on
-macOS is the instrument for the fence; and the two design questions of §9 (9.2, the 64-byte
+Still open, in order: a native Linux run (the park floor here is the hypervisor's, §6) — the
+self-hosted `qb-vm-linux-arm64` runner is where it happens; and the two design questions of §9 (9.2, the 64-byte
 bucket, a 4.0 experiment on top of the segmented pipe; 9.4, placement, to be closed by design with
 a placement paragraph in `qb.llm.md`). 9.11, the pipe's growth, which used to head this list, is
-taken by `perf/event-pipe-segmented` (§9.11 carries the two-host A/B), and 9.12 closed with it. The
-CAF spin profile, the cross-core CAF cell and axis I, which used to head this list, are closed
-by §1.1, §8 and the subsection below. `docs/ROADMAP.md` carries the same list as the 3.2.0
-pipeline, with what must happen before the branch ships and what comes after.
+taken by `perf/event-pipe-segmented` (§9.11 carries the two-host A/B), and 9.12 closed with it.
+arm64 and the axis-K fence, which used to be on this list, are answered by §9.13: the macOS host
+measured the `dmb ish` without effect and qb's `dev/bench` gate passed with the engine metric
++94.9 %. The CAF spin profile, the cross-core CAF cell and axis I, which used to head this list,
+are closed by §1.1, §8 and the subsection below. `docs/ROADMAP.md` carries the same list as the
+3.2.0 pipeline, with what must happen before the branch ships and what comes after.
 
 ### Axes I and M — the dense router, and the regression it exposed
 
@@ -695,5 +695,148 @@ whose libnghttp3 1.8.0 turns HTTP/3 off, pre-existing and not this branch). Wind
 370/370 executed, 0 skipped; feature-gates 324 registered / 311 executed / 13 skipped (the
 structural pgsql self-skips); the package installed and consumed; `dev/agent/verify.sh` ALL GREEN
 on both hosts' tree (175 docs, 4615 content digests, 0 non-conformant of 443 formatted files).
-`dev/bench` (macOS arm64 baseline) has not been run: this host has no baseline for it, and it is
-the first item of what remains.
+`dev/bench` (macOS arm64 baseline) ran on 2026-09-05 — §9.13 below.
+
+### 9.13 The macOS arm64 host — the third host, and the first one nobody could pin
+
+`results/macbook-m4pro-macos-clang21/`, 2026-09-05, one quiet session: Apple M4 Pro (10 P + 4 E
+cores, 48 GB), macOS 26.6, AppleClang 21.0.0, `-O3 -DNDEBUG`, 7 repetitions + 2 warmup, the
+field at 18:59–19:07 UTC and the candidate's grids, sweep and censuses at 19:06–19:21 UTC, with
+the other agents on the machine paused first. Its README carries the residual load (a VM, two
+idle dev servers, macOS's storage scan after 20 GB of build output). Three things distinguish this
+host from the other two, and each shaped the protocol:
+
+- **Nothing here is pinned.** macOS offers no affinity a program can read back; the harness
+  refuses `--cpus` on such a platform rather than record a pin that did not happen (FAIRNESS.md
+  1.4), and `tools/run.py --no-pin` — added for this host — forwards the harness's own escape
+  hatch and writes `unpinned` where the CPU list goes, so a partial re-run cannot merge pinned
+  and unpinned cells. Every document says `pinned:false`. The consequence is measured, not
+  assumed: the two-core cells of ping-pong, thread-ring and big are bimodal within a launch
+  (min–max over 7 repetitions 1.3–1.5×; one-core cells 1.01–1.04×), so **every two-core figure
+  quoted here comes from a launch census**, never from the grid alone.
+- **The compiler is the third one.** g++ 14 and MSVC 19.51 had disagreed on the one-core
+  ping-pong cell (g++ −3 %, MSVC +1–2 % for the candidate); clang/arm64 is the tiebreak.
+- **The fence of axis K is a `dmb ish`**, not an `mfence`, and had never been measured.
+
+**The field** (`savina-*/`, shipped 3.1.0 against CAF 1.1.0, SObjectizer 5.8.5.1 and the floor;
+README.md carries the tables under `check-report`). The shape of the other two hosts holds:
+qb fastest in every one-core cell (ping-pong 87 ns against SObjectizer 135 and CAF 263; counting
+11 / 64 / 73; thread-ring 43 / 57 / 122; fork-join 13 / 45 / 146; big 24 / 174 / 258), fastest in
+every two-core cell of counting, fork-join and big, and **below the floor** in seven cells — a
+framework that stays on one core beating two raw threads that cross one, as on Windows. What is
+new is the **2c-park column**: the raw condition-variable floor is **4.62 µs per ping-pong round
+trip** and 2.49 µs per ring hop — between Windows (~300 ns) and WSL2 (25 µs) — and every
+framework that parks across cores pays it (qb 3.1.0 6.85 µs, SObjectizer 5.61 µs, `caf-detached`
+6.13 µs); the pooled `caf` row (381 ns) never crosses a core.
+
+**The burst sweep** (`qb-branch-perf-event-pipe-segmented/burst-sweep/`, `tools/burst-sweep.py`:
+the three qb binaries launched interleaved at each burst, 7 + 2, page reclaims from
+`/usr/bin/time -l` beside each document). ns per message, p50, counting 1c-spin:
+
+| burst | `perf/event-pipe-segmented` `a017b8a5` | `f5c20eeb` | 3.1.0 | CAF | SObjectizer | floor |
+|---:|---:|---:|---:|---:|---:|---:|
+| 2 000 | **5.9** | 6.9 | 9.3 | | | |
+| 10 000 | 6.2 | 8.0 | 10.4 | | | |
+| 30 000 | **5.7** | 7.7 | 10.4 | 73.5 | 64.4 | 4.3 |
+| 100 000 | 5.6 | 8.2 | 10.5 | | | |
+| 300 000 | 6.1 | 8.8 | 11.8 | | | |
+| 1 000 000 | **6.2** | 8.2 | 11.3 | 74.8 | 64.2 | 4.4 |
+| 4 000 000 | 6.1 | 8.6 | 11.3 | | | |
+
+**There was no cliff to remove on macOS.** `f5c20eeb`, which climbed 9.7 → 40 on g++ and
+19 → 27 on MSVC, reads 6.9 → 8.6 here, and 3.1.0 9.3 → 11.3 where it read 43. The mechanism
+§9.11 describes — the doubling ladder re-faulting fresh pages at every rung because the block is
+above the allocator's reuse threshold — costs XNU almost nothing: its zero-fill fault is cheap and
+`malloc`'s large-block path hands the ladder back warm. What the candidate buys here is the
+dispatch, not the faults: **5.6–6.2 flat**, fastest at every burst, −25 % against `f5c20eeb` and
+−45 % against 3.1.0, 1.4× the raw floor. The page-reclaim count says where the residual is: at
+1 M the candidate takes **4 344** against 8 364 / 8 365 (16 256 against 32 374 at 4 M) — halved,
+where Linux divided by 800 — because `MADV_POPULATE_WRITE` does not exist on Darwin and
+`slab_cache` maps its 2 MB slabs without prefaulting them, so each 16 KB page is still faulted on
+first touch. Touching each page once at carve time would close that gap on this platform; it is
+recorded as an option, not taken, because the slabs are retained at the high-water mark and the
+faults are paid in warmup.
+
+**The three grids** (`grid-final/`, `grid-f5c20eeb/`, `grid-shipped-3.1.0/`, 7 + 2, 19:06–19:08 UTC).
+One-core cells, ns per unit, p50 (min–max spread 1–4 %, quotable as they are):
+
+| | candidate | `f5c20eeb` | 3.1.0 | candidate vs `f5c20eeb` |
+|---|---:|---:|---:|---:|
+| ping-pong 1c-spin | **49.7** | 53.8 | 84.9 | −7.6 % |
+| ping-pong 1c-park | 50.4 | 53.3 | 84.5 | −5.4 % |
+| counting 1c-spin | 6.6 | 8.3 | 11.6 | −20 % |
+| thread-ring 1c-spin | 25.9 | 26.8 | 42.0 | −3.4 % |
+| fork-join 1c-spin | 6.2 | 8.6 | 12.9 | −28 % |
+| big 1c-spin | 15.0 | 19.6 | 23.9 | −23 % |
+
+The one-core ping-pong cell — the sensitive same-core path where MSVC kept +1–2 % — reads
+**−7.6 % for the candidate** on clang/arm64, in both spin and park. Two-core cells, from the
+**launch census** (`launch-census/`: 12 launches interleaved candidate/`f5c20eeb`, 3 + 1 each,
+median of per-launch medians, and whether the two distributions overlap):
+
+| | candidate | `f5c20eeb` | | distributions |
+|---|---:|---:|---:|---|
+| ping-pong 2c-spin | **156.3** | 187.4 | −16.6 % | overlap (142–209 vs 156–218) |
+| ping-pong 2c-park | 210.6 | **186.9** | +12.7 % | overlap (196–235 vs 172–241) |
+| thread-ring 2c-spin | 75.9 | 74.7 | +1.6 % | overlap |
+| thread-ring 2c-park | 95.0 | 90.6 | +4.9 % | overlap |
+| big 2c-spin | **16.3** | 17.6 | −7.1 % | overlap |
+| big 2c-park | **15.3** | 17.3 | −11.2 % | overlap |
+
+Every pair overlaps, so by this repository's own rule none of these is a measured difference;
+the medians favour the candidate on ping-pong 2c-spin and both big cells (the slabs' locality,
+as on the other hosts) and are level on the ring. **The one residual is ping-pong 2c-park**: the
+candidate's median is 12 % above `f5c20eeb`'s in the grid (209.6 vs 185.4), in the 12-launch
+census (210.6 vs 186.9) and in a third instrument built for it — 24 launches × 5 repetitions
+(`launch-census-pingpong-2cpark-24x5/`: 209.7 vs 187.5, +11.8 %, candidate 185–228, control
+166–241). Three instruments agree on the sign and all three distributions overlap. Nothing in the
+two `event-pipe-segmented` commits touches the park handshake; what they change on this path is
+where the staged event lives before its flush (a staggered slab segment rather than a `malloc`
+block), and a cross-core wake that reads it is the one cell where that placement could show.
+Recorded, not explained — the same standing as MSVC's one-core +1–2 %. Against shipped 3.1.0 the
+same cell is 6.85 µs → 0.21 µs, the branch's largest single move on this host (axes A/B/C).
+
+**Axis K on `dmb ish`** (`axis-k/`: qb at `39992047`, the commit that made `Mailbox::notify()`
+fence in spin mode too, against its parent `e995973f`; three interleaved grid rounds, then the
+12-launch census that is the figure to quote):
+
+| | with fence | without | | distributions |
+|---|---:|---:|---:|---|
+| ping-pong 2c-spin | 190.4 | 181.5 | +4.9 % | overlap (169–218 vs 161–225) |
+| ping-pong 2c-park | 199.1 | 190.5 | +4.5 % | overlap |
+| thread-ring 2c-spin | 79.8 | 89.1 | −10.5 % | overlap |
+| thread-ring 2c-park | 99.6 | 88.7 | +12.3 % | overlap |
+
+Mixed signs, every pair overlapping: **the fence has no measurable cost on arm64** at the
+precision this unpinned host allows (the grid rounds read +12.6 / 0.0 / +18.1 % on ping-pong
+2c-spin, which is what sent the question to the census; the census does not confirm it). The
+inversion QB-44 asked about — two-core spin slower than two-core park — does not occur: in the
+candidate's own grid spin beats park in every cell (ping-pong 152.7 vs 209.6, thread-ring 76.9
+vs 93.2, counting 7.3 vs 7.9).
+
+**qb's own gate, `dev/bench`** (superproject `benchmarks` preset, `bench-run.sh --runs 3`,
+`bench-compare.py --baseline dev/bench/baseline/macos-arm64.json`): **VERDICT PASS** — 51 gated
+metrics, 46 within threshold, 0 regressed, 5 improved, 0 missing. The five are one benchmark, the
+only engine-path metric that gates: ping-pong throughput, 64 pairs on one core, **82.0 → 159.7 M
+messages/s (+94.9 %)**. Of the 69 recorded-only metrics the engine ones all moved the right way:
+same-core pipeline hop 42.5 → 31.9 ns (+33.5 % deliveries/s), same-core ping-pong latency
++13.3 %, cross-core ping-pong latency +61 %, 8-core ping-pong throughput +20 %, cross-core
+pipeline hop +5.1 % inside a 58 % recorded spread.
+
+**Suites before any of these numbers were quoted** — the whole solution, as this superproject
+validates it: qb standalone (`cmake --preset` from `qb/`) release, sanitize, sanitize-thread,
+coverage each 195 TUs, 0 warnings, **189/189 executed, 0 skipped**; superproject release,
+sanitize, sanitize-thread, coverage, dev-cxx23 each 554 TUs, 0 warnings, **372/372, 0 skipped**
+(the ≥ 365 floor plus the branch's seven new tests; PostgreSQL 18 and Redis answered, so all 14
+pgsql and 27 redis integration tests executed); feature-gates 485 TUs, **326 / 313 / 13** (the
+thirteen structural pgsql self-skips); the example corpus **99 / 99**, 586 `@expect`, 18
+second-instance assertions (`modules-http-http3` passes here — the WSL2 failure was libnghttp3,
+not the branch). Two things the macOS pass found and fixed on the way, neither in the branch:
+the superproject's `sanitize` preset linked a Homebrew GoogleTest compiled without ASan, and
+libc++'s container annotations then disagreed at the library boundary — three qbm-http unit
+tests aborted with a `container-overflow` that is not one (intermittent, gone with
+`detect_container_overflow=0`; `GTestIsInitialized()` copying the library's argv vector) — so
+under `QB_SANITIZE` qb now builds GoogleTest from the pinned tag, instrumented like everything
+else (372/372 again with it); and the 19 `benchmark::internal::Benchmark` deprecation warnings
+of google-benchmark 1.9.5 are gone with the public spelling, the floor and pin at 1.9.5, and the
+deprecation exemption that hid them retired.

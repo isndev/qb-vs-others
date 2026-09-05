@@ -151,7 +151,14 @@ def main() -> int:
             faults = None
             if wrapper:
                 f = parse_faults(r.stderr)
-                faults = f.get("page_faults", f.get("minor_faults"))
+                # macOS `time -l` splits the count: "page reclaims" are the minor faults (a fresh
+                # page zero-filled or reused -- the number 9.11 is about), "page faults" only the
+                # major ones (paged in from disk: the binary itself, ~20 on a cold launch, 1 warm).
+                # Linux perf reports the total as page-faults, minor first.
+                if sys.platform == "darwin":
+                    faults = f.get("page_reclaims")
+                else:
+                    faults = f.get("page_faults", f.get("minor_faults"))
                 (args.out / f"{label}__counting-{args.config}-{burst}.faults.txt").write_text(
                     r.stderr, encoding="utf-8")
             if r.returncode != 0 or not dest.exists():
