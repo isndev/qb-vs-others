@@ -119,13 +119,21 @@ def main() -> int:
     ap.add_argument("--warmup", type=int, default=2)
     ap.add_argument("--cpus", default=None,
                     help="affinity set (default: one CPU per physical performance core)")
+    ap.add_argument("--no-pin", action="store_true",
+                    help="run every cell unpinned (the harness records pinned:false). The only "
+                         "way to measure on a platform with no verified affinity API -- macOS "
+                         "-- where the harness refuses --cpus by design (FAIRNESS.md 1.4)")
     ap.add_argument("--only", default=None, help="comma-separated framework subset")
     ap.add_argument("--benchmark", default=None, help="comma-separated benchmark subset")
     ap.add_argument("--config", default=None, help="comma-separated configuration subset")
     ap.add_argument("--timeout", type=int, default=1800)
     args = ap.parse_args()
 
-    cpus = args.cpus or default_cpus()
+    if args.no_pin and args.cpus:
+        sys.exit("run.py: --no-pin and --cpus are contradictory -- pick one")
+    # "unpinned" is recorded where a CPU list would be, so the manifest's own field says the run
+    # was not pinned and a partial re-run cannot silently merge pinned and unpinned cells.
+    cpus = "unpinned" if args.no_pin else (args.cpus or default_cpus())
     cells = discover(args.build)
     if not cells:
         sys.exit("run.py: no benchmark binaries found -- refusing to write an empty result set")
@@ -136,7 +144,11 @@ def main() -> int:
 
     frameworks = sorted({f for f, _, _ in cells})
     print(f"run.py: {len(cells)} binaries, frameworks: {', '.join(frameworks)}")
-    print(f"run.py: pinning to CPUs {cpus}, {args.repetitions} repetitions + {args.warmup} warmup")
+    if args.no_pin:
+        print(f"run.py: UNPINNED (--no-pin), {args.repetitions} repetitions + {args.warmup} warmup"
+              " -- every result carries pinned:false")
+    else:
+        print(f"run.py: pinning to CPUs {cpus}, {args.repetitions} repetitions + {args.warmup} warmup")
 
     # Refuse a partial field silently. A table missing a framework is a table that reads as if
     # that framework did not exist, and this is the single easiest way to publish a flattering one.
@@ -169,7 +181,8 @@ def main() -> int:
             dest = dest_dir / f"{framework}__{cfg_name}.json"
 
             cmd = [str(exe), "--repetitions", str(args.repetitions),
-                   "--warmup", str(args.warmup), "--cpus", cpus, "--out", str(dest)]
+                   "--warmup", str(args.warmup), "--out", str(dest)]
+            cmd += ["--no-pin"] if args.no_pin else ["--cpus", cpus]
             for k, v in params.items():
                 cmd += ["--param", f"{k}={v}"]
 
