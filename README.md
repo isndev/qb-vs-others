@@ -269,7 +269,9 @@ between ~245–255 and ~300–345 ns per round trip (ring ~120–145 vs ~165–1
 median lands wherever the majority fell — so the grid's 319 vs `f5c20eeb`'s 259 and the ring's
 164 vs 137 are not the figure to quote for those two cells: the launch census (the same
 binaries launched standalone 10–16 times, interleaved) puts ping-pong 2c-spin at 250.2 → 250.0
-ns and the ring at 130.3 → 124.7, and a census under the grid's own launcher with the three
+ns and the ring at 130.3 → 124.7 — and the kept 12-launch census on all eight cells of the two
+(`launch-census/`, 2026-09-06) reads 265.9 → 269.8 and 138.8 → 133.3, every pair overlapping —
+and a census under the grid's own launcher with the three
 burst benchmarks removed from the sequence puts the ring at 129.5 → 122.8 and ping-pong at
 238.3 → 251.8 with the two builds' launches overlapping (`grid-order-census/`, TUNING §9.11).
 On WSL2 the same census reads ping-pong 2c-spin 217 → 210 and the ring 116 → 106. What the
