@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/counting",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 330342121336310502,
+  "expected_messages": 30002,
+  "work_unit": "message",
+  "work_units": 30000,
+  "repetitions": 7,
+  "warmup": 2,
+  "params": {"cores": 1, "messages": 30000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-04T23:55:53Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw std::thread + one bounded SPSC ring from producer to counter; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. It has no supervision, no addressing, no dynamic actor lifetime, no mailbox fairness and no backpressure beyond a full ring. It bounds how much of each framework's cost is inherent to streaming a million messages through one queue", "cores=1 is one thread pushing into a 65536-slot ring and draining it inline whenever it is full -- the floor for single-threaded dispatch, still a real queue", "the threads are pinned one per CPU from the harness's set, exactly as every framework's workers are", "wait=1 busy-polls the rings; wait=0 parks the consumer on a condition variable and the producer notifies it after a push only while it announces itself asleep"],
+  "failures": [],
+  "work_ns": [88131.0, 85198.0, 85174.0, 85692.0, 87215.0, 86789.0, 87006.0],
+  "total_ns": [140232.0, 135856.0, 135867.0, 136260.0, 209911.0, 137814.0, 137399.0],
+  "outside_window_ns": [52101.0, 50658.0, 50693.0, 50568.0, 122696.0, 51025.0, 50393.0],
+  "summary": {
+    "work_min": 85174.0,
+    "work_p50": 86789.0,
+    "work_p99": 88076.0,
+    "work_iqr": 1665.5
+  }
+}

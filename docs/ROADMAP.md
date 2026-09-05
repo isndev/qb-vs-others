@@ -69,11 +69,15 @@ until the two platforms this host cannot see have run it; nothing on qb or qev i
 1. **Record and re-read** — done at each step: `docs/TUNING.md` §7 and §9 carry every axis with
    its A/B, the shipped control of the same session beside every candidate grid, and the burst
    sweep (§9.11) that says what the one-core cell measures.
-2. **`perf/event-pipe-segmented`** — the pipe's growth (§9.11) on a branch of its own, off
-   `perf/core-hot-path`, A/B'd against it on both hosts with the burst sweep as the instrument
-   and the five-benchmark grid as the regression check; suites on MSVC and g++ (release,
-   ASan+UBSan, TSan) before any number is quoted. The `Pipe.h:118` contract is retired by it, so
-   its pinning test (`PipeAllocatorContract.*`) turns into the opposite assertion.
+2. **`perf/event-pipe-segmented`** — done, local (`518d956e` + `a017b8a5` over
+   `perf/core-hot-path`): the pipe's growth (§9.11) taken by a segmented pipe over a process-wide
+   slab cache, A/B'd against `f5c20eeb` on both hosts with the burst sweep as the instrument
+   (g++ 1 M: 35.0 → 9.2 ns, MSVC 25.8 → 9.5; page faults per 1 M process 230 942 → 291) and the
+   five-benchmark grid plus a launch census as the regression check — no cell slower beyond the
+   instrument's spread, the two cross-core `2c-spin` cells on Windows read through the census
+   (§9.11). Suites on MSVC and g++ (release, ASan+UBSan, TSan) run before the numbers were
+   quoted. The `Pipe.h:118` contract is retired by it; `PushReferenceStability.*` asserts the
+   opposite.
 3. **macOS + Linux** — before the merge, on the maintainer's macOS: the full suite (`release`,
    `sanitize`, `sanitize-thread`) and qb's own `dev/bench` gate against
    `baseline/macos-arm64.json`, which is the instrument for the axis-K fence on arm64; on the
@@ -84,10 +88,11 @@ until the two platforms this host cannot see have run it; nothing on qb or qev i
    checks); the root's citation sweep (`cite-digest.baseline`, `llm-guard.baseline`, `.cursor/`,
    the Factbook — already drifted by the branch, uncommitted) lands in the same commit as the
    pointer bump, or `verify.sh` is red in between.
-5. **After the merge** — §9.12 (clang-cl on Windows, compiler vs OS on the dispatch gap); the
-   SObjectizer spin-budget sweep (§4, adapter-side); the placement paragraph in `qb.llm.md`
-   that closes 9.4 by design and the `send<>` sentence that closes 9.6; and 9.2, the 32-byte
-   bucket, as a measured 4.0 experiment on top of the segmented pipe.
+5. **After the merge** — the SObjectizer spin-budget sweep (§4, adapter-side); the placement
+   paragraph in `qb.llm.md` that closes 9.4 by design and the `send<>` sentence that closes
+   9.6; and 9.2, the 32-byte bucket, as a measured 4.0 experiment on top of the segmented pipe.
+   §9.12 (the MSVC dispatch gap) closed with item 2: warm, MSVC dispatches at 6.6–10.4 ns against
+   g++'s 5.9–9.3 from 2 k to 4 M, so the clang-cl A/B has no premise left.
 
 
 ### The other 20 Savina benchmarks

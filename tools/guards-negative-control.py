@@ -464,7 +464,9 @@ def report_controls(base: Path, results: str) -> None:
     # The one-framework GRID (`framework=qb`, rows = benchmarks, columns = configurations): the
     # shape the candidate branch is transcribed in. Its figures are verified against the grid's
     # OWN directory, so a candidate number cannot borrow a shipped cell's document, or the reverse.
-    grid = first_marked_row(readme, f"{results}/qb-branch-perf-core-hot-path")
+    # The marker is matched on the `qb-branch-` prefix so the battery follows whichever candidate
+    # README.md currently transcribes (`perf-core-hot-path`, then `perf-event-pipe-segmented`).
+    grid = first_marked_row(readme, f"{results}/qb-branch-")
     if grid is None:
         botched("framework= grid controls", "no `framework=` grid under the branch directory")
     else:
@@ -490,7 +492,7 @@ def report_controls(base: Path, results: str) -> None:
         with Sandbox(base) as s:
             p = s / "README.md"
             text = p.read_text(encoding="utf-8")
-            marker = f"<!-- check-report: {results}/qb-branch-perf-core-hot-path"
+            marker = f"<!-- check-report: {results}/qb-branch-"
             at = text.find(marker)
             if at < 0:
                 botched("a grid column that is not a configuration", "grid marker not found")

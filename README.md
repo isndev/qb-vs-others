@@ -221,57 +221,67 @@ Seven things in those tables are worth more than the ranking:
    per-event publish on that path is worth. Every qb-side finding from these five benchmarks — what
    it costs, where, and what was done about it — is in [docs/TUNING.md §9](docs/TUNING.md).
 7. **The candidate branch is measured for all five, on both hosts, and read the same way.** qb
-   at `perf/core-hot-path` (`f5c20eeb`, eight commits over 3.1.0), through the same adapters,
-   after a shipped build measured in the same session (`M-f5c20eeb-shipped-3.1.0/` beside each
-   grid); the `qb` items above are the published shipped run, and the two agree within the
-   spread (Windows ping-pong 2c-park 4.23 µs there, 6.62 µs in the same-session control — a
+   at `perf/event-pipe-segmented` (`a017b8a5`, two commits over `perf/core-hot-path` `f5c20eeb`
+   and ten over 3.1.0), through the same adapters, in one session with `f5c20eeb` and a shipped
+   build (`grid-f5c20eeb/` and `grid-shipped-3.1.0/` beside each `grid-final/`); the `qb` items
+   above are the published shipped run, and the two shipped measurements agree within the
+   spread (Windows ping-pong 2c-park 4.23 µs there, 3.59 µs in the same-session control — a
    collapsed cell has no stable figure, which is the point of the branch).
 
 <!-- the two grids below are the candidate branch; check-report verifies them against their own directory -->
-The candidate on Windows (`results/desktop-b67osn6-win-msvc/qb-branch-perf-core-hot-path/M-f5c20eeb/`):
+The candidate on Windows (`results/desktop-b67osn6-win-msvc/qb-branch-perf-event-pipe-segmented/grid-final/`):
 
-<!-- check-report: results/desktop-b67osn6-win-msvc/qb-branch-perf-core-hot-path/M-f5c20eeb framework=qb -->
+<!-- check-report: results/desktop-b67osn6-win-msvc/qb-branch-perf-event-pipe-segmented/grid-final framework=qb -->
 | benchmark | 1 core, spin | 1 core, park | 2 cores, spin | 2 cores, park |
 |---|---|---|---|---|
-| ping-pong | 77 ns | 78 ns | 277 ns | 266 ns |
-| counting | 25 ns | 26 ns | 28 ns | 28 ns |
-| thread-ring | 46 ns | 43 ns | 146 ns | 135 ns |
-| fork-join | 35 ns | 35 ns | 40 ns | 36 ns |
-| big | 24 ns | 24 ns | 27 ns | 27 ns |
+| ping-pong | 83 ns | 79 ns | 319 ns | 265 ns |
+| counting | 9 ns | 10 ns | 11 ns | 12 ns |
+| thread-ring | 43 ns | 46 ns | 164 ns | 144 ns |
+| fork-join | 10 ns | 10 ns | 11 ns | 11 ns |
+| big | 22 ns | 21 ns | 23 ns | 25 ns |
 
-The candidate on WSL2 (`results/wsl-debian-g++14/qb-branch-perf-core-hot-path/M-f5c20eeb/`):
+The candidate on WSL2 (`results/wsl-debian-g++14/qb-branch-perf-event-pipe-segmented/grid-final/`):
 
-<!-- check-report: results/wsl-debian-g++14/qb-branch-perf-core-hot-path/M-f5c20eeb framework=qb -->
+<!-- check-report: results/wsl-debian-g++14/qb-branch-perf-event-pipe-segmented/grid-final framework=qb -->
 | benchmark | 1 core, spin | 1 core, park | 2 cores, spin | 2 cores, park |
 |---|---|---|---|---|
-| ping-pong | 69 ns | 67 ns | 234 ns | 214 ns |
-| counting | 35 ns | 34 ns | 43 ns | 44 ns |
-| thread-ring | 37 ns | 48 ns | 123 ns | 130 ns |
-| fork-join | 65 ns | 59 ns | 54 ns | 45 ns |
-| big | 25 ns | 26 ns | 23 ns | 23 ns |
+| ping-pong | 65 ns | 66 ns | 209 ns | 232 ns |
+| counting | 9 ns | 11 ns | 10 ns | 11 ns |
+| thread-ring | 42 ns | 43 ns | 126 ns | 129 ns |
+| fork-join | 9 ns | 10 ns | 11 ns | 12 ns |
+| big | 26 ns | 29 ns | 22 ns | 24 ns |
 
-Against the shipped rows above: the two 2c-park collapses are gone (ping-pong 4.23 µs → 266 ns
-on Windows, 26.78 µs → 214 ns on WSL2; thread-ring bimodal → 135 ns and 13.41 µs → 130 ns),
-every one-core cell is 15–42 % cheaper on both compilers (Windows ping-pong 112 → 77 ns,
-ring 63 → 43–46, counting 29 → 25, big 36 → 24; WSL2 ping-pong 98 → 67–69, ring 63 → 37–48,
-counting 44 → 34–35, big 38 → 25–26), and the three shapes with parallelism are 10–30 %
-cheaper at two cores as well (Windows counting 34 → 28, big 32 → 27; WSL2 big 29 → 23). Cells
-to read with care: the two `2c-spin` cells that cross a core per message (ping-pong, ring)
-carry a ±15 % intra-run spread on Windows (this document's ping-pong 2c-spin repetitions run
-252–311 ns, the previous candidate's 234–335), so 277 vs 254 ns is level, not a regression —
-the four-pass interleaved A/B in `ab-axis-IM/` puts the two builds at 260–284 vs 261–267 ns;
-thread-ring at 2 cores on WSL2 is 123 ns against CAF's 140, a 12 % margin; and fork-join at
-two cores spinning on WSL2 (50 → 54 ns) is inside the run-to-run spread of that cell.
+Against the shipped rows above: the two 2c-park collapses are gone (ping-pong 4.23 µs → 265 ns
+on Windows, 26.78 µs → 232 ns on WSL2; thread-ring bimodal → 144 ns and 13.41 µs → 129 ns);
+the two shapes that stage a burst — counting and fork-join — are **3–7× cheaper at every cell
+on both compilers** (Windows counting 29–33 → 9–12 ns, fork-join 40–46 → 10–11; WSL2 counting
+44–46 → 9–11, fork-join 57–70 → 9–12), which is the segmented pipe: a handler that pushes a
+million events no longer pays a growth ladder that copies everything it holds and faults every
+page it touches (`docs/TUNING.md` §9.11 — 291 page faults per 1 M process against 230 942 for
+`f5c20eeb` and 287 732 for 3.1.0); the other one-core cells are 25–45 % cheaper (Windows
+ping-pong 112 → 79–83, ring 63 → 43–46, big 36 → 21–22; WSL2 ping-pong 98 → 65–66, ring
+63 → 42–43, big 37–39 → 26–29), and big at two cores 20–35 % (Windows 31–33 → 23–25, WSL2
+33 → 22–24).
+Cells to read with care: the two `2c-spin` cells that cross a core per message (ping-pong, ring)
+are bimodal within a launch on Windows — the repetition sequence of either build alternates
+between ~245–255 and ~300–345 ns per round trip (ring ~120–145 vs ~165–180) and a 7-repetition
+median lands wherever the majority fell — so the grid's 319 vs `f5c20eeb`'s 259 and the ring's
+164 vs 137 are not the figure to quote for those two cells: the launch census (the same
+binaries launched standalone 10–16 times, interleaved) puts ping-pong 2c-spin at 250.2 → 250.0
+ns and the ring at 130.3 → 124.7, and a census under the grid's own launcher with the three
+burst benchmarks removed from the sequence puts the ring at 129.5 → 122.8 and ping-pong at
+238.3 → 251.8 with the two builds' launches overlapping (`grid-order-census/`, TUNING §9.11).
+On WSL2 the same census reads ping-pong 2c-spin 217 → 210 and the ring 116 → 106. What the
+branch leaves open is one cell: MSVC's same-core ping-pong is 1–2 % slower than `f5c20eeb` in
+three instruments that agree on the sign (77.3 → 77.8, 77.2 → 78.0, 76.3 → 77.7 ns), inside
+each one's spread, where g++ gains 3 %.
 
-One more thing the one-core cells measure, found after these grids were taken and recorded as
-`docs/TUNING.md` §9.11: a handler that pushes a million events stages all of them in one
-growable pipe, and that pipe's growth — doubling, with a copy of everything it holds and
-fresh pages from the kernel every time — is most of a one-core cell at 1 M on g++. Swept
-along the burst size, the branch's same-core dispatch is **8.5 ns** at 30 000 messages
-(shipped 3.1.0: 37, CAF 113, SObjectizer 94) and 35 at 1 M; CAF and SObjectizer are flat.
-The 1 M protocol stays — it is the Savina figure and every framework runs it — but read the
-one-core rows as a cold 64-MB burst through the engine, not as its dispatch cost. The fix
-(a segmented pipe that copies nothing) is the branch after this one.
+The one-core cells now measure the dispatch, not a cold burst: swept along the burst size
+(`burst-sweep/` on both hosts, `docs/TUNING.md` §9.11), the branch's same-core dispatch is
+**5.9–9.3 ns from 2 000 to 4 M messages on g++** and 6.6–10.4 on MSVC — 9.2 / 9.5 ns at the
+Savina 1 M against 35.0 / 25.8 for `f5c20eeb`, 43 / 30 for shipped 3.1.0, 115–185 for CAF and
+91–143 for SObjectizer, over a 2.8–3.0 ns floor. The 1 M protocol stays — it is the Savina
+figure and every framework runs it — and it is no longer a caveat.
 
 ## Running it
 

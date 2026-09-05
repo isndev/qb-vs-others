@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/counting",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 330342121336310502,
+  "expected_messages": 30002,
+  "work_unit": "message",
+  "work_units": 30000,
+  "repetitions": 7,
+  "warmup": 2,
+  "params": {"cores": 1, "messages": 30000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-04T23:57:12Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md (push = ordered) + the ping-pong adapter",
+    "note": "push<> for the ordered increment stream (send<> may reorder across cores), require<>() bootstrap, one VirtualCore per actor"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction"],
+  "failures": [],
+  "work_ns": [1143603.0, 1084567.0, 1037366.0, 1060739.0, 1056053.0, 1063240.0, 1012658.0],
+  "total_ns": [1409824.0, 1385571.0, 1271755.0, 1313301.0, 1303331.0, 1303006.0, 1275607.0],
+  "outside_window_ns": [266221.0, 301004.0, 234389.0, 252562.0, 247278.0, 239766.0, 262949.0],
+  "summary": {
+    "work_min": 1012658.0,
+    "work_p50": 1060739.0,
+    "work_p99": 1140060.8,
+    "work_iqr": 27194.0
+  }
+}
