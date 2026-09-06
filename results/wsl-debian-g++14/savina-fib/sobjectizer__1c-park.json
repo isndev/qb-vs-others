@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/fib",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 18138759588748310478,
+  "expected_messages": 114624,
+  "work_unit": "actor",
+  "work_units": 57312,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"cores": 1, "n": 23, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-06T17:40:54Z"
+  },
+  "idiom": {
+    "source": "the big adapter + so_5::introduce_child_coop (environment.hpp) + so_deregister_agent_coop_normally",
+    "note": "a node introduces one child coop per child, on their direct mboxes, and deregisters its own coop after responding; thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "SObjectizer creates agents only inside a cooperation registered with the environment, so every node here pays one coop registration and one deregistration on top of the agent itself -- that is the framework's own dynamic-agent idiom, not an adapter choice (two siblings cannot share a coop: an agent ends by deregistering its coop, which would take the sibling down with it -- measured as error 185 on the pool)", "children bind to the same thread_pool as their parent and the pool places them, so with cores=2 the tree is balanced by the dispatcher; qb's cell keeps each sub-tree on its seed's core because qb has no cross-core spawn -- see benchmarks/savina/fib.md"],
+  "failures": [],
+  "work_ns": [158213641.0, 158998549.0, 155237790.0, 161857684.0, 155629260.0],
+  "total_ns": [166256470.0, 164932697.0, 161706044.0, 169007082.0, 163718371.0],
+  "outside_window_ns": [8042829.0, 5934148.0, 6468254.0, 7149398.0, 8089111.0],
+  "summary": {
+    "work_min": 155237790.0,
+    "work_p50": 158213641.0,
+    "work_p99": 161743318.6,
+    "work_iqr": 3369289.0
+  }
+}

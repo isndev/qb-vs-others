@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/fib",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 18138759588748310478,
+  "expected_messages": 114624,
+  "work_unit": "actor",
+  "work_units": 57312,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "n": 23, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-09-06T17:01:44Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; an actor is a heap node in its worker's slot table, created by its parent's worker and freed after responding; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. An actor is one `new`, one slot and one `delete`, with no mailbox, no registry and no lifecycle beyond the slot: the floor for what creating and destroying an actor can cost", "a child is allocated on its parent's worker (id = slot * cores + worker), the same static placement qb's addRefActor has: with cores=2 the two sub-trees never balance, so this floor is a bound for the placing frameworks and NOT for the pools", "cores=1 is one thread with every node in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with tens of thousands of nodes in flight never happens inside the window"],
+  "failures": [],
+  "work_ns": [3842100.0, 3839900.0, 3759000.0, 3938000.0, 4587000.0, 2841500.0, 4250400.0, 3820800.0, 3962100.0],
+  "total_ns": [5588100.0, 5544700.0, 5455700.0, 5560200.0, 6285500.0, 4847100.0, 6020400.0, 5379700.0, 5546100.0],
+  "outside_window_ns": [1746000.0, 1704800.0, 1696700.0, 1622200.0, 1698500.0, 2005600.0, 1770000.0, 1558900.0, 1584000.0],
+  "summary": {
+    "work_min": 2841500.0,
+    "work_p50": 3842100.0,
+    "work_p99": 4560072.0,
+    "work_iqr": 141300.0
+  }
+}

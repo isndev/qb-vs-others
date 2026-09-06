@@ -7,6 +7,10 @@ candidate qb branch's grids, burst sweep and launch censuses following at 19:06â
 same session. Nothing else of ours ran meanwhile: the other agents on this machine were paused
 first, and the residual load is recorded below. `run.json` carries `merged_partial_runs: 1`
 because the field was assembled from two builds of the same tree (see the second paragraph).
+**`savina-fib/` and `savina-chameneos/` are not measured on this host yet** (they were written on
+2026-09-06, after this session): `tools/check-roster.py --results results/macbook-m4pro-macos-clang21`
+reports the 32 missing cells by name until the next macOS session fills them, and the shipped
+3.1.0 fib cell there will carry the logging cost the two pinned hosts' READMEs describe.
 
 **This host is UNPINNED, and every document says so.** macOS has no CPU affinity API a program
 can read back â€” `qb::CPU::ThreadPinningSupported()` is false, and the harness refuses `--cpus` on

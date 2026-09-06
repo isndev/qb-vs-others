@@ -1010,3 +1010,104 @@ tree and a candidate tree, then for each of the 12 cells launch `qvoprobe-parked
 <latency_us> <gap_us> 2000` from each build, interleaved, on a quiet host with nothing else
 running; the probe pins itself, so no `taskset` or `start /affinity` is needed beyond keeping the
 rest of the machine off CPUs 0 and 2.
+
+## 11. What two shapes that CREATE actors said — fib and chameneos
+
+Every shape through §10 builds its actors before the window opens. §7's audit therefore never
+had an actor's LIFETIME on a profile: the registry, the five default subscriptions each
+`Actor::Actor()` makes, the kill path. `savina/fib` puts 57 312 lifetimes inside one window and
+nothing else (`benchmarks/savina/fib.md`); `savina/chameneos` puts 200 000 meetings through one
+broker actor (`benchmarks/savina/chameneos.md`). Both were written on 2026-09-06, both hosts,
+9 repetitions + 2 warmup for the branch grids and the host protocol for the shipped-3.1.0 cells
+that joined the published tables the same evening (`results/<host>/savina-fib/`,
+`savina-chameneos/`), the six sessions never overlapping
+(`results/<host>/qb-branch-perf-dense-table-growth/`).
+
+### 11.1 fib's first run: 43 seconds
+
+qb `develop` (`22c9bf6e`, every axis through N) measured fib at **43.2 s** per repetition on
+Windows/MSVC against CAF's 86 ms — three orders of magnitude, super-linear in the live count.
+The dense router of axis I grew its `key_table` with `reserve(max(idx + 1, size() * 2))` on
+each insert: one element past the previous doubling, so every subscription of a NEW id copied
+the whole table — O(n) per `registerEvent`, O(n²) per core, one table per event type, five
+default subscriptions per actor. Invisible to every static-topology test and benchmark, whose
+tables reach their size once and stay there. Unreleased: 3.1.0 has no dense table.
+
+That is the whole argument for writing the other eighteen shapes. §7 and §9 measured the
+dispatch path forty ways and could not have seen this, because nothing they run creates an
+actor after start-up.
+
+### 11.2 The chain, 2c-spin p50 (WSL2 g++-14 / Windows MSVC)
+
+| qb commit | fib | what the profile showed next |
+|---|---|---|
+| shipped **3.1.0** | **159 / 459 ms** | no dense table — the LOGGER: 9 `LOG_INFO` lines per actor lifetime at the shipped `QB_WITH_LOGGING=ON` default (`registerEvent` × 7, `New`, `Delete`), 515 819 lines and 60.9 MB per repetition, formatted on the actor's core inside the window; see 11.5 |
+| `develop` `22c9bf6e` | 43.2 s (Windows) | the O(n²) table growth of 11.1 |
+| `b4baba33` | 178 ms → 28 ms (Windows) | growth by capacity; then every per-lifecycle `LOG_INFO` line (the nine above) demoted to VERBOSE |
+| `3ea9a2ae` | **8.49 / 12.13 ms** | `ActorMap` a hash map keyed by what is already a per-core slot; the kill queue a hash set; a `dynamic_cast` per subscription |
+| `8362a4b8` | **7.08 / 11.09 ms** | `active_coroutines_` `make_shared`'d in every constructor — ~30 % of a non-spawning actor's lifetime |
+
+Field at `8362a4b8`, fib 2c-spin: floor 3.3 / 4.0, **qb 7.1 / 11.1**, CAF 38.6 / 52.5,
+SObjectizer 328 / 188 ms. One core: floor 1.7 / 3.7, **qb 11.4 / 17.6**, CAF 68.5 / 84.0,
+SObjectizer 148 / 154. Per actor lifetime on one core that is **200 ns** for qb against 30 for a
+malloc-and-free node, 1.2 µs for CAF and 2.6 µs for SObjectizer.
+
+Against shipped 3.1.0 in the SAME session (the pair FAIRNESS.md asks for —
+`grid-8362a4b8-session2/` beside `savina-fib/`, 18:13 UTC on WSL2 and 18:14–18:16 on Windows):
+fib 2c-spin **159 → 7.6 ms** (21×) and 1c-spin **205 → 11.9** (17×) on WSL2; **459 → 10.5**
+(44×) and **558 → 17.2** (32×) on Windows. Chameneos, which creates 101 actors and logs nothing
+per meeting, moves 15.3 → 11.1 / 12.0 → 6.5 (WSL2) and 20.8 → 12.8 / 13.2 → 7.6 (Windows) —
+the §7–§10 dispatch work and the registry landing on a broker's mailbox.
+
+Two placements in that table are not what a reader expects. qb's two-core cell is its WORST
+placement — a child lives on its parent's core, so fib(22) and fib(21) run as two unbalanced
+sub-trees (62 / 38) while CAF and SObjectizer steal — and it still leads. SObjectizer is slower
+on two cores than on one on both hosts (328 vs 148, 188 vs 154): each node is its own
+cooperation, registered and deregistered through the environment, and two work threads contend
+on that path.
+
+### 11.3 What is left in an actor's lifetime, and what is not this branch's
+
+`perf --call-graph dwarf` on fib 1c at `8362a4b8`: the actor object's own `new`/`delete` is the
+last heap traffic on the path. The rest is the router — `registerEvent` × 7 per actor
+(5 default + 2 of the benchmark's) ≈ 29 %, `unregisterEvents` ≈ 12 % because it walks EVERY
+resolver on the core asking each to forget an id it mostly never held, `removeActor` 23 %
+inclusive. The five default events are five `dense::key_table`s of 65 536 × 32 B — 10 MiB per
+core whose key set is exactly "the live actors", which `ActorMap` already is. Routing them
+through the registry, and making `unregisterEvents` visit only the resolvers an actor is in, is
+Huly QB-174: ~28 % of what remains, against a floor that is 3.5× away. The actor object's slab,
+the 16-bit slot ceiling that keeps fib at n=23 (n=24 needs 92 735 live on one core) and the
+absence of a cross-core spawn are QB-175, a 4.0 conversation.
+
+### 11.4 Chameneos: nothing moved, and that is the finding
+
+qb 11.2 / 11.8 ms at 2c-spin, 6.8 / 7.4 at 1c-spin, on every commit of the branch — inside its
+own spread. It creates 101 actors and its cost is the broker's mailbox: 200 000 meetings, each a
+push to the broker and a push back, exactly the counting shape of §9 with state. CAF 129 / 215,
+SObjectizer 154 / 248. The floor is the shape where a mutex-and-condvar broker sits ABOVE qb at
+two cores (29.8 / 68.6 ms — a core crossing per meeting) and below everyone at one (2.9 / 5.7).
+
+### 11.5 What 3.1.0's fib cell is, and what the benchmark said about its own caveat
+
+The shipped cell was measured last, after the branch chain, because the first attempt to run
+it looked like a hang: under `tools/run.py` the 2c-park cell had not returned after eight
+minutes. gdb said otherwise — main thread in `exit()` → `~unique_ptr<NanoLogger>` →
+`thread::join`, the writer in `NanoLogger::pop()` → `flush()` → `write()` inside
+`p9_client_rpc`. 3.1.0 at its shipped default (`QB_WITH_LOGGING=ON`, INFO in a release build,
+`qb/cmake/qbConfig.cmake`) logs nine lines per actor lifetime: `[registerEvent] Actor(c.i)
+subscribed to <E>` for the five default events and the benchmark's two, `[appendActor] New
+Actor[...]`, `[removeActor] Delete Actor[...]` — **515 819 lines, 60.9 MB of `qb.1.log` per
+repetition**, counted. On an ext4 cwd the run is 522 ms wall for one repetition; on the
+9p-mounted checkout nanolog's per-line flush makes every `write()` a round trip to the Windows
+host and the EXIT of a one-repetition run takes minutes. `b4baba33` demotes all nine to VERBOSE.
+That is a user-visible 3.1.0 characteristic and it is recorded as such: the published cell is
+the qb a 3.1.0 user builds, and the 21× / 44× above is what 3.2.0 changes for a program that
+creates actors — most of it the logger, the rest the registry.
+
+The benchmark also caught its own caveat lying. Every qb document carried "its logger writes at
+startup, outside the measured window", written when the five shapes all built their actors
+before the window and true of every one of them. It is false for fib on 3.1.0, and the
+measurement is what said so. The sixteen shipped documents keep the sentence as the provenance
+of their run; `frameworks/qb/qb_support.h` now says what is true of every shape — whatever qb
+logs at INFO inside the window is part of the cost, the writer thread shares the pinned set,
+and the option stays ON because no other framework gets an equivalent subtraction.
