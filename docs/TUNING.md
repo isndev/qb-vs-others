@@ -840,3 +840,173 @@ under `QB_SANITIZE` qb now builds GoogleTest from the pinned tag, instrumented l
 else (372/372 again with it); and the 19 `benchmark::internal::Benchmark` deprecation warnings
 of google-benchmark 1.9.5 are gone with the public spelling, the floor and pin at 1.9.5, and the
 deprecation exemption that hid them retired.
+
+## 10. Axis N — a parked core that owns sockets, and what it took to wake it
+
+§8.2 closed on the sentence every framework in this repository shares: once an actor thread
+really sleeps, it pays what the OS charges to wake it, and the differences are in how long each
+one refuses to. That sentence hid an assumption. It was measured on ping-pong, where the thing
+that wakes a parked core is another core's push — and a qb core parked in `Mailbox::wait()` was
+woken by exactly that and by nothing else. A qb core that also owns io watchers — a listening
+socket, a session, a `qb::io::async::callback` timer — parked in the same condition variable, and
+while it slept nothing polled its loop. A socket that became readable a microsecond into the park
+waited for the park's timeout: the core's `latency`, which is the one knob every parked qb server
+sets, and which §2 tuned for ping-pong cadence without ever asking what it did to io.
+
+### 10.1 The instrument
+
+`tools/probes/parked-io-wake.cpp` (`qvoprobe-parked-io-wake`) is a qb-only probe, built under
+`QVO_BUILD_PROBES` and named so that `tools/run.py` cannot discover it: the question has no
+counterpart in CAF or SObjectizer, whose schedulers own no sockets, so its figure must never sit
+in a table beside theirs. One `VirtualCore` hosts an echo actor (`qb::Actor` +
+`use<>::tcp::server`) with the cell's `latency`; a raw blocking-socket client on another thread
+sleeps `gap` — longer than the 50 µs idle-spin floor, so the core has parked when the request
+lands — sends one line, and times the round trip. Twelve cells, `latency` ∈ {0, 100, 1000,
+10000} µs × `gap` ∈ {10, 200, 2000} µs, 2000 rounds after 50 warm-ups, control and candidate
+interleaved twice per cell. The `latency=0` column is the busy-poll floor (the core never parks)
+and the `gap=10us` row keeps the core inside its idle-spin floor (it polls); every other cell
+parks. Control is qb `develop` at `f0da4e32`, the tree axis N branches from; candidate is
+`perf/park-in-ev-loop`.
+
+**The probe pins its own two threads, and the difference between that and a process mask is the
+whole control.** With only an affinity mask of {0, 2}, Windows placed the client on the core's
+CPU for a per-launch random fraction of rounds; a client spinning its gap on the core's CPU keeps
+the core from ever seeing its idle floor elapse, so it never parks and the control's `latency=1000
+gap=200` cell read p50 19–20 µs with a p90 anywhere from 23 µs to 1.8 ms between launches — a
+defect measured as absent. Under WSL2 the load balancer spread the two busy threads and the
+unpinned p50s agreed with the pinned ones everywhere (914 / 9966 → 30.5 / 31.8 µs on the headline
+row), but its `latency=0` cells carried a p99 of 1.2–3.1 ms on both sides that the first reading
+attributed to the hypervisor. It was the same trap in the tails: pinned, the same cells' p99 is
+42–150 µs. The unpinned log is kept beside the pinned one
+(`results/wsl-debian-g++14/qb-branch-perf-park-in-ev-loop/parked-io-wake.unpinned.log`) for
+exactly that lesson. The pinning is `SetThreadAffinityMask` / `pthread_setaffinity_np` for the
+client and `core.setAffinity()` for the core; macOS has neither, and a run there is unpinned by
+construction — its figures, when they exist, carry that caveat.
+
+### 10.2 The finding
+
+p50 of the round trip in µs, control → candidate, both passes; the `latency=0` column and the
+`gap=10us` row are the floors and move nowhere.
+
+**WSL2 Debian 13 / g++ 14.2** (`taskset -c 0,2`, core on vCPU 0, client on vCPU 2, 2026-09-06
+03:09–03:22 UTC):
+
+| `latency` \ `gap` | 10 µs (polling) | 200 µs (parked) | 2000 µs (parked, really asleep) |
+|---|---:|---:|---:|
+| 0 (never parks) | 18.5 / 18.3 → 18.1 / 18.1 | 19.1 / 19.0 → 19.3 / 17.8 | 26.6 / 27.4 → 24.9 / 25.0 |
+| 100 µs | 17.9 / 17.8 → 18.4 / 18.0 | 23.2 / 29.2 → 31.2 / 31.2 | **100.2 / 99.1 → 46.1 / 45.3** |
+| 1 ms | 17.4 / 17.3 → 17.3 / 17.3 | **923.3 / 910.8 → 30.7 / 31.2** | **169.7 / 171.4 → 46.7 / 43.5** |
+| 10 ms | 16.9 / 17.5 → 17.4 / 18.1 | **9960.8 / 9953.7 → 31.0 / 33.7** | **8154.2 / 8154.2 → 51.0 / 47.6** |
+
+**Windows 11 / MSVC 19.51** (process mask {0, 2}, core on CPU 0, client on CPU 2, 03:02–03:27
+UTC):
+
+| `latency` \ `gap` | 10 µs (polling) | 200 µs (parked) | 2000 µs (parked, really asleep) |
+|---|---:|---:|---:|
+| 0 (never parks) | 19.7 / 19.7 → 19.6 / 19.7 | 19.5 / 20.6 → 19.3 / 19.3 | 28.4 / 28.1 → 28.7 / 29.1 |
+| 100 µs | 18.8 / 18.9 → 18.7 / 19.0 | **1220.6 / 898.3 → 26.3 / 24.9** | **2112.4 / 2050.0 → 62.4 / 62.5** |
+| 1 ms | 19.9 / 20.1 → 19.6 / 19.1 | **2215.4 / 2787.5 → 26.7 / 24.0** | **11 620.8 / 10 544.9 → 62.3 / 68.7** |
+| 10 ms | 18.3 / 18.8 → 18.8 / 18.4 | **15 549.9 / 15 566.5 → 24.4 / 26.9** | **13 774.2 / 13 779.5 → 134.9 / 133.9** |
+
+Three things to read off them:
+
+- **The control answers io at the timeout, and on Windows the timeout is the scheduler tick.**
+  Under WSL2 the `gap=200us` column is `latency` minus a little (923 µs at 1 ms, 9.96 ms at
+  10 ms): the park began before the request, and the request waited for the rest of it. On
+  Windows `std::condition_variable::wait_for` lands on the 15.6 ms tick that §5 measured, so
+  even `latency=100us` costs 0.9–1.2 ms and `latency=10ms` costs 15.6 — a qb server tuned with
+  a small `latency` for responsiveness was, on Windows, no more responsive to its sockets than
+  one tuned with a large one. The `gap=2000us` column shows the same clock from the other side:
+  the request lands inside a 2 ms gap, and what it pays is however much of the park's timeout
+  was left. Neither is a defect in the OS; both are a core that was asked to sleep on the wrong
+  primitive.
+- **The candidate answers at poll latency plus one wake.** 31 µs on WSL2 and 24–27 µs on Windows
+  at `gap=200us`, on all three latencies — the 18–20 µs busy-poll floor plus the cost of leaving
+  `ev_run`'s backend poll. `latency` no longer appears in the figure; it only bounds the park.
+- **A thread that really slept still pays the OS.** At `gap=2000us` the candidate reads
+  46–51 µs on WSL2 and 62 µs on Windows at latency 100 µs / 1 ms, 134 µs at 10 ms: the deeper the
+  cap let the thread sleep, the longer the OS takes to bring it back, and on Windows a 10 ms
+  cap visibly parks the thread in a deeper state than a 1 ms one. That is §8.2's floor, unchanged
+  and untouched by axis N, whose whole claim is that io now ends the sleep at all.
+
+The `gap=10us` row is not quite as flat as its p50s: in the control, the p99 of the polling cells
+IS the latency (WSL2: 713 / 1078 µs at 1 ms, 10 119 / 10 009 µs at 10 ms; Windows: 260 / 787 µs
+at 1 ms, 11.6 / 12.0 ms max at 10 ms) — once in a hundred rounds the client's 10 µs gap plus a
+scheduling hiccup let the core reach its 50 µs floor, and the next request then paid the full
+park. The candidate's p99 on the same cells is 48–78 µs. A busy server was not immune to the
+defect; it merely met it less often.
+
+### 10.3 The mechanism, and what it costs where it does not apply
+
+The candidate changes where a core parks, not whether. In `VirtualCore::__workflow__`, once the
+idle-spin floor has elapsed, `listener::has_work()` selects the path: a core whose loop has
+nothing to deliver parks in the condition variable exactly as shipped; a core with io watchers
+parks in `Mailbox::wait(listener &)` → `listener::run_once_for(latency)`, which is
+`ev_run(EVRUN_ONCE)` blocking in the backend poll under a one-shot cap timer armed at `latency`
+(the loop clock is refreshed first — a timer scheduled against libev's stale `mn_now` expires
+early or at once — and the cap is stopped by a guard on every exit, a throw out of a handler
+included). A turn that already has something to run — a deferred callback, a ready coroutine, an
+event fed to the loop since its last pass — does not block, because `ev_run` computes its wait
+from watcher deadlines alone and would sleep on top of ready work. Io delivered by the park counts
+as activity: the idle stamp is cleared, so the reply and the request after it are met at polling
+latency rather than by another park.
+
+A producer on another core ends the loop park through libev's one thread-safe entry point,
+`ev_async_send`, on an `ev::async` the listener arms lazily on its first loop park and `unref()`s
+so it never counts as work; the mailbox's `_parked` flag became a tri-state (`None` / `Cv` /
+`Loop`), and `notify()` — still one fence and one load on the common path — takes the mutex only
+on an announced park and then re-reads WHICH park under it, waking the loop or the cv. The
+listener pointer that `wake()` dereferences is published by `attach_loop()` before the start
+barrier and withdrawn by `detach_loop()` under the same mutex on every exit path, so a producer
+holding the mutex sees a live listener or none. ThreadSanitizer found the one ordering the first
+draft lacked, on the first park of `core-park-wake`: the `Park::Loop` announce must be a release
+store and the producer's re-read an acquire, or the `eventfd()` that `arm_wake()` creates on the
+core's thread is unordered against the producer's first write to it. The embedded qev profile
+gains the async family for this (`QB_EV_ASYNC_ENABLE 1` in qb's copy of the loop; the standalone
+already ships it): three exported symbols, 24 bytes.
+
+**Where the path does not apply it must cost nothing, and the ping-pong A/B is that proof**:
+ping-pong carries no io watcher, so on this benchmark the candidate's parked core takes exactly
+the control's cv branch through the new tri-state flag and the acquire re-read. Per-rep p50 in
+ns per round trip, control → candidate, three interleaved reps per cell
+(`results/<host>/qb-branch-perf-park-in-ev-loop/ab/`):
+
+| cell | WSL2 g++ 14.2 | Windows / MSVC 19.51 |
+|---|---:|---:|
+| 1c-w1 (one core, spin) | 66.6 / 67.2 / 67.1 → 67.3 / 67.9 / 67.5 | 84.2 / 79.7 / 81.2 → 80.8 / 80.3 / 80.5 |
+| 2c-w0 (park, default floor) | 230.0 / 228.9 / 216.1 → 236.8 / 219.3 / 217.9 | 292.0 / 286.2 / 304.8 → 274.2 / 294.7 / 270.0 |
+| 2c-w1 (spin) | 238.0 / 223.2 / 211.1 → 219.4 / 238.8 / 221.8 | 351.1 / 309.8 / 275.4 → 270.3 / 330.4 / 249.3 |
+| 2c-w0, idle-spin floor 0 (§8.2) | 27 332 / 27 624 / 26 910 → 27 357 / 27 350 / 27 331 | 390.3 / 463.8 / 355.8 → 393.1 / 421.1 / 422.0 |
+
+No cell moved outside its own rep-to-rep spread on either host. The WSL2 one-core cell's
++0.4 ns (0.6 %) is below the 1 ns this benchmark resolves and is the `has_work()` gate evaluated
+once per idle pass on a core that never parks; the §8.2 floor-0 cells read the same OS wake on
+both sides, which is the statement that axis N did not touch it.
+
+### 10.4 What was validated before the figures were quoted
+
+WSL2, qb standalone from the branch: release, ASan+UBSan and TSan each **191 / 191 executed, 0
+skipped** — the shipped suite plus `core-park-policy` (past the spin floor the core parks inside
+its loop, an io timer on that core fires at its own delay, a loop park is capped by `latency` and
+sees `Main::stop()`) and `core-park-wake` (a readable socket ends a loop park, a cross-core push
+ends both a loop park and a cv park, each in far less than `latency`, with the process's CPU time
+proving the core was parked rather than polling). The TSan run is the one that found the
+release/acquire pair above; it is clean with it. The Windows/MSVC pass is
+`dev/agent/verify-windows.ps1` over the five presets at their recorded floors, and the macOS
+pass is the same agent protocol as QB-44's — both are recorded in the Huly issue (QB-42) as they
+land, not here in advance.
+
+**What axis N does not change, stated so nobody reads it as more than it is.** A qb core with no
+io watchers parks exactly as before, and pays exactly what §8.2 measured once it sleeps. A core
+WITH io watchers that really sleeps still pays the OS wake — 46–51 µs under WSL2, 62–135 µs on
+Windows — because the socket wakes the thread through the same kernel path a futex or a
+`WaitOnAddress` would; what it no longer pays is the park's own timeout on top. And a spinning
+core (`latency = 0`) was never affected, which is why the audits of §7 and §9, all measured
+with spin and park at ping-pong cadence, never saw it: the defect lived only in the one
+configuration that both parks and serves.
+
+To re-run: build with `-DQVO_BUILD_PROBES=ON` (the default when qb is enabled) against a control
+tree and a candidate tree, then for each of the 12 cells launch `qvoprobe-parked-io-wake
+<latency_us> <gap_us> 2000` from each build, interleaved, on a quiet host with nothing else
+running; the probe pins itself, so no `taskset` or `start /affinity` is needed beyond keeping the
+rest of the machine off CPUs 0 and 2.

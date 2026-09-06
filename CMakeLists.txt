@@ -127,4 +127,22 @@ if(QVO_BUILD_CONTROLS)
         FOLDER "controls")
 endif()
 
+# -------------------------------------------------------------------------------------------
+# Probes: qb-only instruments behind docs/TUNING.md
+# -------------------------------------------------------------------------------------------
+#
+# A probe measures one qb mechanism that has no counterpart in the other frameworks -- section 10's
+# `parked-io-wake` asks what an idle actor core that OWNS io watchers pays to be woken by one of
+# them, and neither CAF nor SObjectizer owns a socket. Named `qvoprobe-` and NOT declared through
+# qvo_add_benchmark, for the same reason as the control subject: tools/run.py cannot discover it
+# and a probe's figure can never be mistaken for a cross-framework cell.
+option(QVO_BUILD_PROBES "Build the qb-only probes behind docs/TUNING.md" ON)
+if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
+    add_executable(qvoprobe-parked-io-wake tools/probes/parked-io-wake.cpp)
+    target_link_libraries(qvoprobe-parked-io-wake PRIVATE qb::core)
+    set_target_properties(qvoprobe-parked-io-wake PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "probes")
+endif()
+
 qvo_report_configuration()

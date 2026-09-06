@@ -402,4 +402,5 @@ docs/TUNING.md         the configuration sweeps, including the one that embarras
 docs/FEATURES.md       what each framework offers, cited to its source
 docs/ROADMAP.md        what is not done yet
 tools/                 run.py, report.py, check-report.py, check-roster.py, the negative-control batteries
+tools/probes/          qb-only instruments (`qvoprobe-*`): undiscoverable by run.py, never a table cell; docs/TUNING.md section 10
 ```
