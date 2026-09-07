@@ -5,5 +5,5 @@
 # many-actor benchmarks (100 ring actors, 60 workers, 120 all-to-all) a thread per actor on two
 # CPUs would measure the OS scheduler, not CAF -- README.md says why in full. The line below is
 # what tools/check-roster.py reads; an omission it names that stops being a spec is an error.
-# qvo-roster-omit: savina/counting savina/thread-ring savina/fork-join savina/big savina/fib savina/chameneos -- a thread per actor on two CPUs measures the OS scheduler, not CAF; ping-pong is the only two-actor shape
+# qvo-roster-omit: savina/counting savina/thread-ring savina/fork-join savina/big savina/fib savina/chameneos savina/bank-transaction -- a thread per actor on two CPUs measures the OS scheduler, not CAF; ping-pong is the only two-actor shape
 qvo_add_all_benchmarks(FRAMEWORK caf-detached SUITES savina LIBS CAF::core DEFINES QVO_CAF_DETACHED=1)

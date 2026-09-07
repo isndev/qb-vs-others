@@ -99,32 +99,36 @@ until the two platforms this host cannot see have run it; nothing on qb or qev i
    g++'s 5.9–9.3 from 2 k to 4 M, so the clang-cl A/B has no premise left.
 
 
-### The other 18 Savina benchmarks
+### The other 17 Savina benchmarks
 
-Seven of the suite's twenty-five are written — the round trip, the fan-in, the ring, the fan-out,
-the all-to-all, and since 2026-09-06 the two that the first five could not show: `savina/fib`
+Eight of the suite's twenty-five are written — the round trip, the fan-in, the ring, the fan-out,
+the all-to-all, since 2026-09-06 the two that the first five could not show: `savina/fib`
 (dynamic actor creation and destruction — 57 312 actors born and dead inside the window) and
-`savina/chameneos` (rendezvous through a shared broker). Those two are published on Windows and
-WSL2 with shipped 3.1.0 like the five before them (`results/<host>/savina-fib/`,
-`savina-chameneos/`; macOS not yet), and were written against the qb branch they produced
-(`results/<host>/qb-branch-perf-dense-table-growth/`, `docs/TUNING.md` §11), which joins the
+`savina/chameneos` (rendezvous through a shared broker), and since 2026-09-07
+`savina/bank-transaction`, the first that WAITS for a reply (one `qb::ask` per transfer, 50 000
+of them, `benchmarks/savina/bank-transaction.md`). All three are published on Windows and WSL2
+with shipped 3.1.0 like the five before them (`results/<host>/savina-fib/`,
+`savina-chameneos/`, `savina-bank-transaction/`; macOS not yet), and were written against the
+qb work they produced (`results/<host>/qb-branch-perf-dense-table-growth/`,
+`qb-branch-perf-coro-scope-local-refcount/`; `docs/TUNING.md` §11 and §12), which joins the
 tables with the 3.2.0 grid. fib alone found a 43 s defect in unreleased `develop` on its first
 run, and then found that shipped 3.1.0 logs nine INFO lines per actor lifetime inside the window
-— 159 / 459 ms against the branch's 7.6 / 10.5 — the argument for writing the rest. None of the
-seven carries a pipeline or blocks on a reply promise. The ones that would change the picture
-most, roughly in order of what they would teach:
+— 159 / 459 ms against the branch's 7.6 / 10.5; bank-transaction put a `perf` profile on the
+coroutine request path for the first time and found five defects on it in one afternoon (qb
+`9814c2a1`) — the argument for writing the rest. None of the eight carries a pipeline. The ones
+that would change the picture most, roughly in order of what they would teach:
 
-| benchmark | what it adds that the seven cannot show |
+| benchmark | what it adds that the eight cannot show |
 |---|---|
 | `nqueens` / `a-star` | creation with WORK per actor — fib's nodes compute nothing, so it isolates the registry; these two would show whether the registry still matters once a node does something |
-| `bank-transaction` | request/response with a reply promise |
 | `philosophers` / `barber` / `smokers` | blocking-shaped coordination |
 | `radixsort` / `sieve` / `trapezoid` | pipelines and data-parallel shapes |
 
 Each needs one spec header in `benchmarks/specs/qvospec/savina/` and one implementation per
 framework — `check-roster.py` refuses a framework missing from one. The per-framework support
 headers (`frameworks/<fw>/*_support.h`) exist so that placement and spin/park do not have to be
-re-decided eighteen more times; fib and chameneos cost one afternoon each on that basis.
+re-decided seventeen more times; fib, chameneos and bank-transaction cost one afternoon each on
+that basis.
 
 ### Actor creation cost and memory footprint
 

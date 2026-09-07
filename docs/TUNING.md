@@ -1111,3 +1111,91 @@ measurement is what said so. The sixteen shipped documents keep the sentence as 
 of their run; `frameworks/qb/qb_support.h` now says what is true of every shape — whatever qb
 logs at INFO inside the window is part of the cost, the writer thread shares the pinned set,
 and the option stays ON because no other framework gets an equivalent subtraction.
+
+## 12. What the first shape that WAITS said — bank-transaction
+
+Every shape through §11 pushes and forgets. `savina/bank-transaction`
+(`benchmarks/savina/bank-transaction.md`) is one teller, a thousand accounts and 50 000
+transfers, each a request nested inside a request: the source account `co_await`s a
+`qb::ask<Deposit>` to the destination and acknowledges the teller when the reply lands. It is the
+first benchmark to sit on the coroutine request path — `ScopedCoroContext`, `ask_awaiter`, the
+cancellation token, `reply()` — and its one-core `perf` profile on qb `develop` (`203cfb56`,
+every axis of §7–§11 in) read as a list of things that should not be on a request path. Written
+2026-09-06, the five fixes landed on `develop` as one commit (`9814c2a1`, Huly QB-42), and the
+field, shipped 3.1.0 and the two `develop` builds were measured in ONE quiet session per host on
+2026-09-07 (WSL2 02:21 UTC, 5 + 1; Windows 02:24 UTC, 9 + 2, each host idle while the other ran):
+`results/<host>/savina-bank-transaction/` and
+`results/<host>/qb-branch-perf-coro-scope-local-refcount/`.
+
+### 12.1 The five, and the sixth they exposed
+
+| # | what the profile showed (1c spin, g++-14, `203cfb56`) | what changed |
+|---|---|---|
+| 1 | `ScopedCoroContext` copied a `shared_ptr` on every ask and every spawn — **29 % of the core, 24 % on the single `lock xadd` of `_M_release`**, on a state its own contract calls single-threaded | the cancellation token's state carries an intrusive non-atomic `refs`; the actor's coroutine census is `detail::coro_census {active, refs}` behind `coro_census_ref` — zero atomics on a counter only the owning core's thread touches |
+| 2 | `ask_awaiter` registered through `on_cancel`: a `std::function` + vector push per ask, a linear `remove_on_cancel` per completion | `cancellation_token::cancel_hook` + `token.link(hook)`: an intrusive, allocation-free node the awaiter owns, unlinked on completion |
+| 3 | the by-value `qb::ask(ctx, dst, E req, timeout)` built a 64-byte temporary, moved it three times, and read header fields back with 16-byte loads over the narrow stores that had just written them — `Account::start`'s frame was **21.7 % of the core** | the emplace form `qb::ask<E>(ctx, dst, timeout, args...)` (and `ask_by<E>`) constructs the request IN the pipe slot; `CoroContext::push` / `push_to` return the built `E&` so the correlation id is set in place. The frame left the top of the profile |
+| 4 | `reply()` / `forward()` wrote `dest` / `source` / `alive` with narrow stores and the copy that followed loaded the header wide — libc `memmove` **4.3 % of the core**, all of it that store-forwarding stall | `detail::event_wire` composes the 16-byte header in one register (SSE2 / NEON / two words) and stores it once; `copy` reads back exactly those bytes and clears `alive` in the register |
+| 5 | `__receive_events__` and the activation pump stored `alive = 0` into every arriving event before routing it — **70 % of `deliver_thunk`'s first-header-load time** | the bit is already 0 in the bytes every transport carries; the store is gone |
+| 6 | removing 5 exposed what it had been masking: a cross-core `forward()` of an event already `reply()`ed relocated ORIGINAL bytes carrying `alive = 1`, and the receiver skipped its destructor — **a leak per relay**, shipped | `VirtualCore::send(Event const&)` refuses to relocate a raised flag (the local pipe's `event_wire::copy` clears it), and `reply()` / `forward()` raise the original only AFTER the copy is taken; `RelayChain.*` pins both polarities |
+
+Tests added with them: `ActorCoroutineAsk.EmplaceAsk*` (6), `CancellationToken.Hook*` /
+`LinkOn*` (9), `EventWire.*` (12), `RelayChain.*` (5); standalone `cmake -S qb` suites on
+Linux/g++-14 Release / ASan+UBSan / TSan 192/192/0 each, Windows/MSVC Release 188/188/0, 0
+warnings.
+
+### 12.2 The chain, p50 ms (1c spin / 1c park / 2c spin / 2c park)
+
+| qb | WSL2 g++-14 | Windows MSVC |
+|---|---|---|
+| shipped **3.1.0** | 14.71 / 14.58 / 9.21 / 9.31 | 25.48 / 25.45 / 29.20 / 33.45 |
+| shipped 3.1.0, `QB_WITH_LOGGING=OFF` | 15.80 / 16.28 / 8.99 / 9.75 | — |
+| `develop` `203cfb56` — the base | 9.40 / 9.44 / 5.09 / 5.02 | 13.65 / 13.86 / 7.97 / 7.78 |
+| `develop` `9814c2a1` — the five | **8.06 / 8.80 / 4.56 / 4.77** | **12.91 / 12.82 / 7.57 / 7.56** |
+
+Field in the same sessions: floor 1.10 / 2.59 / 6.30 / 4.63 and 3.47 / 3.92 / 32.2 / 7.25; CAF
+41.5 / 43.0 / 36.6 / 36.6 and 57.8 / 58.0 / 57.5 / 58.1; SObjectizer 19.5 / 20.5 / 25.5 / 27.7
+and 29.6 / 31.5 / 38.0 / 44.4. Per transfer on one core, spin: **qb 161 ns** at `9814c2a1`
+(294 at 3.1.0), SObjectizer 391, CAF 830, the floor 22.
+
+Three readings. The five fixes alone are **−14 % / −10 %** (1c / 2c spin) on g++ and **−5 % /
+−5 %** on MSVC — the profile that found them was taken on Linux and no Windows profile was, so
+why MSVC gains less is recorded, not explained. 3.1.0 → base is the larger step on both hosts
+(1.6× / 1.8× on WSL2, 1.9× / 3.7× on Windows): §7–§11 landing on a request path for the first
+time, and the one place it was measured before the fixes. The 1c-park candidate cell on WSL2 is
+the noisy one of the twelve (7.96–9.39, IQR 0.63); other launches of the same binary in that
+session read 7.54–8.08.
+
+### 12.3 Two things the controls said
+
+**The control in the commit message was mislabelled, and the same-session pair is what caught
+it.** `9814c2a1`'s message and qb's `[Unreleased]` quoted "shipped 3.1.0" at 9.74 / 9.60 ms (1c
+spin / park). Shipped 3.1.0 measures 14.7 in the same session, three times over; 9.4 is
+`203cfb56`, the commit the work branched from — which is what that "shipped" build had been all
+along. It changes nothing about the five (base → candidate is the delta they own) and it is why
+the bank page presents three controls rather than one, and why the CHANGELOG entry names the base
+by SHA. The rule this repository already had — shipped and candidate in the same quiet session,
+never a remembered number — is the rule that found it.
+
+**3.1.0's figure is not a logging figure here, unlike fib's.** A second 3.1.0 built from the same
+tree with `-DQB_WITH_LOGGING=OFF` measures 15.80 / 16.28 / 8.99 / 9.75 in the same session —
+no faster — and its `qb.1.log` is 1.5 KB against ~10 000 lines per repetition with logging on,
+every one of them the thousand accounts' `registerEvent` / `New` / `Delete`, written before the
+window opens and after it closes. What 3.1.0 pays on this shape is the request path §12.1 lists,
+plus what §7–§11 took: the shipped profile has `_Sp_counted_base::_M_release` at 4.8 %, the
+by-value ask frame at 3.75 %, `malloc` at 2.8 % and `ask_awaiter` at 2.4 % of the core.
+
+### 12.4 What is left, and the Windows 2c cells
+
+`perf` on `9814c2a1`, 1c spin: the ask registry — a hash map keyed by correlation id,
+inserted on every ask and erased on every reply — is **≈10–12 % of the core** and the largest
+single item. It is recorded as the follow-up (a slot table keyed by what is already a per-core
+counter, the shape §11.3 gave `ActorMap`), not done in the commit.
+
+On Windows, three of the `2c` cells that cross a core per transfer are WIDE: the floor's 2c-spin
+spans 20.0–62.2 ms over nine repetitions (IQR 29.5), shipped qb's 2c-spin 24.3–49.6 (IQR 13.0)
+and its 2c-park 19.2–42.1 (IQR 18.5), while every 1c cell and both `develop` builds' 2c cells sit
+inside a tenth of that (`9814c2a1`: 7.57 / 7.56, IQR 0.2). The report's bimodality rule does not
+fire on them — no gap of 2× between clusters — so they render as medians, and the page quotes
+them with their spread. What makes a busy-polling ring floor and a 3.1.0 that crosses a core per
+transfer spread 3× on MSVC where the `develop` builds do not is not measured; it is the same
+host, the same session and the same CPU set.
