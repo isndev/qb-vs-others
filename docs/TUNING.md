@@ -232,7 +232,7 @@ on an idle wepoll / epoll loop 370 / 300 ns, `cv.notify_all()` with no waiter 2 
 | **A. park policy** | spin credit = *events* seen last pass; a 1-event/pass workload parks after 2–3 empty passes | 2c-park 10.7 µs (Win) / 27.6 µs (WSL2) → **323 / 282 ns** with a 100-pass idle floor, = the spin figure | **dominant, fix first** |
 | **B. lost wakeup** | `Mailbox::wait()` = `cv.wait_for` with no predicate; `notify()` without the mutex | Win: each loss = ~13 ms (MSVC ms-ceiling + 15.6 ms tick), 50–95 % of wait time; Linux: bounded 1 ms, ~5 % | **correctness defect**, fix with A |
 | **C. `notify()` per event** | producer notifies on every cross-core enqueue | 1–2 ns when nobody waits | negligible; keep, gate on a `_waiting` flag when B lands |
-| **D. wall clock per pass** | `wall_now()` every loop pass (19 / 30 ns) | 1c: 124 → 93 ns (Win), 101 → 75 (Linux) reading it every 64 passes = **−25 %**; 2c: 0 alone, 232 → 209 ns on top of F (Linux) | worth taking; cadence or `steady_clock` |
+| **D. wall clock per pass** | `wall_now()` every loop pass (19 / 30 ns) | 1c: 124 → 93 ns (Win), 101 → 75 (Linux) reading it every 64 passes = **−25 %**; 2c: 0 alone, 232 → 209 ns on top of F (Linux) | worth taking; cadence or `steady_clock`. **Landed as `time()` on demand (`443c5976`) — which MOVED the read into the tick phase's `LoopEvent` rather than removing it, so the −25 % was never delivered by that commit; §14 is where it arrived, at −57 %.** |
 | **E. io poll per pass** | `listener::run(EVRUN_NOWAIT)` runs every pass once *any* coroutine scheduler exists, even with zero watchers | 1c: 124 → **694** (Win), 101 → **739** (Linux), 5.6–7.3× slower; 2c: 408 → 645, 271 → 594. A gate on `size() \|\| has_deferred()` (still draining deferred + `run_ready`) restores the figures | **large, hits any app that ever `co_await`ed**; also the ~300–380 ns/pass floor of any app with one watcher |
 | **F. spsc producer re-reads `read_index_`** | one remote cache-line read per hop | 2c-spin 404 → **290** ns (Win, −28 %), 281 → **232** (Linux, −17 %); 1c unchanged | take; mirror it on the consumer side |
 | **G. copies per hop** | event → pipe → mpsc ring → `consume_all` scratch → dispatch | analysed, not isolated; an in-place `consume_all(func)` exists in `mpsc.h` | minor, after F |
@@ -1353,3 +1353,102 @@ Named per host in each `qb-branch-develop/README.md`; the two readings agree on 
 Nothing in the grid argues for another core axis before the train: the collapses are closed,
 every shape is ahead of the field on both compilers, and the residuals are each a named
 figure with a named instrument. This is the grid 3.2.0 ships with (`docs/ROADMAP.md`).
+
+## 14. The loop clock — what one line cost, and what an idle spin pass needs
+
+§13.3 named the per-pass cost of a core with ONE event in flight as the first residual and `perf`
+on g++ as its instrument. The first profile answered in one line. `perf record -e cpu-clock
+-F 25000` (WSL2 has no PMU) on `f8eba11d`'s `savina/ping-pong` at one core, spin:
+
+```
+39.56%  [vdso] __vdso_clock_gettime
+ 9.51%  qb::VirtualCore::__workflow__()
+ 9.24%  qb::VirtualCore::__receive__()
+ 8.08%  qb::VirtualCore::__receive_events__(span<EventBucket>)
+ 6.93%  router::memh<Event,true>::EventResolver<Ball>::resolve
+ 3.64%  ev_pending_count      2.15% ev_active_count      (listener::has_work(), every pass)
+ 3.62%  VirtualCore::send(Event const&)   3.39% send<Ball>   2.97% __flush_all__   1.42% time()
+```
+
+Axis D (§7) had been "landed" as `443c5976`, `VirtualCore::time()` sampled on demand and keyed on
+the pass counter, with a field comment promising that a pass nobody asks costs nothing. It had
+moved the read, not removed it: `__workflow__` still built `const qb::LoopEvent loop_ev{time(),
+_loop_count}` on every pass — the event handed to `ICallback::on()` — whether or not a single
+callback was registered to receive it, so every pass of a callback-free core (every benchmark
+here; every server that drives itself from io and events) paid one `clock_gettime`, ~13 ns of a
+~33 ns pass, for an event nobody received. The fix is the obvious one: the tick phase, snapshot
+and `LoopEvent` included, sits behind `if (!_callback_list.empty())`.
+
+### 14.1 The guard alone: −56 % at one core, +25 % on the cross-core spin cells
+
+Measured through the unmodified adapters, qb-only builds, candidate / control (`f8eba11d`) /
+shipped 3.1.0 / candidate in one quiet WSL2 session (9 + 2, CPUs 0,2;
+`results/wsl-debian-g++14/qb-branch-perf-loop-clock-on-demand/grid-guard-only*/`): ping-pong
+1c-spin **64.9 → 28.4 ns** per round trip and thread-ring 1c-spin **37.9 → 17.5 ns** per hop —
+and ping-pong 2c-spin **206.9 → 253 / 259**, thread-ring 2c-spin **105.9 → 133 / 134**, with the
+2c-park cells and the batched shapes level. The ten-launch interleaved census (`census-guard-only/`)
+made it a finding rather than a level shift: 250.6 … 262.1 against 198.2 … 212.9, 127.9 … 141.6
+against 101.4 … 111.4, fully separated distributions.
+
+The mechanism is the idle pass. A SPINNING core whose pass just lost its only clock read polls its
+peer's ring index in ~20 ns of unserialized code and re-runs the whole pass between two reads —
+signal load, `has_work()`, flush, receive, the empty-tick check — and the cross-core exchange gets
+slower for it; the parked configurations did not move because a parkable core's idle pass still
+reads `mono_now()` for the idle-spin floor (axis A), and that read is `lfence; rdtsc` under the
+vDSO. What an idle spin pass needs was then measured rather than reasoned, one insertion at a time
+at the end of an idle spin-mode pass, interleaved launches, 3 reps + 1 warmup (per-primitive costs
+from a pinned micro-benchmark on the same CPUs: `_mm_pause` **33.4 ns** on the i9-12900K P-core,
+`_mm_lfence` 2.8 ns, `clock_gettime` 13.1 ns, bare `rdtsc` 6.0 ns):
+
+| idle spin pass | ping-pong 2c-spin | thread-ring 2c-spin | ping-pong 1c-spin |
+|---|---:|---:|---:|
+| `f8eba11d` (the control: a wall clock read per pass, everywhere) | 205.8 | 105.6 | 65.0 |
+| guard only (~20 ns, unserialized) | 259.9 | 134.4 | 28.3 |
+| + bounded tight `has_data()` poll, ×256 | **271.6** | **144.3** | 28.9 |
+| + `spin_loop_pause()` (33 ns) | 228.2 | 123.5 | 28.6 |
+| + `lfence` (3 ns) | 221.3 | 120.3 | 28.6 |
+| + `lfence` + `pause` | 224.0 | 126.5 | 28.4 |
+| + `lfence; rdtsc` (11 ns) | 204.6 | 114.8 | 28.6 |
+| **+ `mono_now()` on the idle pass (13 ns)** | **212.4** | **107.4** | **28.6** |
+
+(Three censuses, 7 / 5 / 7 launches; the per-directory README carries all three, the third's
+JSON is `census-variants/`.) Read together: the tightest poll is the worst — more reads of the
+peer's line per unit time, not fewer, is what hurts; an `lfence` alone recovers most of the loss
+for 3 ns; a `pause` recovers less and costs 33 ns of detection latency on this generation; and
+~10–15 ns of serialized work between two reads puts both cells back on the control's figure. The
+monotonic clock read the park policy already takes on an idle pass is exactly that, so the fix
+takes it in every latency mode — `_idle_since` is stamped on idle passes whether or not the core
+can park, and only the park stays gated on `latency > 0`; a busy pass reads no clock in any mode.
+The pacing is documented in `VirtualCore.cpp` as pacing, with these figures, not left as an
+accident a later cleanup would remove again. A hardware wait on the peer line (`umonitor` /
+`umwait` and `tpause` on WAITPKG parts, `wfe` on arm64) is the axis this leaves open: the
+right primitive for "sleep until that line is written" exists on both ISAs this repository
+measures, and nothing here has tried it.
+
+### 14.2 The branch head, both hosts, one session each
+
+| cell (per unit) | Windows/MSVC: `f8eba11d` → head | WSL2/g++: `f8eba11d` → head | census (10 / 15 launches, ctl vs head) |
+|---|---|---|---|
+| ping-pong 1c-spin (round trip) | 80.7 → **41.6** (−48 %) | 65.8 → **28.3** (−57 %) | 80.7 vs 41.9 / 64.8 vs 28.2 |
+| ping-pong 1c-park | 81.5 → **42.8** (−47 %) | 66.5 → **28.4** (−57 %) | — |
+| thread-ring 1c-spin (hop) | 44.7 → **22.9** (−49 %) | 38.1 → **17.8** (−53 %) | — |
+| thread-ring 1c-park | 45.5 → **23.0** (−49 %) | 38.3 → **23.1 / 18.0** | — |
+| ping-pong 2c-spin | 251.7 → 267.1 / 245.5 | 197.1 → 211.1 / 212.9 | 247.3 vs 255.0 / 205.6 vs 209.7, overlapping |
+| thread-ring 2c-spin | 123.3 → 123.3 / 124.7 | 105.8 → 107.4 / 110.9 | 122.4 vs 122.8 / 104.4 vs 109.3, overlapping |
+| ping-pong 2c-park | 257.3 → 257.1 | 219.4 → 209.3 | — |
+| thread-ring 2c-park | 128.3 → 123.3 | 114.9 → 108.0 | — |
+| counting (all four) | bimodal on both builds (§9.11) | 8.0–9.9, level | 9.8 vs 9.8 / 9.9 vs 9.8 (2c) |
+
+Shipped 3.1.0 in the same sessions: ping-pong 1c 113.6 / 97.9, so the head is **−63 / −71 %**
+against the release. `dev/bench`'s same-core cells say the same thing in the engine's own units:
+`BM_Mono_PingPong_Latency` **117.8 → 76.7** (MSVC) and **100.2 → 62.9** (g++), the 10-actor
+one-core pipeline **79.1 → 43.3** and **65.1 → 31.8 ns** per delivery, the 8 × 8 pipeline and the
+cross-core `Multi_PingPong` inside their spread (257.3 vs 258.4 over eight interleaved g++ runs),
+the ask round trips −3 to −7 %. The cross-core spin medians on g++ sit +2 / +5 % with
+overlapping distributions across three censuses — recorded with their sign, not rounded away:
+the head's idle pass is a few nanoseconds shorter than the control's (it no longer copies an
+empty tick snapshot), and the table above is not sharp enough to say whether that is the reason.
+
+What is left of residual 1 after this: the pass itself — `has_work()` is two `ev_*` calls per
+pass, `__receive__` swaps and walks an empty pipe before it reads the rings, and the resolver's
+dispatch is 7 % of the profile — and the profile is the instrument again.

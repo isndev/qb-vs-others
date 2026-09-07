@@ -96,7 +96,16 @@ is left of the pipeline is the train itself.
    checks). **The merge to `develop` is done** (2026-09-06, the citation sweep in the same
    commits as the pointer bumps); the train (Huly QB-45, `dev/agent/release-gate.sh`) is not,
    and the 3.2.0 grid above is the figure it ships with.
-5. **After the merge** — the SObjectizer spin-budget sweep (§4, adapter-side); the placement
+5. **The residuals of §13.3, on `develop` before the train** — residual 1 (the per-pass cost of a
+   core with one event in flight) took its first cut on 2026-09-07: `perf/loop-clock-on-demand`
+   (Huly QB-180, §14 — the tick phase's `LoopEvent` read the wall clock on every pass of a
+   callback-free core; ping-pong 1c **65.8 → 28.3 ns** on g++, **80.7 → 41.6** on MSVC, the
+   cross-core cells inside their spread once the idle pass kept a paced clock read), measured on
+   both hosts in one session each, A/B'd through the censuses. What §14 leaves: the pass itself
+   (`has_work()`, the empty `__receive__` walk, the resolver) with `perf` as the instrument, and a
+   hardware wait on the peer line (`umonitor`/`umwait`, `tpause`, arm64 `wfe`) as an axis nobody
+   has tried.
+6. **After the merge** — the SObjectizer spin-budget sweep (§4, adapter-side); the placement
    paragraph in `qb.llm.md` that closes 9.4 by design and the `send<>` sentence that closes
    9.6; and 9.2, the 32-byte bucket, as a measured 4.0 experiment on top of the segmented pipe.
    §9.12 (the MSVC dispatch gap) closed with item 2: warm, MSVC dispatches at 6.6–10.4 ns against
