@@ -1452,3 +1452,87 @@ empty tick snapshot), and the table above is not sharp enough to say whether tha
 What is left of residual 1 after this: the pass itself — `has_work()` is two `ev_*` calls per
 pass, `__receive__` swaps and walks an empty pipe before it reads the rings, and the resolver's
 dispatch is 7 % of the profile — and the profile is the instrument again.
+
+## 15. The pass itself — what a core pays per pass and per event, and the probe that separates them
+
+§14 removed the clock read from the pass and left a one-core ping-pong at 28.3 ns per round trip
+on g++: two passes of ~14 ns, each carrying one event. What is a pass, and what is the event?
+`counting` measures the event at ~8 ns when a million of them are drained in a burst, so the
+fixed part of a pass had to be ~6 ns; but neither number could be read off a benchmark directly.
+`tools/probes/pass-cost.cpp` (Huly QB-182) is the instrument: one actor on one pinned core with
+k independent self-event chains, so every pass carries exactly k events through the self pipe,
+the router and the handler — no tick, no clock inside the window — and k = 1, 2, 4 separate the
+per-pass and per-event costs. On `0f7994e6` (the §14 head), g++-14: **14.6 / 23.1 / 41.0 ns**
+for k = 1 / 2 / 4 — a fixed pass of ~6 ns and **8.4–8.9 ns per event**; MSVC 19.51: 20.4 /
+28.4 / 44.8.
+
+The per-instruction profile of the k = 1 pass (cpu-clock samples joined to the disassembly by
+symbol offset, since `perf annotate` has no PMU to lean on under WSL2) put a third of it in
+the handler's `push`: a **four-deep dependent-load chain** to find the outbound pipe (the
+engine's core set → its dense-index table → the pipe vector's data pointer → the pipe's
+cursors), a six-register prologue inherited from the inlined slow half of `allocate_back`, and
+the cursors themselves just rewritten by `__receive__`'s pipe swap; a fifth in `__receive__`
+(the swap — six loads and six stores per pass — then `front()` reading them back); and the
+rest spread over `__flush_all__`'s prologue on a pass with nothing to flush, the two `ev_*`
+calls behind `listener::has_work()` (one a loop over five priorities), the resolver's prologue
+(the broadcast walk's thread-local snapshot vector, inlined into the unicast path) and a
+divide-by-24 in the router's bounds check. Five changes, each kept only after the probe moved
+(ns per pass, k = 1 / 2 / 4, g++-14):
+
+| step | k = 1 | k = 2 | k = 4 |
+|---|---:|---:|---:|
+| `0f7994e6` | 14.55 | 23.15 | 40.99 |
+| io counters read inline (qev `ev_active_count_addr` / `ev_pending_count_addr`), swap gated on a non-empty self pipe | 14.46 | 23.35 | — |
+| + `_pipe_of_core[CoreId]` (one indexed load), `allocate_back_slow` out of line | 14.08 | 20.88 | — |
+| + the self pipe walked in place up to a fence — no second pipe, no swap | 13.80 | 20.24 | 33.25 |
+| + inline peer scan before the flush drain, broadcast walk out of line | 12.68 | 17.12 | 25.37 |
+| + cached slot count in `key_table::find` (**`2771cd67`**) | **12.9** | **16.6** | **24.6** |
+
+The pass with one event is **−12 %** and the marginal event **8.9 → 4.2 ns**; on MSVC 20.4 →
+15.6 / 28.4 → 22.9 / 44.8 → 37.0. The fence is the design change: `__receive__` used to swap a
+second pipe in so that a handler's same-core pushes could not grow the range being walked; a
+`segmented_pipe::fence` — the tail segment and write cursor at the top of the pass — gives the
+same guarantee on ONE pipe (pushes land behind it and are the next pass's), and a pipe drained
+to its fence rewinds its resident segment, so a one-event pass reads and writes the same 64
+bytes every time.
+
+### 15.1 Both hosts, one session each, against `0f7994e6` (p50 per unit; the per-directory READMEs carry every cell and the censuses)
+
+| cell | Windows/MSVC | WSL2/g++ |
+|---|---|---|
+| ping-pong 1c-spin (round trip) | 41.4 → **30.6** (−26 %) | 28.7 → **22.6** (−21 %) |
+| thread-ring 1c-spin (hop) | 22.7 → **18.5** (−19 %) | 21.1 → **17.2** (census 18.0 → 17.3) |
+| fork-join 1c / 2c-park (message) | 8.9 → 8.4 / 10.7 → 11.5 | 9.2 → **7.4** / 11.1 → **8.4** (−25 %) |
+| big 1c-park (round trip) | 19.4 → **17.0** (−12 %) | 22.5 → **18.5** (−18 %) |
+| counting 1c-spin (message) | bimodal, both builds | 8.9 → 8.0 |
+| ping-pong 2c-park / 2c-spin | 260 → 230–246 / 248 → 238–246 | 213 → 200 / 209 → 200–211 |
+| thread-ring 2c-spin / 2c-park | 122 → 125–127 / 123 → 126 (**+2–5 %**) | 108.5 → 110–114 / 108 → 112 (**+1–5 %**) |
+| `dev/bench` `Mono_PingPong` / one-core pipeline | 76.6 → **66.4** / 42.7 → **34.6** | 63.7 → 58.5 / 32.2 → 29.9 |
+| `dev/bench` `BM_PINGPONG` 64 actors, 1 core | 29.4 → 26.5 | 26.5 → **21.3** (−20 %) |
+
+### 15.2 The cell that moves the other way, and why it is kept
+
+thread-ring at two cores — a hundred actors round-robin over two cores, every hop crossing, one
+token in flight — reads +1 to +5 % against the control in every interleaved census on both
+hosts, while the two-actor ping-pong at two cores reads −4 to −9 %. The bisect (the head with
+one change undone at a time, eight interleaved launches each, g++): the inline flush scan alone
+brings the ring back to 105 ns (control 107); the pipe table and the router split do not. A
+waiting core's idle pass is ~2 ns shorter without the drain's prologue and walk, and the
+100-actor ring's cross-core hop is slower for it — the sensitivity §14 measured when the idle
+spin pass lost its clock read, in the shape that had already shown it most. Undoing the scan
+would cost 0.5 ns on every one-event pass, 3 ns on a four-event pass and 6 % on ping-pong 1c;
+the ring's ~4 ns per hop is the recorded price, and QB-181 (what an idle spin pass should do
+while it waits — `umonitor`/`umwait`, `tpause`, `wfe`) now has the ring as its instrument. The
+probe for that question measured here, under WSL2 on the i9-12900K: `tpause` has a 25 ns floor
+whatever its deadline, `umwait` wakes ~86 ns after the remote write against 31 ns for a tight
+spin, `pause` 33 ns.
+
+### 15.3 What is left of residual 1
+
+The one-event pass is ~13 ns on g++ for ~180 instructions; the marginal event ~4 ns. The next
+instrument is the same probe over the receive side — `__receive_events__`'s prologue and the two
+table lookups per event, the trampoline's `is_alive` byte, `dispose` — and the open design
+question is the ORDER of the pass: the flush runs before the receive, so a handler's cross-core
+`push` waits a whole pass before it leaves the core; `send`/`forward`/`reply` already deliver
+straight into the peer's ring, and moving the flush after the receive would give `push` the same
+latency at the cost of a documented ordering change (engine.md, steps 5 and 6).

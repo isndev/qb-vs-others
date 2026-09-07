@@ -143,6 +143,11 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     set_target_properties(qvoprobe-parked-io-wake PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "probes")
+    add_executable(qvoprobe-pass-cost tools/probes/pass-cost.cpp)
+    target_link_libraries(qvoprobe-pass-cost PRIVATE qb::core)
+    set_target_properties(qvoprobe-pass-cost PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "probes")
 endif()
 
 qvo_report_configuration()

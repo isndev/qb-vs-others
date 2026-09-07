@@ -104,7 +104,12 @@ is left of the pipeline is the train itself.
    both hosts in one session each, A/B'd through the censuses. What §14 leaves: the pass itself
    (`has_work()`, the empty `__receive__` walk, the resolver) with `perf` as the instrument, and a
    hardware wait on the peer line (`umonitor`/`umwait`, `tpause`, arm64 `wfe`) as an axis nobody
-   has tried.
+   has tried. The second cut landed the same day (QB-182, §15): the pass itself and its enqueue
+   path, measured with the `pass-cost` probe — a one-event pass 14.6 → 12.9 ns and the marginal
+   event 8.9 → 4.2 on g++, 20.4 → 15.6 on MSVC; ping-pong 1c **−21 / −26 %**, fork-join and big
+   −10 to −25 %; one cell the other way (thread-ring 2c, +1–5 %, bisected to a shorter idle pass,
+   handed to QB-181 with the ring as its instrument). Left: the receive side per event, and the
+   pass ORDER — flush before receive costs a cross-core `push` a whole pass (§15.3).
 6. **After the merge** — the SObjectizer spin-budget sweep (§4, adapter-side); the placement
    paragraph in `qb.llm.md` that closes 9.4 by design and the `send<>` sentence that closes
    9.6; and 9.2, the 32-byte bucket, as a measured 4.0 experiment on top of the segmented pipe.
