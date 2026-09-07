@@ -1223,3 +1223,133 @@ fire on them — no gap of 2× between clusters — so they render as medians, a
 them with their spread. What makes a busy-polling ring floor and a 3.1.0 that crosses a core per
 transfer spread 3× on MSVC where the `develop` builds do not is not measured; it is the same
 host, the same session and the same CPU set.
+
+---
+
+## 13. The 3.2.0 candidate grid — eight shapes, two hosts, one session each
+
+Everything §7–§12 produced is one branch now: qb `develop` at **`f8eba11d`**, 29 commits over
+the shipped v3.1.0 (`eac739ff`) — axes A–N (§7, §10), the segmented pipe (§9.11, QB-43), the
+dense router (axes I / M), the default-event registry (QB-174), the dense-table growth chain
+fib produced (§11), the five ask-path fixes bank-transaction produced and the ask slot table
+(§12, QB-178). On 2026-09-07 it was measured through the unmodified adapters on **all eight
+Savina shapes**, candidate / shipped 3.1.0 / candidate, **9 repetitions + 2 warmup**, in one
+quiet session per host with the other host idle: Windows / MSVC 19.51 08:21:40–08:26:18 UTC
+(`build/final` rebuilt at `f8eba11d` against `build/shipped-win`), WSL2 / g++-14 08:45:23–
+08:54:36 UTC (`~/qvo/linux` against `~/qvo/shipped`, both on ext4 — shipped 3.1.0's fib
+writes 61 MB of log per repetition, §11.5, which is 8 min 40 s of that session). The three
+grids per host are `results/<host>/qb-branch-develop/`, each 32 / 32 verified; README.md's
+two `framework=qb` grids render `grid-f8eba11d/` and `check-report.py` holds them to the
+JSON. The field columns below are the published `savina-*/` cells of each host (their own
+sessions, 2026-09-04 / -06 / -07); "× floor" is the candidate over the raw-thread floor, "×
+best other" is the better of CAF and SObjectizer over the candidate.
+
+| shape (per unit) | config | Windows: 3.1.0 → `f8eba11d` | WSL2: 3.1.0 → `f8eba11d` | × floor (W / L) | × best other (W / L) |
+|---|---|---|---|---|---|
+| `ping-pong` (round trip) | 1c-spin | 117.4 → **84.2** (-28 %) | 100.3 → **66.0** (-34 %) | 49 / 40 | 2.2 / 2.2 |
+|  | 1c-park | 118.7 → **83.4** (-30 %) | 99.8 → **66.4** (-33 %) | 49 / 40 | 2.6 / 2.5 |
+|  | 2c-spin | 373.9 → **297.2** (-21 %) | 290.9 → **222.0** (-24 %) | 1.63 / 1.06 | 1.6 / 1.3 |
+|  | 2c-park | 7,793.0 → **274.5** (-96 %) | 29,026.5 → **227.0** (-99 %) | 0.59 / 0.01 | 1.8 / 1.3 |
+| `counting` (message) | 1c-spin | 31.7 → **10.0** (-69 %) | 43.6 → **8.7** (-80 %) | 3.14 / 3.11 | 14.0 / 12.5 |
+|  | 1c-park | 31.7 → **9.5** (-70 %) | 43.9 → **8.5** (-81 %) | 1.22 / 1.31 | 15.4 / 12.9 |
+|  | 2c-spin | 34.3 → **11.7** (-66 %) | 47.9 → **11.0** (-77 %) | 0.28 / 0.46 | 10.8 / 14.9 |
+|  | 2c-park | 34.2 → **11.7** (-66 %) | 48.4 → **11.0** (-77 %) | 0.22 / 0.18 | 12.8 / 15.2 |
+| `thread-ring` (hop) | 1c-spin | 65.0 → **45.4** (-30 %) | 55.1 → **39.3** (-29 %) | 5.35 / 14 | 2.0 / 1.8 |
+|  | 1c-park | 63.3 → **45.0** (-29 %) | 55.8 → **38.7** (-31 %) | 4.44 / 3.01 | 2.4 / 2.1 |
+|  | 2c-spin | 209.2 → **154.2** (-26 %) | 169.1 → **112.3** (-34 %) | 1.40 / 0.98 | 1.5 / 1.3 |
+|  | 2c-park | 2,621.0 → **146.4** (-94 %) | 14,541.5 → **120.7** (-99 %) | 0.54 / 0.01 | 1.6 / 1.2 |
+| `fork-join` (message) | 1c-spin | 43.6 → **10.5** (-76 %) | 62.3 → **9.5** (-85 %) | 3.15 / 2.92 | 13.3 / 10.6 |
+|  | 1c-park | 42.9 → **10.5** (-75 %) | 61.8 → **9.6** (-85 %) | 1.44 / 1.36 | 14.3 / 11.2 |
+|  | 2c-spin | 46.1 → **12.2** (-74 %) | 51.7 → **9.6** (-81 %) | 0.32 / 0.34 | 14.0 / 16.6 |
+|  | 2c-park | 44.5 → **11.2** (-75 %) | 50.9 → **9.9** (-81 %) | 0.23 / 0.23 | 15.0 / 17.2 |
+| `big` (round trip) | 1c-spin | 37.1 → **20.3** (-45 %) | 33.9 → **21.4** (-37 %) | 1.80 / 2.97 | 9.2 / 6.2 |
+|  | 1c-park | 36.0 → **20.0** (-44 %) | 33.2 → **22.7** (-32 %) | 1.03 / 1.64 | 10.0 / 6.3 |
+|  | 2c-spin | 32.6 → **24.8** (-24 %) | 28.8 → **21.7** (-25 %) | 0.57 / 0.85 | 12.4 / 10.5 |
+|  | 2c-park | 31.8 → **23.9** (-25 %) | 29.9 → **21.9** (-27 %) | 0.39 / 0.38 | 12.9 / 11.5 |
+| `fib` (actor) | 1c-spin | 8,826.2 → **198.8** (-98 %) | 3,388.3 → **133.3** (-96 %) | 3.07 / 4.45 | 7.5 / 9.0 |
+|  | 1c-park | 8,868.4 → **197.6** (-98 %) | 3,420.4 → **135.3** (-96 %) | 2.73 / 2.54 | 7.5 / 9.0 |
+|  | 2c-spin | 8,175.1 → **117.2** (-99 %) | 2,598.8 → **90.4** (-97 %) | 1.67 / 1.52 | 7.8 / 7.5 |
+|  | 2c-park | 8,251.8 → **116.5** (-99 %) | 2,413.5 → **89.8** (-96 %) | 1.65 / 1.54 | 7.8 / 7.5 |
+| `chameneos` (meeting) | 1c-spin | 66.9 → **35.3** (-47 %) | 59.4 → **35.3** (-41 %) | 1.06 / 2.40 | 10.7 / 7.6 |
+|  | 1c-park | 66.1 → **34.9** (-47 %) | 65.4 → **33.3** (-49 %) | 0.76 / 1.20 | 11.6 / 8.9 |
+|  | 2c-spin | 100.3 → **65.3** (-35 %) | 72.2 → **54.3** (-25 %) | 0.21 / 0.38 | 16.6 / 11.6 |
+|  | 2c-park | 105.2 → **63.5** (-40 %) | 78.5 → **53.8** (-31 %) | 0.17 / 0.15 | 16.8 / 11.9 |
+| `bank-transaction` (transfer) | 1c-spin | 529.8 → **263.2** (-50 %) | 283.6 → **143.5** (-49 %) | 3.80 / 6.50 | 2.2 / 2.7 |
+|  | 1c-park | 539.6 → **272.5** (-50 %) | 278.7 → **145.7** (-48 %) | 3.48 / 2.81 | 2.3 / 2.8 |
+|  | 2c-spin | 749.6 → **156.6** (-79 %) | 179.3 → **92.8** (-48 %) | 0.24 / 0.74 | 4.9 / 5.5 |
+|  | 2c-park | 701.4 → **149.6** (-79 %) | 177.5 → **96.4** (-46 %) | 1.03 / 1.04 | 5.9 / 5.7 |
+
+### 13.1 What the two hosts agree on
+
+**Every one of the 64 cells is faster than shipped 3.1.0, and none by less than the spread.**
+The smallest deltas are the cross-core spin cells (−21 / −24 % ping-pong, −26 / −34 % ring);
+everything else is −28 % or more. Both `2c-park` collapses (§5) are gone on both hosts, and on
+WSL2 they are gone under a hypervisor whose futex wake alone is 12 µs: the parked candidate
+answers a cross-core round trip in 274 / 227 ns where 3.1.0 took 7.79 / 29.03 µs, because a
+parked core no longer sleeps outside its loop (§10, axis N — the park is `ev_run` capped by
+a timer, and a producer's `ev_async_send` ends it). The two shapes that stage a burst are
+3–8× cheaper at every cell — that is the segmented pipe, and its burst sweep (§9.11) is
+unchanged by the 18 commits since `a017b8a5`: counting 1c is 10.0 / 8.7 ns here against
+9.5 / 9.2 there. fib is the largest delta the repository has recorded — **44× / 70×** on
+Windows, **25× / 29×** on WSL2 — and §11.5 says what 3.1.0's cell was (nine `LOG_INFO` lines
+per actor lifetime, then an O(n²) table growth): a defect a benchmark had to exist to see.
+bank-transaction is −48 to −50 % at one core on both hosts, and −79 % at two cores on Windows
+where 3.1.0's 2c cells were the wide ones §12.4 records (342–1133 ns per transfer across nine
+repetitions there; 145–208 in the candidate).
+
+**The candidate is the fastest framework in all 64 cells** — by 1.3× at the least (ring and
+ping-pong 2c cells on WSL2, against pooled CAF, which never crosses a core: §8.1) and 17× at
+the most (fork-join 2c-park on WSL2) — and it is **below the raw-thread floor in 11 of the 16
+two-core cells on Windows and 12 on WSL2**. §9.7 explains the mechanism for the batched shapes
+(the floor pays one remote cache-line crossing per message on its SPSC ring; qb moves a batch
+per flush), and axis N explains the park cells (the floor's condition variable pays the wake;
+qb's parked core answers before it sleeps). One cell is new to that list, and it is a one-core cell:
+chameneos 1c-park on Windows sits at 0.76× the floor (34.9 vs 45.8 ns). The floor's parked
+mode is a `seq_cst` fence plus a `sleeping` load on every `send` — an `mfence` per message on
+x86, `frameworks/baseline/baseline_support.h` — which is why the seven Mesh floors' 1c-park cells are
+1.1–4.4× their own 1c-spin cells (ping-pong's floor at one core is one SPSC ring in both
+columns, 1.0×); the candidate's park costs it nothing on the same core (34.9 vs
+35.3), because a core that owns the whole ring never announces that it sleeps. What stays above the floor is exactly the set of
+two-core cells that cross a core per message with nothing to batch: ping-pong 2c-spin (1.63× /
+1.06×), thread-ring 2c-spin on Windows (1.40×; 0.98× on WSL2), the two fib cells (1.5–1.7× —
+actor creation, not messaging) and bank-transaction 2c-park (1.03× / 1.04×, level).
+
+### 13.2 What the two hosts disagree on
+
+- **MSVC is 1.3–1.5× g++ on the same-core dispatch cells** (ping-pong 84 vs 66, ring 45 vs 39,
+  fib 199 vs 133, bank 263 vs 144) and level or ahead on the all-to-all (big 20 vs 21; 25 vs 22
+  at two cores). The fib gap is the widest — the same source, one generation of the same dense
+  tables (§11.3) — and is the cell to profile if a Windows profile ever joins this protocol.
+- **The WSL2 pass 2 sits above pass 1 on the cross-core cells by a level shift, not a spread**
+  (ring 2c-spin 107.2 … 122.6 against 125.0 … 129.4, ping-pong 2c-spin 207.2 … 245.6 against
+  224.4 … 257.9; the one-core and the batched cells do not move), after the 9-minute shipped
+  leg between the passes. On Windows the same two cells are bimodal WITHIN a launch, as §9.11
+  measured. Either way a grid median is where the majority fell, and the interleaved launch
+  census (§9.11) is the instrument for those two cells; both passes rank the two builds the
+  same way on both hosts.
+- **The Windows 1c bank-transaction cells are 8–10 % above the same host's A/B session of two
+  hours earlier** (13.16 / 13.62 ms against 11.99–12.22 at 06:28 UTC, §12.4's QB-178 session)
+  while WSL2's agree to 1–2 % (143.5 / 145.7 against 145.0 / 144.9). The 2c cells agree on both
+  hosts. It is the host's level, and the reason a session is compared within itself.
+
+### 13.3 What the grid leaves, and where the next axis is
+
+Named per host in each `qb-branch-develop/README.md`; the two readings agree on the order:
+
+1. **The per-pass cost of a core with one event in flight.** A one-core round trip is 84 / 66
+   ns and a round trip is two dispatches; counting measures the same dispatch at 10 / 9 ns when
+   a million events are staged and drained in batches. ping-pong's two actors alternate one
+   event at a time, so every event pays a whole `__flush_all__` → `consume_all` → route pass —
+   42 / 33 ns per hop against 10 / 9 batched, 49× / 40× the floor's atomic hand-off, 2.2× the
+   best of the field. This is the `perf` target on g++, and the cell every other shape's
+   one-core figure is made of.
+2. **An actor's lifetime.** fib is 199 / 133 ns per actor against a floor of 65 / 30 (one
+   heap `Node` in a per-worker slot table and two ring messages): `addActor`, a registry slot,
+   two subscriptions, `kill`, and the pipe traffic of two events. §11.3 lists what is in it.
+3. **The cross-core hop with nothing to batch** — ping-pong and ring at 2c-spin, 1.0–1.6× a
+   floor that IS the hop. Not a defect; the shape of the measurement. The census, not a grid,
+   is what will say whether an axis moved it.
+
+Nothing in the grid argues for another core axis before the train: the collapses are closed,
+every shape is ahead of the field on both compilers, and the residuals are each a named
+figure with a named instrument. This is the grid 3.2.0 ships with (`docs/ROADMAP.md`).

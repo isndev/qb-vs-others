@@ -39,6 +39,7 @@ argument it exists to win:
 | Feature comparison, cited to the three sources | [docs/FEATURES.md](docs/FEATURES.md) |
 | `savina/fib`, `savina/chameneos` × the same four (+ CAF-detached declared omitted) | **done on Windows and WSL2**: 16 cells each per host, shipped qb 3.1.0 like the five before them (`results/<host>/savina-fib/`, `savina-chameneos/`, rendered in each host's `REPORT.md`), **116 cells per host**; macOS not yet. Written against the qb branch they produced (`results/<host>/qb-branch-perf-dense-table-growth/`): fib found a 43 s defect in unreleased `develop` and drove three qb commits, and its shipped-3.1.0 cell is a LOGGING figure — nine `LOG_INFO` lines per actor lifetime, 515 819 lines per repetition, 159 / 459 ms (WSL2 / Windows, 2c-spin) against the branch's 7.6 / 10.5 in the same session, CAF 39 / 53, floor 3.4 / 4.0 (`docs/TUNING.md` §11) |
 | `savina/bank-transaction` × the same four (+ CAF-detached declared omitted) | **done on Windows and WSL2** (2026-09-07): 16 cells per host, shipped qb 3.1.0 (`results/<host>/savina-bank-transaction/`, rendered in each host's `REPORT.md`), **132 cells per host**; macOS not yet. The first shape that WAITS for a reply — one `qb::ask` / CAF `request().then()` per transfer, 50 000 of them — and it found five defects on qb's ask path in one afternoon (`docs/TUNING.md` §12, qb `9814c2a1`): shipped 3.1.0 measures 14.7 / 9.2 ms (WSL2, 1c / 2c spin) and 25.5 / 29.2 (Windows), qb `develop` before the fixes 9.4 / 5.1 and 13.7 / 8.0, after them **8.1 / 4.6** and **12.9 / 7.6** in the same session (`results/<host>/qb-branch-perf-coro-scope-local-refcount/`), against CAF 41.5 / 36.6 and 57.8 / 57.5, SObjectizer 19.5 / 25.5 and 29.6 / 38.0, floor 1.1 / 6.3 and 3.5 / 32.2 |
+| **The 3.2.0 candidate grid** — qb `develop` `f8eba11d` × all eight shapes | **done on Windows and WSL2** (2026-09-07): 96 qb cells per host (candidate / shipped 3.1.0 / candidate, 9 + 2, one quiet session per host, `results/<host>/qb-branch-develop/`) — the fastest framework in all 64 cells, below the floor in 11 / 12 of the 16 two-core cells, both 2c-park collapses gone, fib 44× / 70× (Windows) and 25× / 29× (WSL2), bank −50 / −79 % and −48 / −48 %; the two `framework=qb` grids below and `docs/TUNING.md` §13. macOS not yet: its machine measures the candidate when it is next on. |
 | The other 17 Savina benchmarks | **not yet written** — see [docs/ROADMAP.md](docs/ROADMAP.md) |
 | Linux axis (WSL2 Debian 13 / g++ 14.2) | **run**, the same 84 cells — with the WSL2 caveat below; native Linux not yet |
 | macOS axis (Apple M4 Pro / AppleClang 21, arm64) | **run**, the same 84 cells — **unpinned** (macOS has no verified affinity API; every document says `pinned:false`); the candidate branch measured beside shipped 3.1.0 in the same session, `docs/TUNING.md` §9.13 |
@@ -223,70 +224,94 @@ Seven things in those tables are worth more than the ranking:
    what removing the out-of-line accessors, the two hash lookups per dispatch and the
    per-event publish on that path is worth. Every qb-side finding from these five benchmarks — what
    it costs, where, and what was done about it — is in [docs/TUNING.md §9](docs/TUNING.md).
-7. **The candidate branch is measured for all five, on both hosts, and read the same way.** qb
-   at `perf/event-pipe-segmented` (`a017b8a5`, two commits over `perf/core-hot-path` `f5c20eeb`
-   and ten over 3.1.0), through the same adapters, in one session with `f5c20eeb` and a shipped
-   build (`grid-f5c20eeb/` and `grid-shipped-3.1.0/` beside each `grid-final/`); the `qb` items
-   above are the published shipped run, and the two shipped measurements agree within the
-   spread (Windows ping-pong 2c-park 4.23 µs there, 3.59 µs in the same-session control — a
-   collapsed cell has no stable figure, which is the point of the branch).
+7. **The 3.2.0 candidate is measured for all EIGHT shapes, on both hosts, in one session each,
+   and it is the fastest framework in every one of the 64 cells.** qb `develop` at
+   **`f8eba11d`** — 29 commits over 3.1.0, every perf branch this repository produced merged:
+   axes A–N, the segmented pipe (QB-43), the dense router, the default-event registry (QB-174),
+   the dense-table growth fib found, the five ask-path fixes bank-transaction found and the ask
+   slot table (QB-178) — through the same adapters, 9 repetitions + 2 warmup, candidate /
+   shipped 3.1.0 / candidate back to back on 2026-09-07 (Windows 08:21:40–08:26:18 UTC, WSL2
+   08:45:23–08:54:36 UTC, the other side idle each time; `results/<host>/qb-branch-develop/`).
+   The `qb` items above are the published shipped runs; the same-session controls agree with
+   them within the spread, except where a collapsed cell has no stable figure — which was the
+   point.
 
-<!-- the two grids below are the candidate branch; check-report verifies them against their own directory -->
-The candidate on Windows (`results/desktop-b67osn6-win-msvc/qb-branch-perf-event-pipe-segmented/grid-final/`):
+<!-- the two grids below are the 3.2.0 candidate; check-report verifies them against their own directory -->
+The candidate on Windows (`results/desktop-b67osn6-win-msvc/qb-branch-develop/grid-f8eba11d/`; per unit — round trip, message, hop, message, round trip, actor, meeting, transfer):
 
-<!-- check-report: results/desktop-b67osn6-win-msvc/qb-branch-perf-event-pipe-segmented/grid-final framework=qb -->
+<!-- check-report: results/desktop-b67osn6-win-msvc/qb-branch-develop/grid-f8eba11d framework=qb -->
 | benchmark | 1 core, spin | 1 core, park | 2 cores, spin | 2 cores, park |
 |---|---|---|---|---|
-| ping-pong | 83 ns | 79 ns | 319 ns | 265 ns |
-| counting | 9 ns | 10 ns | 11 ns | 12 ns |
-| thread-ring | 43 ns | 46 ns | 164 ns | 144 ns |
-| fork-join | 10 ns | 10 ns | 11 ns | 11 ns |
-| big | 22 ns | 21 ns | 23 ns | 25 ns |
+| ping-pong | 84 ns | 83 ns | 297 ns | 274 ns |
+| counting | 10 ns | 9 ns | 12 ns | 12 ns |
+| thread-ring | 45 ns | 45 ns | 154 ns | 146 ns |
+| fork-join | 11 ns | 11 ns | 12 ns | 11 ns |
+| big | 20 ns | 20 ns | 25 ns | 24 ns |
+| fib | 199 ns | 198 ns | 117 ns | 116 ns |
+| chameneos | 35 ns | 35 ns | 65 ns | 64 ns |
+| bank-transaction | 263 ns | 272 ns | 157 ns | 150 ns |
 
-The candidate on WSL2 (`results/wsl-debian-g++14/qb-branch-perf-event-pipe-segmented/grid-final/`):
+The candidate on WSL2 (`results/wsl-debian-g++14/qb-branch-develop/grid-f8eba11d/`):
 
-<!-- check-report: results/wsl-debian-g++14/qb-branch-perf-event-pipe-segmented/grid-final framework=qb -->
+<!-- check-report: results/wsl-debian-g++14/qb-branch-develop/grid-f8eba11d framework=qb -->
 | benchmark | 1 core, spin | 1 core, park | 2 cores, spin | 2 cores, park |
 |---|---|---|---|---|
-| ping-pong | 65 ns | 66 ns | 209 ns | 232 ns |
-| counting | 9 ns | 11 ns | 10 ns | 11 ns |
-| thread-ring | 42 ns | 43 ns | 126 ns | 129 ns |
-| fork-join | 9 ns | 10 ns | 11 ns | 12 ns |
-| big | 26 ns | 29 ns | 22 ns | 24 ns |
+| ping-pong | 66 ns | 66 ns | 222 ns | 227 ns |
+| counting | 9 ns | 9 ns | 11 ns | 11 ns |
+| thread-ring | 39 ns | 39 ns | 112 ns | 121 ns |
+| fork-join | 10 ns | 10 ns | 10 ns | 10 ns |
+| big | 21 ns | 23 ns | 22 ns | 22 ns |
+| fib | 133 ns | 135 ns | 90 ns | 90 ns |
+| chameneos | 35 ns | 33 ns | 54 ns | 54 ns |
+| bank-transaction | 144 ns | 146 ns | 93 ns | 96 ns |
 
-Against the shipped rows above: the two 2c-park collapses are gone (ping-pong 4.23 µs → 265 ns
-on Windows, 26.78 µs → 232 ns on WSL2; thread-ring bimodal → 144 ns and 13.41 µs → 129 ns);
-the two shapes that stage a burst — counting and fork-join — are **3–7× cheaper at every cell
-on both compilers** (Windows counting 29–33 → 9–12 ns, fork-join 40–46 → 10–11; WSL2 counting
-44–46 → 9–11, fork-join 57–70 → 9–12), which is the segmented pipe: a handler that pushes a
-million events no longer pays a growth ladder that copies everything it holds and faults every
-page it touches (`docs/TUNING.md` §9.11 — 291 page faults per 1 M process against 230 942 for
-`f5c20eeb` and 287 732 for 3.1.0); the other one-core cells are 25–45 % cheaper (Windows
-ping-pong 112 → 79–83, ring 63 → 43–46, big 36 → 21–22; WSL2 ping-pong 98 → 65–66, ring
-63 → 42–43, big 37–39 → 26–29), and big at two cores 20–35 % (Windows 31–33 → 23–25, WSL2
-33 → 22–24).
-Cells to read with care: the two `2c-spin` cells that cross a core per message (ping-pong, ring)
-are bimodal within a launch on Windows — the repetition sequence of either build alternates
-between ~245–255 and ~300–345 ns per round trip (ring ~120–145 vs ~165–180) and a 7-repetition
-median lands wherever the majority fell — so the grid's 319 vs `f5c20eeb`'s 259 and the ring's
-164 vs 137 are not the figure to quote for those two cells: the launch census (the same
-binaries launched standalone 10–16 times, interleaved) puts ping-pong 2c-spin at 250.2 → 250.0
-ns and the ring at 130.3 → 124.7 — and the kept 12-launch census on all eight cells of the two
-(`launch-census/`, 2026-09-06) reads 265.9 → 269.8 and 138.8 → 133.3, every pair overlapping —
-and a census under the grid's own launcher with the three
-burst benchmarks removed from the sequence puts the ring at 129.5 → 122.8 and ping-pong at
-238.3 → 251.8 with the two builds' launches overlapping (`grid-order-census/`, TUNING §9.11).
-On WSL2 the same census reads ping-pong 2c-spin 217 → 210 and the ring 116 → 106. What the
-branch leaves open is one cell: MSVC's same-core ping-pong is 1–2 % slower than `f5c20eeb` in
-three instruments that agree on the sign (77.3 → 77.8, 77.2 → 78.0, 76.3 → 77.7 ns), inside
-each one's spread, where g++ gains 3 %.
+Against shipped 3.1.0 in the same session, **all 64 cells are faster and none is inside the
+spread**. The two 2c-park collapses are gone on both hosts (ping-pong 7.79 µs → 274 ns on
+Windows, 29.03 µs → 227 ns on WSL2; thread-ring 2.62 µs → 146 ns and 14.54 µs → 121 ns — the
+§5 defect, and on WSL2 gone under a hypervisor whose futex wake alone is 12 µs). The two shapes
+that stage a burst are 3–8× cheaper at every cell (Windows counting 31.7 → 10.0 ns, fork-join
+43.6 → 10.5; WSL2 43.6 → 8.7 and 62.3 → 9.5), which is the segmented pipe (`docs/TUNING.md`
+§9.11); the other one-core cells are 28–49 % cheaper (Windows ping-pong 117 → 84, ring
+65 → 45, big 37 → 20, chameneos 67 → 35; WSL2 100 → 66, 55 → 39, 34 → 21, 59 → 35). fib — the
+shape that creates 57 312 actors inside the window — is **44× / 70×** faster on Windows
+(505.8 → 11.4 ms at one core, 468.5 → 6.7 at two) and **25× / 29×** on WSL2 (194.2 → 7.6,
+148.9 → 5.2): the nine `LOG_INFO` lines per actor lifetime demoted and the O(n²) table growth
+gone (§11). bank-transaction — the shape that waits for a reply — is −50 % / −79 % on Windows
+(26.5 / 37.5 ms → 13.2 / 7.8) and −48 % / −48 % on WSL2 (14.2 / 9.0 → 7.2 / 4.6): the five
+ask-path fixes and the slot table (§12, QB-178). Against the field, the margin runs from 1.17×
+(thread-ring 2c-park on WSL2, against CAF's 141 ns) to 17.2× (fork-join 2c-park on WSL2,
+against CAF's 170), and the candidate sits **below the raw-thread floor in 11 of the 16
+two-core cells on Windows and 12 of 16 on WSL2** — the floor pays one cache-line crossing per
+message where qb moves a batch per flush, and the floor's condition variable pays the wake
+where qb's park answers before it sleeps (axis N). The two-core cells still above the floor are
+the ones that cross a core per message with nothing to batch: ping-pong 2c-spin (1.63× on
+Windows, 1.06× on WSL2), thread-ring 2c-spin on Windows (1.40×), the two fib cells (1.5–1.7×,
+creation, not messaging) and bank-transaction 2c-park (1.03–1.04×, level).
 
-The one-core cells now measure the dispatch, not a cold burst: swept along the burst size
-(`burst-sweep/` on both hosts, `docs/TUNING.md` §9.11), the branch's same-core dispatch is
+Cells to read with care, still: the two `2c-spin` cells that cross a core per message
+(ping-pong, ring) are bimodal within a launch on Windows — pass 1 of the ring sorts 136.7 …
+178.0 ns per hop, pass 2 162.9 … 182.3, shipped 194.4 … 234.0 — and on WSL2 the cross-core
+cells sit at a higher level in pass 2 than in pass 1 (ring 107.2 … 122.6 against 125.0 …
+129.4, the two launches not overlapping, after the 9-minute shipped leg between them). A grid
+median lands wherever the majority fell, so for those cells the interleaved launch census
+(`launch-census/`, `grid-order-census/`, TUNING §9.11) is the instrument, and its last reading
+— 133.3 vs 138.8 on the ring, 265.9 vs 269.8 on ping-pong, 2026-09-06 — is the figure to
+quote; the grids above rank both builds the same way in either pass. What the candidate leaves
+open is named per host in each `qb-branch-develop/README.md` and read together in
+`docs/TUNING.md` §13: the one-core round trip (84 / 66 ns, two dispatches that each pay a full
+flush-consume-route pass where the batched dispatch costs 10 / 9 — the next thing to profile,
+on g++ where `perf` is), fib's 199 / 133 ns per actor lifetime against a floor of 65 / 30, and
+MSVC's wide two-core cells.
+
+The one-core cells measure the dispatch, not a cold burst: swept along the burst size
+(`burst-sweep/` on both hosts, `docs/TUNING.md` §9.11, measured at `a017b8a5` and unchanged by
+the commits since — counting 1c is 10.0 / 8.7 ns in the grids above), the same-core dispatch is
 **5.9–9.3 ns from 2 000 to 4 M messages on g++** and 6.6–10.4 on MSVC — 9.2 / 9.5 ns at the
 Savina 1 M against 35.0 / 25.8 for `f5c20eeb`, 43 / 30 for shipped 3.1.0, 115–185 for CAF and
 91–143 for SObjectizer, over a 2.8–3.0 ns floor. The 1 M protocol stays — it is the Savina
-figure and every framework runs it — and it is no longer a caveat.
+figure and every framework runs it — and it is no longer a caveat. The previous candidate's
+five-shape grids (`perf/event-pipe-segmented` `a017b8a5`, `qb-branch-perf-event-pipe-segmented/grid-final/`)
+stay beside the new ones as the A/B that produced QB-43.
 
 The same 84 cells on macOS — Apple M4 Pro (10 P + 4 E cores), macOS 26.6, AppleClang 21.0.0, `-O3 -DNDEBUG`, **unpinned**, 7 repetitions + 2 warmup, one quiet session on 2026-09-05 (`results/macbook-m4pro-macos-clang21/`). macOS has no verified CPU affinity API, so the harness was run with `--no-pin` and every document carries `pinned:false` — the qb rows here are the shipped v3.1.0 (`eac739ff`); the candidate's grids sit beside them in `qb-branch-perf-event-pipe-segmented/`, read in `docs/TUNING.md` §9.13:
 

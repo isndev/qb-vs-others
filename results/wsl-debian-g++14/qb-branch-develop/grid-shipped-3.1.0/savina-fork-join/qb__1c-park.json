@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/fork-join",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 16648013738289302308,
+  "expected_messages": 600060,
+  "work_unit": "message",
+  "work_units": 600000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 60, "cores": 1, "messages": 10000, "wait": 0, "work": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-07T08:46:13Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md (push = ordered) + the counting adapter",
+    "note": "push<> job stream into per-core pipes; master on VirtualCore 0, worker w on core w % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "worker w lives on VirtualCore w % cores, fixed before start: qb does not balance load, so with cores=2 the master's own core runs half the workers AND the master's dispatch loop while the other core runs the other half -- see benchmarks/savina/fork-join.md"],
+  "failures": [],
+  "work_ns": [38653394.0, 37253375.0, 36908647.0, 36980346.0, 37237086.0, 37086089.0, 36896612.0, 37197046.0, 36051813.0],
+  "total_ns": [41276165.0, 40310465.0, 39403591.0, 39790453.0, 39617363.0, 39521162.0, 39828292.0, 39716577.0, 38448513.0],
+  "outside_window_ns": [2622771.0, 3057090.0, 2494944.0, 2810107.0, 2380277.0, 2435073.0, 2931680.0, 2519531.0, 2396700.0],
+  "summary": {
+    "work_min": 36051813.0,
+    "work_p50": 37086089.0,
+    "work_p99": 38541392.5,
+    "work_iqr": 328439.0
+  }
+}

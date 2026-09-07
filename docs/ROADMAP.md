@@ -63,8 +63,12 @@ ambition has already misled the reader.
 ### The qb branch — the 3.2.0 pipeline, in order
 
 Everything performance-side is aimed at qb **3.2.0** (a minor: the 2c-park collapse is a
-user-reachable defect, and the branch changes no observable behaviour). All of it is local
-until the two platforms this host cannot see have run it; nothing on qb or qev is pushed.
+user-reachable defect, and the branch changes no observable behaviour). **Merged on qb
+`develop` since 2026-09-06** — axes A–N, QB-43, the ask/coroutine work, QB-171..178 — and
+**measured as one grid on 2026-09-07**: `develop` `f8eba11d` (29 commits over v3.1.0) on all
+eight shapes against shipped 3.1.0 in one quiet session per host
+(`results/<host>/qb-branch-develop/`, README.md's candidate grids, `docs/TUNING.md` §13). What
+is left of the pipeline is the train itself.
 
 1. **Record and re-read** — done at each step: `docs/TUNING.md` §7 and §9 carry every axis with
    its A/B, the shipped control of the same session beside every candidate grid, and the burst
@@ -89,9 +93,9 @@ until the two platforms this host cannot see have run it; nothing on qb or qev i
    without measurable effect on `dmb ish`. Native Linux is the run that does not exist yet.
 4. **Merge as 3.2.0, in lockstep** — qb + qbm-\* + qb-examples on one train, qev **5.1.0** with
    it (axis E needs `ev_active_count()`, which lives in the 22 shared files the identity guard
-   checks); the root's citation sweep (`cite-digest.baseline`, `llm-guard.baseline`, `.cursor/`,
-   the Factbook — already drifted by the branch, uncommitted) lands in the same commit as the
-   pointer bump, or `verify.sh` is red in between.
+   checks). **The merge to `develop` is done** (2026-09-06, the citation sweep in the same
+   commits as the pointer bumps); the train (Huly QB-45, `dev/agent/release-gate.sh`) is not,
+   and the 3.2.0 grid above is the figure it ships with.
 5. **After the merge** — the SObjectizer spin-budget sweep (§4, adapter-side); the placement
    paragraph in `qb.llm.md` that closes 9.4 by design and the `send<>` sentence that closes
    9.6; and 9.2, the 32-byte bucket, as a measured 4.0 experiment on top of the segmented pipe.
@@ -110,8 +114,8 @@ of them, `benchmarks/savina/bank-transaction.md`). All three are published on Wi
 with shipped 3.1.0 like the five before them (`results/<host>/savina-fib/`,
 `savina-chameneos/`, `savina-bank-transaction/`; macOS not yet), and were written against the
 qb work they produced (`results/<host>/qb-branch-perf-dense-table-growth/`,
-`qb-branch-perf-coro-scope-local-refcount/`; `docs/TUNING.md` §11 and §12), which joins the
-tables with the 3.2.0 grid. fib alone found a 43 s defect in unreleased `develop` on its first
+`qb-branch-perf-coro-scope-local-refcount/`; `docs/TUNING.md` §11 and §12), and joined the
+tables with the 3.2.0 grid on 2026-09-07 (`qb-branch-develop/`, §13). fib alone found a 43 s defect in unreleased `develop` on its first
 run, and then found that shipped 3.1.0 logs nine INFO lines per actor lifetime inside the window
 — 159 / 459 ms against the branch's 7.6 / 10.5; bank-transaction put a `perf` profile on the
 coroutine request path for the first time and found five defects on it in one afternoon (qb
