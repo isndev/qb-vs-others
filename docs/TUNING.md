@@ -1187,9 +1187,33 @@ by-value ask frame at 3.75 %, `malloc` at 2.8 % and `ask_awaiter` at 2.4 % of th
 ### 12.4 What is left, and the Windows 2c cells
 
 `perf` on `9814c2a1`, 1c spin: the ask registry — a hash map keyed by correlation id,
-inserted on every ask and erased on every reply — is **≈10–12 % of the core** and the largest
-single item. It is recorded as the follow-up (a slot table keyed by what is already a per-core
-counter, the shape §11.3 gave `ActorMap`), not done in the commit.
+inserted on every ask and erased on every reply — was **≈10–12 % of the core** and the largest
+single item. It was recorded as the follow-up (a slot table keyed by what is already a per-core
+counter, the shape §11.3 gave `ActorMap`), not done in the commit. **Done since, as QB-178**
+(`perf/ask-slot-table`, two commits over `develop` `ba9b1a81`; the A/B documents are
+`results/<host>/qb-branch-perf-ask-slot-table/`, each README with its chain), and the branch is
+a lesson in what a profile percentage buys. `dfa303ec` made the registry a slot table the
+correlation id itself indexes — `[core:16][generation:26][slot:22]`, a FIFO free list, nothing
+hashed — and the registry fell 12.8 → 8.4 % of the core (`perf record -F 20000 -g`, 1c spin,
+30 repetitions, registry symbols only) while bank-transaction moved 1–4 %, less than the 4.4
+points lost. `perf annotate` on the remaining `ask_unregister` said why: 4.69 % spread over ~10
+instructions, 15 % of it on one `jne`, 9.5 % on the epilogue, 7.5 % on the prologue `push`, no
+miss signature anywhere. That is the cost of the CALL — a `thread_local` with a destructor is
+a `__tls_init` guard check per access on g++ — and the path paid it five times per ask:
+`ask_next_id`, `ask_register`, `ask_deliver`, `ask_unregister` from `await_resume` and
+`ask_unregister` again from the awaiter's destructor. `82ea03a8` makes it three (`ask_take(owner,
+slot)` pops and binds in one call, `finish()` keeps a byte so the destructor's pass is a compare,
+the awaiter takes its entry in its constructor before the send so the throw-window guard is
+deleted): registry **4.36 %**, and the 1c gain arrives — WSL2 same-session p50, control →
+candidate / candidate pass 2: 1c-spin 7.70 → 7.21 / 7.25 ms (**−6.3 / −5.8 %**), 1c-park
+7.58 → 7.30 / 7.24 (**−3.7 / −4.4 %**), 2c inside its spread (the hop, not the registry,
+owns the cross-core cell). Per transfer on one core, spin: 154 → 144 ns, ≈ 9–10 ns per ask —
+which is 1 % of a ≈ 880 ns `dev/bench` round trip, so those cells stay flat (±1 %) and the
+savina shape is the one that sees it. **On MSVC the branch is inside the spread on every cell**
+(1c-spin 12.22 → 11.99 / 12.07 ms with the control's minimum the lowest of the three; round
+trips +1.5 %): MSVC runs dynamic TLS initialisation once at thread start and has no per-access
+guard, so three calls fewer buy correspondingly less — a reading from the g++ profile, not a
+Windows measurement, since no Windows profile is in this protocol.
 
 On Windows, three of the `2c` cells that cross a core per transfer are WIDE: the floor's 2c-spin
 spans 20.0–62.2 ms over nine repetitions (IQR 29.5), shipped qb's 2c-spin 24.3–49.6 (IQR 13.0)
