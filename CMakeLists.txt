@@ -148,6 +148,22 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     set_target_properties(qvoprobe-pass-cost PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "probes")
+    add_executable(qvoprobe-xcore-hop tools/probes/xcore-hop.cpp)
+    target_link_libraries(qvoprobe-xcore-hop PRIVATE qb::core)
+    set_target_properties(qvoprobe-xcore-hop PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "probes")
+    # No qb in it: the raw ring shapes behind docs/TUNING.md section 16. Linux / x86-64 only for real;
+    # elsewhere the same source builds to a stub that says so and exits 2.
+    add_executable(qvoprobe-raw-ring tools/probes/raw-ring.cpp)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+        target_compile_options(qvoprobe-raw-ring PRIVATE -mmovdir64b -mavx2)
+    endif()
+    find_package(Threads REQUIRED)
+    target_link_libraries(qvoprobe-raw-ring PRIVATE Threads::Threads)
+    set_target_properties(qvoprobe-raw-ring PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "probes")
 endif()
 
 qvo_report_configuration()

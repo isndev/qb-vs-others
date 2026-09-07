@@ -108,8 +108,14 @@ is left of the pipeline is the train itself.
    path, measured with the `pass-cost` probe — a one-event pass 14.6 → 12.9 ns and the marginal
    event 8.9 → 4.2 on g++, 20.4 → 15.6 on MSVC; ping-pong 1c **−21 / −26 %**, fork-join and big
    −10 to −25 %; one cell the other way (thread-ring 2c, +1–5 %, bisected to a shorter idle pass,
-   handed to QB-181 with the ring as its instrument). Left: the receive side per event, and the
-   pass ORDER — flush before receive costs a cross-core `push` a whole pass (§15.3).
+   handed to QB-181 with the ring as its instrument). The pass ORDER question of §15.3 was
+   measured and parked (QB-183, §16.1: no cell beyond its spread; a two-actor ping-pong
+   phase-locks and only phase-averaged probes compare across builds) and led to the third cut
+   (QB-184, §16): the SPSC ring's producer re-read the line it publishes on every enqueue — a
+   cross-core miss per hop — and with the working indices on private lines the two-core
+   ping-pong reads **−22 %**, the cross-core ring **−31 %** per hop, `Multi_PingPong` −20 % on g++,
+   on MSVC ping-pong 2c −22 %, the ring −29 %, `Multi_PingPong` −23 %. Left: the receive side per event, and the idle loop's shape (§16.4,
+   QB-181), measured against §16 as the base.
 6. **After the merge** — the SObjectizer spin-budget sweep (§4, adapter-side); the placement
    paragraph in `qb.llm.md` that closes 9.4 by design and the `send<>` sentence that closes
    9.6; and 9.2, the 32-byte bucket, as a measured 4.0 experiment on top of the segmented pipe.

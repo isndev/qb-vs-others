@@ -234,7 +234,7 @@ on an idle wepoll / epoll loop 370 / 300 ns, `cv.notify_all()` with no waiter 2 
 | **C. `notify()` per event** | producer notifies on every cross-core enqueue | 1–2 ns when nobody waits | negligible; keep, gate on a `_waiting` flag when B lands |
 | **D. wall clock per pass** | `wall_now()` every loop pass (19 / 30 ns) | 1c: 124 → 93 ns (Win), 101 → 75 (Linux) reading it every 64 passes = **−25 %**; 2c: 0 alone, 232 → 209 ns on top of F (Linux) | worth taking; cadence or `steady_clock`. **Landed as `time()` on demand (`443c5976`) — which MOVED the read into the tick phase's `LoopEvent` rather than removing it, so the −25 % was never delivered by that commit; §14 is where it arrived, at −57 %.** |
 | **E. io poll per pass** | `listener::run(EVRUN_NOWAIT)` runs every pass once *any* coroutine scheduler exists, even with zero watchers | 1c: 124 → **694** (Win), 101 → **739** (Linux), 5.6–7.3× slower; 2c: 408 → 645, 271 → 594. A gate on `size() \|\| has_deferred()` (still draining deferred + `run_ready`) restores the figures | **large, hits any app that ever `co_await`ed**; also the ~300–380 ns/pass floor of any app with one watcher |
-| **F. spsc producer re-reads `read_index_`** | one remote cache-line read per hop | 2c-spin 404 → **290** ns (Win, −28 %), 281 → **232** (Linux, −17 %); 1c unchanged | take; mirror it on the consumer side |
+| **F. spsc producer re-reads `read_index_`** | one remote cache-line read per hop | 2c-spin 404 → **290** ns (Win, −28 %), 281 → **232** (Linux, −17 %); 1c unchanged | take; mirror it on the consumer side. **Its other half landed with §16 (QB-184): the producer also re-read its OWN published line, `write_index_`, on every enqueue — 2c ping-pong −22 %, the cross-core ring −31 % once the working index moved to a private line.** |
 | **G. copies per hop** | event → pipe → mpsc ring → `consume_all` scratch → dispatch | analysed, not isolated; an in-place `consume_all(func)` exists in `mpsc.h` | minor, after F |
 | **H. SpinLock on the send path** | — | the indexed `enqueue(index, …)` used by `SharedCoreCommunication::send` takes **no** lock; the lock is only on the round-robin variants | **retired** — not a cost |
 | **K. store-buffer drain on the publish** | `notify()` returned before its fence at latency 0, so a spin-mode enqueue reached the polling peer only when the producer's store buffer drained on its own | 2c-**park** beat 2c-**spin** on BOTH platforms; fencing in spin mode too, interleaved A/B on a quiet host (3 pairs × 7 reps): Win 2c-spin 296–309 → **259–263** ns (park 256–272); WSL2 p50 a wash, 204–219 → 205–208, but the worst run 295 → 215; 1c and a 1M-event bulk push unchanged (18.6 M msg/s) | **taken** — one fence per cross-core publish; commit `39992047` on the branch |
@@ -1536,3 +1536,128 @@ question is the ORDER of the pass: the flush runs before the receive, so a handl
 `push` waits a whole pass before it leaves the core; `send`/`forward`/`reply` already deliver
 straight into the peer's ring, and moving the flush after the receive would give `push` the same
 latency at the cost of a documented ordering change (engine.md, steps 5 and 6).
+
+## 16. The ring's other line — a producer that re-reads what it publishes, and what a cross-core hop is made of
+
+§15 closed with a design question: does a cross-core `push` pay a whole pass because the flush
+runs before the receive? The answer took a day and turned out to be about something else. This
+section records the three instruments the question needed, the two dead ends they measured,
+and the defect they found — one line of the SPSC ring that both sides had been reading.
+
+### 16.1 The flush position is not the variable (QB-183, parked)
+
+Moving `__flush_all__` to the end of the pass, measured on the eight shapes in one session
+(`results/wsl-debian-g++14/qb-branch-perf-flush-at-pass-end/`), moved no cell beyond its
+spread: fib 2c −0.7 %, bank, big and fork-join 2c level, chameneos 2c +4 % at the census. The
+expected gain had been mis-stated — a handler's push waits the ~4 ns of instructions between
+the end of the receive and the next pass's flush, not "a whole pass" — and nothing the grids
+can resolve. To resolve it anyway, `tools/probes/xcore-hop.cpp`: two actors, one per pinned
+core, a round trip by `push<>` or by `send<>`, so ns(push) − ns(send) is what the pipe and the
+flush's place in the pass cost a hop.
+
+What that probe found first was that its own locked figure cannot be trusted. A two-actor
+ping-pong **phase-locks**: the producer's store lands at a fixed point of the consumer's idle
+cadence, so five flush positions read 166–237 ns per round trip with no monotonic relation to
+where the flush sits, a **5 ns** busy-wait in front of the flush moved the round trip by
+**+80 ns**, and the SAME variant read ±10 % from one binary to the next — the control 241 →
+219 and the "end of pass" variant 215 → 231 when the ring's index lines were spaced 128 bytes
+apart, i.e. from the memory layout, not the code (a 1–2-byte shift of the loop's code moved
+nothing: 239–246 vs 217–218 at three alignments). The probe's `jitter_ns` option breaks the
+lock — a uniformly random 0..j busy-wait before every hop on the A end, rdtsc-paced, reported
+NET — and at a random phase the picture is flat: `send` **235 ± 2 ns** on every one of eight
+builds and two layouts, `push` inside a ±6 % band that follows the layout. Phase-averaged
+figures are the only ones comparable across builds; every number below is one.
+
+### 16.2 What a cross-core hop is made of — a raw ring, no qb in the loop
+
+`tools/probes/raw-ring.cpp` is two threads and two rings of 64-byte slots, the shape of qb's
+mailbox ring, with one thing varied at a time. Its first lesson is about itself: **a launch
+sits in one of two regimes ~90 ns apart**, decided at launch and not by the code — the same
+binary, the same row, six launches in a row read ~120 and ~210 — and the A-side jitter that
+breaks the phase lock of §16.1 does not move a launch between them (what does is presumably
+where the rings land physically, which no user-space layout controls). So the table gives all
+six launches of each row, sorted, and the reading is which regime a shape can REACH, not a
+median (i9-12900K / WSL2 g++-14, CPUs 0 and 2, 1.2 s windows, jitter 150 ns, ns per round trip
+net of the jitter; `results/wsl-debian-g++14/qb-branch-perf-ring-private-lines/raw-ring.txt`):
+
+| what varies | six launches, sorted |
+|---|---|
+| the two-line handshake (slot, then index line, then a full fence — qb's ring), tight poll | 148 · 154 · 155 · 222 · 226 · 228 |
+| … the consumer spins with `pause` between polls | **121 · 122 · 126 · 130** · 210 · 213 |
+| … with `lfence; rdtsc` between polls | **114 · 119 · 137** · 184 · 193 · 201 |
+| … with one `clock_gettime(CLOCK_MONOTONIC)` (`qb::mono_now()`) | **120 · 125** · 189 · 191 · 195 · 216 |
+| … the clock, then six independent L1-hit loads with compares (a pass's checks) | 190 · 193 · 233 · 237 · 241 · 243 |
+| … the six checks, then the clock | 165 · 174 · 183 · 213 · 217 · 238 |
+| … ~30 ns of dependent ALU work, no fence | 174 · 177 · 178 · 184 · 230 · 239 |
+| … `lfence; rdtsc` then ~15 ns of ALU work | 168 · 176 · 176 · 182 · 238 · 243 |
+| **… the producer loads its published index line before its store**, `mono_now()` gap | **166 · 167 · 167 · 172 · 178 · 197** |
+| one line per hop (a lap-tagged sequence in the slot, two stores), `pause` | **119 · 120 · 122 · 123** · 183 · 185 |
+| one line per hop as two 32-byte AVX2 stores, `pause` | 182 · 183 · 185 · 185 · 186 · 186 |
+| one line per hop written by ONE `movdir64b` + `sfence`, `pause` | 210 · 213 · 213 · 269 · 270 · 270 |
+
+Four things read off that table. The one-line hop — the "sequence in the slot" design that was
+axis O — reaches the same ~120 the two-line handshake reaches, in the same share of launches:
+the two misses of a hop overlap, or the spatial prefetcher pairs them; it is not worth a ring.
+`movdir64b` never gets below 210: a direct store goes past the caches and the consumer fetches
+it from far away. The poll's SHAPE decides whether the low regime exists at all: a bare
+serialized read between two polls (`pause`, `lfence; rdtsc`, one `clock_gettime`) reaches
+~120 in a third to two thirds of the launches, while any ordinary work around that read — six
+L1-hit loads, 15–30 ns of ALU work — never goes below 165, because the next poll's load issues
+speculatively at the top of the gap and the gap's length is added on top. The pre-3.2 shape of
+a qb idle pass — ~30 ns of checks around one clock read — is that second family.
+
+The bold row is the defect. ONE load of the published index line by the producer, before its
+store, and the row that read 120 · 125 in its low launches never gets below **166**: the
+consumer's poll has snooped that line, and on this microarchitecture the owner's copy does not
+survive the snoop, so the load is a cross-core miss on every hop. qb's `spsc::ringbuffer` did
+exactly that: `write_index_` (published) and `cached_read_index_` (the producer's snapshot)
+shared a line, and every `enqueue` began by loading both. A cpu-clock profile of the two-actor
+`send` round trip had already said so in numbers nobody could read until the raw ring gave them
+a meaning: 8 544 samples on the load of the producer line at
+`SharedCoreCommunication::send+0x4f`, 9 633 on the release fence after the publish — the miss
+cost what the fence cost.
+
+### 16.3 The fix: private working lines (QB-184)
+
+Each side of the ring owns two lines now, each in its own two-line block so no spatial-prefetch
+partner belongs to the peer: a PRIVATE line with the working index and the snapshot of the
+peer's index, and a PUBLISHED line with nothing but the index the peer polls. The rule the
+layout encodes is that a side only ever *writes* the line it publishes on. 512 bytes of header
+per ring instead of 128, against 64 KiB of slots.
+
+Same host, one quiet session per host, candidate / control / candidate against `2771cd67` (p50
+per unit; the per-directory READMEs carry every cell, the censuses and the bench cells):
+
+| cell | WSL2 / g++-14 | Windows / MSVC 19.51 |
+|---|---|---|
+| ping-pong 2c-park (round trip) | 209 → **165 / 159** (census **211.7 → 164.7**, −22 %) | 257 → **209 / 206** (census **263.2 → 204.9**, −22 %) |
+| ping-pong 2c-spin | 221 → **163 / 173** (census 207.5 → 163.2, −21 %) | 258 → **217 / 199** (census 257.0 → 206.1, −20 %) |
+| thread-ring 2c-park (hop) | 114 → **82 / 80** (census **115.0 → 79.9**, −31 %) | 130 → **102 / 100** (census **138.6 → 98.9**, −29 %) |
+| thread-ring 2c-spin | 114 → **81 / 83** (census 116.1 → 80.4, −31 %) | 144 → **105 / 96** (census 137.0 → 98.4, −28 %) |
+| chameneos 2c (meeting) | 49 → **45** (census −7 %) | 55 → **53 / 51** (census −5 %) |
+| big 2c (round trip) | 19.3 → 18.7 / 17.9 (census −4 %) | 22.5 → 20.4 / 20.3 (−9 %; census 21.1 → 20.5) |
+| bank-transaction 2c (transfer) | 93 → 88–90 (census level) | 147 → 159 / 154 in the grid, 154.7 → 158.2 on a 15-launch census — level |
+| every 1c cell, counting, fork-join, fib | level (15-launch census on each cell the grid had moved) | level (15-launch census on fib 2c, counting, bank, big) |
+| `dev/bench` `Multi_PingPong` (cross-core) | 253 → **203** (−20 %) | 318 → **246** (−23 %); the raw-ring reference 286 → 223 (−22 %) |
+| `dev/bench` pipeline 8 × 8 cores / `BM_PINGPONG` 64 actors, 8 cores | 322 → **264** (−18 %) / 24.7 → **21.7** | 252 → **220** (−13 %) / 24.9 → 23.9 |
+| `dev/bench` same-core cells (`Mono`, pipeline 1c, `BM_PINGPONG` 1c, ask) | level | level (`Mono` 71.7 → 70.9, pipeline 1c 36.7 → 37.4, `BM_PINGPONG` 1c 26.5 → 26.2) |
+| `xcore-hop` send / push, phase-averaged (jitter 150) | 240 → **198** / 240 → **159** | 295–303 → **257–271** / 258–283 → 254–273 (the locked push bimodal on MSVC) |
+| `pass-cost` k = 1 / 2 / 4 | 12.9 / 17.1 / 25.0 → 12.7 / 17.1 / 25.0 | 16.2 / 23.7 / 38.1 → 16.1 / 23.6 / 37.9 |
+
+The same-core figures do not move because the same-core path never touches this ring (the
+self pipe is a `segmented_pipe`), and the batched cross-core shapes do not move because they
+publish runs of hundreds of events per ring write. What moves is every cell whose hop is one
+event on an idle peer — the cross-core round trip, the cross-core ring, the broker — by a
+fifth to a third.
+
+### 16.4 What §16 leaves
+
+The raw floor for this handshake on this host is ~120 ns per round trip in the launches that
+reach it; qb's two-actor `send` round trip is ~198 after the fix, so ~75 ns per round trip
+remain between the raw ring and qb's hop — the receive and dispatch of the event, the fence
+stall the producer pays after its publish, and the shape of the idle pass between two polls
+(16.2: the shapes that never reach the low regime are the ones with work around the clock read). A tight idle loop — `has_data()`, the clock, the signal and stop checks, and
+nothing else, entered when a pass had no activity, no tick and no io work — was prototyped
+against the fix on the probe and split: `send` −5 %, `push` +6 %. It is not shipped; it is
+QB-181's next measurement, against this section's figures as the base and with the eight
+shapes as the judge, and the ring's cross-core hop is still its most sensitive cell.

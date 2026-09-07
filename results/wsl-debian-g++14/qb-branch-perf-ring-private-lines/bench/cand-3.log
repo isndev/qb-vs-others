@@ -1,0 +1,6 @@
+== run 1/1 ==
+  ok   qb-core-bench-ping-pong-latency (15 measurements)
+  ok   qb-core-bench-pipeline-chain-latency (10 measurements)
+  ok   qb-core-bench-ping-pong-throughput (10 measurements)
+  ok   qb-core-bench-ask-roundtrip (10 measurements)
+bench-run.sh: wrote 1 run(s) x 4 binaries to /mnt/d/repo/qb-dev/qb-vs-others/results/wsl-debian-g++14/qb-branch-perf-ring-private-lines/bench/cand-3
