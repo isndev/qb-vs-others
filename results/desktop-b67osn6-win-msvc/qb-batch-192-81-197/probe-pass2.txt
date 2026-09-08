@@ -1,0 +1,62 @@
+session-2 2026-09-08T21:45:31 same binaries, 10 alternations ctl-first
+ctl pass-cost k=1 chains=1 passes=95092736 elapsed_ns=1500908200 ns_per_pass=15.78 events=95092736
+ctl ask-cost push push trips=47603712 elapsed_ns=1500054800 ns_per_trip=31.51
+ctl io-pass timer timer passes=50450432 elapsed_ns=1500018300 ns_per_pass=29.73
+cand pass-cost k=1 chains=1 passes=95879168 elapsed_ns=1500344800 ns_per_pass=15.65 events=95879168
+cand ask-cost push push trips=47550464 elapsed_ns=1500057600 ns_per_trip=31.55
+cand io-pass timer timer passes=49332224 elapsed_ns=1500092600 ns_per_pass=30.41
+ctl pass-cost k=1 chains=1 passes=94502912 elapsed_ns=1500159700 ns_per_pass=15.87 events=94502912
+ctl ask-cost push push trips=48001024 elapsed_ns=1500043400 ns_per_trip=31.25
+ctl io-pass timer timer passes=50208768 elapsed_ns=1500057900 ns_per_pass=29.88
+cand pass-cost k=1 chains=1 passes=94044160 elapsed_ns=1500037600 ns_per_pass=15.95 events=94044160
+cand ask-cost push push trips=46600192 elapsed_ns=1500039700 ns_per_trip=32.19
+cand io-pass timer timer passes=49037312 elapsed_ns=1500044400 ns_per_pass=30.59
+ctl pass-cost k=1 chains=1 passes=94502912 elapsed_ns=1500847800 ns_per_pass=15.88 events=94502912
+ctl ask-cost push push trips=47529984 elapsed_ns=1500126000 ns_per_trip=31.56
+ctl io-pass timer timer passes=49291264 elapsed_ns=1500032900 ns_per_pass=30.43
+cand pass-cost k=1 chains=1 passes=93126656 elapsed_ns=1500293400 ns_per_pass=16.11 events=93126656
+cand ask-cost push push trips=47140864 elapsed_ns=1500110300 ns_per_trip=31.82
+cand io-pass timer timer passes=50339840 elapsed_ns=1500035100 ns_per_pass=29.80
+ctl pass-cost k=1 chains=1 passes=95223808 elapsed_ns=1500892900 ns_per_pass=15.76 events=95223808
+ctl ask-cost push push trips=47710208 elapsed_ns=1500041900 ns_per_trip=31.44
+ctl io-pass timer timer passes=50003968 elapsed_ns=1500036400 ns_per_pass=30.00
+cand pass-cost k=1 chains=1 passes=94633984 elapsed_ns=1500503900 ns_per_pass=15.86 events=94633984
+cand ask-cost push push trips=47255552 elapsed_ns=1500039800 ns_per_trip=31.74
+cand io-pass timer timer passes=49115136 elapsed_ns=1500025800 ns_per_pass=30.54
+ctl pass-cost k=1 chains=1 passes=94175232 elapsed_ns=1500036500 ns_per_pass=15.93 events=94175232
+ctl ask-cost push push trips=46456832 elapsed_ns=1500002700 ns_per_trip=32.29
+ctl io-pass timer timer passes=49762304 elapsed_ns=1500040000 ns_per_pass=30.14
+cand pass-cost k=1 chains=1 passes=94896128 elapsed_ns=1500909300 ns_per_pass=15.82 events=94896128
+cand ask-cost push push trips=47222784 elapsed_ns=1500080500 ns_per_trip=31.77
+cand io-pass timer timer passes=49995776 elapsed_ns=1500080800 ns_per_pass=30.00
+ctl pass-cost k=1 chains=1 passes=93782016 elapsed_ns=1500202100 ns_per_pass=16.00 events=93782016
+ctl ask-cost push push trips=47247360 elapsed_ns=1500015000 ns_per_trip=31.75
+ctl io-pass timer timer passes=49680384 elapsed_ns=1500007000 ns_per_pass=30.19
+cand pass-cost k=1 chains=1 passes=94961664 elapsed_ns=1500099100 ns_per_pass=15.80 events=94961664
+cand ask-cost push push trips=46764032 elapsed_ns=1500122900 ns_per_trip=32.08
+cand io-pass timer timer passes=49233920 elapsed_ns=1500062600 ns_per_pass=30.47
+ctl pass-cost k=1 chains=1 passes=94502912 elapsed_ns=1500890000 ns_per_pass=15.88 events=94502912
+ctl ask-cost push push trips=47341568 elapsed_ns=1500000600 ns_per_trip=31.68
+ctl io-pass timer timer passes=49676288 elapsed_ns=1500002500 ns_per_pass=30.20
+cand pass-cost k=1 chains=1 passes=93519872 elapsed_ns=1500364600 ns_per_pass=16.04 events=93519872
+cand ask-cost push push trips=47431680 elapsed_ns=1500037800 ns_per_trip=31.63
+cand io-pass timer timer passes=49766400 elapsed_ns=1500018400 ns_per_pass=30.14
+ctl pass-cost k=1 chains=1 passes=95485952 elapsed_ns=1500382200 ns_per_pass=15.71 events=95485952
+ctl ask-cost push push trips=47235072 elapsed_ns=1500112700 ns_per_trip=31.76
+ctl io-pass timer timer passes=49455104 elapsed_ns=1500073900 ns_per_pass=30.33
+cand pass-cost k=1 chains=1 passes=93388800 elapsed_ns=1500225800 ns_per_pass=16.06 events=93388800
+cand ask-cost push push trips=47624192 elapsed_ns=1500012000 ns_per_trip=31.50
+cand io-pass timer timer passes=49664000 elapsed_ns=1500009900 ns_per_pass=30.20
+ctl pass-cost k=1 chains=1 passes=94240768 elapsed_ns=1500130300 ns_per_pass=15.92 events=94240768
+ctl ask-cost push push trips=47292416 elapsed_ns=1500019800 ns_per_trip=31.72
+ctl io-pass timer timer passes=50049024 elapsed_ns=1500033000 ns_per_pass=29.97
+cand pass-cost k=1 chains=1 passes=95092736 elapsed_ns=1500382900 ns_per_pass=15.78 events=95092736
+cand ask-cost push push trips=47833088 elapsed_ns=1500009700 ns_per_trip=31.36
+cand io-pass timer timer passes=49659904 elapsed_ns=1500041800 ns_per_pass=30.21
+ctl pass-cost k=1 chains=1 passes=92340224 elapsed_ns=1500656200 ns_per_pass=16.25 events=92340224
+ctl ask-cost push push trips=47431680 elapsed_ns=1500093100 ns_per_trip=31.63
+ctl io-pass timer timer passes=49737728 elapsed_ns=1500087800 ns_per_pass=30.16
+cand pass-cost k=1 chains=1 passes=94699520 elapsed_ns=1500856200 ns_per_pass=15.85 events=94699520
+cand ask-cost push push trips=47255552 elapsed_ns=1500068700 ns_per_trip=31.74
+cand io-pass timer timer passes=49192960 elapsed_ns=1500036900 ns_per_pass=30.49
+end 2026-09-08T21:47:02
