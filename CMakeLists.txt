@@ -153,6 +153,11 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     set_target_properties(qvoprobe-xcore-hop PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "probes")
+    add_executable(qvoprobe-ask-cost tools/probes/ask-cost.cpp)
+    target_link_libraries(qvoprobe-ask-cost PRIVATE qb::core)
+    set_target_properties(qvoprobe-ask-cost PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "probes")
     # No qb in it: the raw ring shapes behind docs/TUNING.md section 16. Linux / x86-64 only for real;
     # elsewhere the same source builds to a stub that says so and exits 2.
     add_executable(qvoprobe-raw-ring tools/probes/raw-ring.cpp)

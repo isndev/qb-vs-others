@@ -114,8 +114,15 @@ is left of the pipeline is the train itself.
    (QB-184, §16): the SPSC ring's producer re-read the line it publishes on every enqueue — a
    cross-core miss per hop — and with the working indices on private lines the two-core
    ping-pong reads **−22 %**, the cross-core ring **−31 %** per hop, `Multi_PingPong` −20 % on g++,
-   on MSVC ping-pong 2c −22 %, the ring −29 %, `Multi_PingPong` −23 %. Left: the receive side per event, and the idle loop's shape (§16.4,
-   QB-181), measured against §16 as the base.
+   on MSVC ping-pong 2c −22 %, the ring −29 %, `Multi_PingPong` −23 %. The fourth cut (QB-185,
+   §17.1) resumed an `ask` reply inline from the handler that routes it: ask 54 → 46.7 ns on
+   g++, 82 → 72 on MSVC, bank 2c −9 %. And §17.2 is where the audit turned to **qev**: a timed
+   ask cost 798 / 1108 ns because libev read its clocks through the raw syscall and polled the
+   backend over a loop with no fd — 172 / 124 after the two fixes (QB-187), and a programme of
+   its own for the rest (`dev/plans/roadmaps/QEV_PERFORMANCE_ROADMAP.md`, QB-186: the pass at
+   its floor, request timeouts without a libev timer, the embedder's clock, the io pass with
+   io_uring, the wake). Left on the core side: the receive side per event, and the idle loop's
+   shape (§16.4, QB-181), measured against §16 as the base.
 6. **After the merge** — the SObjectizer spin-budget sweep (§4, adapter-side); the placement
    paragraph in `qb.llm.md` that closes 9.4 by design and the `send<>` sentence that closes
    9.6; and 9.2, the 32-byte bucket, as a measured 4.0 experiment on top of the segmented pipe.

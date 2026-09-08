@@ -1,0 +1,100 @@
+cand ask-cost push trips=44974080 elapsed_ns=1500053600 ns_per_trip=33.35
+cand ask-cost ask trips=21176320 elapsed_ns=1500968700 ns_per_trip=70.88
+cand ask-cost chunks=64 stream trips=20066304 elapsed_ns=1500107600 ns_per_trip=74.76
+cand ask-cost chunks=1 stream trips=5525504 elapsed_ns=1500444300 ns_per_trip=271.55
+cand pass-cost chains=1 passes=91160576 elapsed_ns=1500675200 ns_per_pass=16.46 events=91160576
+ctl ask-cost push trips=43675648 elapsed_ns=1500103400 ns_per_trip=34.35
+ctl ask-cost ask trips=17649664 elapsed_ns=1500290300 ns_per_trip=85.00
+ctl ask-cost chunks=64 stream trips=19722240 elapsed_ns=1500066200 ns_per_trip=76.06
+ctl ask-cost chunks=1 stream trips=5300224 elapsed_ns=1500067600 ns_per_trip=283.02
+ctl pass-cost chains=1 passes=92340224 elapsed_ns=1500338600 ns_per_pass=16.25 events=92340224
+cand ask-cost push trips=44957696 elapsed_ns=1500040000 ns_per_trip=33.37
+cand ask-cost ask trips=21082112 elapsed_ns=1500258800 ns_per_trip=71.16
+cand ask-cost chunks=64 stream trips=19050496 elapsed_ns=1500098000 ns_per_trip=78.74
+cand ask-cost chunks=1 stream trips=5435392 elapsed_ns=1500209500 ns_per_trip=276.01
+cand pass-cost chains=1 passes=89128960 elapsed_ns=1500001000 ns_per_pass=16.83 events=89128960
+ctl ask-cost push trips=44339200 elapsed_ns=1500409900 ns_per_trip=33.84
+ctl ask-cost ask trips=17866752 elapsed_ns=1500229800 ns_per_trip=83.97
+ctl ask-cost chunks=64 stream trips=19787776 elapsed_ns=1500102100 ns_per_trip=75.81
+ctl ask-cost chunks=1 stream trips=5537792 elapsed_ns=1500127600 ns_per_trip=270.89
+ctl pass-cost chains=1 passes=90767360 elapsed_ns=1500148600 ns_per_pass=16.53 events=90767360
+cand ask-cost push trips=44367872 elapsed_ns=1500076200 ns_per_trip=33.81
+cand ask-cost ask trips=21209088 elapsed_ns=1500000400 ns_per_trip=70.72
+cand ask-cost chunks=64 stream trips=20078592 elapsed_ns=1500073600 ns_per_trip=74.71
+cand ask-cost chunks=1 stream trips=5337088 elapsed_ns=1500723500 ns_per_trip=281.19
+cand pass-cost chains=1 passes=91029504 elapsed_ns=1500623300 ns_per_pass=16.49 events=91029504
+ctl ask-cost push trips=43864064 elapsed_ns=1500055000 ns_per_trip=34.20
+ctl ask-cost ask trips=18300928 elapsed_ns=1500200200 ns_per_trip=81.97
+ctl ask-cost chunks=64 stream trips=19673088 elapsed_ns=1500266100 ns_per_trip=76.26
+ctl ask-cost chunks=1 stream trips=5423104 elapsed_ns=1500032400 ns_per_trip=276.60
+ctl pass-cost chains=1 passes=90767360 elapsed_ns=1500196200 ns_per_pass=16.53 events=90767360
+cand ask-cost push trips=44138496 elapsed_ns=1500084400 ns_per_trip=33.99
+cand ask-cost ask trips=21237760 elapsed_ns=1500028700 ns_per_trip=70.63
+cand ask-cost chunks=64 stream trips=19558400 elapsed_ns=1500169900 ns_per_trip=76.70
+cand ask-cost chunks=1 stream trips=5459968 elapsed_ns=1500677500 ns_per_trip=274.85
+cand pass-cost chains=1 passes=89522176 elapsed_ns=1500757700 ns_per_pass=16.76 events=89522176
+ctl ask-cost push trips=43610112 elapsed_ns=1500153900 ns_per_trip=34.40
+ctl ask-cost ask trips=17879040 elapsed_ns=1500330800 ns_per_trip=83.92
+ctl ask-cost chunks=64 stream trips=20021248 elapsed_ns=1500386400 ns_per_trip=74.94
+ctl ask-cost chunks=1 stream trips=5468160 elapsed_ns=1501019500 ns_per_trip=274.50
+ctl pass-cost chains=1 passes=90308608 elapsed_ns=1500508600 ns_per_pass=16.62 events=90308608
+cand ask-cost push trips=44695552 elapsed_ns=1500080300 ns_per_trip=33.56
+cand ask-cost ask trips=21008384 elapsed_ns=1500154600 ns_per_trip=71.41
+cand ask-cost chunks=64 stream trips=18763776 elapsed_ns=1500199000 ns_per_trip=79.95
+cand ask-cost chunks=1 stream trips=3289088 elapsed_ns=1500065400 ns_per_trip=456.07
+cand pass-cost chains=1 passes=91422720 elapsed_ns=1500476700 ns_per_pass=16.41 events=91422720
+ctl ask-cost push trips=44605440 elapsed_ns=1500126100 ns_per_trip=33.63
+ctl ask-cost ask trips=18268160 elapsed_ns=1500316500 ns_per_trip=82.13
+ctl ask-cost chunks=64 stream trips=19480576 elapsed_ns=1500234000 ns_per_trip=77.01
+ctl ask-cost chunks=1 stream trips=5435392 elapsed_ns=1500979100 ns_per_trip=276.15
+ctl pass-cost chains=1 passes=91095040 elapsed_ns=1500803100 ns_per_pass=16.48 events=91095040
+cand ask-cost timeout=0ms ask trips=20828160 elapsed_ns=1500150300 ns_per_trip=72.03
+cand ask-cost timeout=500ms ask+timeout trips=12115968 elapsed_ns=1500011300 ns_per_trip=123.80
+cand ask-cost timeout=500ms stream+timeout trips=4550656 elapsed_ns=1500823500 ns_per_trip=329.80
+cand ask-cost timeout=500ms stream+timeout trips=19156992 elapsed_ns=1500098500 ns_per_trip=78.31
+cand pass-cost chains=1 passes=90570752 elapsed_ns=1500433800 ns_per_pass=16.57 events=90570752
+ctl ask-cost timeout=0ms ask trips=18546688 elapsed_ns=1500255600 ns_per_trip=80.89
+ctl ask-cost timeout=500ms ask+timeout trips=1355776 elapsed_ns=1502205800 ns_per_trip=1108.00
+ctl ask-cost timeout=500ms stream+timeout trips=1351680 elapsed_ns=1500287200 ns_per_trip=1109.94
+ctl ask-cost timeout=500ms stream+timeout trips=16629760 elapsed_ns=1500009700 ns_per_trip=90.20
+ctl pass-cost chains=1 passes=91553792 elapsed_ns=1500466100 ns_per_pass=16.39 events=91553792
+cand ask-cost timeout=0ms ask trips=20742144 elapsed_ns=1500054900 ns_per_trip=72.32
+cand ask-cost timeout=500ms ask+timeout trips=11821056 elapsed_ns=1500120900 ns_per_trip=126.90
+cand ask-cost timeout=500ms stream+timeout trips=4599808 elapsed_ns=1501332100 ns_per_trip=326.39
+cand ask-cost timeout=500ms stream+timeout trips=19820544 elapsed_ns=1500154200 ns_per_trip=75.69
+cand pass-cost chains=1 passes=91422720 elapsed_ns=1500729800 ns_per_pass=16.42 events=91422720
+ctl ask-cost timeout=0ms ask trips=18206720 elapsed_ns=1500052400 ns_per_trip=82.39
+ctl ask-cost timeout=500ms ask+timeout trips=1355776 elapsed_ns=1500219600 ns_per_trip=1106.54
+ctl ask-cost timeout=500ms stream+timeout trips=1462272 elapsed_ns=1500489100 ns_per_trip=1026.14
+ctl ask-cost timeout=500ms stream+timeout trips=16969728 elapsed_ns=1500143700 ns_per_trip=88.40
+ctl pass-cost chains=1 passes=91947008 elapsed_ns=1500226900 ns_per_pass=16.32 events=91947008
+cand ask-cost timeout=0ms ask trips=20795392 elapsed_ns=1500080900 ns_per_trip=72.14
+cand ask-cost timeout=500ms ask+timeout trips=12058624 elapsed_ns=1500321400 ns_per_trip=124.42
+cand ask-cost timeout=500ms stream+timeout trips=4521984 elapsed_ns=1500897900 ns_per_trip=331.91
+cand ask-cost timeout=500ms stream+timeout trips=19582976 elapsed_ns=1500089200 ns_per_trip=76.60
+cand pass-cost chains=1 passes=90832896 elapsed_ns=1500090900 ns_per_pass=16.51 events=90832896
+ctl ask-cost timeout=0ms ask trips=18259968 elapsed_ns=1500114100 ns_per_trip=82.15
+ctl ask-cost timeout=500ms ask+timeout trips=1343488 elapsed_ns=1504062200 ns_per_trip=1119.52
+ctl ask-cost timeout=500ms stream+timeout trips=1544192 elapsed_ns=1502851200 ns_per_trip=973.23
+ctl ask-cost timeout=500ms stream+timeout trips=17145856 elapsed_ns=1500240600 ns_per_trip=87.50
+ctl pass-cost chains=1 passes=91553792 elapsed_ns=1500556200 ns_per_pass=16.39 events=91553792
+cand ask-cost timeout=0ms ask trips=20779008 elapsed_ns=1500315200 ns_per_trip=72.20
+cand ask-cost timeout=500ms ask+timeout trips=12021760 elapsed_ns=1500206500 ns_per_trip=124.79
+cand ask-cost timeout=500ms stream+timeout trips=4513792 elapsed_ns=1500819600 ns_per_trip=332.50
+cand ask-cost timeout=500ms stream+timeout trips=19664896 elapsed_ns=1500246900 ns_per_trip=76.29
+cand pass-cost chains=1 passes=92078080 elapsed_ns=1500223700 ns_per_pass=16.29 events=92078080
+ctl ask-cost timeout=0ms ask trips=18395136 elapsed_ns=1500216200 ns_per_trip=81.56
+ctl ask-cost timeout=500ms ask+timeout trips=1335296 elapsed_ns=1500406000 ns_per_trip=1123.65
+ctl ask-cost timeout=500ms stream+timeout trips=1683456 elapsed_ns=1502599300 ns_per_trip=892.57
+ctl ask-cost timeout=500ms stream+timeout trips=17027072 elapsed_ns=1500147300 ns_per_trip=88.10
+ctl pass-cost chains=1 passes=90177536 elapsed_ns=1500017900 ns_per_pass=16.63 events=90177536
+cand ask-cost timeout=0ms ask trips=21123072 elapsed_ns=1500266500 ns_per_trip=71.03
+cand ask-cost timeout=500ms ask+timeout trips=12111872 elapsed_ns=1500280900 ns_per_trip=123.87
+cand ask-cost timeout=500ms stream+timeout trips=4554752 elapsed_ns=1500867400 ns_per_trip=329.52
+cand ask-cost timeout=500ms stream+timeout trips=19611648 elapsed_ns=1500107600 ns_per_trip=76.49
+cand pass-cost chains=1 passes=91226112 elapsed_ns=1500588800 ns_per_pass=16.45 events=91226112
+ctl ask-cost timeout=0ms ask trips=18354176 elapsed_ns=1500244600 ns_per_trip=81.74
+ctl ask-cost timeout=500ms ask+timeout trips=1445888 elapsed_ns=1500842300 ns_per_trip=1038.01
+ctl ask-cost timeout=500ms stream+timeout trips=1716224 elapsed_ns=1500744400 ns_per_trip=874.45
+ctl ask-cost timeout=500ms stream+timeout trips=16883712 elapsed_ns=1500252900 ns_per_trip=88.86
+ctl pass-cost chains=1 passes=91160576 elapsed_ns=1500735100 ns_per_pass=16.46 events=91160576

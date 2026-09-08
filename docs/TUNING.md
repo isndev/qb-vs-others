@@ -1661,3 +1661,99 @@ nothing else, entered when a pass had no activity, no tick and no io work — wa
 against the fix on the probe and split: `send` −5 %, `push` +6 %. It is not shipped; it is
 QB-181's next measurement, against this section's figures as the base and with the eight
 shapes as the judge, and the ring's cross-core hop is still its most sensitive cell.
+
+## 17. The request/reply machinery, and the loop under a timer
+
+`tools/probes/ask-cost.cpp` (Huly QB-185) puts two actors on one pinned core and measures three
+round trips: `push` — the asker's handler pushes, the responder `reply()`s: two passes and
+nothing else; `ask` — one coroutine looping `co_await qb::ask<E>()`, the responder `reply()`s,
+the asker routes with `resolve_ask()`; `stream` — `ask_stream` drained with `next()`, per
+chunk. A `timeout_ms` option gives every ask (or every `next()`) a deadline, the documented
+idiom.
+
+### 17.1 What an `ask` pays over a push, and where the queue was
+
+On `develop` `4a0b62be`, g++-14: push **24.0 ns**, ask **53.6** — ~30 ns of machinery over the
+two passes an ask cannot avoid. The cpu-clock profile: the `qb::ask<E>` coroutine's ramp 16 %,
+`__workflow__` 21 % (the scheduler's `run_ready()`: a ready-queue pop and a hash-set erase),
+`deliver_thunk` 5 %, the registry (`ask_take` / `ask_deliver` / `ask_unregister`) 9 %,
+`__tls_init` 1.7 % (a `static thread_local bool` with dynamic initialisation, read through the
+TLS init wrapper on every ask). The defect: `ask_awaiter::deliver_thunk`, reached from
+`resolve_ask()` in the asker's own handler on its own core, did not resume the waiting frame —
+it queued it (`schedule_via_current`: a hash-set insert and a queue push) for the next pass's io
+phase to pop, erase and resume, while the `task<E>` the ask returns already completed by
+symmetric transfer. Resuming inline from the thunk (the cancel and timeout paths keep the
+queue: they run from a token callback or a timer) and making the flag `constinit`:
+
+| probe, one core (ns per round trip) | WSL2 / g++-14 | Windows / MSVC 19.51 |
+|---|---|---|
+| push | 24.4 → 24.3 | 34.2 → 33.6 |
+| ask | **54.0 → 46.7** (−14 %) | **81.7 → 72.0** (−12 %) |
+| the ask machinery over push | 29.7 → 22.4 (−25 %) | 47.5 → 38.4 (−19 %) |
+| `savina/bank-transaction` 2c-spin / 2c-park (census, per transfer) | 92.4 → **84.0** / 93.2 → 88.3 | 153.7 → 152.7 / 154.7 → **147.4** |
+| bank 1c-spin / 1c-park | 142.3 → 137.7 / 140.8 → 138.5 | 261.7 → 250.6 / 260.8 → 250.1 |
+
+Measured and dropped on the way: draining the scheduler's ready coroutines right after the
+receive, in the same pass — for `ask_stream`, `ping`, `require`, `ask_all`, whose wakes keep
+the queue — a null result (a one-chunk stream 107 → 105.7 ns) that cost ~1 ns on every pass:
+a deferred wake already ran in the next pass's io phase *before* that pass's receive, so its
+push was handled in that same pass and the queue, not a pass, was the whole price. What the
+sanitizer added: a spawned coroutine completing outside `run_ready()` — now the normal end of
+an ask-driven coroutine — leaked its frame at teardown through a `!done()` guard in the
+scheduler's cascade; fixed with the test that pins it (qb `CHANGELOG.md`).
+
+What is left of the ask machinery (~22 ns on g++): the `task<E>` frame's ramp and teardown,
+the registry, the cancellation hook, three moves of E — spread thin; a lever would have to be
+structural (an awaitable that is not a coroutine, a 4.0 shape).
+
+### 17.2 The timer under the ask — where libev's 2010 defaults were
+
+The same probe with `timeout_ms = 500`: **798 ns** per round trip on g++ against 46 without
+the timeout, **1108** on MSVC against 82 — the documented idiom 17× the timeout-less ask, and a
+one-chunk `ask_stream` with a timeout 860 / 973. No Savina cell had shown it: `bank-transaction`
+asks with `duration::zero()`; the `dev/bench` ask cell (~700 ns per ask, bimodal on MSVC) had
+been showing it all along and was read as "instrumentation".
+
+Two libev defaults, both in qev now (qev `CHANGELOG.md` `[Unreleased]`, Huly QB-187), measured
+with `qev/bench/bench-pass.c` — N `ev_run(EVRUN_NOWAIT)` over a loop whose watchers never fire,
+what a core with one watcher pays on EVERY pass:
+
+| shape (ns per non-blocking pass, WSL2 g++-14) | qev `ec16b7c` | qev after QB-187 |
+|---|---:|---:|
+| empty loop | 297 | **50** |
+| one far timer (a pending request timeout) | 297 | **51** |
+| one quiet socket | 296 | **131** |
+| `ev_now_update` (what every timer arm pays first) | 97 | **17.5** |
+| `ev_timer_start` + `ev_timer_stop` | 3.2 | 3.3 |
+
+1. **The clock through the raw syscall.** `EV_USE_CLOCK_SYSCALL`: the config probe's
+   `HAVE_CLOCK_SYSCALL` always compiles on Linux, and libev took it as "use the syscall" to
+   spare glibc < 2.17 a librt dependency. Every clock read was a trap, ~95 ns, and `ev_run`
+   reads it twice per pass: 52 % of the timed ask's profile. Now only where libc has no
+   `clock_gettime`.
+2. **A poll over nothing.** A NOWAIT pass called `backend_poll(0)` — `epoll_wait`, wepoll's
+   `GetQueuedCompletionStatusEx`, `kevent` — with no fd registered. Now the loop counts its
+   active `ev_io` watchers and skips a poll that would not block when there is none; a
+   blocking wait is kept (with no fd it is the sleep).
+
+The timed ask after both: **172 ns** on g++ (the poll skip 798 → 604, the clock 604 → 172),
+**124 ns** on MSVC (1108 → 124: there the whole cost was the poll), the one-chunk timed stream
+860 → 238 / 973 → 330; a 64-chunk timed stream 38 → 34.6 / 88 → 76.5 per chunk. What remains
+of libev per timed ask on g++ (~115 ns of 172): one clock read per pass plus the pass's
+bookkeeping (a full memory fence for a wake-up handshake a non-blocking pass never needs, a
+second `time_update`), and the fact that a pending timer keeps the loop running on every pass
+at all — the programme that follows.
+
+### 17.3 The qev programme
+
+qev is on the path of every core that owns a timer or a socket, and on none of the Savina
+cells, which is why its cost went unmeasured for the whole 3.2 audit until 17.2.
+`dev/plans/roadmaps/QEV_PERFORMANCE_ROADMAP.md` (Huly QB-186) is the audit — the three entry
+points, twelve findings ranked by measured cost — and the plan: the non-blocking pass at its
+floor (no handshake, one clock read, the evpipe not counted as a pollable fd — it is, after the
+first park, and it re-enables the poll for the life of the loop; QB-188, target ≤ 25 ns per
+pass), request timeouts without a libev timer (a deadline list on the pass clock; QB-189,
+target a timed ask ≤ 60 ns), the embedder's clock handed to the loop (QB-190, ≤ 10 ns per
+pass), the io pass — io_uring's user-space completion queue against `epoll_wait(0)`, wepoll on
+Windows, a quiet-fd cadence (QB-81, QB-191) — and the wake/park path (QB-192). Every step
+carries `bench-pass` and `ask-cost` on both hosts, and no step is judged on one.
