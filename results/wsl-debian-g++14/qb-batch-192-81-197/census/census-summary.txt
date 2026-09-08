@@ -1,0 +1,8 @@
+bank-transaction-cores=2-wait=1 ctl    79.3  79.8  80.5  81.0  81.7  81.9  82.1  82.1  83.4  83.4   median 81.8 ns
+bank-transaction-cores=2-wait=1 cand   80.3  80.8  81.7  82.0  82.5  83.0  83.2  83.5  83.9  85.9   median 82.8 ns
+ping-pong-cores=1-wait=1       ctl    22.5  22.6  22.6  22.7  22.8  22.8  22.8  22.9  22.9  23.0   median 22.8 ns
+ping-pong-cores=1-wait=1       cand   22.5  22.6  22.6  22.7  22.7  22.8  22.8  22.8  22.8  23.1   median 22.7 ns
+ping-pong-cores=2-wait=1       ctl   154.1 154.5 154.8 155.2 155.6 158.5 159.5 160.8 160.8 161.6   median 157.0 ns
+ping-pong-cores=2-wait=1       cand  148.4 151.1 151.6 153.3 154.3 155.2 155.9 156.9 159.5 159.9   median 154.7 ns
+thread-ring-cores=2-wait=1     ctl    73.2  74.0  74.1  74.3  74.4  74.6  74.8  75.2  75.6  75.9   median 74.5 ns
+thread-ring-cores=2-wait=1     cand   73.7  74.0  74.2  74.7  75.0  75.3  75.3  75.8  77.9  79.4   median 75.1 ns
