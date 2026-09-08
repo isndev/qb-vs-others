@@ -1,0 +1,32 @@
+session 2026-09-09T00:34:20 cand=acf2dd77 (D:/repo/qb-198) ctl=d20417f9 (D:/repo/qb-dev/qb)
+cand ask-cost push push trips=47894528 elapsed_ns=1500093000 ns_per_trip=31.32
+cand ask-cost ask timeout=500 ask+timeout trips=16773120 elapsed_ns=1500150300 ns_per_trip=89.44
+cand pass-cost k=1 chains=1 passes=94830592 elapsed_ns=1500453100 ns_per_pass=15.82 events=94830592
+ctl ask-cost push push trips=48365568 elapsed_ns=1500081400 ns_per_trip=31.02
+ctl ask-cost ask timeout=500 ask+timeout trips=16691200 elapsed_ns=1500164800 ns_per_trip=89.88
+ctl pass-cost k=1 chains=1 passes=96534528 elapsed_ns=1500177300 ns_per_pass=15.54 events=96534528
+cand ask-cost push push trips=48099328 elapsed_ns=1500017500 ns_per_trip=31.19
+cand ask-cost ask timeout=500 ask+timeout trips=16769024 elapsed_ns=1500013800 ns_per_trip=89.45
+cand pass-cost k=1 chains=1 passes=97517568 elapsed_ns=1500340000 ns_per_pass=15.39 events=97517568
+ctl ask-cost push push trips=46698496 elapsed_ns=1500015900 ns_per_trip=32.12
+ctl ask-cost ask timeout=500 ask+timeout trips=16576512 elapsed_ns=1500245400 ns_per_trip=90.50
+ctl pass-cost k=1 chains=1 passes=96731136 elapsed_ns=1500301700 ns_per_pass=15.51 events=96731136
+cand ask-cost push push trips=48001024 elapsed_ns=1500078100 ns_per_trip=31.25
+cand ask-cost ask timeout=500 ask+timeout trips=16531456 elapsed_ns=1501377300 ns_per_trip=90.82
+cand pass-cost k=1 chains=1 passes=90767360 elapsed_ns=1500731300 ns_per_pass=16.53 events=90767360
+ctl ask-cost push push trips=47882240 elapsed_ns=1500116200 ns_per_trip=31.33
+ctl ask-cost ask timeout=500 ask+timeout trips=16560128 elapsed_ns=1500158300 ns_per_trip=90.59
+ctl pass-cost k=1 chains=1 passes=96403456 elapsed_ns=1500685700 ns_per_pass=15.57 events=96403456
+cand ask-cost push push trips=47013888 elapsed_ns=1500055400 ns_per_trip=31.91
+cand ask-cost ask timeout=500 ask+timeout trips=16343040 elapsed_ns=1500231500 ns_per_trip=91.80
+cand pass-cost k=1 chains=1 passes=96206848 elapsed_ns=1500765100 ns_per_pass=15.60 events=96206848
+ctl ask-cost push push trips=48033792 elapsed_ns=1500016300 ns_per_trip=31.23
+ctl ask-cost ask timeout=500 ask+timeout trips=16318464 elapsed_ns=1500023400 ns_per_trip=91.92
+ctl pass-cost k=1 chains=1 passes=96206848 elapsed_ns=1500903500 ns_per_pass=15.60 events=96206848
+cand ask-cost push push trips=47321088 elapsed_ns=1500105600 ns_per_trip=31.70
+cand ask-cost ask timeout=500 ask+timeout trips=16699392 elapsed_ns=1500047900 ns_per_trip=89.83
+cand pass-cost k=1 chains=1 passes=96796672 elapsed_ns=1500846800 ns_per_pass=15.51 events=96796672
+ctl ask-cost push push trips=48246784 elapsed_ns=1500054500 ns_per_trip=31.09
+ctl ask-cost ask timeout=500 ask+timeout trips=16379904 elapsed_ns=1500095500 ns_per_trip=91.58
+ctl pass-cost k=1 chains=1 passes=96075776 elapsed_ns=1500948800 ns_per_pass=15.62 events=96075776
+end 2026-09-09T00:35:06

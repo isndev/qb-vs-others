@@ -1,0 +1,50 @@
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[100%] Built target qvo-qb-savina-ping-pong
+[ 30%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[100%] Built target qvo-qb-savina-thread-ring
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[100%] Built target qvo-qb-savina-bank-transaction
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[ 92%] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-counting.dir/savina/counting.cpp.o
+[100%] Linking CXX executable ../../bin/qvo-qb-savina-counting
+[100%] Built target qvo-qb-savina-counting
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[ 92%] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-big.dir/savina/big.cpp.o
+[100%] Linking CXX executable ../../bin/qvo-qb-savina-big
+[100%] Built target qvo-qb-savina-big
+[ 30%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[ 92%] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-fib.dir/savina/fib.cpp.o
+[100%] Linking CXX executable ../../bin/qvo-qb-savina-fib
+[100%] Built target qvo-qb-savina-fib
+[ 18%] Built target qev
+[ 63%] Built target qb-io
+[ 81%] Built target qb-core
+[100%] Built target qvoprobe-io-pass
+[ 18%] Built target qev
+[ 63%] Built target qb-io
+[ 81%] Built target qb-core
+[100%] Built target qvoprobe-ask-cost
+[ 18%] Built target qev
+[ 63%] Built target qb-io
+[ 81%] Built target qb-core
+[ 90%] Building CXX object CMakeFiles/qvoprobe-pass-cost.dir/tools/probes/pass-cost.cpp.o
+[100%] Linking CXX executable bin/qvoprobe-pass-cost
+[100%] Built target qvoprobe-pass-cost

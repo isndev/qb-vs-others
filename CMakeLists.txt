@@ -169,6 +169,13 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     if(_qvo_poll_knob)
         target_compile_definitions(qvoprobe-io-pass PRIVATE QVO_QB_HAS_IO_POLL_INTERVAL=1)
     endif()
+    # The dispatch under a population (Huly QB-198): what one event costs a core serving N actors as
+    # N grows past what its caches hold -- the shape the dispatcher's prefetch is for.
+    add_executable(qvoprobe-dispatch-population tools/probes/dispatch-population.cpp)
+    target_link_libraries(qvoprobe-dispatch-population PRIVATE qb::core)
+    set_target_properties(qvoprobe-dispatch-population PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "probes")
     # No qb in it: the raw ring shapes behind docs/TUNING.md section 16. Linux / x86-64 only for real;
     # elsewhere the same source builds to a stub that says so and exits 2.
     add_executable(qvoprobe-raw-ring tools/probes/raw-ring.cpp)

@@ -1,0 +1,42 @@
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[100%] Built target qvo-qb-savina-ping-pong
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[100%] Built target qvo-qb-savina-thread-ring
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[100%] Built target qvo-qb-savina-bank-transaction
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[100%] Built target qvo-qb-savina-counting
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[100%] Built target qvo-qb-savina-big
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[100%] Built target qvo-qb-savina-fib
+[ 18%] Built target qev
+[ 63%] Built target qb-io
+[ 81%] Built target qb-core
+[100%] Built target qvoprobe-io-pass
+[ 18%] Built target qev
+[ 63%] Built target qb-io
+[ 81%] Built target qb-core
+[100%] Built target qvoprobe-ask-cost
+[ 18%] Built target qev
+[ 63%] Built target qb-io
+[ 81%] Built target qb-core
+[100%] Built target qvoprobe-pass-cost

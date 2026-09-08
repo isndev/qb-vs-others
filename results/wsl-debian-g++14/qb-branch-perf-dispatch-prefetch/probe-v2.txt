@@ -1,0 +1,60 @@
+ctl ask-cost push push trips=82796544 elapsed_ns=2000075559 ns_per_trip=24.16
+ctl ask-cost ask  ask trips=42590208 elapsed_ns=2000088336 ns_per_trip=46.96
+ctl pass-cost k=1 chains=1 passes=161218560 elapsed_ns=2000197428 ns_per_pass=12.41 events=161218560
+C ask-cost push push trips=82657280 elapsed_ns=2000081751 ns_per_trip=24.20
+C ask-cost ask  ask trips=43483136 elapsed_ns=2000147139 ns_per_trip=46.00
+C pass-cost k=1 chains=1 passes=162463744 elapsed_ns=2000477502 ns_per_pass=12.31 events=162463744
+A1 ask-cost push push trips=82792448 elapsed_ns=2000075330 ns_per_trip=24.16
+A1 ask-cost ask  ask trips=42577920 elapsed_ns=2000123171 ns_per_trip=46.98
+A1 pass-cost k=1 chains=1 passes=160694272 elapsed_ns=2000719108 ns_per_pass=12.45 events=160694272
+A2 ask-cost push push trips=84606976 elapsed_ns=2000010853 ns_per_trip=23.64
+A2 ask-cost ask  ask trips=42930176 elapsed_ns=2000028191 ns_per_trip=46.59
+A2 pass-cost k=1 chains=1 passes=160825344 elapsed_ns=2000133867 ns_per_pass=12.44 events=160825344
+ctl ask-cost push push trips=82313216 elapsed_ns=2000061406 ns_per_trip=24.30
+ctl ask-cost ask  ask trips=42348544 elapsed_ns=2000041297 ns_per_trip=47.23
+ctl pass-cost k=1 chains=1 passes=158662656 elapsed_ns=2000689359 ns_per_pass=12.61 events=158662656
+C ask-cost push push trips=82571264 elapsed_ns=2000003223 ns_per_trip=24.22
+C ask-cost ask  ask trips=42696704 elapsed_ns=2000138053 ns_per_trip=46.85
+C pass-cost k=1 chains=1 passes=159580160 elapsed_ns=2000272090 ns_per_pass=12.53 events=159580160
+A1 ask-cost push push trips=81981440 elapsed_ns=2000055164 ns_per_trip=24.40
+A1 ask-cost ask  ask trips=42586112 elapsed_ns=2000179180 ns_per_trip=46.97
+A1 pass-cost k=1 chains=1 passes=160759808 elapsed_ns=2000393696 ns_per_pass=12.44 events=160759808
+A2 ask-cost push push trips=84434944 elapsed_ns=2000089393 ns_per_trip=23.69
+A2 ask-cost ask  ask trips=43610112 elapsed_ns=2000017868 ns_per_trip=45.86
+A2 pass-cost k=1 chains=1 passes=164429824 elapsed_ns=2000229744 ns_per_pass=12.16 events=164429824
+ctl ask-cost push push trips=81625088 elapsed_ns=2000080254 ns_per_trip=24.50
+ctl ask-cost ask  ask trips=42622976 elapsed_ns=2000120219 ns_per_trip=46.93
+ctl pass-cost k=1 chains=1 passes=161218560 elapsed_ns=2000234316 ns_per_pass=12.41 events=161218560
+C ask-cost push push trips=83525632 elapsed_ns=2000005321 ns_per_trip=23.94
+C ask-cost ask  ask trips=41316352 elapsed_ns=2000044522 ns_per_trip=48.41
+C pass-cost k=1 chains=1 passes=161808384 elapsed_ns=2000527244 ns_per_pass=12.36 events=161808384
+A1 ask-cost push push trips=83161088 elapsed_ns=2000028690 ns_per_trip=24.05
+A1 ask-cost ask  ask trips=42426368 elapsed_ns=2000037569 ns_per_trip=47.14
+A1 pass-cost k=1 chains=1 passes=163512320 elapsed_ns=2000396581 ns_per_pass=12.23 events=163512320
+A2 ask-cost push push trips=84869120 elapsed_ns=2000021428 ns_per_trip=23.57
+A2 ask-cost ask  ask trips=43151360 elapsed_ns=2000039276 ns_per_trip=46.35
+A2 pass-cost k=1 chains=1 passes=165019648 elapsed_ns=2000274145 ns_per_pass=12.12 events=165019648
+ctl ask-cost push push trips=83468288 elapsed_ns=2000043680 ns_per_trip=23.96
+ctl ask-cost ask  ask trips=42766336 elapsed_ns=2000051653 ns_per_trip=46.77
+ctl pass-cost k=1 chains=1 passes=161611776 elapsed_ns=2000796929 ns_per_pass=12.38 events=161611776
+C ask-cost push push trips=83308544 elapsed_ns=2000046111 ns_per_trip=24.01
+C ask-cost ask  ask trips=43245568 elapsed_ns=2000108177 ns_per_trip=46.25
+C pass-cost k=1 chains=1 passes=161415168 elapsed_ns=2000815142 ns_per_pass=12.40 events=161415168
+A1 ask-cost push push trips=83943424 elapsed_ns=2000072704 ns_per_trip=23.83
+A1 ask-cost ask  ask trips=43020288 elapsed_ns=2000097978 ns_per_trip=46.49
+A1 pass-cost k=1 chains=1 passes=163577856 elapsed_ns=2000564507 ns_per_pass=12.23 events=163577856
+A2 ask-cost push push trips=81149952 elapsed_ns=2000035604 ns_per_trip=24.65
+A2 ask-cost ask  ask trips=43626496 elapsed_ns=2000055367 ns_per_trip=45.84
+A2 pass-cost k=1 chains=1 passes=164364288 elapsed_ns=2000349224 ns_per_pass=12.17 events=164364288
+ctl ask-cost push push trips=80420864 elapsed_ns=2000087813 ns_per_trip=24.87
+ctl ask-cost ask  ask trips=42762240 elapsed_ns=2000033447 ns_per_trip=46.77
+ctl pass-cost k=1 chains=1 passes=160104448 elapsed_ns=2000577371 ns_per_pass=12.50 events=160104448
+C ask-cost push push trips=83550208 elapsed_ns=2000004139 ns_per_trip=23.94
+C ask-cost ask  ask trips=43458560 elapsed_ns=2000027972 ns_per_trip=46.02
+C pass-cost k=1 chains=1 passes=162594816 elapsed_ns=2000753605 ns_per_pass=12.31 events=162594816
+A1 ask-cost push push trips=83587072 elapsed_ns=2000014915 ns_per_trip=23.93
+A1 ask-cost ask  ask trips=43036672 elapsed_ns=2000097379 ns_per_trip=46.47
+A1 pass-cost k=1 chains=1 passes=162398208 elapsed_ns=2000184380 ns_per_pass=12.32 events=162398208
+A2 ask-cost push push trips=85778432 elapsed_ns=2000082276 ns_per_trip=23.32
+A2 ask-cost ask  ask trips=43298816 elapsed_ns=2000070166 ns_per_trip=46.19
+A2 pass-cost k=1 chains=1 passes=163512320 elapsed_ns=2000467489 ns_per_pass=12.23 events=163512320

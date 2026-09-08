@@ -1,0 +1,90 @@
+[  7%] Building CXX object CMakeFiles/qvo-harness.dir/harness/src/harness.cpp.o
+[ 15%] Building C object _deps/qb-build/src/qb/ev/CMakeFiles/qev.dir/ev.c.o
+[ 23%] Linking C static library ../../../../../lib/libqb-ev.a
+[ 23%] Built target qev
+[ 38%] Building CXX object _deps/qb-build/src/qb/io/CMakeFiles/qb-io.dir/io.cpp.o
+[ 38%] Building CXX object _deps/qb-build/src/qb/io/CMakeFiles/qb-io.dir/slab.cpp.o
+[ 46%] Building CXX object _deps/qb-build/src/qb/io/CMakeFiles/qb-io.dir/cpu.cpp.o
+[ 53%] Building CXX object _deps/qb-build/src/qb/io/CMakeFiles/qb-io.dir/quic.cpp.o
+[ 61%] Linking CXX static library libqvo-harness.a
+[ 61%] Built target qvo-harness
+[ 69%] Linking CXX static library ../../../../../lib/libqb-io.a
+[ 69%] Built target qb-io
+[ 76%] Building CXX object _deps/qb-build/src/qb/core/CMakeFiles/qb-core.dir/core.cpp.o
+[ 84%] Linking CXX static library ../../../../../lib/libqb-core.a
+[ 84%] Built target qb-core
+[ 92%] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-ping-pong.dir/savina/ping-pong.cpp.o
+[100%] Linking CXX executable ../../bin/qvo-qb-savina-ping-pong
+[100%] Built target qvo-qb-savina-ping-pong
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[ 92%] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-thread-ring.dir/savina/thread-ring.cpp.o
+[100%] Linking CXX executable ../../bin/qvo-qb-savina-thread-ring
+[100%] Built target qvo-qb-savina-thread-ring
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[ 92%] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-bank-transaction.dir/savina/bank-transaction.cpp.o
+In file included from /home/mbelhadi/qb-198-A4/src/src/qb/io/async/coroutine/scheduler.h:64,
+                 from /home/mbelhadi/qb-198-A4/src/src/qb/io/async/listener.h:43,
+                 from /home/mbelhadi/qb-198-A4/src/src/qb/core/Main.h:41,
+                 from /home/mbelhadi/qb-198-A4/src/src/qb/main.h:13,
+                 from /home/mbelhadi/qvo-198-A4/src/frameworks/qb/savina/../qb_support.h:17,
+                 from /home/mbelhadi/qvo-198-A4/src/frameworks/qb/savina/bank-transaction.cpp:25:
+/home/mbelhadi/qb-198-A4/src/src/qb/io/async/coroutine/task.h: In member function ‘void qb::io::async::task<T>::promise_type::return_value(T) [with T = savina_bank_transaction_qb::Deposit]’:
+/home/mbelhadi/qb-198-A4/src/src/qb/io/async/coroutine/task.h:563:9: note: the ABI for passing parameters with 64-byte alignment has changed in GCC 4.6
+  563 |         return_value(T value) noexcept(std::is_nothrow_move_constructible_v<T>) {
+      |         ^~~~~~~~~~~~
+[100%] Linking CXX executable ../../bin/qvo-qb-savina-bank-transaction
+[100%] Built target qvo-qb-savina-bank-transaction
+[ 15%] Built target qvo-harness
+[ 30%] Built target qev
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[ 92%] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-counting.dir/savina/counting.cpp.o
+[100%] Linking CXX executable ../../bin/qvo-qb-savina-counting
+[100%] Built target qvo-qb-savina-counting
+[ 30%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[ 92%] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-big.dir/savina/big.cpp.o
+[100%] Linking CXX executable ../../bin/qvo-qb-savina-big
+[100%] Built target qvo-qb-savina-big
+[ 15%] Built target qev
+[ 30%] Built target qvo-harness
+[ 69%] Built target qb-io
+[ 84%] Built target qb-core
+[ 92%] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-fib.dir/savina/fib.cpp.o
+[100%] Linking CXX executable ../../bin/qvo-qb-savina-fib
+[100%] Built target qvo-qb-savina-fib
+[ 18%] Built target qev
+[ 63%] Built target qb-io
+[ 81%] Built target qb-core
+[ 90%] Building CXX object CMakeFiles/qvoprobe-ask-cost.dir/tools/probes/ask-cost.cpp.o
+In file included from /home/mbelhadi/qb-198-A4/src/src/qb/io/async/coroutine/scheduler.h:64,
+                 from /home/mbelhadi/qb-198-A4/src/src/qb/io/async/coroutine.h:226,
+                 from /home/mbelhadi/qb-198-A4/src/src/qb/core/Actor.h:48,
+                 from /home/mbelhadi/qb-198-A4/src/src/qb/actor.h:14,
+                 from /home/mbelhadi/qvo-198-A4/src/tools/probes/ask-cost.cpp:31:
+/home/mbelhadi/qb-198-A4/src/src/qb/io/async/coroutine/task.h: In member function ‘void qb::io::async::task<T>::promise_type::return_value(T) [with T = {anonymous}::Echo]’:
+/home/mbelhadi/qb-198-A4/src/src/qb/io/async/coroutine/task.h:563:9: note: the ABI for passing parameters with 64-byte alignment has changed in GCC 4.6
+  563 |         return_value(T value) noexcept(std::is_nothrow_move_constructible_v<T>) {
+      |         ^~~~~~~~~~~~
+[100%] Linking CXX executable bin/qvoprobe-ask-cost
+[100%] Built target qvoprobe-ask-cost
+[ 18%] Built target qev
+[ 63%] Built target qb-io
+[ 81%] Built target qb-core
+[ 90%] Building CXX object CMakeFiles/qvoprobe-pass-cost.dir/tools/probes/pass-cost.cpp.o
+[100%] Linking CXX executable bin/qvoprobe-pass-cost
+[100%] Built target qvoprobe-pass-cost
+[ 18%] Built target qev
+[ 63%] Built target qb-io
+[ 81%] Built target qb-core
+[ 90%] Building CXX object CMakeFiles/qvoprobe-dispatch-population.dir/tools/probes/dispatch-population.cpp.o
+[100%] Linking CXX executable bin/qvoprobe-dispatch-population
+[100%] Built target qvoprobe-dispatch-population

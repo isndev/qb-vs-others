@@ -1,0 +1,26 @@
+bank-transaction-cores=1-wait=1 ctl   124.9  142.4  142.8  143.2  143.2  143.6  146.3  146.9  147.1  147.3  147.3  148.0   median 145.0
+bank-transaction-cores=1-wait=1 cand  134.2  135.8  141.3  142.9  143.3  144.0  145.3  145.5  146.9  148.5  149.1  152.4   median 144.6
+bank-transaction-cores=2-wait=1 ctl    76.5   77.3   78.7   79.7   79.8   81.7   81.9   82.2   82.2   85.4   86.8   93.1   median 81.8
+bank-transaction-cores=2-wait=1 cand   77.8   77.9   78.8   78.8   79.1   79.1   81.5   82.6   84.0   84.3   84.8   87.6   median 80.3
+big-cores=1-wait=1             ctl    17.7   17.9   17.9   17.9   18.0   18.0   18.1   18.2   18.2   18.3   18.4   18.5   median 18.1
+big-cores=1-wait=1             cand   17.6   17.9   17.9   17.9   18.0   18.0   18.1   18.2   18.4   18.4   18.6   19.3   median 18.0
+counting-cores=1-wait=1        ctl     7.4    7.4    7.4    7.5    7.5    7.5    7.5    7.5    7.5    7.6    7.6    8.0   median 7.5
+counting-cores=1-wait=1        cand    7.3    7.4    7.4    7.4    7.5    7.5    7.5    7.5    7.5    7.5    7.8    8.1   median 7.5
+fib-cores=1-wait=1             ctl   123.8  124.0  124.3  125.5  125.9  126.5  126.9  127.4  127.6  127.9  128.0  128.2   median 126.7
+fib-cores=1-wait=1             cand  123.1  124.4  125.1  125.7  126.9  127.2  128.4  128.9  129.5  131.9  132.5  133.9   median 127.8
+ping-pong-cores=1-wait=1       ctl    22.6   22.6   22.8   22.9   22.9   23.1   23.1   23.1   23.1   23.4   23.4   24.2   median 23.1
+ping-pong-cores=1-wait=1       cand   22.3   22.5   22.5   22.6   22.6   22.7   22.9   22.9   22.9   22.9   23.1   23.4   median 22.8
+ping-pong-cores=2-wait=1       ctl   145.2  149.7  151.7  152.3  153.0  154.0  154.1  154.8  154.9  156.3  157.0  157.7   median 154.1
+ping-pong-cores=2-wait=1       cand  145.6  148.0  148.9  151.2  152.5  153.9  153.9  154.3  155.1  156.0  156.3  158.7   median 153.9
+thread-ring-cores=2-wait=1     ctl    72.7   73.1   73.2   73.3   73.4   73.4   73.4   73.4   73.5   74.4   75.3   75.8   median 73.4
+thread-ring-cores=2-wait=1     cand   72.5   72.8   72.9   72.9   73.3   73.3   73.6   73.6   74.0   75.9   76.6   77.2   median 73.5
+
+cell                                ctl     cand   delta   ctl p25-p75 / cand p25-p75
+bank-transaction-cores=1-wait=1    145.0    144.6   -0.2%   142.8-147.1 / 141.3-146.9
+bank-transaction-cores=2-wait=1     81.8     80.3   -1.8%   78.7-82.2 / 78.8-84.0
+big-cores=1-wait=1                 18.1     18.0   -0.2%   17.9-18.2 / 17.9-18.4
+counting-cores=1-wait=1             7.5      7.5   -0.1%   7.4-7.5 / 7.4-7.5
+fib-cores=1-wait=1                126.7    127.8   +0.9%   124.3-127.6 / 125.1-129.5
+ping-pong-cores=1-wait=1           23.1     22.8   -1.4%   22.8-23.1 / 22.5-22.9
+ping-pong-cores=2-wait=1          154.1    153.9   -0.1%   151.7-154.9 / 148.9-155.1
+thread-ring-cores=2-wait=1         73.4     73.5   +0.0%   73.2-73.5 / 72.9-74.0

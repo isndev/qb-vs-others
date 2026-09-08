@@ -1994,3 +1994,80 @@ a core that polls on every pass, the one configuration where sub-microsecond wak
 affordable. qb's Linux CI runs its suite on both (`-DQB_IO_EV_TEST_BACKENDS=epoll;iouring`), with a
 guard that fails an io_uring variant the kernel refused rather than let it test epoll under that
 name; the whole suite forced onto io_uring under both sanitizers: 385/385.
+
+## 18. The dispatch under a population: the actor's line, and what the core already hides
+
+QB-198 (`results/<host>/qb-branch-perf-dispatch-prefetch/`, the `dispatch-population` probe — a
+negative result, measured on both sides and kept) and QB-199 (`results/<host>/qb-branch-perf-loop-listener-ref/`).
+
+After the pass reached its floor (§15, §17), `perf` on savina/bank-transaction at one core — 1 000
+accounts, transfers to accounts drawn at random, ~1 MB of live objects against a 1.25 MB L2 —
+showed where a core serving a POPULATION pays: the account's `on(Deposit&)` handler was 18 % of
+the core and **78 % of its samples sat on the trampoline's `is_alive()` load**, the destination
+actor's first line, an L3 miss of ~20 ns on a 150 ns transfer; `EventResolver<Deposit>::resolve`
+had 64 % of its samples on the load of the router's handler slot (32 bytes a subscriber, 32 KB a
+type). Each account is touched every ~1 000 events, so its lines have left L1 and L2 by the time
+its next event arrives — the shape of any core serving one actor per connection. (The transfer
+coroutine's own 25 % sat on the adapter's `std::deque` chunk: the user's structure, left alone;
+CAF and SObjectizer pay it too.)
+
+### 18.1 The prefetch, and the four measurements that shaped it
+
+`__receive_events__` walks a sequential pipe — the headers of the events ahead are in cache, and a
+destination's slot in the core's actor table is one load from a table that stays resident — so
+the loop can prefetch the actor of an event ahead before routing the one in hand, and the miss
+overlaps the handlers in between. Each design decision was measured, and three of the four went
+the other way from the plan:
+
+- **One line, not two.** Prefetching the liveness line AND the first line of user data hid the
+  trampoline's miss (13.2 → 5.0 % of the core under `perf`) but put `qb::ask` +2.7 points on the
+  same profile: two fills a peek take the fill buffers the handler's own misses need.
+- **Not the handler slot.** The same peek into the router's slot through a virtual
+  `IEventResolver::prefetch` cost `big` **+19 %**, a plain pass **+21 %** and `push` **+13 %** with
+  the gate CLOSED — the code the call added around the loop, not the prefetch.
+- **A gate of 512, read per batch — and no lambda.** At 64, savina/big's 120 hot actors paid +4 %
+  for a peek that hid nothing. A per-event compare never taken cost counting **+1 %** of a 7.7 ns
+  message in three sessions; the obvious way to make it free — the loop as a C++20 templated lambda
+  instantiated with and without the peek, "byte for byte" — compiled WORSE (ping-pong 1c **+12 %**,
+  `push` +9 %, the probe at 16 actors +13 %: by-reference captures of the loop's locals and a
+  doubled body). Reverted; a hoisted bool it was.
+- **Two events of lead paid on bank-transaction (−3.6 %) and hid nothing at 2 ns a handler.** The
+  cursor went to eight events ahead (40 ns of lead at the cheapest handler) — and bank-transaction
+  fell back to −0.5 %: 800 ns of its own traffic evicts the fetched lines before use.
+
+### 18.2 The probe's verdict
+
+`qvoprobe-dispatch-population <actors> [batch] [s] [cpu]`: N actors of ~300 bytes on one core, a
+driver pushing batches of 256 events to actors drawn at random, ns per event. Its CONTROL curve
+is the fact that decides the question (WSL2 g++-14, medians of three): **5.0 ns an event at 16
+actors, 5.1 at 64, 5.5 at 256, 5.7 at 512, 6.1 at 1 024, 9.3 at 4 096, 11.2 at 16 384** — the
+population costs a core ~6 ns an event on this probe, against an L3 miss of 40–60 ns on this
+host. The out-of-order engine already overlaps the misses of a dozen short, predictable handlers
+(one trampoline target, one loop, a 512-entry reorder window). So on every cheap workload the
+software prefetch adds its instructions and hides nothing: with the gate closed **+6 %** an event
+(16–256 actors: the per-batch bool, the cursor's bookkeeping), on a hot population of 512–1 024
+actors **+21–25 %** (300 KB of actors sit in L2; the peek's own loads and fills cost more than the
+L2 hits they pre-empt), −3.5 % where the misses finally start (4 096), +7.7 % again at 16 384. Where
+it paid — a ~100 ns handler with dependent misses and unpredictable control flow (a coroutine
+resumed inline, indirect calls to different targets) — it paid at two events of lead and not at
+eight, and no cheap gate (population, batch size) tells such a handler from a hot population of
+the same size; the one that would (the time an event costs, read per batch) needs an `rdtsc` a
+batch, which a ping-pong's batch of one cannot afford, and a threshold tuned on this host.
+**Not shipped.** Windows/MSVC's curve for the record, identical code on both sides: 6.2 → 16.6 ns
+an event from 16 to 16 384 actors, with ±1–10 % between two identical binaries at three points —
+more rounds are needed there before the probe can judge an A/B. What stays: the probe, and
+`messaging-dispatch-batch` — one batch mixing live destinations, a slot the reap emptied, a
+broadcast, a never-assigned service id and a mid-batch kill, delivered in one pass, and a batch
+over three segment links with kills scattered through it.
+
+### 18.3 QB-199 — one reference to the loop
+
+`listener::current` is an inline thread_local with a non-trivial constructor, so g++ routes every
+access through its TLS wrapper (the init guard, `__tls_init`), and `__workflow__` reached it three
+times a pass (`has_work()`, `run()`, `nb_invoked_event()`) plus once on the idle path: 2.2 % of
+ping-pong 1c. One reference taken at the top of the loop — the object lives for the thread, and
+the loop is the thread. Measured alone at twelve interleaved rounds, one quiet session each:
+**ping-pong 1c 23.1 → 22.8 ns (−1.4 %, quartiles separated)** on WSL2 g++-14, every other cell and
+the three probes level; Windows/MSVC, which initialises TLS at thread start, level everywhere
+(ping-pong 1c 31.4 / 31.5). Small, pure, and the one thing QB-198's four sessions delivered to
+`develop`.
