@@ -1,0 +1,19 @@
+[0/2] Re-checking globbed directories...
+[1/9] Building CXX object CMakeFiles/qvo-harness.dir/harness/src/harness.cpp.o
+[2/9] Linking CXX static library libqvo-harness.a
+[3/9] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-ping-pong.dir/savina/ping-pong.cpp.o
+[4/9] Linking CXX executable bin/qvo-qb-savina-ping-pong
+[5/9] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-thread-ring.dir/savina/thread-ring.cpp.o
+[6/9] Linking CXX executable bin/qvo-qb-savina-thread-ring
+[7/9] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-bank-transaction.dir/savina/bank-transaction.cpp.o
+In file included from /home/mbelhadi/qb-ctl/src/qb/io/async/coroutine/scheduler.h:64,
+                 from /home/mbelhadi/qb-ctl/src/qb/io/async/listener.h:43,
+                 from /home/mbelhadi/qb-ctl/src/qb/core/Main.h:41,
+                 from /home/mbelhadi/qb-ctl/src/qb/main.h:13,
+                 from /mnt/d/repo/qb-dev/qb-vs-others/frameworks/qb/savina/../qb_support.h:17,
+                 from /mnt/d/repo/qb-dev/qb-vs-others/frameworks/qb/savina/bank-transaction.cpp:25:
+/home/mbelhadi/qb-ctl/src/qb/io/async/coroutine/task.h: In member function ‘void qb::io::async::task<T>::promise_type::return_value(T) [with T = savina_bank_transaction_qb::Deposit]’:
+/home/mbelhadi/qb-ctl/src/qb/io/async/coroutine/task.h:563:9: note: the ABI for passing parameters with 64-byte alignment has changed in GCC 4.6
+  563 |         return_value(T value) noexcept(std::is_nothrow_move_constructible_v<T>) {
+      |         ^~~~~~~~~~~~
+[8/9] Linking CXX executable bin/qvo-qb-savina-bank-transaction
