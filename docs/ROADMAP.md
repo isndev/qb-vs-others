@@ -128,7 +128,12 @@ is left of the pipeline is the train itself.
    pre-QB-193 124). Phase 3 landed (§17.6, QB-191): a core polls a quiet socket on a cadence
    (`EVRUN_NOPOLL` between, hot after a delivery), the pass with a socket **124 → 48.5** on g++
    and **275 → 83** on MSVC — and it found qev's wepoll suite had never measured wepoll
-   (QB-194, fixed). Left on the core side: the receive side per event, and the idle loop's
+   (QB-194, fixed). Phase 3 landed (§17.7, QB-190): a pass with nothing for the loop to do does
+   not run it (the loop asked inline, a timer's reach estimated on the CPU's counter, the
+   reading handed to the loop with `ev_now_set` when it fires), a busy pass with a far timer
+   **36.9 → 26.2** on g++ and **47.7 → 29.5** on MSVC, a cold io pass 48.6 → 28.5 / 82.9 → 49.5
+   — and it found that the QPC clock of QB-193 had never been compiled in on Windows (QB-195,
+   fixed). Left on the core side: the receive side per event, and the idle loop's
    shape (§16.4, QB-181), measured against §16 as the base.
 6. **After the merge** — the SObjectizer spin-budget sweep (§4, adapter-side); the placement
    paragraph in `qb.llm.md` that closes 9.4 by design and the `send<>` sentence that closes

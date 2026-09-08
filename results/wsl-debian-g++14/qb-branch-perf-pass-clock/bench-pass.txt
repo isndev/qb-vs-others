@@ -1,0 +1,25 @@
+bench-pass (qev working tree, ~/qev-build):
+qev pass cost (ev 5.0, backend 0x7), 3000000 passes per shape, ns per pass
+  empty          20.9
+  timer          21.4   (io_count=0)
+  timer+set      22.1   (ev_clock_now + ev_now_set + ev_run)
+  timer+set0     11.0   (a free sample: ev_now_set + ev_run)
+  gate            1.8   (no ev_run: timer count, ev_timer_next, wake flag)
+  arm+now        21.3   (ev_now_update + start + stop)
+  now            18.0   (ev_now_update)
+qev pass cost (ev 5.0, backend 0x7), 3000000 passes per shape, ns per pass
+  empty          21.6
+  timer          21.8   (io_count=0)
+  timer+set      21.4   (ev_clock_now + ev_now_set + ev_run)
+  timer+set0     10.5   (a free sample: ev_now_set + ev_run)
+  gate            1.8   (no ev_run: timer count, ev_timer_next, wake flag)
+  arm+now        20.7   (ev_now_update + start + stop)
+  now            17.1   (ev_now_update)
+qev pass cost (ev 5.0, backend 0x7), 3000000 passes per shape, ns per pass
+  empty          21.1
+  timer          21.5   (io_count=0)
+  timer+set      21.2   (ev_clock_now + ev_now_set + ev_run)
+  timer+set0      9.7   (a free sample: ev_now_set + ev_run)
+  gate            1.8   (no ev_run: timer count, ev_timer_next, wake flag)
+  arm+now        20.4   (ev_now_update + start + stop)
+  now            17.4   (ev_now_update)

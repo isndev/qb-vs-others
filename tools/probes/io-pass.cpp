@@ -13,8 +13,12 @@
 //          idle; the handler reads it and records now - sent: the latency of a byte on a quiet
 //          socket, p50 / p99 / max over the window. The cadence's cost is here, bounded by one
 //          interval; its benefit is the `pass` figure.
+//   timer  no socket: the actor holds one far libev timer (`async::callback` an hour out -- the
+//          shape a `sleep`, a retry or a keep-alive leaves on a busy core) and drives itself as
+//          in `pass`: ns per pass = the pass plus what the loop costs for a timer that is not
+//          due (`ev_run` on every pass before QB-190, the inline gate after).
 //
-// usage: qvoprobe-io-pass <pass|wake> [seconds=2] [core_cpu=0] [latency_us=0] [gap_us=100] [poll_interval_us=default]
+// usage: qvoprobe-io-pass <pass|wake|timer> [seconds=2] [core_cpu=0] [latency_us=0] [gap_us=100] [poll_interval_us=default]
 //
 //   poll_interval_us < 0 keeps the engine's default (1 us on a QB-191 tree, "every pass" before it
 //   -- the knob does not exist there, so the option is only honoured when the tree has it).
@@ -62,8 +66,11 @@ public:
     qb::io::async::task<bool>
     onInit() override {
         registerEvent<Tick>(*this);
-        _watch = &qb::io::async::listener::current.registerEvent<qb::io::async::event::io>(*this);
-        _watch->start(_sock->native_handle(), EV_READ);
+        if (_sock) {
+            _watch = &qb::io::async::listener::current.registerEvent<qb::io::async::event::io>(*this);
+            _watch->start(_sock->native_handle(), EV_READ);
+        } else
+            qb::io::async::callback([] {}, std::chrono::hours{1}); // the far timer of `timer` mode
         _lat.reserve(1 << 16);
         _t0 = qb::mono_now();
         if (_pass_mode)
@@ -115,7 +122,7 @@ private:
     finish() {
         const auto elapsed = elapsed_ns();
         if (_pass_mode) {
-            std::printf("pass passes=%llu elapsed_ns=%llu ns_per_pass=%.2f\n", static_cast<unsigned long long>(_passes),
+            std::printf("%s passes=%llu elapsed_ns=%llu ns_per_pass=%.2f\n", _sock ? "pass" : "timer", static_cast<unsigned long long>(_passes),
                         static_cast<unsigned long long>(elapsed), static_cast<double>(elapsed) / static_cast<double>(_passes));
         } else {
             std::sort(_lat.begin(), _lat.end());
@@ -126,7 +133,8 @@ private:
         }
         std::fflush(stdout);
         g_stop.store(true);
-        _watch->stop();
+        if (_watch)
+            _watch->stop();
         unregisterCallback();
         kill();
     }
@@ -136,10 +144,11 @@ private:
 
 int
 main(int argc, char **argv) {
-    const bool pass = argc > 1 && std::strcmp(argv[1], "pass") == 0;
-    const bool wake = argc > 1 && std::strcmp(argv[1], "wake") == 0;
-    if (!pass && !wake) {
-        std::fprintf(stderr, "usage: %s <pass|wake> [seconds=2] [core_cpu=0] [latency_us=0] [gap_us=100] [poll_interval_us=default]\n", argv[0]);
+    const bool pass  = argc > 1 && std::strcmp(argv[1], "pass") == 0;
+    const bool wake  = argc > 1 && std::strcmp(argv[1], "wake") == 0;
+    const bool timer = argc > 1 && std::strcmp(argv[1], "timer") == 0;
+    if (!pass && !wake && !timer) {
+        std::fprintf(stderr, "usage: %s <pass|wake|timer> [seconds=2] [core_cpu=0] [latency_us=0] [gap_us=100] [poll_interval_us=default]\n", argv[0]);
         return 2;
     }
     const double seconds  = argc > 2 ? std::atof(argv[2]) : 2.0;
@@ -149,23 +158,26 @@ main(int argc, char **argv) {
     const long   poll_us  = argc > 6 ? std::atol(argv[6]) : -1;
     const auto   window   = static_cast<std::uint64_t>(seconds * 1e9);
 
-    // The loopback pair: a listener on an ephemeral port, connect, accept -- all here, before the engine.
+    // The loopback pair: a listener on an ephemeral port, connect, accept -- all here, before the
+    // engine. `timer` mode owns no socket.
     qb::io::tcp::listener acceptor;
-    if (acceptor.listen_v4(0, "127.0.0.1") != qb::io::SocketStatus::Done) {
-        std::fprintf(stderr, "listen failed\n");
-        return 1;
+    qb::io::tcp::socket   client;
+    qb::io::tcp::socket   accepted;
+    if (!timer) {
+        if (acceptor.listen_v4(0, "127.0.0.1") != qb::io::SocketStatus::Done) {
+            std::fprintf(stderr, "listen failed\n");
+            return 1;
+        }
+        if (client.connect_v4("127.0.0.1", acceptor.local_endpoint().port()) != qb::io::SocketStatus::Done) {
+            std::fprintf(stderr, "connect failed\n");
+            return 1;
+        }
+        if (acceptor.accept(accepted) != qb::io::SocketStatus::Done) {
+            std::fprintf(stderr, "accept failed\n");
+            return 1;
+        }
+        accepted.set_nonblocking(true);
     }
-    qb::io::tcp::socket client;
-    if (client.connect_v4("127.0.0.1", acceptor.local_endpoint().port()) != qb::io::SocketStatus::Done) {
-        std::fprintf(stderr, "connect failed\n");
-        return 1;
-    }
-    qb::io::tcp::socket accepted;
-    if (acceptor.accept(accepted) != qb::io::SocketStatus::Done) {
-        std::fprintf(stderr, "accept failed\n");
-        return 1;
-    }
-    accepted.set_nonblocking(true);
 
     qb::Main engine;
     auto    &core = engine.core(0);
@@ -177,7 +189,7 @@ main(int argc, char **argv) {
 #else
     (void) poll_us;
 #endif
-    core.addActor<Holder>(&accepted, window, pass);
+    core.addActor<Holder>(timer ? nullptr : &accepted, window, pass || timer);
 
     std::thread writer;
     if (wake) {

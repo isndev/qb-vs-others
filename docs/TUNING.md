@@ -1787,7 +1787,10 @@ sleeps, retries, the park cap — was judged at that granularity. QB-193 puts th
 `QueryPerformanceCounter` and `GetSystemTimePreciseAsFileTime`; a precise read is ~16 ns (the
 TSC, the same floor the vDSO has on Linux), so the MSVC pass is 15.8 → 31 ns, a timer arm with
 `ev_now_update` 5.8 → 24, and the timed ask **115 → 166** — four precise reads per round trip
-(three passes and the arm) where there were four tick reads. That column is reported as the
+(three passes and the arm) where there were four tick reads. (Corrected in §17.7, QB-195: the
+`QueryPerformanceCounter` half was not compiled in until then — libev's misconfiguration block
+had switched the monotonic clock off for lack of `CLOCK_MONOTONIC` on MSVC, and the precise
+system time was standing in for it; the figures of this section are those of that clock.) That column is reported as the
 regression it is on the probe and the fix it is for every timer; the next two phases remove
 exactly those four reads: the deadline list (QB-189) takes the libev timer off the request
 path, and the embedder's reading handed to the loop (QB-190) takes the pass's read off a core
@@ -1895,3 +1898,66 @@ LOOKED — it counts what wepoll fed — and so could not be fooled. The sockets
 rejected (3 FAIL), and the floor is 5 → 13. Same lesson on the qb side: the cadence test's five
 fd cases were behind `#ifndef _WIN32` (a pipe) and run on Windows now over a loopback pair
 through wepoll — the platform where the cadence buys the most is the one that must prove it.
+
+### 17.7 Phase 3 delivered — the pass without the loop, and the embedder's clock
+
+QB-190 (`results/<host>/qb-branch-perf-pass-clock/`; qev `ev_now_set`, `ev_clock_now`,
+`ev_timer_count_addr`, `ev_timer_next`, `ev_wake_pending_addr`). Once the poll was on a cadence
+(§17.6), what a non-blocking pass still paid was `ev_run` itself — its clock read, the timer heap,
+the pending walk, `bench-pass`'s `timer` shape: 21.8 ns on g++-14, 28.6 on MSVC — on every pass of
+every core holding one far timer (a `sleep`, a retry, a keep-alive) or one quiet socket, to find
+nothing. The `io-pass` probe gained a `timer` mode for exactly that shape: a busy core (a self-event
+chain) holding one `async::callback` an hour out, no socket.
+
+The listener now asks the loop, inline, before calling it — an event fed since the last pass
+(`ev_pending_count_addr`), a wake an `ev_async_send` from another thread left while no pass was
+blocking (`ev_wake_pending_addr`), a poll the cadence is due to make (`ev_io_count_addr`), a timer
+within reach (`ev_timer_count_addr`, `ev_timer_next`) — and a pass with none of the four does not
+enter the loop. "Within reach" is judged the way the cadence is, on the CPU's counter: the listener
+anchors each reading of the loop's clock against `tsc_ticks()` and estimates now as the anchor plus
+the counter's advance (a 0.1 % rate margin, 2 ms of slack, a fresh anchor every second at most), so
+a deadline beyond the estimate costs no clock read, and one within it costs the precise read —
+handed to the loop (`ev_now_set`) so the pass that fires the timer reads the clock once. A timer is
+never judged against the estimate, only against a real reading.
+
+| one core, medians of five | WSL2 / g++-14 | Windows / MSVC 19.51 |
+|---|---|---|
+| busy pass with a far timer (ns) | **36.9 → 26.2** (−29 %) | **47.7 → 29.5** (−38 %) |
+| pass with a quiet socket, cold (ns) | **48.6 → 28.5** (−41 %) | **82.9 → 49.5** (−40 %; both bimodal) |
+| what those pay over a plain pass (12.4 / 15.6) | 24.5 → 13.8 ; 36 → 16 | 32 → 14 ; 67 → 34 |
+| wake p50 on the socket, push, timed ask, no-watcher pass | level (all inside their spreads) | level |
+| qev `bench-pass`: `timer` / `timer+set0` (a free sample) / `gate` (no `ev_run`) | 21.6 / **10.3** / **1.8** | 28.6 / **15.0** / **0.8** |
+
+The roadmap's phase-3 target (`timer` ≤ 10 ns on a core that supplies its clock) is the
+`timer+set0` row — the loop's bookkeeping floor given its time, 9.7–11.0 on g++, 15.0 on MSVC —
+and qb does better than take it: on the passes where nothing is due it takes the `gate` row, and
+pays `timer+set` (the read moved, not saved: 21.2–22.1) on the one that fires. What is left in a
+skipped pass, 14 ns over a plain one, is the counter read (`rdtsc`, ~8) and the loads and the call
+of the gate; below that is a shared pass clock for every consumer at once, which is 3.3's question,
+not this milestone's.
+
+**The gate had to go out of line, and Windows is where that was measured.** Written inline in
+`listener::run()` — which every core's pass inlines — the gate cost MSVC's `push` **31.0 → 33.1 ns**
+(+6.5 %, five alternations, fully separated) on a core whose pass never enters it: two actors
+exchanging events, no timer, no socket. Bisected in five builds: the control's `listener.h` in the
+candidate tree read level, so the file was the cause; the loop struct's growth (moved to its end)
+and the listener's (its fields moved last; the control plus 48 bytes of padding: +0.5) were not; the
+gate's double arithmetic out of line (`_timer_due` `QB_NOINLINE`) recovered the timed ask and most
+of push, and the whole gate as one out-of-line call (`_nowait_gate`) closed it, 31.2 against 31.2.
+What MSVC did to the pass around an inlined gate the pass never took cost more than the call the
+gate now is; g++ showed nothing of it in either form.
+
+**Found on the way (Huly QB-195): the `QueryPerformanceCounter` clock of QB-193 had never been
+compiled in.** The first `ev_now_set` case failed on MSVC alone — `ev_clock_now()` read Unix
+seconds — and the reason is libev's "fixes any misconfiguration" block, which forces
+`EV_USE_MONOTONIC` to 0 wherever `CLOCK_MONOTONIC` is undefined, 450 lines after QB-193 had set it
+to 1 for `_WIN32`; MSVC defines it nowhere. So `get_clock` was `ev_time`, the loop's "monotonic"
+time was the precise SYSTEM time (QB-193's other half) — stepped by every wall-clock adjustment —
+and the QPC path was dead code in qev and in qb's copy alike; `test_clock_resolution` could not
+tell, a precise system clock also moving a thousand times in 50 ms without stepping back inside
+them. §17.4's Windows figures are therefore those of the precise system time; with the block
+exempting Windows, QPC reads cheaper (`timer` 31.5 → 28.6) and the loop is monotonic for the first
+time. The corollary for every raw timer user, tested with the raw C arm as the negative control: a
+loop that runs only when something is due has a stale clock the rest of the time, so
+`event::timer::start()` / `again()` refresh it before every arm, as `sleep`, `callback` and
+`with_timeout` already did by hand.

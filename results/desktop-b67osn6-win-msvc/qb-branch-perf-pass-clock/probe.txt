@@ -1,0 +1,62 @@
+session 2026-09-08T14:01:50 cand=D:\repo\qb-dev\qb (working tree) ctl=ae09da3a
+cand io-pass timer timer passes=50913280 elapsed_ns=1500035600 ns_per_pass=29.46
+cand io-pass pass pass passes=35209216 elapsed_ns=1500151700 ns_per_pass=42.61
+cand io-pass wake gap=100 wake bytes=746 passes=21393664 elapsed_ns=1500005500 ns_per_pass=70.11 wake_p50_ns=15000 wake_p99_ns=82900 wake_max_ns=1012300
+cand ask-cost push push trips=47919104 elapsed_ns=1500074200 ns_per_trip=31.30
+cand ask-cost ask timeout=500 ask+timeout trips=16973824 elapsed_ns=1500333000 ns_per_trip=88.39
+cand pass-cost k=1 chains=1 passes=94175232 elapsed_ns=1500060200 ns_per_pass=15.93 events=94175232
+ctl io-pass timer timer passes=31436800 elapsed_ns=1500164100 ns_per_pass=47.72
+ctl io-pass pass pass passes=20578304 elapsed_ns=1500130400 ns_per_pass=72.90
+ctl io-pass wake gap=100 wake bytes=755 passes=14467584 elapsed_ns=1500051700 ns_per_pass=103.68 wake_p50_ns=19200 wake_p99_ns=698500 wake_max_ns=1648300
+ctl ask-cost push push trips=48566272 elapsed_ns=1500020600 ns_per_trip=30.89
+ctl ask-cost ask timeout=500 ask+timeout trips=16752640 elapsed_ns=1500286300 ns_per_trip=89.56
+ctl pass-cost k=1 chains=1 passes=96927744 elapsed_ns=1500431800 ns_per_pass=15.48 events=96927744
+cand io-pass timer timer passes=51212288 elapsed_ns=1500009000 ns_per_pass=29.29
+cand io-pass pass pass passes=35995648 elapsed_ns=1500079300 ns_per_pass=41.67
+cand io-pass wake gap=100 wake bytes=753 passes=20692224 elapsed_ns=1500033900 ns_per_pass=72.49 wake_p50_ns=19700 wake_p99_ns=935000 wake_max_ns=6977800
+cand ask-cost push push trips=47546368 elapsed_ns=1500077100 ns_per_trip=31.55
+cand ask-cost ask timeout=500 ask+timeout trips=16850944 elapsed_ns=1500166500 ns_per_trip=89.03
+cand pass-cost k=1 chains=1 passes=96731136 elapsed_ns=1500640800 ns_per_pass=15.51 events=96731136
+ctl io-pass timer timer passes=31952896 elapsed_ns=1500029000 ns_per_pass=46.95
+ctl io-pass pass pass passes=17870848 elapsed_ns=1500301800 ns_per_pass=83.95
+ctl io-pass wake gap=100 wake bytes=759 passes=12048896 elapsed_ns=1500016000 ns_per_pass=124.49 wake_p50_ns=18400 wake_p99_ns=615800 wake_max_ns=1671700
+ctl ask-cost push push trips=48603136 elapsed_ns=1500040000 ns_per_trip=30.86
+ctl ask-cost ask timeout=500 ask+timeout trips=16883712 elapsed_ns=1500128400 ns_per_trip=88.85
+ctl pass-cost k=1 chains=1 passes=96993280 elapsed_ns=1500106800 ns_per_pass=15.47 events=96993280
+cand io-pass timer timer passes=50429952 elapsed_ns=1500025800 ns_per_pass=29.74
+cand io-pass pass pass passes=29417472 elapsed_ns=1500005000 ns_per_pass=50.99
+cand io-pass wake gap=100 wake bytes=741 passes=18120192 elapsed_ns=1500015200 ns_per_pass=82.78 wake_p50_ns=9100 wake_p99_ns=341500 wake_max_ns=1552600
+cand ask-cost push push trips=47603712 elapsed_ns=1500112200 ns_per_trip=31.51
+cand ask-cost ask timeout=500 ask+timeout trips=16887808 elapsed_ns=1500134500 ns_per_trip=88.83
+cand pass-cost k=1 chains=1 passes=95944704 elapsed_ns=1500317800 ns_per_pass=15.64 events=95944704
+ctl io-pass timer timer passes=30720000 elapsed_ns=1500186000 ns_per_pass=48.83
+ctl io-pass pass pass passes=18223104 elapsed_ns=1500115200 ns_per_pass=82.32
+ctl io-pass wake gap=100 wake bytes=745 passes=12961536 elapsed_ns=1500001300 ns_per_pass=115.73 wake_p50_ns=9100 wake_p99_ns=79600 wake_max_ns=488500
+ctl ask-cost push push trips=48451584 elapsed_ns=1500077500 ns_per_trip=30.96
+ctl ask-cost ask timeout=500 ask+timeout trips=16162816 elapsed_ns=1500023900 ns_per_trip=92.81
+ctl pass-cost k=1 chains=1 passes=93257728 elapsed_ns=1500245100 ns_per_pass=16.09 events=93257728
+cand io-pass timer timer passes=50864128 elapsed_ns=1500109500 ns_per_pass=29.49
+cand io-pass pass pass passes=30302208 elapsed_ns=1500020400 ns_per_pass=49.50
+cand io-pass wake gap=100 wake bytes=750 passes=18704896 elapsed_ns=1500000200 ns_per_pass=80.19 wake_p50_ns=20000 wake_p99_ns=80900 wake_max_ns=1099300
+cand ask-cost push push trips=48553984 elapsed_ns=1500065900 ns_per_trip=30.89
+cand ask-cost ask timeout=500 ask+timeout trips=12099584 elapsed_ns=1500031800 ns_per_trip=123.97
+cand pass-cost k=1 chains=1 passes=76808192 elapsed_ns=1500536700 ns_per_pass=19.54 events=76808192
+ctl io-pass timer timer passes=31424512 elapsed_ns=1500123300 ns_per_pass=47.74
+ctl io-pass pass pass passes=18092032 elapsed_ns=1500136300 ns_per_pass=82.92
+ctl io-pass wake gap=100 wake bytes=742 passes=12938496 elapsed_ns=1500007700 ns_per_pass=115.93 wake_p50_ns=20500 wake_p99_ns=474300 wake_max_ns=3153100
+ctl ask-cost push push trips=48365568 elapsed_ns=1500045900 ns_per_trip=31.01
+ctl ask-cost ask timeout=500 ask+timeout trips=16683008 elapsed_ns=1500341300 ns_per_trip=89.93
+ctl pass-cost k=1 chains=1 passes=94240768 elapsed_ns=1500411000 ns_per_pass=15.92 events=94240768
+cand io-pass timer timer passes=50360320 elapsed_ns=1500060600 ns_per_pass=29.79
+cand io-pass pass pass passes=27402240 elapsed_ns=1500075500 ns_per_pass=54.74
+cand io-pass wake gap=100 wake bytes=754 passes=19049984 elapsed_ns=1500011600 ns_per_pass=78.74 wake_p50_ns=21400 wake_p99_ns=116100 wake_max_ns=1748800
+cand ask-cost push push trips=47771648 elapsed_ns=1500033500 ns_per_trip=31.40
+cand ask-cost ask timeout=500 ask+timeout trips=16650240 elapsed_ns=1500059300 ns_per_trip=90.09
+cand pass-cost k=1 chains=1 passes=94633984 elapsed_ns=1500465600 ns_per_pass=15.86 events=94633984
+ctl io-pass timer timer passes=30797824 elapsed_ns=1500182400 ns_per_pass=48.71
+ctl io-pass pass pass passes=17743872 elapsed_ns=1500224600 ns_per_pass=84.55
+ctl io-pass wake gap=100 wake bytes=744 passes=13202944 elapsed_ns=1500013900 ns_per_pass=113.61 wake_p50_ns=23700 wake_p99_ns=637100 wake_max_ns=2736300
+ctl ask-cost push push trips=46686208 elapsed_ns=1500013100 ns_per_trip=32.13
+ctl ask-cost ask timeout=500 ask+timeout trips=16695296 elapsed_ns=1500083300 ns_per_trip=89.85
+ctl pass-cost k=1 chains=1 passes=95944704 elapsed_ns=1500082900 ns_per_pass=15.63 events=95944704
+end 2026-09-08T14:03:21
