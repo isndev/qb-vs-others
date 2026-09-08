@@ -125,7 +125,10 @@ is left of the pipeline is the train itself.
    ask 174 → 115 — and it found that Windows had been judging every libev timer on the 15.6 ms
    system tick (QB-193, fixed). Phase 2 landed (§17.5, QB-189): the request path has no libev
    timer at all, the timed ask **115 → 68** on g++ and **166 → 90** on MSVC (under its
-   pre-QB-193 124). Left on the core side: the receive side per event, and the idle loop's
+   pre-QB-193 124). Phase 3 landed (§17.6, QB-191): a core polls a quiet socket on a cadence
+   (`EVRUN_NOPOLL` between, hot after a delivery), the pass with a socket **124 → 48.5** on g++
+   and **275 → 83** on MSVC — and it found qev's wepoll suite had never measured wepoll
+   (QB-194, fixed). Left on the core side: the receive side per event, and the idle loop's
    shape (§16.4, QB-181), measured against §16 as the base.
 6. **After the merge** — the SObjectizer spin-budget sweep (§4, adapter-side); the placement
    paragraph in `qb.llm.md` that closes 9.4 by design and the `send<>` sentence that closes

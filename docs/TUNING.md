@@ -1841,3 +1841,57 @@ outlives its `qb::Main` — `start(false)` runs core 0 on the caller's thread, w
 that thread's, not the engine's — so a test's far timer leaked into the next test in the same
 process (`active_count` read 1 with no watcher of its own); the test uses a scope-cancelled
 `sleep` instead, and the hygiene note is in the milestone's memory.
+
+### 17.6 Phase 3 delivered — the io pass on a cadence
+
+QB-191 (`results/<host>/qb-branch-perf-io-poll-cadence/`; qev `EVRUN_NOPOLL`, `ev_io_count_addr`,
+`ev_io_fed_addr`). A core that owns one socket ran the backend poll — `epoll_wait(0)`, wepoll's
+IOCP wait, `kevent` — on EVERY pass, and on a quiet socket every one of those calls returned
+nothing. `tools/probes/io-pass.cpp` (`qvoprobe-io-pass`) is the instrument: one actor on one
+pinned core owning the accepted end of a loopback TCP pair as a raw `event::io` watcher (the
+shape every qb-io session registers), driving itself with a self-event chain (`pass`) or spinning
+idle while a peer thread writes an 8-byte timestamp every 100 or 20 µs (`wake`: p50 / p99 / max
+of `now − sent`). With the pass at its floor, an io pass cost **124 ns against 12 for a plain
+pass** on g++ (the poll ~80, the rest of `ev_run` ~22), **275 against 16 on MSVC** (the IOCP
+wait ~245 — the largest single item any qb pass paid on any host).
+
+The listener polls on a cadence now: on every pass while the loop is HOT (the previous pass's
+poll reported a ready fd — read inline off qev's `ev_io_fed_addr()`, so a burst stays at poll
+latency) and otherwise once per `CoreInitializer::setIoPollInterval` (1 µs by default; 0 = every
+pass, the 3.1 contract), measured on the CPU's own counter (`qb::tsc_ticks`, ~5 ns, calibrated
+once against `mono_now()`). The passes in between run `ev_run(EVRUN_NOWAIT | EVRUN_NOPOLL)`:
+timers, periodics and pending events exactly as before, no backend call. A blocking pass — a
+park, `run_once_for` — always polls (there the poll IS the wake), and the listener's own default
+stays "every pass", so a program driving `run(EVRUN_NOWAIT)` itself keeps one call, one poll; a
+`VirtualCore` opts its listener in at thread start.
+
+| one core, medians of five | WSL2 / g++-14 | Windows / MSVC 19.51 |
+|---|---|---|
+| pass with a quiet socket (ns) | **124.2 → 48.5** (−61 %) | **275.0 → 83.1** (−70 %) |
+| wake latency on that socket, p50 (µs) | 3.36 → 3.93 (+0.57: half the interval, by design) | 17.7 → 18.9 (inside the spread; the host's ~18 µs is the writer thread and AFD, bimodal on both sides) |
+| wake latency, p99 (µs) | 25.1 → 23.2, level | noisy on both, no conclusion |
+| push / timed ask / no-watcher pass | 23.7 → 23.9 / 67.9 → 68.6 / 12.4 → 12.3, level | 31.1 → 31.1 / 90.2 → 89.6 / 15.8 → 15.7, level |
+| the same candidate with the interval set to 0 | pass 126.1, p50 3.31 — the control | pass 272.5, p50 20.1 — the control |
+
+The trade is stated, not hidden: a QUIET socket's first byte waits up to one interval more (half
+of it on average, and the g++ p50 moved by exactly that); a burst pays nothing, because the loop
+is hot for the pass after every delivery; and a core that owns a socket pays 36 ns a pass on g++
+(67 on MSVC) for it instead of 112 (259). A 20 µs cadence of bytes is 400 passes apart and finds
+the loop cold every time — hot is one pass, which is the design (a burst is bytes back to back).
+The knob is per engine, and 0 restores the old behaviour, measured to the control on both hosts.
+
+What remains in the cold pass — the loop's own clock read and bookkeeping, ~22 ns of the 48 on
+g++ — needs the earliest timer deadline and the loop's clock readable inline to skip `ev_run`
+altogether when nothing is due; that is the next cut, packed with QB-190 (the embedder's clock).
+
+Found on the way, in qev (Huly QB-194): the standalone's wepoll suite — the only dedicated
+coverage of the fork's headline backend — had never measured wepoll. Its five cases wrote a raw
+winsock `SOCKET` cast to `int` as the fd, registered nowhere in qev's `SOCKET ↔ fd` registry;
+`EPOLL_CTL_ADD` failed, `fd_kill` fed the watcher `EV_ERROR | EV_READ | EV_WRITE`, and callbacks
+that never looked at `revents` took the kill for a delivery (`revents` 0x80000003 measured, the
+loop's io count 0 after the pass). The sixth case, written for this phase, asks whether a pass
+LOOKED — it counts what wepoll fed — and so could not be fooled. The sockets go through
+`ev_io_init_sock` now, every verdict requires `EV_ERROR` absent, the raw form replanted is
+rejected (3 FAIL), and the floor is 5 → 13. Same lesson on the qb side: the cadence test's five
+fd cases were behind `#ifndef _WIN32` (a pipe) and run on Windows now over a loopback pair
+through wepoll — the platform where the cadence buys the most is the one that must prove it.

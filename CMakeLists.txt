@@ -158,6 +158,17 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     set_target_properties(qvoprobe-ask-cost PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "probes")
+    # The io pass (Huly QB-191): what a quiet socket costs a core per pass, and what a byte on it
+    # waits for. The same source builds against a tree with or without the poll-interval knob.
+    add_executable(qvoprobe-io-pass tools/probes/io-pass.cpp)
+    target_link_libraries(qvoprobe-io-pass PRIVATE qb::core)
+    set_target_properties(qvoprobe-io-pass PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "probes")
+    file(STRINGS "${QVO_QB_DIR}/src/qb/core/Main.h" _qvo_poll_knob REGEX "setIoPollInterval")
+    if(_qvo_poll_knob)
+        target_compile_definitions(qvoprobe-io-pass PRIVATE QVO_QB_HAS_IO_POLL_INTERVAL=1)
+    endif()
     # No qb in it: the raw ring shapes behind docs/TUNING.md section 16. Linux / x86-64 only for real;
     # elsewhere the same source builds to a stub that says so and exits 2.
     add_executable(qvoprobe-raw-ring tools/probes/raw-ring.cpp)
