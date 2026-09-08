@@ -201,7 +201,7 @@ main(int argc, char **argv) {
     const bool push   = argc > 1 && std::strcmp(argv[1], "push") == 0;
     const bool stream = argc > 1 && std::strcmp(argv[1], "stream") == 0;
     if (!ask && !push && !stream) {
-        std::fprintf(stderr, "usage: %s <push|ask|stream> [seconds=2] [core_cpu=0] [latency_us=0] [chunks=64]\n", argv[0]);
+        std::fprintf(stderr, "usage: %s <push|ask|stream> [seconds=2] [core_cpu=0] [latency_us=0] [chunks=64] [timeout_ms=0]\n", argv[0]);
         return 2;
     }
     const double seconds  = argc > 2 ? std::atof(argv[2]) : 2.0;

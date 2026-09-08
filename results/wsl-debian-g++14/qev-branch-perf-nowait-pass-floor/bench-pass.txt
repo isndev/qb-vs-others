@@ -1,0 +1,10 @@
+187: empty=52.3 timer=52.1 fd=131.0 fd+timer=132.8 arm+now=20.9 now=17.8 
+188: empty=21.6 timer=22.3 fd=101.4 fd+timer=103.7 arm+now=21.7 now=18.0 
+187: empty=50.8 timer=50.9 fd=134.1 fd+timer=132.5 arm+now=20.9 now=17.8 
+188: empty=21.4 timer=22.0 fd=102.9 fd+timer=102.2 arm+now=21.2 now=17.8 
+187: empty=50.0 timer=51.7 fd=130.3 fd+timer=133.1 arm+now=21.2 now=17.8 
+188: empty=21.4 timer=22.1 fd=101.0 fd+timer=101.4 arm+now=21.3 now=17.7 
+187: empty=50.1 timer=50.5 fd=132.1 fd+timer=132.3 arm+now=21.5 now=17.4 
+188: empty=21.7 timer=22.1 fd=101.2 fd+timer=103.1 arm+now=21.0 now=17.7 
+187: empty=49.9 timer=51.5 fd=132.1 fd+timer=131.8 arm+now=21.4 now=18.2 
+188: empty=22.1 timer=22.3 fd=101.8 fd+timer=102.8 arm+now=21.4 now=17.9 

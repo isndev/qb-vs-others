@@ -1757,3 +1757,46 @@ target a timed ask ≤ 60 ns), the embedder's clock handed to the loop (QB-190, 
 pass), the io pass — io_uring's user-space completion queue against `epoll_wait(0)`, wepoll on
 Windows, a quiet-fd cadence (QB-81, QB-191) — and the wake/park path (QB-192). Every step
 carries `bench-pass` and `ask-cost` on both hosts, and no step is judged on one.
+
+### 17.4 Phase 1 delivered — the pass at its floor, and what Windows had been hiding
+
+QB-188, measured with `bench-pass` and `ask-cost` on both hosts
+(`results/<host>/qev-branch-perf-nowait-pass-floor/`): a NOWAIT pass reads the clock once,
+raises no wake-up handshake (the sender's flag path delivers, and the pass tail reads
+`sig_pending` / `async_pending` beside `pipe_write_skipped` so a byte written around a park
+that lands after its poll is picked up by the next pass), and the loop's own evpipe is not
+counted as a pollable fd — which mattered more than the two others in qb, because the first
+`Park::Loop` of a core arms the wake, creates that pipe, and had been re-enabling the poll
+QB-187 removed for the life of the core.
+
+| ns | WSL2 / g++-14 | Windows / MSVC 19.51 |
+|---|---|---|
+| NOWAIT pass, timers-only loop | **51 → 22** (−57 %) | 19.7 → 15.8 |
+| NOWAIT pass, one quiet socket | 132 → 101 (−23 %) | — |
+| ask with a 500 ms timeout | **174 → 115** (−34 %) | 124 → 115 (−7 %) |
+| stream, 1 chunk, with a timeout | 240 → 179 (−25 %) | 327 → 320 |
+| untimed ask / push / one-core pass | level | level |
+
+The MSVC column was small for a reason the suite found rather than the profiler: qev's loop
+suite had never run on Windows, and its first run measured **27 checks, 2 failed** on the
+shipped code — a 0-second timer started and run inside one pass did not fire. The loop's
+clock there was `GetSystemTimeAsFileTime`, a 3 ns memory read of the system tick (steps every
+2.2 ms on this host, 15.6 nominal; not monotonic), and MSVC having no `clock_gettime`, it was
+the monotonic clock too: every libev timer in qb on Windows — ask timeouts, `callback` delays,
+sleeps, retries, the park cap — was judged at that granularity. QB-193 puts the clocks on
+`QueryPerformanceCounter` and `GetSystemTimePreciseAsFileTime`; a precise read is ~16 ns (the
+TSC, the same floor the vDSO has on Linux), so the MSVC pass is 15.8 → 31 ns, a timer arm with
+`ev_now_update` 5.8 → 24, and the timed ask **115 → 166** — four precise reads per round trip
+(three passes and the arm) where there were four tick reads. That column is reported as the
+regression it is on the probe and the fix it is for every timer; the next two phases remove
+exactly those four reads: the deadline list (QB-189) takes the libev timer off the request
+path, and the embedder's reading handed to the loop (QB-190) takes the pass's read off a core
+that already made one. Windows is where the deadline list pays most.
+
+Two more findings for the phases ahead, recorded on the way: the io_uring backend arms its
+timerfd to "now" on a NOWAIT pass (`iouring_poll` with a zero timeout: a `timerfd_settime`
+syscall and a spurious completion per pass, QB-191's first item), and the superproject's
+TSan preset does not instrument `ev.c` — the C target never receives `-fsanitize=thread`, so
+the evpipe protocol has never been under ThreadSanitizer; instrumented standalone, it reports
+the volatile-flag exchange libev has always used (QB-192, with C11 atomics as the likely
+answer).

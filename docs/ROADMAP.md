@@ -121,8 +121,11 @@ is left of the pipeline is the train itself.
    backend over a loop with no fd — 172 / 124 after the two fixes (QB-187), and a programme of
    its own for the rest (`dev/plans/roadmaps/QEV_PERFORMANCE_ROADMAP.md`, QB-186: the pass at
    its floor, request timeouts without a libev timer, the embedder's clock, the io pass with
-   io_uring, the wake). Left on the core side: the receive side per event, and the idle loop's
-   shape (§16.4, QB-181), measured against §16 as the base.
+   io_uring, the wake). Phase 1 landed (§17.4, QB-188): the pass 51 → 22 ns on g++, the timed
+   ask 174 → 115 — and it found that Windows had been judging every libev timer on the 15.6 ms
+   system tick (QB-193, fixed; the precise clock costs the MSVC probe what the deadline list,
+   QB-189, is designed to give back). Left on the core side: the receive side per event, and
+   the idle loop's shape (§16.4, QB-181), measured against §16 as the base.
 6. **After the merge** — the SObjectizer spin-budget sweep (§4, adapter-side); the placement
    paragraph in `qb.llm.md` that closes 9.4 by design and the `send<>` sentence that closes
    9.6; and 9.2, the 32-byte bucket, as a measured 4.0 experiment on top of the segmented pipe.

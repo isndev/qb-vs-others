@@ -1,0 +1,10 @@
+ctl empty=19.7 timer=19.9 arm=3.9 arm+now=6.0 now=3.4
+cand empty=31.8 timer=31.6 arm=4.0 arm+now=24.7 now=19.2
+ctl empty=19.7 timer=19.7 arm=3.9 arm+now=5.8 now=3.4
+cand empty=31.0 timer=31.1 arm=4.3 arm+now=24.2 now=19.3
+ctl empty=19.8 timer=19.5 arm=4.2 arm+now=6.1 now=3.6
+cand empty=31.2 timer=31.3 arm=3.9 arm+now=24.4 now=19.1
+ctl empty=19.9 timer=19.8 arm=4.0 arm+now=5.5 now=3.3
+cand empty=31.2 timer=31.6 arm=4.3 arm+now=24.1 now=19.2
+ctl empty=19.2 timer=19.2 arm=4.1 arm+now=5.5 now=3.4
+cand empty=31.1 timer=31.4 arm=4.3 arm+now=24.7 now=19.4

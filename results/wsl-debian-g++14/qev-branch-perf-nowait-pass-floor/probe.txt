@@ -1,0 +1,62 @@
+quiet: load=1.94 10.52 10.91 2026-09-08T01:02:02Z
+cand-188  ask-cost ask timeout=500 ask+timeout trips=12955648 elapsed_ns=1500396361 ns_per_trip=115.81
+cand-188  ask-cost stream chunks=1 timeout=500 stream+timeout trips=8331264 elapsed_ns=1500448091 ns_per_trip=180.10
+cand-188  ask-cost stream chunks=64 timeout=500 stream+timeout trips=55513088 elapsed_ns=1500004051 ns_per_trip=27.02
+cand-188  ask-cost ask ask trips=31883264 elapsed_ns=1500037208 ns_per_trip=47.05
+cand-188  ask-cost push push trips=61542400 elapsed_ns=1500025207 ns_per_trip=24.37
+cand-188  pass-cost k=1 chains=1 passes=117702656 elapsed_ns=1500053495 ns_per_pass=12.74 events=117702656
+ctl-185   ask-cost ask timeout=500 ask+timeout trips=8622080 elapsed_ns=1500161788 ns_per_trip=173.99
+ctl-185   ask-cost stream chunks=1 timeout=500 stream+timeout trips=6250496 elapsed_ns=1500727238 ns_per_trip=240.10
+ctl-185   ask-cost stream chunks=64 timeout=500 stream+timeout trips=53088256 elapsed_ns=1500091818 ns_per_trip=28.26
+ctl-185   ask-cost ask ask trips=31862784 elapsed_ns=1500120473 ns_per_trip=47.08
+ctl-185   ask-cost push push trips=61616128 elapsed_ns=1500037205 ns_per_trip=24.34
+ctl-185   pass-cost k=1 chains=1 passes=116391936 elapsed_ns=1500015115 ns_per_pass=12.89 events=116391936
+cand-188  ask-cost ask timeout=500 ask+timeout trips=13074432 elapsed_ns=1500118387 ns_per_trip=114.74
+cand-188  ask-cost stream chunks=1 timeout=500 stream+timeout trips=8384512 elapsed_ns=1500009076 ns_per_trip=178.90
+cand-188  ask-cost stream chunks=64 timeout=500 stream+timeout trips=55726080 elapsed_ns=1500057013 ns_per_trip=26.92
+cand-188  ask-cost ask ask trips=31961088 elapsed_ns=1500174084 ns_per_trip=46.94
+cand-188  ask-cost push push trips=61804544 elapsed_ns=1500088581 ns_per_trip=24.27
+cand-188  pass-cost k=1 chains=1 passes=117047296 elapsed_ns=1500188716 ns_per_pass=12.82 events=117047296
+ctl-185   ask-cost ask timeout=500 ask+timeout trips=8642560 elapsed_ns=1500352535 ns_per_trip=173.60
+ctl-185   ask-cost stream chunks=1 timeout=500 stream+timeout trips=6266880 elapsed_ns=1500643403 ns_per_trip=239.46
+ctl-185   ask-cost stream chunks=64 timeout=500 stream+timeout trips=53497856 elapsed_ns=1500005288 ns_per_trip=28.04
+ctl-185   ask-cost ask ask trips=31956992 elapsed_ns=1500057470 ns_per_trip=46.94
+ctl-185   ask-cost push push trips=61870080 elapsed_ns=1500031541 ns_per_trip=24.24
+ctl-185   pass-cost k=1 chains=1 passes=117112832 elapsed_ns=1500290381 ns_per_pass=12.81 events=117112832
+cand-188  ask-cost ask timeout=500 ask+timeout trips=13099008 elapsed_ns=1500065006 ns_per_trip=114.52
+cand-188  ask-cost stream chunks=1 timeout=500 stream+timeout trips=8380416 elapsed_ns=1500181653 ns_per_trip=179.01
+cand-188  ask-cost stream chunks=64 timeout=500 stream+timeout trips=55500800 elapsed_ns=1500100777 ns_per_trip=27.03
+cand-188  ask-cost ask ask trips=31866880 elapsed_ns=1500090499 ns_per_trip=47.07
+cand-188  ask-cost push push trips=61718528 elapsed_ns=1500050207 ns_per_trip=24.30
+cand-188  pass-cost k=1 chains=1 passes=116850688 elapsed_ns=1500289261 ns_per_pass=12.84 events=116850688
+ctl-185   ask-cost ask timeout=500 ask+timeout trips=8593408 elapsed_ns=1500427054 ns_per_trip=174.60
+ctl-185   ask-cost stream chunks=1 timeout=500 stream+timeout trips=6303744 elapsed_ns=1500313519 ns_per_trip=238.00
+ctl-185   ask-cost stream chunks=64 timeout=500 stream+timeout trips=53383168 elapsed_ns=1500010844 ns_per_trip=28.10
+ctl-185   ask-cost ask ask trips=32051200 elapsed_ns=1500083944 ns_per_trip=46.80
+ctl-185   ask-cost push push trips=61628416 elapsed_ns=1500020002 ns_per_trip=24.34
+ctl-185   pass-cost k=1 chains=1 passes=118358016 elapsed_ns=1500619756 ns_per_pass=12.68 events=118358016
+cand-188  ask-cost ask timeout=500 ask+timeout trips=13053952 elapsed_ns=1500349251 ns_per_trip=114.93
+cand-188  ask-cost stream chunks=1 timeout=500 stream+timeout trips=8400896 elapsed_ns=1500508715 ns_per_trip=178.61
+cand-188  ask-cost stream chunks=64 timeout=500 stream+timeout trips=55701504 elapsed_ns=1500009958 ns_per_trip=26.93
+cand-188  ask-cost ask ask trips=31973376 elapsed_ns=1500075175 ns_per_trip=46.92
+cand-188  ask-cost push push trips=61542400 elapsed_ns=1500009405 ns_per_trip=24.37
+cand-188  pass-cost k=1 chains=1 passes=117440512 elapsed_ns=1500758852 ns_per_pass=12.78 events=117440512
+ctl-185   ask-cost ask timeout=500 ask+timeout trips=8650752 elapsed_ns=1500155701 ns_per_trip=173.41
+ctl-185   ask-cost stream chunks=1 timeout=500 stream+timeout trips=6262784 elapsed_ns=1500111912 ns_per_trip=239.53
+ctl-185   ask-cost stream chunks=64 timeout=500 stream+timeout trips=53526528 elapsed_ns=1500032832 ns_per_trip=28.02
+ctl-185   ask-cost ask ask trips=32047104 elapsed_ns=1500182295 ns_per_trip=46.81
+ctl-185   ask-cost push push trips=61714432 elapsed_ns=1500048462 ns_per_trip=24.31
+ctl-185   pass-cost k=1 chains=1 passes=118358016 elapsed_ns=1500481107 ns_per_pass=12.68 events=118358016
+cand-188  ask-cost ask timeout=500 ask+timeout trips=13033472 elapsed_ns=1500448770 ns_per_trip=115.12
+cand-188  ask-cost stream chunks=1 timeout=500 stream+timeout trips=8343552 elapsed_ns=1500109381 ns_per_trip=179.79
+cand-188  ask-cost stream chunks=64 timeout=500 stream+timeout trips=55283712 elapsed_ns=1500076188 ns_per_trip=27.13
+cand-188  ask-cost ask ask trips=31784960 elapsed_ns=1500130247 ns_per_trip=47.20
+cand-188  ask-cost push push trips=61861888 elapsed_ns=1500055537 ns_per_trip=24.25
+cand-188  pass-cost k=1 chains=1 passes=117571584 elapsed_ns=1500579513 ns_per_pass=12.76 events=117571584
+ctl-185   ask-cost ask timeout=500 ask+timeout trips=8667136 elapsed_ns=1500561318 ns_per_trip=173.13
+ctl-185   ask-cost stream chunks=1 timeout=500 stream+timeout trips=6275072 elapsed_ns=1500791184 ns_per_trip=239.17
+ctl-185   ask-cost stream chunks=64 timeout=500 stream+timeout trips=53727232 elapsed_ns=1500014290 ns_per_trip=27.92
+ctl-185   ask-cost ask ask trips=31928320 elapsed_ns=1500144483 ns_per_trip=46.98
+ctl-185   ask-cost push push trips=61521920 elapsed_ns=1500043834 ns_per_trip=24.38
+ctl-185   pass-cost k=1 chains=1 passes=118751232 elapsed_ns=1500179201 ns_per_pass=12.63 events=118751232
+end 01:03:32
