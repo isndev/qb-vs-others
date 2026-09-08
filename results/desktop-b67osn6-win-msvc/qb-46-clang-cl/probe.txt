@@ -1,0 +1,62 @@
+session 2026-09-09T01:02:23 qb=9366384b msvc=cl 19.51 clang=clang-cl 22.1.7
+msvc ask-cost push push trips=47099904 elapsed_ns=1500098500 ns_per_trip=31.85
+msvc ask-cost ask timeout=500 ask+timeout trips=16801792 elapsed_ns=1500147900 ns_per_trip=89.28
+msvc pass-cost k=1 chains=1 passes=96272384 elapsed_ns=1500365600 ns_per_pass=15.58 events=96272384
+msvc pass-cost k=2 chains=2 passes=66584576 elapsed_ns=1500608500 ns_per_pass=22.54 events=133169152
+msvc io-pass timer timer passes=51240960 elapsed_ns=1500087900 ns_per_pass=29.28
+msvc io-pass pass pass passes=35864576 elapsed_ns=1500110600 ns_per_pass=41.83
+clang ask-cost push push trips=52252672 elapsed_ns=1500113600 ns_per_trip=28.71
+clang ask-cost ask timeout=500 
+clang pass-cost k=1 chains=1 passes=107216896 elapsed_ns=1500376500 ns_per_pass=13.99 events=107216896
+clang pass-cost k=2 chains=2 passes=76873728 elapsed_ns=1500391400 ns_per_pass=19.52 events=153747456
+clang io-pass timer timer passes=53129216 elapsed_ns=1500108800 ns_per_pass=28.24
+clang io-pass pass pass passes=34189312 elapsed_ns=1500021000 ns_per_pass=43.87
+msvc ask-cost push push trips=47349760 elapsed_ns=1500085900 ns_per_trip=31.68
+msvc ask-cost ask timeout=500 ask+timeout trips=16445440 elapsed_ns=1500291100 ns_per_trip=91.23
+msvc pass-cost k=1 chains=1 passes=96534528 elapsed_ns=1500924600 ns_per_pass=15.55 events=96534528
+msvc pass-cost k=2 chains=2 passes=61243392 elapsed_ns=1500549200 ns_per_pass=24.50 events=122486784
+msvc io-pass timer timer passes=51146752 elapsed_ns=1500065900 ns_per_pass=29.33
+msvc io-pass pass pass passes=30457856 elapsed_ns=1500042900 ns_per_pass=49.25
+clang ask-cost push push trips=51642368 elapsed_ns=1500098600 ns_per_trip=29.05
+clang ask-cost ask timeout=500 
+clang pass-cost k=1 chains=1 passes=107020288 elapsed_ns=1500730800 ns_per_pass=14.02 events=107020288
+clang pass-cost k=2 chains=2 passes=76709888 elapsed_ns=1500507200 ns_per_pass=19.56 events=153419776
+clang io-pass timer timer passes=53305344 elapsed_ns=1500086900 ns_per_pass=28.14
+clang io-pass pass pass passes=41213952 elapsed_ns=1500089800 ns_per_pass=36.40
+msvc ask-cost push push trips=47529984 elapsed_ns=1500010800 ns_per_trip=31.56
+msvc ask-cost ask timeout=500 ask+timeout trips=16572416 elapsed_ns=1500231600 ns_per_trip=90.53
+msvc pass-cost k=1 chains=1 passes=95027200 elapsed_ns=1500476600 ns_per_pass=15.79 events=95027200
+msvc pass-cost k=2 chains=2 passes=65765376 elapsed_ns=1500492300 ns_per_pass=22.82 events=131530752
+msvc io-pass timer timer passes=50499584 elapsed_ns=1500089300 ns_per_pass=29.70
+msvc io-pass pass pass passes=30326784 elapsed_ns=1500081000 ns_per_pass=49.46
+clang ask-cost push push trips=51781632 elapsed_ns=1500012600 ns_per_trip=28.97
+clang ask-cost ask timeout=500 
+clang pass-cost k=1 chains=1 passes=105906176 elapsed_ns=1500058300 ns_per_pass=14.16 events=105906176
+clang pass-cost k=2 chains=2 passes=76185600 elapsed_ns=1500444300 ns_per_pass=19.69 events=152371200
+clang io-pass timer timer passes=53747712 elapsed_ns=1500082600 ns_per_pass=27.91
+clang io-pass pass pass passes=34189312 elapsed_ns=1500050200 ns_per_pass=43.87
+msvc ask-cost push push trips=47702016 elapsed_ns=1500091900 ns_per_trip=31.45
+msvc ask-cost ask timeout=500 ask+timeout trips=16683008 elapsed_ns=1500165000 ns_per_trip=89.92
+msvc pass-cost k=1 chains=1 passes=98304000 elapsed_ns=1500560900 ns_per_pass=15.26 events=98304000
+msvc pass-cost k=2 chains=2 passes=67043328 elapsed_ns=1500407700 ns_per_pass=22.38 events=134086656
+msvc io-pass timer timer passes=51404800 elapsed_ns=1500040400 ns_per_pass=29.18
+msvc io-pass pass pass passes=32890880 elapsed_ns=1500144800 ns_per_pass=45.61
+clang ask-cost push push trips=52219904 elapsed_ns=1500109500 ns_per_trip=28.73
+clang ask-cost ask timeout=500 
+clang pass-cost k=1 chains=1 passes=106692608 elapsed_ns=1500513800 ns_per_pass=14.06 events=106692608
+clang pass-cost k=2 chains=2 passes=77201408 elapsed_ns=1500341100 ns_per_pass=19.43 events=154402816
+clang io-pass timer timer passes=53989376 elapsed_ns=1500016800 ns_per_pass=27.78
+clang io-pass pass pass passes=34312192 elapsed_ns=1500004500 ns_per_pass=43.72
+msvc ask-cost push push trips=48279552 elapsed_ns=1500075000 ns_per_trip=31.07
+msvc ask-cost ask timeout=500 ask+timeout trips=16584704 elapsed_ns=1500158300 ns_per_trip=90.45
+msvc pass-cost k=1 chains=1 passes=96272384 elapsed_ns=1500391300 ns_per_pass=15.58 events=96272384
+msvc pass-cost k=2 chains=2 passes=67108864 elapsed_ns=1500348100 ns_per_pass=22.36 events=134217728
+msvc io-pass timer timer passes=51621888 elapsed_ns=1500115100 ns_per_pass=29.06
+msvc io-pass pass pass passes=30691328 elapsed_ns=1500025100 ns_per_pass=48.87
+clang ask-cost push push trips=52477952 elapsed_ns=1500074800 ns_per_trip=28.58
+clang ask-cost ask timeout=500 
+clang pass-cost k=1 chains=1 passes=106299392 elapsed_ns=1500000900 ns_per_pass=14.11 events=106299392
+clang pass-cost k=2 chains=2 passes=77463552 elapsed_ns=1500489300 ns_per_pass=19.37 events=154927104
+clang io-pass timer timer passes=53809152 elapsed_ns=1500021800 ns_per_pass=27.88
+clang io-pass pass pass passes=37695488 elapsed_ns=1500053000 ns_per_pass=39.79
+end 2026-09-09T01:03:47

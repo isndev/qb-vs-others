@@ -687,6 +687,28 @@ in three instruments that agree on the sign (census 77.3 → 77.8 ns, 24 launche
 grid-order 76.3 → 77.7) where g++ gains 3 % — inside each instrument's spread, recorded, not
 explained, and the one open item this branch leaves on the same-core path.
 
+**And the A/B was run anyway, on 2026-09-08, against the 3.2.0 tree — the answer is "both,
+in halves"** (`results/desktop-b67osn6-win-msvc/qb-46-clang-cl/`, Huly QB-46). qb `9366384b` built
+twice from the same directory by `cl` 19.51 and by `clang-cl` 22.1.7 — LLVM's Clang behind MSVC's
+command line, ABI, CRT and STL — and measured in one quiet session: on every dispatch-bound shape
+the clang-cl binary is **10–18 % faster** (ping-pong 1c 31.6 → 27.4 ns, big 17.1 → 14.8, fib
+179 → 161, `pass-cost` k = 1 15.6 → 14.1, k = 2 22.5 → 19.5, `push` 31.6 → 28.7, the io pass
+48.9 → 43.7, `dispatch-population` at 16 actors 6.1 → 5.2), and on the `counting` burst sweep —
+one actor, a cache-resident and perfectly predictable dispatch — the two are level (5.7–6.0 ns a
+message from 2 k to 100 k, against g++'s ~5: what §9.11 left of the "3×" is a tenth). Against
+g++-14 on WSL2, the same tree's ping-pong 1c reads 22.8 ns: MSVC is +39 % and clang-cl +20 %, so
+half the gap is MSVC's codegen of the dispatch chain and the other half is the platform, which no
+compiler switch reaches. What the experiment found on the way is worth more than its number:
+under clang-cl **every `task<qb::Event>` crashed on its first `co_await`** — the MSVC STL's
+`from_promise()` / `promise()` computed with an alignment of zero, wrong for an over-aligned
+promise (QB-200: fixed in qb, `promise_access.h`, reproduced in thirty lines) — and qb's CMake
+compiled clang-cl through its GCC/Clang branch, `-Wall` read as `/Wall` = `-Weverything`
+(QB-201: clang-cl is an MSVC-frontend toolchain now, 0 warnings, the `clang-cl` preset, the suite
+194/194). One anomaly stays recorded, not explained: the clang-cl `counting` binary reads +49 %
+at a burst of exactly 1 M (12.3 against 8.2, its minimum as high as its median) and +5 % at 4 M —
+a layout effect to re-measure on the fixed toolchain. §9.12's recommendation: on Windows, build
+with clang-cl.
+
 Suites before any of these numbers were quoted: WSL2 g++ 14.2 release 534 TUs, 0 warnings, ctest
 368/368 executed, 0 skipped; ASan+UBSan 189/189; TSan 189/189; the example corpus 98/99 (586
 `@expect` lines, 17 second-instance assertions; the one failure is `modules-http-http3` on a host
