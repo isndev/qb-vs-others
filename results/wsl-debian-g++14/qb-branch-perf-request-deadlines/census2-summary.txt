@@ -1,0 +1,6 @@
+savina-bank-transaction-cores=1-wait=1 cand-188       131.9  137.5  140.6  141.6  142.7  143.1  143.8  144.1  144.2  145.0   median 142.9 ns
+savina-bank-transaction-cores=1-wait=1 cand-189       140.2  141.0  143.5  144.3  144.8  144.8  145.0  146.1  146.3  146.9   median 144.8 ns
+savina-bank-transaction-cores=2-wait=1 cand-188        76.4   80.2   81.4   82.8   82.9   83.1   83.2   84.7   85.3   90.4   median 83.0 ns
+savina-bank-transaction-cores=2-wait=1 cand-189        77.7   78.9   80.1   80.2   80.7   81.0   83.0   84.4   84.6   84.8   median 80.9 ns
+savina-ping-pong-cores=2-wait=1    cand-188       155.3  157.3  158.1  159.4  159.5  159.5  159.6  161.2  162.8  163.3   median 159.5 ns
+savina-ping-pong-cores=2-wait=1    cand-189       155.6  157.5  158.7  159.3  160.2  160.4  161.0  162.2  162.3  166.0   median 160.3 ns

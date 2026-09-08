@@ -1800,3 +1800,44 @@ TSan preset does not instrument `ev.c` — the C target never receives `-fsaniti
 the evpipe protocol has never been under ThreadSanitizer; instrumented standalone, it reports
 the volatile-flag exchange libev has always used (QB-192, with C11 atomics as the likely
 answer).
+
+### 17.5 Phase 2 delivered — the request path without a libev timer
+
+QB-189 (`results/<host>/qb-branch-perf-request-deadlines/`). Every timed `ask`,
+`ask_stream::next()`, `ping` and `require` armed an `ev_timer`, and the timer's real cost was not
+the arm: it was a referenced active watcher for the whole wait, so `listener::has_work()` stayed
+true and every pass of the core ran `ev_run` — 22 ns a pass on g++ after §17.4, 31 on MSVC with a
+precise clock — for the one request in flight. The deadline is an intrusive node in the awaiter
+now, in a per-core list sorted by deadline (a `VirtualCore` member), and the pass checks it
+without the loop: a member load when nothing is armed; a COARSE clock read (the scheduler tick —
+`CLOCK_MONOTONIC_COARSE`, `GetTickCount64`, `CLOCK_MONOTONIC_RAW_APPROX` — ~3–5 ns) when
+something is, and the precise `mono_now()` only within one tick of the earliest deadline, so a
+timeout keeps its sub-microsecond precision. An idle pass hands the list the reading it already
+makes for the park policy, and a park is bounded by the earliest deadline (the loop holds no
+timer for it any more — the regression the reading of the whole pass avoided).
+
+| ns per round trip, one core | WSL2 / g++-14 | Windows / MSVC 19.51 |
+|---|---|---|
+| ask with a 500 ms timeout | **111.6 → 67.8** (−39 %) | **157.1 → 90.1** (−43 %) |
+| the timed ask over the untimed one | 66 → 22 | 90 → 25 |
+| stream, 1 chunk, with a timeout | 173.6 → 131.3 (−24 %) | 354.8 → 301.9 (−15 %) |
+| untimed ask / push / one-core pass | level (ten launches) | level |
+| bank 2c / 1c, ping-pong 2c (ten launches) | 83.0 → 80.9 / 142.9 → 144.8 / 159.5 → 160.3 | — |
+
+The programme's line for the timed ask, both hosts: g++ **798 → 174 → 115 → 68**, MSVC
+**1108 → 124 → 115 → 166 → 90** — the Windows figure back under its pre-QB-193 124, as the
+roadmap's acceptance asked, with the timers precise. What remains over the untimed ask is one
+precise clock read at the arm (~16–17 ns on both hosts, the TSC) and the list; the read is what
+QB-190 shares with the pass on a core that already made one.
+
+Two shapes were measured and replaced on the way, and they are the reason the list is a core
+member rather than a thread_local. Read out-of-line, the per-pass gate cost ~0.5 ns on EVERY
+pass of every core (`push` 23.3 → 24.4 on g++). Read inline as an `extern constinit
+thread_local`, g++'s cost vanished (the linker relaxes the general-dynamic access to one `%fs`
+load in an executable) but MSVC's did not: its TLS access is four dependent loads and read
+`push` 31.6 → 33.6. A member load off the core object the pass already holds is free on both.
+Also found on the way: an `io::async::callback` timer armed on the calling thread's core
+outlives its `qb::Main` — `start(false)` runs core 0 on the caller's thread, whose listener is
+that thread's, not the engine's — so a test's far timer leaked into the next test in the same
+process (`active_count` read 1 with no watcher of its own); the test uses a scope-cancelled
+`sleep` instead, and the hygiene note is in the milestone's memory.
