@@ -1961,3 +1961,36 @@ time. The corollary for every raw timer user, tested with the raw C arm as the n
 loop that runs only when something is due has a stale clock the rest of the time, so
 `event::timer::start()` / `again()` refresh it before every arm, as `sleep`, `callback` and
 `with_timeout` already did by hand.
+
+### 17.8 Phase 4 delivered — io_uring measured, and at parity
+
+QB-81 (qb `readme/6_guides/performance_tuning.md`, "io_uring, measured (3.2.0)"; qev `9b83760`).
+`QB_EV_BACKEND=iouring` had shipped since 3.1 with no figure behind it, and the `io-pass` probe was
+the first to ask: a core's pass over one quiet socket read **1345 ns against epoll's 28.5** — a
+syscall storm inside the backend, not a slow backend. `iouring_poll` armed its deadline timerfd at
+"now" on every timeout-0 poll (`>=` where a sleep needs `>`; upstream libev carries the same line),
+the timerfd expired at once, its one-shot `POLL_ADD` completed, was drained and re-armed through
+`io_uring_enter`, and the next pass armed "now" again: three syscalls a cycle, ~300k cycles a second,
+whatever the embedder's cadence. Armed only for a poll that sleeps, the pass fell to 25.8 ns — and
+exposed the second defect: the ring is `COOP_TASKRUN`, the kernel's completion work waits for the
+task's next syscall, and a loop that now made none saw a ready fd at the scheduler tick (wake p50
+2.0 ms against 3.9 µs); `IORING_SETUP_TASKRUN_FLAG` + a `GETEVENTS` enter on `IORING_SQ_TASKRUN`
+in the post-drain flush restores prompt delivery at one syscall per completed event. Running qb's
+whole suite on the backend found the third: the loop's own timerfd watcher counted in `iocnt`, so a
+timers-only loop never took the no-poll pass of §17.4 nor the gate of §17.7 (40.5 ns against 25.8);
+`io_is_loop_own()` keeps it and the wake pipe out of the count.
+
+Final figures against epoll, one pinned core, medians (WSL2 6.6, g++-14): a pass with one quiet
+socket at the default 1 µs cadence **28.8 / 26.4 ns**, polled on every pass **126.9 / 40.9**,
+timers-only 26.5 / 26.4, a byte every 100 µs 55.2 / 50.6, wake p50 3.98 / 4.18 µs (p99 17.0 /
+16.6), a parked core woken by a socket p50 41.6 / 41.3 µs (p99 137 / 161), syscalls on a quiet
+socket 960k/s / **1/s**. Parity with a different shape: io_uring checks readiness by reading its
+memory-mapped completion ring, so a quiet pass costs no syscall at all where epoll pays
+`epoll_wait(0)`; it pays ~0.2 µs more per delivered event (the completion, the one-shot re-arm) and
+two syscalls per park (`timerfd_settime`, `poll`) against `epoll_wait`'s one. **epoll stays the
+default** — a single-digit gain at the default cadence does not buy a younger backend with more
+kernel-version and seccomp surface for every Linux deployment — and io_uring is the right choice for
+a core that polls on every pass, the one configuration where sub-microsecond wake latency is
+affordable. qb's Linux CI runs its suite on both (`-DQB_IO_EV_TEST_BACKENDS=epoll;iouring`), with a
+guard that fails an io_uring variant the kernel refused rather than let it test epoll under that
+name; the whole suite forced onto io_uring under both sanitizers: 385/385.
