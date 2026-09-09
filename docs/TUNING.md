@@ -84,6 +84,54 @@ two CAF columns are one number, deliberately, and "CAF barely moves" is retired 
 question the reader actually has — what does CAF pay when its two actors DO sit on two cores —
 is answered by the `caf-detached` row (§8), not by any pool knob.
 
+### 1.2 SObjectizer's spin budget, swept the same way (2026-09-09, both hosts, 2c, 7 reps + 2 warmup — QB-47)
+
+A comparison that swept one competitor's knob and not the other's is not symmetric, and
+SObjectizer has exactly one on this axis: the `combined_lock` of its dispatcher queues spins for a
+WAITING TIME before it falls back to a mutex and condition variable — a yield loop that re-reads
+the clock each turn (`dev/so_5/disp/mpsc_queue_traits/pub.cpp`, `combined_lock_t::wait_for_notify`
+in the pinned 5.8.5.1), whose default is 1 ms. The adapter's `wait=1` profile sets it to 10 s
+(`frameworks/sobjectizer/so_support.h`, `tune_queue` / `tune_pool_queue`), `wait=0` to
+`simple_lock_factory` (no spin at all). `QVO_SO_SPIN_WAIT_US` overrides the budget for a sweep
+and for nothing else — a document measured under it carries `SWEEP DOCUMENT, NOT A TABLE CELL`
+as its first caveat, like CAF's. `tools/so-sweep.sh` drives it: `savina/ping-pong` and
+`savina/counting`, cores=2 wait=1, CPUs 0 and 2, 7 repetitions + 2 warmup, 1 000 000 messages,
+the profile measured first and last as the drift control, each host in its own quiet session
+(`results/<host>/sobjectizer-spin-sweep/`). ns per message, p50 [min, max]:
+
+| budget | Windows / MSVC ping-pong | WSL2 / g++ ping-pong | Windows counting | WSL2 counting |
+|---|---:|---:|---:|---:|
+| **profile, 10 s** (first) | **827** [770, 895] | **631** [574, 693] | **245** [178, 294] | **169** [166, 178] |
+| `simple_lock` (no spin) | 950 [916, 1298] | **26 344** [26 246, 26 751] | 278 [259, 436] | 168 [160, 171] |
+| 1 µs | 959 [909, 1076] | **9 912** [9 138, 10 865] | 300 [257, 329] | 175 [160, 183] |
+| 10 µs | 968 [870, 1016] | 657 [639, 669] | 300 [281, 345] | 172 [169, 187] |
+| 100 µs | 879 [793, 911] | 695 [669, 722] | 295 [267, 327] | 159 [150, 171] |
+| 1 ms (SObjectizer's default) | 836 [739, 866] | 667 [664, 699] | 224 [172, 289] | 171 [164, 178] |
+| 10 ms | 888 [857, 1290] | 650 [639, 676] | 301 [283, 314] | 164 [153, 177] |
+| 100 ms | 854 [780, 909] | 662 [658, 695] | 303 [279, 321] | 162 [150, 165] |
+| 10 s, through the override | 901 [818, 1145] | 667 [663, 724] | 289 [271, 301] | 160 [152, 167] |
+| **profile, 10 s** (last) | **821** [721, 947] | **608** [561, 655] | **288** [278, 304] | **166** [161, 180] |
+
+Three readings. **No budget beats the profile.** Every budget from 100 µs up (10 µs up on Linux)
+reads inside the launch-to-launch spread of the profile itself — the two profile runs are 827 / 821
+on Windows and 631 / 608 on WSL2 for ping-pong, 245 / 288 for Windows counting, the bimodal
+two-core launch every Windows document beside this one records — and SObjectizer's own 1 ms default
+sits in that band with the rest: the adapter's 10 s and the framework's default are the same
+setting for a hop that never lets the budget expire. **A budget shorter than the hop is the park
+cell in disguise**: at 1 µs and under, the yield loop's first turn (~1 µs with the clock read)
+already exhausts it and every hop pays the mutex-and-condition-variable path — on Windows +15 %
+(950–968 against 821–827: the tickless kernel wake of §19.2 is cheap), on WSL2 ×16 at 1 µs and ×42
+with no spin at all (26 344 ns: the hypervisor's futex wake, §6's floor) — which is what the
+published `wait=0` column already says. **`counting` does not exercise the knob at all**: a
+one-way flood keeps the consumer's queue non-empty, so its lock never waits and every row from
+`simple_lock` to 10 s reads 159–175 ns on WSL2; the Windows column's 224–303 is the launch
+bimodality, not the budget. The shape that measures a spin budget is the one whose queue drains
+between hops.
+
+**Consequence for the tables.** SObjectizer's spin cell IS its best profile, as CAF's is: the
+tables stand, `FAIRNESS.md` §1.1 says both competitors were swept, and the symmetry the issue
+asked for is measured rather than asserted.
+
 ## 2. qb park interval — the same treatment, applied to the author's own framework
 
 Tuning the competitor's knob while leaving your own at an arbitrary value rigs the axis just as
@@ -316,7 +364,8 @@ taken by `perf/event-pipe-segmented` (§9.11 carries the two-host A/B), and 9.12
 arm64 and the axis-K fence, which used to be on this list, are answered by §9.13: the macOS host
 measured the `dmb ish` without effect and qb's `dev/bench` gate passed with the engine metric
 +94.9 %. The CAF spin profile, the cross-core CAF cell and axis I, which used to head this list,
-are closed by §1.1, §8 and the subsection below. `docs/ROADMAP.md` carries the same list as the
+are closed by §1.1, §8 and the subsection below; SObjectizer's spin budget, the symmetric
+question, by §1.2. `docs/ROADMAP.md` carries the same list as the
 3.2.0 pipeline, with what must happen before the branch ships and what comes after.
 
 ### Axes I and M — the dense router, and the regression it exposed

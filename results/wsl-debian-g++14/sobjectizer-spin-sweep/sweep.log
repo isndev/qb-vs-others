@@ -1,0 +1,20 @@
+ping-pong-profile-10s        verified=True sweep-caveat=False p50=  630.8  min=  574.1  max=  693.2 ns/msg
+ping-pong-simple-lock        verified=True sweep-caveat=True p50=26344.4  min=26245.8  max=26750.9 ns/msg
+ping-pong-wait1us            verified=True sweep-caveat=True p50= 9911.9  min= 9137.5  max=10865.2 ns/msg
+ping-pong-wait10us           verified=True sweep-caveat=True p50=  656.8  min=  638.9  max=  668.5 ns/msg
+ping-pong-wait100us          verified=True sweep-caveat=True p50=  694.6  min=  669.4  max=  722.4 ns/msg
+ping-pong-wait1ms-default    verified=True sweep-caveat=True p50=  667.4  min=  664.0  max=  698.6 ns/msg
+ping-pong-wait10ms           verified=True sweep-caveat=True p50=  650.0  min=  639.3  max=  675.8 ns/msg
+ping-pong-wait100ms          verified=True sweep-caveat=True p50=  661.7  min=  657.9  max=  694.6 ns/msg
+ping-pong-wait10s-b          verified=True sweep-caveat=True p50=  667.2  min=  663.4  max=  723.8 ns/msg
+ping-pong-profile-10s-b      verified=True sweep-caveat=False p50=  607.7  min=  560.7  max=  654.6 ns/msg
+counting-profile-10s         verified=True sweep-caveat=False p50=  169.4  min=  166.4  max=  178.1 ns/msg
+counting-simple-lock         verified=True sweep-caveat=True p50=  168.2  min=  160.3  max=  171.0 ns/msg
+counting-wait1us             verified=True sweep-caveat=True p50=  175.3  min=  159.9  max=  182.6 ns/msg
+counting-wait10us            verified=True sweep-caveat=True p50=  172.2  min=  168.6  max=  186.6 ns/msg
+counting-wait100us           verified=True sweep-caveat=True p50=  159.1  min=  149.9  max=  170.7 ns/msg
+counting-wait1ms-default     verified=True sweep-caveat=True p50=  170.6  min=  164.4  max=  177.6 ns/msg
+counting-wait10ms            verified=True sweep-caveat=True p50=  163.5  min=  152.8  max=  176.6 ns/msg
+counting-wait100ms           verified=True sweep-caveat=True p50=  161.7  min=  150.2  max=  165.3 ns/msg
+counting-wait10s-b           verified=True sweep-caveat=True p50=  160.3  min=  152.4  max=  166.6 ns/msg
+counting-profile-10s-b       verified=True sweep-caveat=False p50=  165.9  min=  161.4  max=  179.5 ns/msg

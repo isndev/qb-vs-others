@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/counting",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 6535945399557740267,
+  "expected_messages": 1000002,
+  "work_unit": "message",
+  "work_units": 1000000,
+  "repetitions": 7,
+  "warmup": 2,
+  "params": {"cores": 2, "messages": 1000000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-09T13:24:04Z"
+  },
+  "idiom": {
+    "source": "the ping-pong adapter + dev/sample/so_5/ping_pong_minimal/main.cpp",
+    "note": "agent_t subclasses on their DIRECT mboxes, messages derived from so_5::message_t, active_obj dispatcher for cores>=2 and one_thread below it"
+  },
+  "caveats": ["SWEEP DOCUMENT, NOT A TABLE CELL: the combined_lock waiting time under wait=1 was overridden through QVO_SO_SPIN_WAIT_US=10 microseconds (docs/TUNING.md section 1.2); the adapter's profile is 10 s, SObjectizer's own default 1 ms", "cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating", "wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose"],
+  "failures": [],
+  "work_ns": [168634846.0, 186574211.0, 175101691.0, 178750889.0, 171750251.0, 172244770.0, 171989086.0],
+  "total_ns": [174910500.0, 188008141.0, 182608706.0, 185180092.0, 176839615.0, 178867576.0, 177044949.0],
+  "outside_window_ns": [6275654.0, 1433930.0, 7507015.0, 6429203.0, 5089364.0, 6622806.0, 5055863.0],
+  "summary": {
+    "work_min": 168634846.0,
+    "work_p50": 172244770.0,
+    "work_p99": 186104811.7,
+    "work_iqr": 5056621.5
+  }
+}

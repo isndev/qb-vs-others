@@ -43,7 +43,14 @@ modelled on:
 
 The rule this encodes: **qb's implementation may not be the only tuned one.** Where a framework
 offers a faster idiom than the one its documentation leads with, both are implemented, both are
-reported, and the *faster* one is what enters the comparison table.
+reported, and the *faster* one is what enters the comparison table. The same rule covers the one
+knob every framework has on the spin/park axis, and it is enforced by a SWEEP, not by a reading of
+the defaults: CAF's work-stealing profile was swept over ten points (`docs/TUNING.md` §1.1 — its
+defaults are its fastest setting) and SObjectizer's `combined_lock` spin budget over nine on each
+host (§1.2 — nothing above 100 µs moves outside the launch spread, the framework's own 1 ms default
+included, so the adapter's 10 s profile is its best), and each framework's spin cell is the best
+profile that sweep found. A document measured under a sweep override says so in its first caveat
+(`SWEEP DOCUMENT, NOT A TABLE CELL`) and never enters a table.
 
 ### 1.2 A floor, not just a field
 

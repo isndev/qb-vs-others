@@ -397,7 +397,7 @@ Three things about a run worth knowing before reading its output:
   `merged_partial_runs`. It refuses if the host, platform, CPU set, repetition or warmup count
   differ from the manifest already there — a table stitched from two hosts is not a table.
 - **The report reads `results/<host>/<benchmark>/` only.** Side experiments live in sibling
-  directories (`qb-branch-perf-core-hot-path/`, `caf-spin-sweep/`) whose documents declare a
+  directories (`qb-branch-perf-core-hot-path/`, `caf-spin-sweep/`, `sobjectizer-spin-sweep/`) whose documents declare a
   benchmark their directory is not named for; `report.py` names them on stderr and leaves them
   out, and two documents for one cell are a hard stop rather than a last-writer-wins. A cell
   whose repetitions split into two modes more than 2× apart is marked **bimodal** with both
