@@ -186,7 +186,7 @@ timer thread whose mechanism is chosen at environment creation — wheel, heap o
 
 ## 8. Coroutines
 
-**qb.** The asynchronous surface *is* C++20 coroutines: `task<T>` (`io/async/coroutine/task.h:418`),
+**qb.** The asynchronous surface *is* C++20 coroutines: `task<T>` (`io/async/coroutine/task.h:419`),
 `shared_task` (`io/async/coroutine/shared_task.h:55`), `coroutine_scope` with joining / cancelling /
 detaching exit policies (`io/async/coroutine/scope.h:76`, `:617`–`:635`), `parallel` (`:689`),
 `when_all` / `when_any` / timeouts (`io/async/coroutine/combinators.h:76`, `:207`, `:689`),
