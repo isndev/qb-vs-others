@@ -1033,6 +1033,10 @@ tree and a candidate tree, then for each of the 12 cells launch `qvoprobe-parked
 running; the probe pins itself, so no `taskset` or `start /affinity` is needed beyond keeping the
 rest of the machine off CPUs 0 and 2.
 
+The Windows `gap = 2000 µs` figures of this section are one session's reading of a wake that
+turned out to be bimodal — §19 re-measures the cell as an A/B against this very tree and explains
+what moves it.
+
 ## 11. What two shapes that CREATE actors said — fib and chameneos
 
 Every shape through §10 builds its actors before the window opens. §7's audit therefore never
@@ -2093,3 +2097,154 @@ the loop is the thread. Measured alone at twelve interleaved rounds, one quiet s
 the three probes level; Windows/MSVC, which initialises TLS at thread start, level everywhere
 (ping-pong 1c 31.4 / 31.5). Small, pure, and the one thing QB-198's four sessions delivered to
 `develop`.
+
+## 19. The park's wait, and how fine it is — QB-196
+
+QB-196 (`results/<host>/qb-196-park-cap/`, the `parked-timer-wake` probe, the second qb-only
+instrument after §10's `parked-io-wake`). The issue was filed from a reading of the code: on
+Windows the park of a core that owns io watchers — `ev_run(EVRUN_ONCE)` capped at `latency`,
+axis N — waits through wepoll's `epoll_wait`, whose timeout is whole milliseconds that libev
+rounds UP, and a kernel wait "is honoured at the 15.6 ms system tick unless the process raised
+its timer resolution"; so a `latency` of 100 µs was said to park 1–16 ms, with `timeBeginPeriod`
+and a high-resolution waitable timer as the candidates. The rule on the issue was the right one:
+measure before touching. The measurement refuted half of the reading, found the other half on
+Linux too, and moved one thing — on Linux.
+
+### 19.1 The instrument
+
+`tools/probes/parked-timer-wake.cpp` (`qvoprobe-parked-timer-wake`): one core, one actor, and
+nothing on the core but a timer. Each round arms one `qb::io::async::callback` of `delay` from
+inside the previous one and records its lateness — fired-at minus due-at — in microseconds; 2000
+rounds after 50 warm-ups (400 at `delay = 5 ms`), min / p50 / mean / p90 / p99 / max on one
+line. The core is pinned by the probe (CPU 0); `latency`, `delay`, the idle-spin floor and, on
+Windows, a `timeBeginPeriod(period)` around the run are its arguments. Two controls bound the
+reading: `latency = 0` (the core never parks and judges the timer on the busy pass's clock —
+what the timer costs with no wait at all) and `idle_spin = 0` (the core parks on its first idle
+pass, so the wait is the whole story). A parked core's wait is `min(latency, time to the next
+timer)`, so `delay` under `latency` measures one wait and `delay` over it measures a chain of
+`latency`-long parks ending in a short one.
+
+### 19.2 What Windows said — the tick that was not there, and the idle state that was
+
+Windows 11 / MSVC 19.51, i9-12900K, Docker Desktop quit, the WSL2 side idle, 60 s after the last
+build, one run per cell (`parked-timer-wake.txt`). Lateness p50 in µs, `period = 0` (nothing
+asked of the timer resolution) → `period = 1 ms` (`timeBeginPeriod(1)` around the run):
+
+| `latency` \ `delay` | 100 µs | 1 ms | 5 ms |
+|---|---:|---:|---:|
+| 0 (never parks) | 0.2 → 0.2 | 0.2 → 0.2 | 0.2 → 0.2 |
+| 100 µs | **1417 → 1013** | 997 → 887 | 966 → 783 |
+| 1 ms | **1442 → 1006** | 994 → 910 | 967 → 870 |
+| 10 ms | **998 → 985** | 923 → 906 | 799 → 666 |
+
+Every parked cell's p90 is 1.9 ms and its p99 2.0–2.4 ms, `period` or not; `idle_spin = 0`
+reads the same as the default (1009 / 981 / 1010 µs at the three latencies). Two facts, and
+neither is the one the issue was written on:
+
+- **The 15.6 ms tick is not what a 1 ms wait costs here.** `NtQueryTimerResolution` on this box,
+  read in the same session, says the system resolution is at its coarsest — **15.625 ms**, nothing
+  running has raised it — and a wepoll wait of 1 ms still returned in 1.0–1.5 ms at p50 and 2.4 ms
+  at p99. The kernel's waits are tickless; what it adds to the requested millisecond is its own
+  coalescing, 0.5–1.5 ms. `timeBeginPeriod(1)` moves the p50 by 1–30 % from cell to cell and the tails not at all:
+  a lever, not the floor. Neither of the issue's candidates was pursued.
+- **What a parked core pays to be woken by a socket is the CPU's idle-state exit, and it is the
+  same on every tree.** §10 had recorded 62–69 µs for the `latency = 1 ms, gap = 2 ms` cell on
+  axis N; a first run of the same cell this session read 122 µs, and by the protocol that is an
+  A/B, not a number. `parked-io-wake-ab.txt`: qb at axis N (`a3bc19c6`) against `develop`
+  (`279ec219`), five interleaved repetitions per cell, p50 in µs, control → candidate:
+
+  | cell | control (5 reps) | candidate (5 reps) |
+  |---|---|---|
+  | `latency=1000 gap=2000` | 118 / 88 / 118 / 118 / 66 | 118 / 119 / 86 / 113 / 105 |
+  | `latency=1000 gap=200` (polling) | 23.0 ×5 | 23.1–23.2 ×5 |
+  | `latency=100 gap=2000` | 67 / 103 / 120 / 75 / 117 | 103 / 72 / 120 / 120 / 72 |
+  | `latency=10000 gap=2000` | 180 / 185 / 187 / 189 / 183 | 189 / 188 / 185 / 188 / 188 |
+  | `parked-timer-wake 1000 100` | 1014 / 1134 / 1030 / 1496 / 1436 | 1077 / 1031 / 999 / 1459 / 1411 |
+
+  The `gap = 2 ms` cells are bimodal on BOTH sides — a mode near 65 µs and one near 120, the p50
+  landing on either from one launch to the next, p90 127–130 and min 22–24 on every run of the two
+  sub-millisecond-cap cells — and
+  the 10 ms cell sits at 185 on both: the longer the CPU has been idle before the wake (a 10 ms
+  cap lets it sleep the whole 2 ms gap; a 1 ms cap wakes it every millisecond), the deeper the
+  state it has to leave. §10's 62–69 was the lower mode in a session where the CPU happened to
+  stay shallow. Not a regression, and not qb's: the polling cell and the spinning control do not
+  move, and the instrument that would show a qb cost — the spinning timer at 0.2 µs — is flat.
+
+So on Windows the floor of a parked core's wait is libev's millisecond ceiling plus the kernel's
+coalescing, ~1 ms at p50 and ~2.4 at p99, whatever `latency` says under a millisecond; a
+sub-millisecond timer on a parked core fires at the millisecond, and only `latency = 0` goes
+below. That is now the contract `CoreInitializer::setLatency` states.
+
+### 19.3 What Linux said — libev's own millisecond
+
+WSL2 Debian 13 / g++ 14.2 (Linux 6.6), same probe, qb `develop` (`parked-timer-wake.develop.txt`),
+lateness p50 in µs:
+
+| `latency` \ `delay` | 100 µs | 1 ms | 5 ms |
+|---|---:|---:|---:|
+| 0 (never parks) | 0.1 | 0.2 | 0.2 |
+| 100 µs | **1010** | 110 | 357 |
+| 1 ms | **1012** | 111 | 358 |
+| 10 ms | **1010** | 110 | 113 |
+
+The 100 µs column is exactly one millisecond late, on every latency, with a p90 within 5 µs of
+the p50 — no coalescing, no tick, a precise wait for the wrong duration. The source is in
+`ev_epoll.c` and `ev.c`, and it is the same code on both hosts: `epoll_wait` takes an `int` of
+milliseconds, `EV_TS_TO_MSEC` is `a * 1e3 + 0.9999` (a ceiling), and the epoll backend sets
+`backend_mintime = 1e-3`, which `ev_run` applies before the poll, so a wait of 100 µs is asked
+for as 1 ms before the syscall is even made. The 1 ms column's 110 µs is the same ceiling seen
+from the other side: the core spins its 50 µs idle floor, asks for the 950 µs that remain, gets
+1 ms, and the kernel's 50 µs timer slack (`/proc/sys/kernel/timer_slack` — 50 000 ns on this box,
+the default for a normal thread) is the rest; the 5 ms column at `latency = 1 ms` chains four
+1 ms parks, each late by that slack and a pass, into 357. Linux never had the 15.6 ms problem; it
+had this one, and so did Windows underneath its coalescing.
+
+### 19.4 `epoll_pwait2` — the A/B
+
+Linux 5.11 added `epoll_pwait2`, the same wait with a `struct timespec`, declared by glibc 2.35.
+qev's epoll backend now makes every BLOCKING wait through it where the libc declares it and the
+kernel answers (asked once per loop at init; `ENOSYS` keeps `epoll_wait` and the millisecond
+minimum; a non-blocking poll keeps `epoll_wait` on every kernel — both enter the same path and
+`epoll_wait` copies nothing in, so the NOWAIT pass of §17 pays nothing), with `backend_mintime`
+at the select backend's microsecond. Windows compiles the same backend over wepoll, whose
+`epoll_wait` is the millisecond one, and keeps it. `probe-196-wsl-ab.txt`: qb `develop`
+(`279ec219`) against `perf/epoll-pwait2` (`acbb1829`), five interleaved repetitions per cell,
+60 s after the build, p50 in µs (ns per pass for `io-pass`), medians of the five:
+
+| cell | control | candidate |
+|---|---:|---:|
+| timer 100 µs, `latency` 100 µs | 1011 | **59.7** |
+| timer 100 µs, `latency` 1 ms | 1010 | **59.5** |
+| timer 100 µs, `latency` 10 ms | 1010 | **59.5** |
+| timer 100 µs, `idle_spin` 0 | 960 | **59.0** |
+| timer 1 ms, `latency` 1 ms | 110 | **60.0** |
+| timer 5 ms, `latency` 1 ms | 357 | **59.7** |
+| timer 100 µs, `latency` 0 (spinning) | 0.1 | 0.1 |
+| `parked-io-wake 1000 2000` | 37.8 | 38.0 |
+| `parked-io-wake 1000 200` (polling) | 30.8 | 30.2 |
+| `parked-io-wake 100 2000` | 37.7 | 38.0 |
+| `io-pass timer` (NOWAIT pass, one far timer) | 25.62 | 25.56 |
+| `io-pass pass` (NOWAIT pass, one quiet socket) | 27.62 | 27.70 |
+
+Every timer cell lands on the same 59–60 µs whatever `latency` and `delay` asked, with p90 65–73
+and the five repetitions within 1 µs of each other: the wait is honoured to the duration asked
+and the lateness that remains IS the 50 µs slack plus a pass. The socket wake, the polling cell,
+the spinning control and both NOWAIT passes do not move. What a qb server gets from it on Linux:
+a `setLatency` under a millisecond means what it says (a core parked at 100 µs re-checks every
+~150 µs instead of every millisecond), and a keep-alive, a retry or a poll timer under a
+millisecond on an otherwise idle core fires when due instead of at the millisecond. Pinned by
+qev's `test_epoll_ns_wait` (a blocking run over a 200 µs timer, the best of twenty rounds under
+800 µs: 257 measured; its negative control with the nanosecond path switched off fails at 1058)
+and by qb's `core-park-wake`
+(`ASubMillisecondTimerFiresUnderAMillisecondOnACoreParkedInItsLoop`, the same bound through the
+core's own park, a SKIP under io_uring and wherever the call is missing).
+
+Three levers were looked at and left, each with its reason recorded: `prctl(PR_SET_TIMERSLACK)`
+on the core thread would take the 60 down toward 10 µs, but it is a per-thread policy a server
+should set knowingly rather than a framework default (a tighter slack is a busier CPU on every
+sleep in the process's threads that inherit it) — a knob, if ever, not a change; io_uring's wait
+is already a timespec but keeps libev's 1 ms `backend_mintime`, unmeasured here and the recorded
+gap of this section; and Windows' millisecond, where the wait primitive underneath
+(`GetQueuedCompletionStatusEx`) takes milliseconds and the kernel coalesces on top — a
+high-resolution waitable timer could halve the floor at the cost of a second wait object and a
+restructured wepoll wait, for a platform whose contract is now stated honestly instead.

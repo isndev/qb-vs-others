@@ -158,6 +158,17 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     set_target_properties(qvoprobe-ask-cost PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "probes")
+    # The parked timer wake (Huly QB-196): how late a parked core fires a timer it owns -- the
+    # backend's wait granularity (whole milliseconds for epoll/wepoll, the system tick on Windows
+    # unless the process raised its resolution, which the probe can do with timeBeginPeriod).
+    add_executable(qvoprobe-parked-timer-wake tools/probes/parked-timer-wake.cpp)
+    target_link_libraries(qvoprobe-parked-timer-wake PRIVATE qb::core)
+    if(WIN32)
+        target_link_libraries(qvoprobe-parked-timer-wake PRIVATE winmm)
+    endif()
+    set_target_properties(qvoprobe-parked-timer-wake PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "probes")
     # The io pass (Huly QB-191): what a quiet socket costs a core per pass, and what a byte on it
     # waits for. The same source builds against a tree with or without the poll-interval knob.
     add_executable(qvoprobe-io-pass tools/probes/io-pass.cpp)

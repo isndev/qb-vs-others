@@ -1,0 +1,17 @@
+# QB-196 — the park's wait on Windows 11 / MSVC 19.51: the timer grid, and the socket-wake A/B
+
+Same host and build flags as the published directories beside this one (i9-12900K, Windows 11
+24H2, MSVC 19.51, Release, qb-vs-others probes built against a qb tree with
+`-DQVO_QB_DIR=…`, CAF / SObjectizer / baseline / controls OFF). Every figure was taken in one
+quiet session on 2026-09-09 — Docker Desktop quit, no WSL2 session attached, no build during a
+run, 60 s after the last one — with the core pinned to CPU 0 by the probe itself (and the client
+to CPU 2 for `parked-io-wake`). `docs/TUNING.md` §19 is the reading guide.
+
+| file | what |
+|---|---|
+| `parked-timer-wake.txt` | **the QB-196 instrument**, `tools/probes/parked-timer-wake.cpp` (`qvoprobe-parked-timer-wake`), qb `develop` `279ec219`: one core, one actor, one `qb::io::async::callback` of `delay` re-armed from inside the previous one, the lateness (fired-at minus due-at) recorded per round. `latency` ∈ {0, 100, 1000, 10000} µs × `delay` ∈ {100, 1000, 5000} µs, 2000 rounds after 50 warm-ups (400 at 5 ms), once with nothing asked of the timer resolution (`period=0ms`) and once inside `timeBeginPeriod(1)` (`period=1ms`); then the `idle_spin=0` control (the core parks on its first idle pass). One line per launch, all six statistics. The finding: every parked cell reads **1.0–1.4 ms** late at p50, **1.9 ms** at p90 and **2.0–2.4 ms** at p99, `timeBeginPeriod` moving the p50 by 1–30 % from cell to cell and the tails not at all, while the spinning control (`latency=0`) reads 0.2 µs — and `NtQueryTimerResolution`, read in the same session, reported the system resolution at its coarsest, 15.625 ms. A 1 ms wepoll wait is not honoured at the tick; it is the millisecond libev asked for plus the kernel's own coalescing. |
+| `parked-timer-wake-cand.txt` | **the Windows level check of the `epoll_pwait2` branch**: the probes built against qb `perf/epoll-pwait2` `9dcee7fb` (`build/qvo-196-cand`, where the generated `ev_config.h` reads `EV_USE_EPOLL_PWAIT2 0` — Windows compiles the epoll backend over wepoll and never sets it) against `develop`, three interleaved repetitions of `parked-timer-wake 1000 100` (p50 1412–1440 → 1401–1441 µs) and of `io-pass timer` (29.6 → 29.2–29.5 ns per pass). Level, as the configuration says it must be; measured rather than reasoned. |
+| `parked-io-wake-ab.txt` | **the §10 socket-wake cell re-measured as an A/B**: control qb at axis N (`a3bc19c6`, the tree §10 measured, built under `qb-vs-others/build/qvo-196-ctl` from a worktree of that commit), candidate qb `develop` (`279ec219`, `build/qvo-196`), five interleaved repetitions of `parked-io-wake` at `latency=1000 gap=2000`, `1000/200`, `100/2000`, `10000/2000` and of `parked-timer-wake 1000 100`. Prompted by a single run of the first cell reading 122 µs against §10's recorded 62–69: the A/B reads the same on both sides — bimodal (p50 66–118 on either tree from one launch to the next, p90 127–130, min 22–24 on every run of the two sub-millisecond-cap cells), 185 on both at a 10 ms cap, 23.0 / 23.1 on the polling cell. The wake cost of a parked core is the CPU's idle-state exit, deeper the longer the cap let it sleep; not a regression, and not qb's. |
+
+Not merged into the published tables: both probes are qb-only, and the A/B compares two qb
+trees, not frameworks.
