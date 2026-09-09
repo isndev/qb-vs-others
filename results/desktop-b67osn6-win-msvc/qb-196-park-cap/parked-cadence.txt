@@ -1,0 +1,20 @@
+start 2026-09-09T14:39:36  qb develop 9dcee7fb
+rep1  park=cv latency=100us passes=1310 seconds=2.00 wakes_per_s=654.5 mean_park=1528.0us
+rep2  park=cv latency=100us passes=1308 seconds=2.00 wakes_per_s=653.8 mean_park=1529.4us
+rep3  park=cv latency=100us passes=1369 seconds=2.00 wakes_per_s=684.4 mean_park=1461.1us
+rep1  park=loop latency=100us passes=1408 seconds=2.00 wakes_per_s=704.0 mean_park=1420.6us
+rep2  park=loop latency=100us passes=1390 seconds=2.00 wakes_per_s=694.6 mean_park=1439.7us
+rep3  park=loop latency=100us passes=1393 seconds=2.00 wakes_per_s=696.2 mean_park=1436.3us
+rep1  park=cv latency=1000us passes=1092 seconds=2.00 wakes_per_s=546.0 mean_park=1831.5us
+rep2  park=cv latency=1000us passes=1095 seconds=2.00 wakes_per_s=547.3 mean_park=1827.0us
+rep3  park=cv latency=1000us passes=1118 seconds=2.00 wakes_per_s=558.8 mean_park=1789.5us
+rep1  park=loop latency=1000us passes=1425 seconds=2.00 wakes_per_s=711.0 mean_park=1406.6us
+rep2  park=loop latency=1000us passes=1391 seconds=2.00 wakes_per_s=695.2 mean_park=1438.3us
+rep3  park=loop latency=1000us passes=1399 seconds=2.00 wakes_per_s=699.5 mean_park=1429.7us
+rep1  park=cv latency=10000us passes=189 seconds=2.00 wakes_per_s=94.4 mean_park=10597.4us
+rep2  park=cv latency=10000us passes=189 seconds=2.00 wakes_per_s=94.5 mean_park=10582.4us
+rep3  park=cv latency=10000us passes=190 seconds=2.00 wakes_per_s=95.0 mean_park=10528.9us
+rep1  park=loop latency=10000us passes=193 seconds=2.00 wakes_per_s=96.5 mean_park=10366.5us
+rep2  park=loop latency=10000us passes=193 seconds=2.00 wakes_per_s=96.5 mean_park=10365.9us
+rep3  park=loop latency=10000us passes=194 seconds=2.00 wakes_per_s=97.0 mean_park=10312.7us
+CADENCE-WIN-DONE 2026-09-09T14:41:16

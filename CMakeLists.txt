@@ -169,6 +169,14 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     set_target_properties(qvoprobe-parked-timer-wake PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "probes")
+    # The idle cadence (Huly QB-48): how often a core with nothing to do and `setLatency(L)` really
+    # wakes, through its condition-variable park and through its loop park -- the wait's granularity
+    # on each, per host.
+    add_executable(qvoprobe-parked-cadence tools/probes/parked-cadence.cpp)
+    target_link_libraries(qvoprobe-parked-cadence PRIVATE qb::core)
+    set_target_properties(qvoprobe-parked-cadence PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "probes")
     # The io pass (Huly QB-191): what a quiet socket costs a core per pass, and what a byte on it
     # waits for. The same source builds against a tree with or without the poll-interval knob.
     add_executable(qvoprobe-io-pass tools/probes/io-pass.cpp)

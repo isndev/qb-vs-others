@@ -1,0 +1,20 @@
+start 2026-09-09T12:42:45 qb=9dcee7fb host=6.6.87.2-microsoft-standard-WSL2
+rep1  park=cv latency=100us passes=12258 seconds=2.00 wakes_per_s=6128.8 mean_park=163.2us
+rep2  park=cv latency=100us passes=12243 seconds=2.00 wakes_per_s=6121.3 mean_park=163.4us
+rep3  park=cv latency=100us passes=12247 seconds=2.00 wakes_per_s=6123.2 mean_park=163.3us
+rep1  park=loop latency=100us passes=12296 seconds=2.00 wakes_per_s=6147.8 mean_park=162.7us
+rep2  park=loop latency=100us passes=12307 seconds=2.00 wakes_per_s=6153.3 mean_park=162.5us
+rep3  park=loop latency=100us passes=12323 seconds=2.00 wakes_per_s=6161.0 mean_park=162.3us
+rep1  park=cv latency=1000us passes=1863 seconds=2.00 wakes_per_s=931.5 mean_park=1073.6us
+rep2  park=cv latency=1000us passes=1878 seconds=2.00 wakes_per_s=939.0 mean_park=1065.0us
+rep3  park=cv latency=1000us passes=1863 seconds=2.00 wakes_per_s=931.5 mean_park=1073.6us
+rep1  park=loop latency=1000us passes=1875 seconds=2.00 wakes_per_s=937.5 mean_park=1066.7us
+rep2  park=loop latency=1000us passes=1864 seconds=2.00 wakes_per_s=932.0 mean_park=1073.0us
+rep3  park=loop latency=1000us passes=1875 seconds=2.00 wakes_per_s=937.4 mean_park=1066.7us
+rep1  park=cv latency=10000us passes=199 seconds=2.00 wakes_per_s=99.5 mean_park=10050.6us
+rep2  park=cv latency=10000us passes=199 seconds=2.00 wakes_per_s=99.5 mean_park=10050.6us
+rep3  park=cv latency=10000us passes=199 seconds=2.00 wakes_per_s=99.5 mean_park=10050.6us
+rep1  park=loop latency=10000us passes=199 seconds=2.00 wakes_per_s=99.5 mean_park=10050.6us
+rep2  park=loop latency=10000us passes=199 seconds=2.00 wakes_per_s=99.5 mean_park=10050.6us
+rep3  park=loop latency=10000us passes=199 seconds=2.00 wakes_per_s=99.5 mean_park=10050.6us
+CADENCE-WSL-DONE 2026-09-09T12:43:25

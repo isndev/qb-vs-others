@@ -2248,3 +2248,28 @@ gap of this section; and Windows' millisecond, where the wait primitive undernea
 (`GetQueuedCompletionStatusEx`) takes milliseconds and the kernel coalesces on top — a
 high-resolution waitable timer could halve the floor at the cost of a second wait object and a
 restructured wepoll wait, for a platform whose contract is now stated honestly instead.
+
+### 19.5 The idle cadence — what `setLatency` under a millisecond really sleeps (QB-48)
+
+The tuning guide's fourth QB-48 fact was written from the code ("MSVC rounds `wait_for` to the
+millisecond and hands it to `SleepConditionVariableSRW`, so a `latency` under 1 ms parks at the
+15.6 ms tick"), and §19.2 had just shown what such a reading is worth. `tools/probes/parked-cadence.cpp`
+(`qvoprobe-parked-cadence`) asks the plain question: one core, one actor with a `LoopEvent` callback,
+`setIdleSpin(0)` so that every wake is exactly one pass (a wait that returns with nothing to do parks
+again on the next pass), wakes counted over 2 s — through the CONDITION-VARIABLE park (no io watcher:
+`std::condition_variable::wait_for`) and through the LOOP park (a far `async::callback` on the core:
+`ev_run(EVRUN_ONCE)` capped at `latency`). Mean sleep between two looks at the mailbox, three runs
+per cell, both hosts on qb `develop` `9dcee7fb` (`results/<host>/qb-196-park-cap/parked-cadence.txt`):
+
+| `setLatency` | Windows cv park | Windows loop park | WSL2 cv park | WSL2 loop park |
+|---|---:|---:|---:|---:|
+| 100 µs | 1.46–1.53 ms | 1.42–1.44 ms | 163 µs | 162 µs |
+| 1 ms | 1.79–1.83 ms | 1.41–1.44 ms | 1.07 ms | 1.07 ms |
+| 10 ms | 10.5–10.6 ms | 10.3–10.4 ms | 10.05 ms | 10.05 ms |
+
+On Windows both parks take whole milliseconds (MSVC's `wait_for` rounds up, wepoll's `epoll_wait`
+takes an `int`) and the kernel adds 0.3–0.8 ms of coalescing: `setLatency(1us)` and `setLatency(1ms)`
+sleep the same 1.4–1.8 ms, and 15.6 ms appears nowhere. On Linux both parks honour the value to the
+50 µs slack plus a pass — the condition variable always did (`pthread_cond_timedwait` takes an
+absolute nanosecond deadline), the loop park since §19.4. That is the sentence
+`readme/6_guides/performance_tuning.md` now carries, with this table.
