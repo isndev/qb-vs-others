@@ -2273,3 +2273,56 @@ sleep the same 1.4–1.8 ms, and 15.6 ms appears nowhere. On Linux both parks ho
 50 µs slack plus a pass — the condition variable always did (`pthread_cond_timedwait` takes an
 absolute nanosecond deadline), the loop park since §19.4. That is the sentence
 `readme/6_guides/performance_tuning.md` now carries, with this table.
+
+## 20. The footprint — what N cores hold, and when they hold it (QB-63)
+
+QB-63 (`results/<host>/qb-63-footprint/`, the `pipe-footprint` probe) was filed from a 3.1 reading
+of the tree: "the send pipe grows by doubling and never shrinks; 22.5 MiB at rest on 8 cores;
+`MaxCores = 256`, so a large engine costs gigabytes at rest". QB-43 (§9, the segmented pipe) had
+already changed the first half — a pipe allocates nothing before its first push, a core's pool grows
+in 2 MB slabs to its high water, `shrink()` hands idle slabs to the process-wide `slab_cache` and
+`trim()` returns them to the OS — and the probe measures what is left of the second.
+
+`tools/probes/pipe-footprint.cpp` (`qvoprobe-pipe-footprint`): N cores, one actor each, settled at
+`latency` 100 µs, the process's resident set and private commit read from the main thread at four
+moments — before `Main::start()`, once the engine is idle after the traffic, after `stop()` +
+`join()`, after the `Main` object is destroyed — in three modes: `idle` (no event), `broadcast`
+(core 0 broadcasts once, N pipes used), `mesh` (every actor pushes once to every other, N × (N − 1)
+pipes used). Each line carries the model it is read against: `N² × 64 KiB` of mailbox rings (one
+SPSC ring of `MaxRingEvents` buckets per producer core in every mailbox, value-initialised) plus
+256 KiB per pipe that carried an event. Both hosts on qb `develop` `a1a1212e`, 2026-09-09, resident
+growth over the baseline (Windows: private commit in brackets where it differs):
+
+| cores | idle | broadcast | mesh | destroyed, mesh |
+|---|---:|---:|---:|---:|
+| 8 | 4.1 / 5.1 MiB | 6.2 / 5.2 [7.1] MiB | 20.3 / 5.4 [21.0] MiB | 16.3 / 1.2 [16.7] MiB |
+| 32 | 65 / 68 MiB | 74 / 68 [77] MiB | 324 / 72 [325] MiB | 258 / 4.6 [257] MiB |
+| 64 | 263 / 266 MiB | 279 / 266 [283] MiB | 1.26 / 0.28 [1.26] GiB | 1.00 / 0.02 [1.00] GiB |
+| 128 | 1.02 / 1.02 GiB | 1.05 / 1.02 [1.06] GiB | 5.02 / 1.09 [5.04] GiB | 4.01 / 0.06 [4.01] GiB |
+
+(WSL2 / Windows; the WSL2 figure is `VmRSS`, Windows `WorkingSetSize` with `PrivateUsage` in
+brackets.) Three readings:
+
+- **At rest the cost is the rings, and it is resident from `Main::start()`.** `N² × 64 KiB` within
+  4 % on both hosts at every N: 4 MiB at 8 cores, 1 GiB at 128, ~4 GiB at the 256 `MaxCores` allows
+  (arithmetic; not measured). The mailbox value-initialises every ring (`std::vector<Producer>(n)`,
+  a `std::array<EventBucket, 1024>` per producer), so every page is written before the first event.
+- **With traffic the cost is 256 KiB per pipe that ever carried an event**, up to `N × (N − 1)`; on
+  Linux the slab a segment comes from is populated when it is mapped (§9's `MADV_POPULATE_WRITE`,
+  chosen so that a burst pays no page faults), so the memory is resident the moment the pipe grows
+  — 5 GiB for a 128-core mesh that exchanged one event per pair; on Windows the slab is committed
+  and becomes resident page by page as events land (1.09 GiB resident, 5.04 committed).
+- **When the cores stop, the rings are freed and the slabs go to the cache**: 4 GiB of the 128-core
+  mesh stay mapped after `Main` is destroyed, on both hosts, warm for the next engine; nothing calls
+  `slab_cache::trim()` for you.
+
+**What was decided.** The premise ("never returned") is answered by §9's design: the cache is the
+return path, and `trim()` the lever for a process that wants its memory back; the readme's cost
+table now says what the probe measured instead of the 3.1 figure. The one mechanism worth an issue
+of its own is the rings' eager touch: default-initialising the producer array instead of
+value-initialising it would leave a ring's pages untouched until its producer writes them — a
+128-core engine at rest at ~64 MiB (one page per ring for the indices) instead of 1 GiB, and no
+1 GiB memset at start — at the price of moving those page faults to the first ~1 000 events of each
+(producer, consumer) pair, exactly the trade §9 refused for the segments because the faults landed
+inside a measured burst. It is a decision for the backpressure axis (QB-53), not a quick win: filed,
+with these figures, not done.
