@@ -22,6 +22,9 @@ on a 9p mount would have been the measurement.
 
 | directory | when (UTC) | what |
 |---|---|---|
+| `grid-693c5892/` | 2026-09-09 14:19:38–14:19:48 | **the FINAL candidate**, qb `develop` `693c5892` (66 commits over 3.1.0, 37 over `f8eba11d`; `~/qvo/linux` rebuilt at it at 14:18:38 — qb-core, qb-io, ev and the eight adapters recompiled), 32 / 32 verified — README.md's WSL2 `framework=qb` grid since; `docs/TUNING.md` §13.4 reads it against the midpoint grid below and this session's control. The Windows half ran first (15:39–15:42 local), this side idle. |
+| `grid-shipped-3.1.0-final/` | 14:19:48–14:27:41 | the control of the final session, v3.1.0 through the same adapters (`~/qvo/shipped`, `$HOME` as the working directory for its fib log), 32 / 32 verified; agrees with `grid-shipped-3.1.0/` within the launch spread. |
+| `grid-693c5892-pass2/` | 14:27:41–14:27:51 | the final candidate again, after the control — 32 / 32 verified, every cell within its pass-1 spread. |
 | `grid-f8eba11d/` | 08:45:23–08:45:39 | **the candidate**, 32 cells, 32 / 32 verified — README.md's WSL2 `framework=qb` grid. |
 | `grid-shipped-3.1.0/` | 08:45:39–08:54:19 | **the control**, v3.1.0 through the same adapters, same session, 32 / 32 verified. |
 | `grid-f8eba11d-pass2/` | 08:54:19–08:54:36 | the candidate again, after the control — the repeatability column below, 32 / 32 verified. |

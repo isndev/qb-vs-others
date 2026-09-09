@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/chameneos",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 70030166765474950,
+  "expected_messages": 800400,
+  "work_unit": "meeting",
+  "work_units": 200000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"chameneos": 100, "cores": 1, "meetings": 200000, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-09T14:19:53Z"
+  },
+  "idiom": {
+    "source": "the big adapter (reply() recycling, getSource()) + qb/llm/qb.llm.md",
+    "note": "one Meet event per request, mutated into the announcement or the exit and reply()ed; the waiting creature gets a fresh push<>; mall alone on VirtualCore 0, creatures on the others"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "placement is fixed before start: the mall alone on VirtualCore 0 and the creatures on the remaining cores (all on core 0 when cores=1), so with cores=2 the mall's mailbox is one cross-core pipe written by 100 actors on the far side and nothing balances it -- the pools place the mall and the creatures wherever stealing puts them"],
+  "failures": [],
+  "work_ns": [11799716.0, 11711151.0, 11691692.0, 11599479.0, 11637377.0, 11658453.0, 11689208.0, 11749663.0, 11568047.0],
+  "total_ns": [13036518.0, 12169623.0, 12162492.0, 12051107.0, 12290960.0, 12227067.0, 12203157.0, 12245138.0, 12009558.0],
+  "outside_window_ns": [1236802.0, 458472.0, 470800.0, 451628.0, 653583.0, 568614.0, 513949.0, 495475.0, 441511.0],
+  "summary": {
+    "work_min": 11568047.0,
+    "work_p50": 11689208.0,
+    "work_p99": 11795711.8,
+    "work_iqr": 73774.0
+  }
+}

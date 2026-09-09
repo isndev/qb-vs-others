@@ -1429,6 +1429,90 @@ Nothing in the grid argues for another core axis before the train: the collapses
 every shape is ahead of the field on both compilers, and the residuals are each a named
 figure with a named instrument. This is the grid 3.2.0 ships with (`docs/ROADMAP.md`).
 
+### 13.4 The final candidate — the same grid at `693c5892` (2026-09-09), and what the second half bought
+
+The grid of §13 was the programme's midpoint. The release measurement is the same protocol at
+the last commit before the train — qb `develop` `693c5892`, 66 commits over 3.1.0 and 37 over
+`f8eba11d`: the loop clock (§14), the pass's fixed cost and the ring's private lines (§15, §16),
+the request/reply machinery and the loop under a timer (§17), the qev programme (QB-187 to
+QB-195), the one loop reference (QB-199), the sub-millisecond park (§19) — candidate / shipped
+3.1.0 / candidate, 9 + 2, one quiet session per host (Windows 15:39:09–15:42:12 UTC, WSL2
+14:19:38–14:27:51 UTC, the other side idle each time), `results/<host>/qb-branch-develop/
+grid-693c5892/`, `grid-shipped-3.1.0-final/`, `grid-693c5892-pass2/`, 32 / 32 verified in each.
+ns per unit, p50; shipped 3.1.0 is this session's control, `f8eba11d` the midpoint's own session:
+
+| shape, config | Win 3.1.0 | Win `f8eba11d` | **Win final** | pass 2 | WSL2 3.1.0 | WSL2 `f8eba11d` | **WSL2 final** | pass 2 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| ping-pong 1c-spin | 112.0 | 84.2 | **29.7** | 30.4 | 96.0 | 66.0 | **22.6** | 22.9 |
+| ping-pong 1c-park | 113.5 | 83.4 | **29.8** | 30.3 | 96.8 | 66.4 | **22.7** | 22.7 |
+| ping-pong 2c-spin | 300.8 | 297.2 | **190.9** | 193.0 | 253.1 | 222.0 | **159.1** | 153.5 |
+| ping-pong 2c-park | 3 069.3 | 274.5 | **193.5** | 208.9 | 26 266.8 | 227.0 | **152.3** | 159.1 |
+| counting 1c-spin | 29.1 | 10.0 | **8.3** | 10.2 | 41.4 | 8.7 | **7.4** | 7.4 |
+| counting 1c-park | 28.9 | 9.5 | **10.6** | 8.0 | 41.4 | 8.5 | **7.3** | 7.9 |
+| counting 2c-spin | 32.6 | 11.7 | **13.4** | 13.5 | 44.4 | 11.0 | **9.0** | 9.0 |
+| counting 2c-park | 32.3 | 11.7 | **13.4** | 13.6 | 44.6 | 11.0 | **9.0** | 9.0 |
+| thread-ring 1c-spin | 63.6 | 45.4 | **17.9** | 18.3 | 52.4 | 39.3 | **17.1** | 17.2 |
+| thread-ring 1c-park | 62.3 | 45.0 | **18.0** | 18.2 | 53.4 | 38.7 | **17.2** | 17.1 |
+| thread-ring 2c-spin | 162.2 | 154.2 | **99.7** | 107.5 | 138.6 | 112.3 | **72.2** | 76.4 |
+| thread-ring 2c-park | 513.5 | 146.4 | **104.1** | 103.2 | 13 104.7 | 120.7 | **74.9** | 74.6 |
+| fork-join 1c-spin | 40.9 | 10.5 | **8.8** | 8.3 | 57.3 | 9.5 | **7.9** | 7.2 |
+| fork-join 1c-park | 42.0 | 10.5 | **8.3** | 8.7 | 57.0 | 9.6 | **7.2** | 7.2 |
+| fork-join 2c-spin | 43.7 | 12.2 | **11.1** | 9.7 | 46.3 | 9.6 | **8.3** | 8.3 |
+| fork-join 2c-park | 41.1 | 11.2 | **12.4** | 11.6 | 46.6 | 9.9 | **8.1** | 8.3 |
+| big 1c-spin | 36.2 | 20.3 | **16.7** | 17.3 | 32.0 | 21.4 | **17.6** | 18.0 |
+| big 1c-park | 36.5 | 20.0 | **16.9** | 17.1 | 32.8 | 22.7 | **17.9** | 17.7 |
+| big 2c-spin | 30.6 | 24.8 | **24.1** | 22.9 | 26.9 | 21.7 | **17.6** | 18.3 |
+| big 2c-park | 32.3 | 23.9 | **24.1** | 24.5 | 28.6 | 21.9 | **17.5** | 17.6 |
+| fib 1c-spin | 7 934.8 | 198.8 | **175.9** | 179.7 | 3 001.9 | 133.3 | **124.0** | 126.2 |
+| fib 1c-park | 8 941.5 | 197.6 | **179.7** | 178.2 | 3 023.2 | 135.3 | **122.7** | 126.1 |
+| fib 2c-spin | 7 179.3 | 117.2 | **108.4** | 114.8 | 2 402.6 | 90.4 | **83.0** | 82.8 |
+| fib 2c-park | 7 117.1 | 116.5 | **110.1** | 112.5 | 2 193.4 | 89.8 | **82.7** | 83.2 |
+| chameneos 1c-spin | 69.1 | 35.3 | **30.1** | 30.0 | 57.9 | 35.3 | **25.5** | 26.2 |
+| chameneos 1c-park | 78.5 | 34.9 | **29.5** | 30.1 | 58.4 | 33.3 | **24.8** | 25.3 |
+| chameneos 2c-spin | 97.9 | 65.3 | **73.5** | 73.4 | 70.0 | 54.3 | **43.7** | 43.4 |
+| chameneos 2c-park | 117.0 | 63.5 | **70.0** | 75.2 | 73.8 | 53.8 | **43.8** | 45.2 |
+| bank-transaction 1c-spin | 494.4 | 263.2 | **231.0** | 250.1 | 269.5 | 143.5 | **143.0** | 143.2 |
+| bank-transaction 1c-park | 484.2 | 272.5 | **233.8** | 253.9 | 266.6 | 145.7 | **141.2** | 143.3 |
+| bank-transaction 2c-spin | 714.8 | 156.6 | **142.9** | 160.9 | 183.3 | 92.8 | **78.8** | 77.3 |
+| bank-transaction 2c-park | 911.5 | 149.6 | **139.4** | 162.6 | 178.2 | 96.4 | **84.9** | 81.7 |
+
+**What the second half bought, on g++ (WSL2), where every cell moved in the same direction in
+both passes:** the one-core round trip 66 → 23 ns (−66 %: §14's clock, §15's pass, §17's inline
+resume and the loop under a timer), the one-core hop 39 → 17 (−56 %), the two-core round trip
+222 → 159 (−28 %: §16's ring), the two-core hop 112 → 72 (−36 %), counting 8.7 → 7.4 and
+11.0 → 9.0, fork-join 9.5–9.9 → 7.2–8.3, big 21.4–22.7 → 17.5–18.0, fib 133 → 124 and 90 → 83,
+chameneos 35 → 26 and 54 → 44, bank-transaction 2c 93 → 79 and 96 → 85; bank 1c is the one cell
+the second half did not touch (143.5 → 143.0: its cost is the ask path §12 and §17 already
+took, and the transfer coroutine's own structure). Against 3.1.0 in this session: ping-pong 1c
+96 → 23 (4.2×), 2c-park 26 267 → 152, the ring 52 → 17 and 13 105 → 75, fib 3 002 → 124 (24×),
+bank 270 → 143 and 183 → 79.
+
+**On MSVC (Windows) the one-core cells follow** — ping-pong 84 → 30, ring 45 → 18, big 20 → 17,
+chameneos 35 → 30, bank 263 → 231, fib 199 → 176 — **and the two-core cells are the host's mode
+of the day.** The grid read counting 2c 11.7 at the midpoint and 13.4 now, chameneos 2c 65 and
+74, fork-join 2c-park 11.2 and 12.4, and the shipped control itself moved between the two
+sessions by up to 11 % (chameneos 2c-park 105 → 117): every Windows two-core cell is bimodal
+within a launch (counting 2c's nine repetitions sort 10.6, 10.8, 12.3, 13.3 … 13.5 — a lower
+mode at 10.6 and an upper at 13.4, and the median lands wherever the majority fell). So the
+final build was censused against the midpoint build in ONE session — ten alternated launches of
+3 + 1 on CPUs 0 and 2, `build/final` (`693c5892`) against `build/ab180-ctl` (`f8eba11d`, the same
+adapters), `results/desktop-b67osn6-win-msvc/qb-branch-develop/census-693c5892-vs-f8eba11d/`
+— median of the ten launch medians, [min … max]: counting 2c **13.6** [10.0 … 13.9] against
+**13.5** [10.9 … 14.0]; chameneos 2c **66.9** [46.8 … 74.7] against **67.8** [55.2 … 81.0]; ping-pong
+2c **189.3** [187.0 … 192.5] against **242.7** [215.9 … 249.7]; thread-ring 2c **107.2** [91.2 … 114.7]
+against **119.7** [117.6 … 125.4]. Level on the two cells the grids disagreed on — with the final
+build's lower mode BELOW the midpoint's on both (10.0 vs 10.9, 46.8 vs 55.2) — and −22 % / −10 %
+on the two the grids agreed on. The census's lower modes are what the hardware can do; how often
+the host does it is not the build's.
+
+**What it leaves**, for the train and after it: fib's 176 / 124 ns per actor lifetime against a
+floor of 65 / 30 (creation, not messaging — §11's remaining term is the registry and the five
+default subscriptions); MSVC's two-core cells, wide by the host and not by the build; the
+two-core round trip at 191 on Windows against 159 on WSL2, the cross-core hop's cost now the
+platform's (§16's private lines took the build's share); and bank-transaction 1c at 143, the one
+cell of the 64 the second half did not move. The published tables' `qb` column stays shipped
+3.1.0 until the train ships 3.2.0 and the field is re-measured against it.
+
 ## 14. The loop clock — what one line cost, and what an idle spin pass needs
 
 §13.3 named the per-pass cost of a core with ONE event in flight as the first residual and `perf`

@@ -1,0 +1,8 @@
+counting     ctl  launches=10  median-of-launches=  13.5  min=  10.9  q1=  11.8  q3=  13.5  max=  14.0
+counting     cand launches=10  median-of-launches=  13.6  min=  10.0  q1=  10.6  q3=  13.7  max=  13.9
+ping-pong    ctl  launches=10  median-of-launches= 242.7  min= 215.9  q1= 237.3  q3= 247.2  max= 249.7
+ping-pong    cand launches=10  median-of-launches= 189.3  min= 187.0  q1= 189.0  q3= 190.9  max= 192.5
+thread-ring  ctl  launches=10  median-of-launches= 119.7  min= 117.6  q1= 119.1  q3= 121.3  max= 125.4
+thread-ring  cand launches=10  median-of-launches= 107.2  min=  91.2  q1= 103.8  q3= 109.0  max= 114.7
+chameneos    ctl  launches=10  median-of-launches=  67.8  min=  55.2  q1=  65.3  q3=  71.2  max=  81.0
+chameneos    cand launches=10  median-of-launches=  66.9  min=  46.8  q1=  49.4  q3=  73.8  max=  74.7
