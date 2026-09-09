@@ -176,6 +176,14 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     set_target_properties(qvoprobe-dispatch-population PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "probes")
+    # The footprint at rest (Huly QB-63): what an engine of N cores holds resident before any event
+    # (the per-producer mailbox rings, value-initialised at start) and what the first traffic on
+    # every pipe adds (one 256 KB segment per pipe used) -- the two quadratic terms, separated.
+    add_executable(qvoprobe-pipe-footprint tools/probes/pipe-footprint.cpp)
+    target_link_libraries(qvoprobe-pipe-footprint PRIVATE qb::core)
+    set_target_properties(qvoprobe-pipe-footprint PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "probes")
     # No qb in it: the raw ring shapes behind docs/TUNING.md section 16. Linux / x86-64 only for real;
     # elsewhere the same source builds to a stub that says so and exits 2.
     add_executable(qvoprobe-raw-ring tools/probes/raw-ring.cpp)

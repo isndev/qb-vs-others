@@ -1,0 +1,18 @@
+[  7%] Building C object _deps/qb-build/src/qb/ev/CMakeFiles/qev.dir/ev.c.o
+[ 15%] Building CXX object CMakeFiles/qvo-harness.dir/harness/src/harness.cpp.o
+[ 23%] Linking C static library ../../../../../lib/libqb-ev.a
+[ 23%] Built target qev
+[ 46%] Building CXX object _deps/qb-build/src/qb/io/CMakeFiles/qb-io.dir/slab.cpp.o
+[ 46%] Building CXX object _deps/qb-build/src/qb/io/CMakeFiles/qb-io.dir/io.cpp.o
+[ 53%] Building CXX object _deps/qb-build/src/qb/io/CMakeFiles/qb-io.dir/quic.cpp.o
+[ 46%] Building CXX object _deps/qb-build/src/qb/io/CMakeFiles/qb-io.dir/cpu.cpp.o
+[ 61%] Linking CXX static library libqvo-harness.a
+[ 61%] Built target qvo-harness
+[ 69%] Linking CXX static library ../../../../../lib/libqb-io.a
+[ 69%] Built target qb-io
+[ 76%] Building CXX object _deps/qb-build/src/qb/core/CMakeFiles/qb-core.dir/core.cpp.o
+[ 84%] Linking CXX static library ../../../../../lib/libqb-core.a
+[ 84%] Built target qb-core
+[ 92%] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-ping-pong.dir/savina/ping-pong.cpp.o
+[100%] Linking CXX executable ../../bin/qvo-qb-savina-ping-pong
+[100%] Built target qvo-qb-savina-ping-pong
