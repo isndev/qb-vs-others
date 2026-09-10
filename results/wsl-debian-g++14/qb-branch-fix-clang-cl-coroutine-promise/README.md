@@ -5,8 +5,8 @@ The g++ half of the neutrality measurement for Huly **QB-200** (`promise_access.
 hand clang-cl the promise's real alignment and ARE the standard calls everywhere else) and
 **QB-201** (the clang-cl toolchain profile — CMake only, inert here), measured 2026-09-09
 **00:00–00:02 UTC** in one quiet session (60 s of quiet after the builds, no build during the points,
-the Windows side idle). Control `develop` `9366384b`, candidate `ce39584a`, both from `git archive`
-into ext4 against this harness at `93a9c0a`, same flags, CPUs 0,2, asserted by marker
+the Windows side idle). Control `develop` `381e4995`, candidate `ce39584a`, both from `git archive`
+into ext4 against this harness at `a44f083`, same flags, CPUs 0,2, asserted by marker
 (`promise_access.h` absent / present).
 
 | file | what |

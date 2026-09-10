@@ -9,24 +9,24 @@ grid, no build, no test suite and no WSL measurement running anywhere on the hos
 ran 17:02–17:03, 17:22–17:23 and 17:40–18:13 UTC, this host's at 17:01–17:02, 17:24 and
 18:14–18:16 UTC on 2026-09-06 — the six sessions never overlap). CAF is 1.1.0, SObjectizer 5.8.5.1, the floor is
 `frameworks/baseline/`. qb is `build/final`, built against the working tree of `qb/` — `develop`
-(`22c9bf6e`, every axis through N merged) plus the branch's commits.
+(`00b60afe`, every axis through N merged) plus the branch's commits.
 
 | directory | qb at | what |
 |---|---|---|
-| `grid-3ea9a2ae/` | `perf/dense-table-growth` **two** commits over `develop`: `b4baba33` (the dense router table grows by capacity, not by one slot; per-actor lifecycle logs demoted to VERBOSE) and `3ea9a2ae` (per-core actor registry as a slot-indexed vector, kill queue as a vector, `static_cast` in subscribe) | **32 cells**, all verified: fib × chameneos × {baseline, caf, qb, sobjectizer} × {2c-spin, 2c-park, 1c-spin, 1c-park}. |
-| `grid-8362a4b8/` | the same plus `8362a4b8` (the actor's coroutine counter allocated on its first `spawn`, not in the constructor) — **the branch as proposed for merge** | **32 cells**, all verified, same protocol, 22 minutes later, after the WSL2 grid of the same commit had ended. |
-| `grid-8362a4b8-session2/` | `8362a4b8` again | **8 cells**, qb only, 9 + 2, 18:16 UTC — the same quiet session as the shipped-3.1.0 control in `../savina-fib/` and `../savina-chameneos/` (18:14–18:16 UTC), which is the pair FAIRNESS.md asks for. Every cell lands inside the first grid's spread: fib 10.45 / 10.81 / 17.18 / 17.84 ms (2c-spin / 2c-park / 1c-spin / 1c-park) against 11.09 / 10.59 / 17.57 / 17.05; chameneos 12.79 / 12.67 / 7.57 / 7.26 against 11.75 / 12.86 / 7.40 / 7.93. |
+| `grid-d44e7b44/` | `perf/dense-table-growth` **two** commits over `develop`: `5665b6f8` (the dense router table grows by capacity, not by one slot; per-actor lifecycle logs demoted to VERBOSE) and `d44e7b44` (per-core actor registry as a slot-indexed vector, kill queue as a vector, `static_cast` in subscribe) | **32 cells**, all verified: fib × chameneos × {baseline, caf, qb, sobjectizer} × {2c-spin, 2c-park, 1c-spin, 1c-park}. |
+| `grid-001be013/` | the same plus `001be013` (the actor's coroutine counter allocated on its first `spawn`, not in the constructor) — **the branch as proposed for merge** | **32 cells**, all verified, same protocol, 22 minutes later, after the WSL2 grid of the same commit had ended. |
+| `grid-001be013-session2/` | `001be013` again | **8 cells**, qb only, 9 + 2, 18:16 UTC — the same quiet session as the shipped-3.1.0 control in `../savina-fib/` and `../savina-chameneos/` (18:14–18:16 UTC), which is the pair FAIRNESS.md asks for. Every cell lands inside the first grid's spread: fib 10.45 / 10.81 / 17.18 / 17.84 ms (2c-spin / 2c-park / 1c-spin / 1c-park) against 11.09 / 10.59 / 17.57 / 17.05; chameneos 12.79 / 12.67 / 7.57 / 7.26 against 11.75 / 12.86 / 7.40 / 7.93. |
 
 None of the three is merged into the published tables: `../savina-fib/` and `../savina-chameneos/`
 render shipped 3.1.0, like the five shapes before them, and the candidate joins the tables when
 the 3.2.0 grid is measured for all seven shapes in one session. The branch's starting point,
-`develop` `22c9bf6e`, measures fib at **43 s** per repetition on this host (below), which is not
+`develop` `00b60afe`, measures fib at **43 s** per repetition on this host (below), which is not
 a cell, it is the defect — introduced on `develop` with the dense tables (axis I,
 `docs/TUNING.md` §7) and never shipped.
 
 ## Shipped 3.1.0 against the branch, same session (p50 ms, 18:14–18:16 UTC, 9 + 2)
 
-| shape · config | shipped 3.1.0 | **`8362a4b8`** | ratio |
+| shape · config | shipped 3.1.0 | **`001be013`** | ratio |
 |---|---|---|---|
 | fib · 2c-spin | 458.7 | **10.45** | 44× |
 | fib · 2c-park | 477.1 | **10.81** | 44× |
@@ -45,7 +45,7 @@ and `Delete` — 515 819 lines and 60.9 MB of `qb.1.log` per repetition
 the writer's queue) is inside the window and its writer thread shares the two pinned CPUs. That
 Windows pays 459 ms where Linux pays 159 for the same 515 819 lines is the CRT heap and a
 per-line `WriteFile` against glibc and ext4 — the two hosts' floors on fib lean the same way
-(4.0 against 3.4). `b4baba33` demotes every one of those lines to VERBOSE. The caveat string the
+(4.0 against 3.4). `5665b6f8` demotes every one of those lines to VERBOSE. The caveat string the
 shipped documents carry — "its logger writes at startup, outside the measured window" — was
 written for the five static shapes and is false for fib on 3.1.0; the JSONs are kept as
 measured, `frameworks/qb/qb_support.h` says the true thing now.
@@ -58,15 +58,15 @@ pushes 400 000 events through one mailbox.
 
 | qb | fib n=23 | what changed |
 |---|---|---|
-| `develop` `22c9bf6e` (axis I dense tables, unreleased) | **43.2 s** | the dense router's `key_table` grew by +1 slot per `registerEvent`, rehashing the whole table — five default events per actor × 57 312 actors, O(n²); latent because nothing had ever created more than a few hundred actors per core |
-| `b4baba33` | 178 ms → 28 ms | growth by capacity (43 s → 178 ms); then `VirtualCore::addActor`/`removeActor`'s per-actor `LOG_INFO` (114 624 lines inside the window) demoted to `LOG_VERB` |
-| `3ea9a2ae` | **12.13 ms** | `ActorMap` was a hash map keyed by an id that IS a per-core slot, the kill queue a hash set deduplicating what an idempotent `kill()` deduplicates itself, and subscribe paid a `dynamic_cast` per registration (5 per actor) |
-| `8362a4b8` | **11.09 ms** | `active_coroutines_` was a `make_shared` in every constructor and a release in every destructor, for actors that never spawn — ~30 % of an actor's lifetime on the profile |
+| `develop` `00b60afe` (axis I dense tables, unreleased) | **43.2 s** | the dense router's `key_table` grew by +1 slot per `registerEvent`, rehashing the whole table — five default events per actor × 57 312 actors, O(n²); latent because nothing had ever created more than a few hundred actors per core |
+| `5665b6f8` | 178 ms → 28 ms | growth by capacity (43 s → 178 ms); then `VirtualCore::addActor`/`removeActor`'s per-actor `LOG_INFO` (114 624 lines inside the window) demoted to `LOG_VERB` |
+| `d44e7b44` | **12.13 ms** | `ActorMap` was a hash map keyed by an id that IS a per-core slot, the kill queue a hash set deduplicating what an idempotent `kill()` deduplicates itself, and subscribe paid a `dynamic_cast` per registration (5 per actor) |
+| `001be013` | **11.09 ms** | `active_coroutines_` was a `make_shared` in every constructor and a release in every destructor, for actors that never spawn — ~30 % of an actor's lifetime on the profile |
 
 Chameneos moved on none of them (13.0 → 11.8 ms at 2c-spin, 8.3 → 7.4 at 1c-spin, p99s of 12–17 ms on every qb cell — inside its own spread): it creates 101
 actors, and its cost is the broker's mailbox, which none of these commits touch.
 
-## The field at `8362a4b8` (p50, ms)
+## The field at `001be013` (p50, ms)
 
 | shape · config | floor | **qb** | CAF | SObjectizer |
 |---|---|---|---|---|

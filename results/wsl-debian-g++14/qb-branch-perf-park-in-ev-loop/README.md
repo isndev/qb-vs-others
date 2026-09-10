@@ -1,7 +1,7 @@
 # qb branch `perf/park-in-ev-loop` (axis N) — WSL2 Debian 13 / g++ 14.2
 
 Same host, CPUs and build flags as the published directories beside this one. **Control** is qb
-`develop` at `f0da4e32` (every axis through M and QB-43 merged, the tree axis N branches from),
+`develop` at `d1897d3c` (every axis through M and QB-43 merged, the tree axis N branches from),
 exported with `git archive` and built clean under `~/qb-f0da` / `~/qvo/ctl-f0da`; **candidate**
 is the working tree of `perf/park-in-ev-loop` built under `~/qvo/linux`. Both measured
 2026-09-06 in one quiet session per file, the Windows side idle throughout, under `taskset -c 0,2`

@@ -3,7 +3,7 @@
 The Windows half of the A/B for Huly **QB-190** (the pass that does not run the loop; qev
 `perf/embedder-clock`), measured on 2026-09-08 **14:01–14:03 UTC** in one quiet session (no build
 during the points, no leftover probe, Docker Desktop quit), the WSL2 side idle — its own run had
-ended at 12:01. Control = `build/ab190-ctl` against `D:\repo\qb-ctl-190` (= `develop` `ae09da3a`),
+ended at 12:01. Control = `build/ab190-ctl` against `D:\repo\qb-ctl-190` (= `develop` `4903750e`),
 candidate = `build/ab190-cand` against `D:\repo\qb-dev\qb` (the branch's working tree, final code,
 the branch's qev — which on this host also carries the QB-195 fix: the loop's monotonic clock is
 `QueryPerformanceCounter` for the first time, see below). Same flags as the published directories
@@ -17,7 +17,7 @@ None of it is merged into the published tables.
 
 ## The probes (one core, medians of five)
 
-| probe | control (`ae09da3a`) | **branch** | Δ |
+| probe | control (`4903750e`) | **branch** | Δ |
 |---|---:|---:|---:|
 | **busy pass with a far timer (ns)** | 47.7 | **29.5** | **−38 %** |
 | **pass with a quiet socket, cold (ns)** | 82.9 | **49.5** | **−40 %** (both bimodal: ctl 72.9–84.6, cand 41.7–54.7) |

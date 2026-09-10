@@ -6,7 +6,7 @@ every document but the two profile controls carries `SWEEP DOCUMENT, NOT A TABLE
 first caveat, written by the adapter itself. The reading is in `docs/TUNING.md` §1.2; this
 directory is the evidence for it, the symmetric of `caf-spin-sweep/`.
 
-WSL2 Debian 13 / g++ 14.2 (Linux 6.6), i9-12900K, its own quiet session (no Windows bench), 2026-09-09 13:17–13:19 UTC. Binaries: `~/qvo/linux/bin/qvo-sobjectizer-savina-{ping-pong,counting}` (SObjectizer 5.8.5.1, the harness at qb-vs-others `335edcc` plus the override). Driver: `tools/so-sweep.sh`, which sets `QVO_SO_SPIN_WAIT_US` (the combined lock's
+WSL2 Debian 13 / g++ 14.2 (Linux 6.6), i9-12900K, its own quiet session (no Windows bench), 2026-09-09 13:17–13:19 UTC. Binaries: `~/qvo/linux/bin/qvo-sobjectizer-savina-{ping-pong,counting}` (SObjectizer 5.8.5.1, the harness at qb-vs-others `b693a21` plus the override). Driver: `tools/so-sweep.sh`, which sets `QVO_SO_SPIN_WAIT_US` (the combined lock's
 waiting time in microseconds, 0 = `simple_lock_factory`) and runs the same harness command —
 `--repetitions 7 --warmup 2 --cpus 0,2 --param messages=1000000 --param cores=2 --param wait=1` —
 once per budget, the adapter's own profile (unset, 10 s) first and last; `sweep.log` is its

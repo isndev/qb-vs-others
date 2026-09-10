@@ -3,7 +3,7 @@
 The Windows half of the A/B for Huly **QB-199** (`__workflow__` reaches `listener::current` once per
 loop instead of three times a pass), measured 2026-09-08 **22:33–22:36 UTC** in one quiet session
 (no build during the points, Docker Desktop quit, the WSL2 side idle at 0.17). Control =
-`build/ab199-ctl` against `D:\repo\qb-dev\qb` (`develop` `d20417f9`), candidate = `build/ab199-cand`
+`build/ab199-ctl` against `D:\repo\qb-dev\qb` (`develop` `57df433d`), candidate = `build/ab199-cand`
 against the worktree `D:\repo\qb-198` at `acf2dd77` (the branch: QB-199, the `messaging-dispatch-batch`
 test, the CHANGELOG draft — no dispatch prefetch, QB-198 having been measured and not shipped), both
 asserted by SHA and by marker (`listener::current` 5 / 7 occurrences in `VirtualCore.cpp`). Same
@@ -20,7 +20,7 @@ None of it is merged into the published tables.
 
 ## The census (`work_p50 / work_units`, ns, medians of eight interleaved rounds)
 
-| cell | control `d20417f9` | **candidate** | Δ | quartiles ctl / cand |
+| cell | control `57df433d` | **candidate** | Δ | quartiles ctl / cand |
 |---|---:|---:|---:|---|
 | bank-transaction 1c | 232.2 | 234.7 | +1.1 % | 227.7–233.0 / 230.3–236.6 |
 | bank-transaction 2c | 140.2 | 140.2 | level | 138.1–143.4 / 139.1–145.5 |

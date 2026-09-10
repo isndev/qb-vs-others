@@ -4,8 +4,8 @@ The Windows half of the A/B for Huly **QB-188** (the non-blocking pass at its fl
 **QB-193** (the loop's clocks on Windows: `QueryPerformanceCounter` and
 `GetSystemTimePreciseAsFileTime` instead of the system tick), measured on 2026-09-08 in one
 quiet session (load 2, no build, the WSL2 side idle) against the batch the branch forks from
-(qb `1ee542df` with qev `e9b1d80`, i.e. QB-185 + QB-187): the control is
-`D:\repo\qb-ctl-1ee542df` (a clean clone, 0 dirty), the candidate the working tree with the
+(qb `5de4b363` with qev `ea565d1`, i.e. QB-185 + QB-187): the control is
+`D:\repo\qb-ctl-5de4b363` (a clean clone, 0 dirty), the candidate the working tree with the
 branch's `src/qb/ev/` copy, and a third tree carries **QB-188 alone** (`D:\repo\qb-188only-win`:
 the same clone with the branch's `ev.c` / `ev.h` but not its `ev_win32.c`), so the two changes
 are told apart. Same flags as the published directories (`/O2 /Ob2 /DNDEBUG`), CPU 0,
@@ -15,13 +15,13 @@ candidate and control alternated five times, 1.5 s per point.
 |---|---|
 | `probe.txt` | `qvoprobe-ask-cost` `ask` and one- and 64-chunk `ask_stream` **with a 500 ms timeout**, the untimed `ask`, `push`; `qvoprobe-pass-cost` k = 1 — the full branch (QB-188 + QB-193) vs control × 5. 03:13:47–03:15:18 UTC. |
 | `probe-188-only.txt` | the three timed shapes, QB-188 alone vs control × 5. 03:17:59 UTC. |
-| `bench-pass.txt` | qev's `bench/bench-pass.c` on MSVC, qev `e9b1d80` vs the branch, × 5 (the `fd` shapes need a POSIX pipe and do not run here). |
+| `bench-pass.txt` | qev's `bench/bench-pass.c` on MSVC, qev `ea565d1` vs the branch, × 5 (the `fd` shapes need a POSIX pipe and do not run here). |
 
 None of it is merged into the published tables.
 
 ## What one non-blocking pass costs on MSVC (ns, medians of five)
 
-| shape | qev `e9b1d80` (QB-187) | QB-188 alone | **QB-188 + QB-193** |
+| shape | qev `ea565d1` (QB-187) | QB-188 alone | **QB-188 + QB-193** |
 |---|---:|---:|---:|
 | empty loop | 19.7 | 16.7 | 31.2 |
 | one far timer | 19.7 | 15.8 | 31.4 |

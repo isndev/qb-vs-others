@@ -1,6 +1,6 @@
 # QB-63 — the engine's footprint: what N cores hold at rest, after the first traffic, and after they stop
 
-`tools/probes/pipe-footprint.cpp` (`qvoprobe-pipe-footprint`), qb `develop` `a1a1212e`, 2026-09-09, one
+`tools/probes/pipe-footprint.cpp` (`qvoprobe-pipe-footprint`), qb `develop` `c15d9d9d`, 2026-09-09, one
 run per cell: N ∈ {4, 8, 16, 32, 64, 128} cores, one actor each, `latency` 100 µs, three modes — `idle`
 (no event), `broadcast` (core 0's actor broadcasts once: N pipes used), `mesh` (every actor pushes one
 event to every other: N × (N − 1) pipes used). Four readings per run, resident set and private commit

@@ -1,4 +1,4 @@
-# qvoprobe-raw-ring (2771cd67 tree, no qb in the loop), six launches per row, 1.2 s windows, CPUs 0,2, jitter 150 ns, quiet host 2026-09-07T19:14:05Z
+# qvoprobe-raw-ring (670e9433 tree, no qb in the loop), six launches per row, 1.2 s windows, CPUs 0,2, jitter 150 ns, quiet host 2026-09-07T19:14:05Z
 # columns: launch, scheme, preload, gap, trips, ns per trip, jitter ns, NET ns per trip
 launch=1 2line preload=0 gap=0 trips=5398528 ns_per_trip=222.41 jitter_ns=403941433 net_ns_per_trip=147.58
 launch=1 2line preload=0 gap=1 trips=5976064 ns_per_trip=200.81 jitter_ns=447134153 net_ns_per_trip=125.99

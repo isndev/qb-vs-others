@@ -1,5 +1,5 @@
 # host: MINGW64_NT-10.0-26100 3.6.6-1cdd4371.x86_64 x86_64 2026-09-06T03:02:25Z  cpus 0,2 (core pinned to 0, client to 2; process mask 0x5)  rounds 2000
-# control: develop f0da4e32 (build\ctl-f0da-win\bin\qvoprobe-parked-io-wake.exe)  candidate: perf/park-in-ev-loop (build\final\bin\qvoprobe-parked-io-wake.exe)
+# control: develop d1897d3c (build\ctl-f0da-win\bin\qvoprobe-parked-io-wake.exe)  candidate: perf/park-in-ev-loop (build\final\bin\qvoprobe-parked-io-wake.exe)
 ctl  pass1 latency=0us gap=10us idle_spin=default rounds=2000  min=16.8 p50=19.7 mean=21.3 p90=21.2 p99=50.2 max=526.0 (us)
 cand pass1 latency=0us gap=10us idle_spin=default rounds=2000  min=16.9 p50=19.6 mean=22.7 p90=22.2 p99=74.5 max=989.4 (us)
 ctl  pass2 latency=0us gap=10us idle_spin=default rounds=2000  min=16.2 p50=19.7 mean=22.0 p90=21.2 p99=49.3 max=1743.5 (us)

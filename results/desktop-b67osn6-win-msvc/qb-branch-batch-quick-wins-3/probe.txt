@@ -1,4 +1,4 @@
-session 2026-09-09T04:55:58 ctl=bb5b3e67 cand=b29602bd msvc
+session 2026-09-09T04:55:58 ctl=ef89f175 cand=b29602bd msvc
 ctl ask-cost push push trips=48033792 elapsed_ns=1500051700 ns_per_trip=31.23
 ctl ask-cost ask ask+timeout trips=16596992 elapsed_ns=1500239500 ns_per_trip=90.39
 ctl pass-cost k=1 chains=1 passes=95354880 elapsed_ns=1500162200 ns_per_pass=15.73 events=95354880

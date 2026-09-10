@@ -5,7 +5,7 @@ own clock, not a libev timer), measured on 2026-09-08 at 06:21 UTC in one quiet 
 no build, no leftover probe — an earlier attempt at 06:19 ran beside a probe a truncated
 pipeline had left behind and read every figure doubled; it was discarded and the session
 re-run, the WSL2 side idle). Control = `build/ab188-cand` (the working tree at `develop`
-`6c3a9e0b` with its ev copy), candidate = `build/ab189-cand` against `D:\repo\qb-189-dev`
+`639d1708` with its ev copy), candidate = `build/ab189-cand` against `D:\repo\qb-189-dev`
 (the branch, final code). Same flags as the published directories (`/O2 /Ob2 /DNDEBUG`), CPU 0,
 candidate and control alternated five times, 1.5 s per point.
 
@@ -17,7 +17,7 @@ None of it is merged into the published tables.
 
 ## The probes (ns per round trip, one core, medians of five)
 
-| probe | control (`6c3a9e0b`) | **branch** | Δ |
+| probe | control (`639d1708`) | **branch** | Δ |
 |---|---:|---:|---:|
 | **ask with a 500 ms timeout** | 157.1 | **90.1** | **−43 %** |
 | stream, 1 chunk, with a 500 ms timeout | 354.8 | **301.9** | −15 % |

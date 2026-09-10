@@ -79,7 +79,7 @@ five default subscriptions and this benchmark's two) plus `New` and `Delete` —
 actors is **515 819 lines and 60.9 MB of `qb.1.log` per repetition**, measured by counting the
 file. nanolog's producer side (format, timestamp, push to the writer's queue) runs on the actor's
 core inside the window, and its writer thread is started before `main()` and shares the pinned
-CPU set. The 3.2 line (`b4baba33` on `perf/dense-table-growth`) logs those lines at VERBOSE, and
+CPU set. The 3.2 line (`5665b6f8` on `perf/dense-table-growth`) logs those lines at VERBOSE, and
 its fib cell in the same session is 7.6 / 11.9 ms (WSL2) and 10.5 / 17.2 ms (Windows) —
 `results/<host>/qb-branch-perf-dense-table-growth/`.
 

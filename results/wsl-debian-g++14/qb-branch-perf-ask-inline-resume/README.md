@@ -3,19 +3,19 @@
 The A/B for Huly **QB-185** (an `ask` reply resumes the waiting coroutine inline from the handler
 that routed it) and **QB-187** (qev: the clock read through libc's `clock_gettime` instead of the
 raw syscall, and no backend poll over a loop with no fd), measured against the `develop` the
-branch forks from (`4a0b62be`) on `savina/bank-transaction` — the one grid cell built on `ask` —
+branch forks from (`c4f9d439`) on `savina/bank-transaction` — the one grid cell built on `ask` —
 plus the two ask `dev/bench` binaries and two probes. Same host, CPUs and build flags as the
 published directories beside this one: `-O3 -DNDEBUG`, `taskset -c 0,2`, **9 repetitions + 2
 warmup**, qb-only builds, candidate / control / candidate in ONE quiet session on 2026-09-08, the
 Windows side idle throughout. The candidate is `~/qvo/cand-pass`, built against the working tree
 of the branch (qb + its qev copy); the control `~/qvo/v2`, a clean LF clone whose code is
-`4a0b62be`'s.
+`c4f9d439`'s.
 
 | directory | qb at | what |
 |---|---|---|
 | `grid-worktree/`, `grid-worktree-pass2/` | **the branch** — measured first and third | **4 cells** each (bank-transaction × {1c-spin, 1c-park, 2c-spin, 2c-park}), qb only, all verified. 00:01:28–00:01:29 UTC. |
-| `grid-4a0b62be/` | `develop` `4a0b62be` — the control, measured second | same 4 cells, same session. |
-| `census/` | branch vs `4a0b62be`, **10 interleaved launches** each, 3 reps + 1 warmup, on the four bank cells and the ping-pong 1c anchor | 00:01:29–00:01:34 UTC. |
+| `grid-c4f9d439/` | `develop` `c4f9d439` — the control, measured second | same 4 cells, same session. |
+| `census/` | branch vs `c4f9d439`, **10 interleaved launches** each, 3 reps + 1 warmup, on the four bank cells and the ping-pong 1c anchor | 00:01:29–00:01:34 UTC. |
 | `probe.txt` | `qvoprobe-ask-cost` push / ask / stream (64 chunks, 1 chunk) and `qvoprobe-pass-cost` k = 1, candidate and control alternated five times (00:01:34–00:02:50 UTC); then, in a second quiet window at 00:15 UTC, the same ask and one-chunk stream **with a 500 ms timeout**, five alternations | |
 | `bench/` | `qb-core-bench-ask-roundtrip` (same-core and cross-core) and `BM_Mono_PingPong_Latency`, candidate and control alternated three times (`cand-N/` / `ctl-N/`, one process per run, 5 repetitions) | 00:02:50–00:04:05 UTC. |
 
@@ -23,7 +23,7 @@ None of the grids is merged into the published tables.
 
 ## The probes (ns per round trip, cand / ctl medians of five)
 
-| probe | control `4a0b62be` | **branch** | Δ |
+| probe | control `c4f9d439` | **branch** | Δ |
 |---|---:|---:|---:|
 | push (two passes, nothing else) | 24.4 | 24.3 | level |
 | ask | 54.0 | **46.7** | **−14 %** (the machinery over push 29.7 → 22.4, −25 %) |
@@ -41,7 +41,7 @@ passes paid two raw `clock_gettime` syscalls (~95 ns each) and an `epoll_wait(0)
 
 ## The grids and the census (bank-transaction, p50 per transfer, ns)
 
-| cell | `4a0b62be` | **branch** p1 / p2 | census (10 launches) |
+| cell | `c4f9d439` | **branch** p1 / p2 | census (10 launches) |
 |---|---:|---:|---|
 | 1c-spin | 142.05 | 135.37 / 134.13 | 142.3 → **137.7** (−3 %) |
 | 1c-park | 138.35 | 152.37 / 132.68 | 140.8 → 138.5 (−2 %) |
@@ -55,7 +55,7 @@ per-transfer machinery.
 
 ## `dev/bench` — the ask cells (median of three run medians; `bench/`)
 
-| cell | `4a0b62be` | **branch** | Δ |
+| cell | `c4f9d439` | **branch** | Δ |
 |---|---:|---:|---:|
 | `BM_Ask_RoundTrip_SameCore` (ms per 50 000 asks, each with a 500 ms timeout) | 42.3 | **11.1** | **−74 %** (846 → 222 ns per ask) |
 | `BM_Ask_RoundTrip_CrossCore` | 46.5 | **18.9** | **−59 %** |

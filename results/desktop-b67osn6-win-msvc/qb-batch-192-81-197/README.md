@@ -7,8 +7,8 @@ through the `__atomic` builtins — on MSVC the macros expand to the original ac
 token, so `ev.c` is the same code here; the qb side adds `listener::_wake_is_pending()`), the four
 CI hotfixes, **QB-81** (io_uring at parity on Linux; on Windows only the `iocnt` predicate exists,
 a compare per `ev_io_start/stop`) and **QB-197** (the coroutine scheduler owns no loop). Control
-`c49868b9` (develop after QB-190/195, the last state measured here) built from
-`D:\repo\qb-ctl-batch`, candidate `d20417f9` (develop now) from `D:\repo\qb-dev\qb`, both asserted
+`ee34bb13` (develop after QB-190/195, the last state measured here) built from
+`D:\repo\qb-ctl-batch`, candidate `57df433d` (develop now) from `D:\repo\qb-dev\qb`, both asserted
 by SHA and by marker before the build (`io_is_loop_own` 4 / 0 occurrences, `EV_WAKE_LOAD` 21 / 0,
 the scheduler's `loop_` member 0 / 1); each `build.ninja` names its own tree's `ev.c`. Same flags as
 the published directories (`/O2 /Ob2 /DNDEBUG`), CPU 0, 1.5 s per point, Docker Desktop quit, the
@@ -25,7 +25,7 @@ None of it is merged into the published tables.
 
 ## The probes (one core, medians)
 
-| probe | control `c49868b9` | **candidate `d20417f9`** | Δ | series |
+| probe | control `ee34bb13` | **candidate `57df433d`** | Δ | series |
 |---|---:|---:|---:|---|
 | `pass-cost` k = 1 (ns per pass, no watcher) | 15.91 → 15.88 | 16.09 → **15.86** | +1.1 % → **−0.2 %** | 1 → 2 |
 | `push` (ns per trip) | 31.47 → 31.66 | 31.80 → **31.74** | +1.0 % → **+0.3 %** | 1 → 2 |

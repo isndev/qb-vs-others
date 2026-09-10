@@ -1,4 +1,4 @@
-session 2026-09-09T02:04:00 cand=ce39584a (D:/repo/qb-200) ctl=9366384b (D:/repo/qb-dev/qb)
+session 2026-09-09T02:04:00 cand=ce39584a (D:/repo/qb-200) ctl=381e4995 (D:/repo/qb-dev/qb)
 cand ask-cost push push trips=48214016 elapsed_ns=1500055100 ns_per_trip=31.11
 cand ask-cost ask timeout=500 ask+timeout trips=16584704 elapsed_ns=1500279100 ns_per_trip=90.46
 cand pass-cost k=1 chains=1 passes=97517568 elapsed_ns=1500090800 ns_per_pass=15.38 events=97517568

@@ -38,8 +38,8 @@ argument it exists to win:
 | The document guards (`tools/check-roster.py`, `tools/check-report.py`) | **done**, and negative-controlled: 33 CAUGHT / 3 CONFIRMED / **0 MISSED** (`tools/guards-negative-control.py`) |
 | Feature comparison, cited to the three sources | [docs/FEATURES.md](docs/FEATURES.md) |
 | `savina/fib`, `savina/chameneos` × the same four (+ CAF-detached declared omitted) | **done on Windows and WSL2**: 16 cells each per host, shipped qb 3.1.0 like the five before them (`results/<host>/savina-fib/`, `savina-chameneos/`, rendered in each host's `REPORT.md`), **116 cells per host**; macOS not yet. Written against the qb branch they produced (`results/<host>/qb-branch-perf-dense-table-growth/`): fib found a 43 s defect in unreleased `develop` and drove three qb commits, and its shipped-3.1.0 cell is a LOGGING figure — nine `LOG_INFO` lines per actor lifetime, 515 819 lines per repetition, 159 / 459 ms (WSL2 / Windows, 2c-spin) against the branch's 7.6 / 10.5 in the same session, CAF 39 / 53, floor 3.4 / 4.0 (`docs/TUNING.md` §11) |
-| `savina/bank-transaction` × the same four (+ CAF-detached declared omitted) | **done on Windows and WSL2** (2026-09-07): 16 cells per host, shipped qb 3.1.0 (`results/<host>/savina-bank-transaction/`, rendered in each host's `REPORT.md`), **132 cells per host**; macOS not yet. The first shape that WAITS for a reply — one `qb::ask` / CAF `request().then()` per transfer, 50 000 of them — and it found five defects on qb's ask path in one afternoon (`docs/TUNING.md` §12, qb `9814c2a1`): shipped 3.1.0 measures 14.7 / 9.2 ms (WSL2, 1c / 2c spin) and 25.5 / 29.2 (Windows), qb `develop` before the fixes 9.4 / 5.1 and 13.7 / 8.0, after them **8.1 / 4.6** and **12.9 / 7.6** in the same session (`results/<host>/qb-branch-perf-coro-scope-local-refcount/`), against CAF 41.5 / 36.6 and 57.8 / 57.5, SObjectizer 19.5 / 25.5 and 29.6 / 38.0, floor 1.1 / 6.3 and 3.5 / 32.2 |
-| **The 3.2.0 candidate grid** — qb `develop` × all eight shapes | **done on Windows and WSL2, twice**: at the midpoint (`f8eba11d`, 2026-09-07) and at the final commit (**`693c5892`**, 2026-09-09) — 96 qb cells per host each time (candidate / shipped 3.1.0 / candidate, 9 + 2, one quiet session per host, `results/<host>/qb-branch-develop/`), the fastest framework in all 64 cells both times, every WSL2 cell faster at the end than at the midpoint (ping-pong 1c 66 → 23 ns, ring 1c 39 → 17), the Windows two-core cells level-or-better under the interleaved census; the two `framework=qb` grids below, `docs/TUNING.md` §13 and §13.4. macOS not yet: its machine measures the candidate when it is next on. |
+| `savina/bank-transaction` × the same four (+ CAF-detached declared omitted) | **done on Windows and WSL2** (2026-09-07): 16 cells per host, shipped qb 3.1.0 (`results/<host>/savina-bank-transaction/`, rendered in each host's `REPORT.md`), **132 cells per host**; macOS not yet. The first shape that WAITS for a reply — one `qb::ask` / CAF `request().then()` per transfer, 50 000 of them — and it found five defects on qb's ask path in one afternoon (`docs/TUNING.md` §12, qb `fa1c5ce3`): shipped 3.1.0 measures 14.7 / 9.2 ms (WSL2, 1c / 2c spin) and 25.5 / 29.2 (Windows), qb `develop` before the fixes 9.4 / 5.1 and 13.7 / 8.0, after them **8.1 / 4.6** and **12.9 / 7.6** in the same session (`results/<host>/qb-branch-perf-coro-scope-local-refcount/`), against CAF 41.5 / 36.6 and 57.8 / 57.5, SObjectizer 19.5 / 25.5 and 29.6 / 38.0, floor 1.1 / 6.3 and 3.5 / 32.2 |
+| **The 3.2.0 candidate grid** — qb `develop` × all eight shapes | **done on Windows and WSL2, twice**: at the midpoint (`43f62afe`, 2026-09-07) and at the final commit (**`77b358d8`**, 2026-09-09) — 96 qb cells per host each time (candidate / shipped 3.1.0 / candidate, 9 + 2, one quiet session per host, `results/<host>/qb-branch-develop/`), the fastest framework in all 64 cells both times, every WSL2 cell faster at the end than at the midpoint (ping-pong 1c 66 → 23 ns, ring 1c 39 → 17), the Windows two-core cells level-or-better under the interleaved census; the two `framework=qb` grids below, `docs/TUNING.md` §13 and §13.4. macOS not yet: its machine measures the candidate when it is next on. |
 | The other 17 Savina benchmarks | **not yet written** — see [docs/ROADMAP.md](docs/ROADMAP.md) |
 | Linux axis (WSL2 Debian 13 / g++ 14.2) | **run**, the same 84 cells — with the WSL2 caveat below; native Linux not yet |
 | macOS axis (Apple M4 Pro / AppleClang 21, arm64) | **run**, the same 84 cells — **unpinned** (macOS has no verified affinity API; every document says `pinned:false`); the candidate branch measured beside shipped 3.1.0 in the same session, `docs/TUNING.md` §9.13 |
@@ -227,25 +227,25 @@ Seven things in those tables are worth more than the ranking:
 7. **The 3.2.0 candidate is measured for all EIGHT shapes, on both hosts, in one session each,
    and it is the fastest framework in every one of the 64 cells — twice.** The grid was taken
    at the programme's midpoint and again at its end. **Midpoint, 2026-09-07:** qb `develop` at
-   `f8eba11d`, 29 commits over 3.1.0 — axes A–N, the segmented pipe (QB-43), the dense router,
+   `43f62afe`, 29 commits over 3.1.0 — axes A–N, the segmented pipe (QB-43), the dense router,
    the default-event registry (QB-174), the dense-table growth fib found, the five ask-path
    fixes bank-transaction found and the ask slot table (QB-178) — candidate / shipped 3.1.0 /
-   candidate, 9 + 2 (`results/<host>/qb-branch-develop/grid-f8eba11d/`; `docs/TUNING.md` §13).
-   **Final, 2026-09-09:** qb `develop` at **`693c5892`**, 66 commits over 3.1.0 and 37 over
+   candidate, 9 + 2 (`results/<host>/qb-branch-develop/grid-43f62afe/`; `docs/TUNING.md` §13).
+   **Final, 2026-09-09:** qb `develop` at **`77b358d8`**, 66 commits over 3.1.0 and 37 over
    the midpoint — the loop clock (QB-180), the pass's fixed cost (QB-182), the ring's private
    lines (QB-184), the ask resumed inline (QB-185), the qev programme (QB-187 to QB-195: the
    non-blocking pass at its floor, the deadline list, the io cadence, the pass without the
    loop, the Windows clock on QPC), the one loop reference (QB-199), the sub-millisecond park
    (QB-196) — the same protocol, the same adapters, candidate / shipped 3.1.0 / candidate back
    to back (Windows 15:39:09–15:42:12 UTC, WSL2 14:19:38–14:27:51 UTC, the other side idle each
-   time; `grid-693c5892/`, `grid-shipped-3.1.0-final/`, `grid-693c5892-pass2/`; §13.4). The
+   time; `grid-77b358d8/`, `grid-shipped-3.1.0-final/`, `grid-77b358d8-pass2/`; §13.4). The
    `qb` items above are the published shipped runs; the same-session controls agree with them
    within the spread, except where a collapsed cell has no stable figure — which was the point.
 
 <!-- the two grids below are the 3.2.0 candidate at its FINAL commit; check-report verifies them against their own directory -->
-The candidate on Windows (`results/desktop-b67osn6-win-msvc/qb-branch-develop/grid-693c5892/`; per unit — round trip, message, hop, message, round trip, actor, meeting, transfer):
+The candidate on Windows (`results/desktop-b67osn6-win-msvc/qb-branch-develop/grid-77b358d8/`; per unit — round trip, message, hop, message, round trip, actor, meeting, transfer):
 
-<!-- check-report: results/desktop-b67osn6-win-msvc/qb-branch-develop/grid-693c5892 framework=qb -->
+<!-- check-report: results/desktop-b67osn6-win-msvc/qb-branch-develop/grid-77b358d8 framework=qb -->
 | benchmark | 1 core, spin | 1 core, park | 2 cores, spin | 2 cores, park |
 |---|---|---|---|---|
 | ping-pong | 30 ns | 30 ns | 191 ns | 193 ns |
@@ -257,9 +257,9 @@ The candidate on Windows (`results/desktop-b67osn6-win-msvc/qb-branch-develop/gr
 | chameneos | 30 ns | 30 ns | 74 ns | 70 ns |
 | bank-transaction | 231 ns | 234 ns | 143 ns | 139 ns |
 
-The candidate on WSL2 (`results/wsl-debian-g++14/qb-branch-develop/grid-693c5892/`):
+The candidate on WSL2 (`results/wsl-debian-g++14/qb-branch-develop/grid-77b358d8/`):
 
-<!-- check-report: results/wsl-debian-g++14/qb-branch-develop/grid-693c5892 framework=qb -->
+<!-- check-report: results/wsl-debian-g++14/qb-branch-develop/grid-77b358d8 framework=qb -->
 | benchmark | 1 core, spin | 1 core, park | 2 cores, spin | 2 cores, park |
 |---|---|---|---|---|
 | ping-pong | 23 ns | 23 ns | 159 ns | 152 ns |
@@ -281,7 +281,7 @@ one-core cells follow (ping-pong 84 → 30, ring 45 → 18, big 20 → 17, chame
 wherever the majority fell — counting 2c read 11.7 at the midpoint and 13.4 now, chameneos 2c
 65 and 74 — and for those the interleaved census is the instrument: ten alternated launches of
 the final build against the midpoint build in one session
-(`qb-branch-develop/census-693c5892-vs-f8eba11d/`) read counting 13.6 vs 13.5, chameneos 66.9 vs
+(`qb-branch-develop/census-77b358d8-vs-43f62afe/`) read counting 13.6 vs 13.5, chameneos 66.9 vs
 67.8 (its lower mode 46.8 vs 55.2), ping-pong 189 vs 243 and thread-ring 107 vs 120 — level or
 better on every cell, the cross-session difference being the host's mode of the day. The two 2c-park
 collapses are gone on both hosts (ping-pong 3.07 µs → 193 ns on Windows this session, 26.27 µs →
@@ -302,16 +302,16 @@ the pass's.
 
 
 The one-core cells measure the dispatch, not a cold burst: swept along the burst size
-(`burst-sweep/` on both hosts, `docs/TUNING.md` §9.11, measured at `a017b8a5` and unchanged by
+(`burst-sweep/` on both hosts, `docs/TUNING.md` §9.11, measured at `279e6cd4` and unchanged by
 the commits since — counting 1c is 10.0 / 8.7 ns in the grids above), the same-core dispatch is
 **5.9–9.3 ns from 2 000 to 4 M messages on g++** and 6.6–10.4 on MSVC — 9.2 / 9.5 ns at the
-Savina 1 M against 35.0 / 25.8 for `f5c20eeb`, 43 / 30 for shipped 3.1.0, 115–185 for CAF and
+Savina 1 M against 35.0 / 25.8 for `230c5035`, 43 / 30 for shipped 3.1.0, 115–185 for CAF and
 91–143 for SObjectizer, over a 2.8–3.0 ns floor. The 1 M protocol stays — it is the Savina
 figure and every framework runs it — and it is no longer a caveat. The previous candidate's
-five-shape grids (`perf/event-pipe-segmented` `a017b8a5`, `qb-branch-perf-event-pipe-segmented/grid-final/`)
+five-shape grids (`perf/event-pipe-segmented` `279e6cd4`, `qb-branch-perf-event-pipe-segmented/grid-final/`)
 stay beside the new ones as the A/B that produced QB-43.
 
-The same 84 cells on macOS — Apple M4 Pro (10 P + 4 E cores), macOS 26.6, AppleClang 21.0.0, `-O3 -DNDEBUG`, **unpinned**, 7 repetitions + 2 warmup, one quiet session on 2026-09-05 (`results/macbook-m4pro-macos-clang21/`). macOS has no verified CPU affinity API, so the harness was run with `--no-pin` and every document carries `pinned:false` — the qb rows here are the shipped v3.1.0 (`eac739ff`); the candidate's grids sit beside them in `qb-branch-perf-event-pipe-segmented/`, read in `docs/TUNING.md` §9.13:
+The same 84 cells on macOS — Apple M4 Pro (10 P + 4 E cores), macOS 26.6, AppleClang 21.0.0, `-O3 -DNDEBUG`, **unpinned**, 7 repetitions + 2 warmup, one quiet session on 2026-09-05 (`results/macbook-m4pro-macos-clang21/`). macOS has no verified CPU affinity API, so the harness was run with `--no-pin` and every document carries `pinned:false` — the qb rows here are the shipped v3.1.0 (`830ea244`); the candidate's grids sit beside them in `qb-branch-perf-event-pipe-segmented/`, read in `docs/TUNING.md` §9.13:
 
 `savina/ping-pong` — 1 000 000 round trips, two actors; per round trip:
 

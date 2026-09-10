@@ -1,4 +1,4 @@
-session 2026-09-09T00:34:20 cand=acf2dd77 (D:/repo/qb-198) ctl=d20417f9 (D:/repo/qb-dev/qb)
+session 2026-09-09T00:34:20 cand=acf2dd77 (D:/repo/qb-198) ctl=57df433d (D:/repo/qb-dev/qb)
 cand ask-cost push push trips=47894528 elapsed_ns=1500093000 ns_per_trip=31.32
 cand ask-cost ask timeout=500 ask+timeout trips=16773120 elapsed_ns=1500150300 ns_per_trip=89.44
 cand pass-cost k=1 chains=1 passes=94830592 elapsed_ns=1500453100 ns_per_pass=15.82 events=94830592

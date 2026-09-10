@@ -22,7 +22,7 @@ scheduler decides which core pair and when), so **no two-core figure below is qu
 grid alone** — the launch census (`launch-census*/`) is the instrument for those cells, exactly as
 on Windows (§9.11). One-core cells are steady (min–max spread 1–4 %).
 
-qb in `savina-*/` is the **shipped v3.1.0** (`eac739ff`), built under `build/macos-shipped` with
+qb in `savina-*/` is the **shipped v3.1.0** (`830ea244`), built under `build/macos-shipped` with
 `QVO_WITH_CAF=OFF QVO_WITH_SOBJECTIZER=OFF`; CAF 1.1.0, SObjectizer 5.8.5.1 and the floor come from
 `build/macos-candidate` — they do not depend on qb, and the two builds share the compiler and the
 flag set. Both were merged into this directory by `run.py --only`, which refuses to merge unless
@@ -36,22 +36,22 @@ everything under `qb-branch-perf-event-pipe-segmented/`.
 |---|---|
 | `savina-ping-pong/` | **20 cells** — 18 verified + 2 declared `n/a` (`caf-detached` has no spin mode). |
 | `savina-counting/`, `savina-thread-ring/`, `savina-fork-join/`, `savina-big/` | **16 cells** each, all verified; `caf-detached` declares itself omitted from these four. |
-| `qb-branch-perf-event-pipe-segmented/grid-final/` | **the candidate**: qb at `perf/event-pipe-segmented` `a017b8a5` through the same adapters, all five benchmarks, 7 + 2, 19:06 UTC. |
-| `qb-branch-perf-event-pipe-segmented/grid-f5c20eeb/` | the previous candidate (`perf/core-hot-path` `f5c20eeb`, before the segmented pipe), same protocol, 19:07 UTC — the control for what the two `event-pipe-segmented` commits change. |
+| `qb-branch-perf-event-pipe-segmented/grid-final/` | **the candidate**: qb at `perf/event-pipe-segmented` `279e6cd4` through the same adapters, all five benchmarks, 7 + 2, 19:06 UTC. |
+| `qb-branch-perf-event-pipe-segmented/grid-230c5035/` | the previous candidate (`perf/core-hot-path` `230c5035`, before the segmented pipe), same protocol, 19:07 UTC — the control for what the two `event-pipe-segmented` commits change. |
 | `qb-branch-perf-event-pipe-segmented/grid-shipped-3.1.0/` | shipped v3.1.0 through the same protocol, 19:07–19:08 UTC — the control for the whole branch. |
-| `qb-branch-perf-event-pipe-segmented/burst-sweep/` | `savina/counting`, one core, spin, the burst swept 2 k → 4 M messages for the candidate, `f5c20eeb` and 3.1.0 **interleaved per burst** (`tools/burst-sweep.py`), 7 + 2, with the process's page reclaims from `/usr/bin/time -l` beside each document (`*.faults.txt`); CAF, SObjectizer and the floor at 30 k and 1 M. The §9.11 instrument on its third host. |
-| `qb-branch-perf-event-pipe-segmented/launch-census/` | the candidate against `f5c20eeb` on the six bimodal two-core cells (ping-pong, thread-ring, big × spin/park): **12 launches interleaved, 3 + 1 each** (`tools/launch-census.py`). The figure to quote for those cells. |
+| `qb-branch-perf-event-pipe-segmented/burst-sweep/` | `savina/counting`, one core, spin, the burst swept 2 k → 4 M messages for the candidate, `230c5035` and 3.1.0 **interleaved per burst** (`tools/burst-sweep.py`), 7 + 2, with the process's page reclaims from `/usr/bin/time -l` beside each document (`*.faults.txt`); CAF, SObjectizer and the floor at 30 k and 1 M. The §9.11 instrument on its third host. |
+| `qb-branch-perf-event-pipe-segmented/launch-census/` | the candidate against `230c5035` on the six bimodal two-core cells (ping-pong, thread-ring, big × spin/park): **12 launches interleaved, 3 + 1 each** (`tools/launch-census.py`). The figure to quote for those cells. |
 | `qb-branch-perf-event-pipe-segmented/launch-census-pingpong-2cpark-24x5/` | the third instrument on the one residual (ping-pong, two cores, park): 24 launches, 5 + 1. |
-| `qb-branch-perf-event-pipe-segmented/axis-k/round{1,2,3}-{with,without}/` | the axis-K A/B on arm64 — qb at `39992047` (`Mailbox::notify()` fences in spin mode too, a `dmb ish` here) against its parent `e995973f`, ping-pong and thread-ring, 2c-spin and 2c-park, three interleaved rounds of 7 + 2. |
+| `qb-branch-perf-event-pipe-segmented/axis-k/round{1,2,3}-{with,without}/` | the axis-K A/B on arm64 — qb at `6a0897c0` (`Mailbox::notify()` fences in spin mode too, a `dmb ish` here) against its parent `61b0b4cf`, ping-pong and thread-ring, 2c-spin and 2c-park, three interleaved rounds of 7 + 2. |
 | `qb-branch-perf-event-pipe-segmented/axis-k/launch-census/` | the same A/B as a 12-launch census — the figure to quote. |
 
 **What the session said, in one paragraph each** (all in §9.13 with the tables):
 
-- **Same-core dispatch**: candidate ping-pong 1c-spin **49.7 ns** against `f5c20eeb` 53.8 and
+- **Same-core dispatch**: candidate ping-pong 1c-spin **49.7 ns** against `230c5035` 53.8 and
   3.1.0 84.9 (−7.6 % / −41 %); counting 6.6 / 8.3 / 11.6; fork-join 6.2 / 8.6 / 12.9; thread-ring
   25.9 / 26.8 / 42.0; big 15.0 / 19.6 / 23.9. Where MSVC kept a 1–2 % one-core loss against
-  `f5c20eeb`, clang/arm64 gains 7.6 %.
-- **The burst sweep has no cliff to remove on macOS**: `f5c20eeb` reads 6.9 → 8.6 ns/msg from 2 k
+  `230c5035`, clang/arm64 gains 7.6 %.
+- **The burst sweep has no cliff to remove on macOS**: `230c5035` reads 6.9 → 8.6 ns/msg from 2 k
   to 4 M and 3.1.0 9.3 → 11.3, where the same binaries climbed to 40 and 43 on WSL2 — XNU's
   zero-fill fault is cheap and the copy ladder does not re-fault. The candidate is flat at
   **5.6–6.2** and the fastest at every burst. Page reclaims at 1 M: **4 344** against 8 364 /
@@ -69,7 +69,7 @@ everything under `qb-branch-perf-event-pipe-segmented/`.
   invert the two modes.
 - **The park floor on this host is the condition variable**: `baseline__2c-park` ping-pong 4.62 µs,
   shipped qb 6.85 µs, thread-ring floor 2.49 µs / qb 3.39 µs. The branch's park handshake (axes
-  A/B/C, `e995973f`) takes qb's 2c-park ping-pong to ~210 ns — 30× — which is the single largest
+  A/B/C, `61b0b4cf`) takes qb's 2c-park ping-pong to ~210 ns — 30× — which is the single largest
   move of the session and the reason the `2c-park` column of `savina-*/` must be read with the
   README's caveat.
 

@@ -1,4 +1,4 @@
-start 2026-09-09T13:35:04  ctl=develop 279ec219 cand=perf/epoll-pwait2 9dcee7fb
+start 2026-09-09T13:35:04  ctl=develop 67f4efb6 cand=perf/epoll-pwait2 70354b35
 # cell qvoprobe-parked-timer-wake 1000 100 2000 -1 0 0
 ctl rep1  latency=1000us delay=100us idle_spin=default period=0ms rounds=2000  lateness min=1.4 p50=1440.3 mean=1390.6 p90=1901.7 p99=2417.9 max=2782.6 (us)
 cand rep1  latency=1000us delay=100us idle_spin=default period=0ms rounds=2000  lateness min=1.7 p50=1440.8 mean=1382.6 p90=1901.4 p99=2419.7 max=2749.1 (us)

@@ -3,7 +3,7 @@
 The Windows half of `../../wsl-debian-g++14/qb-branch-batch-quick-wins-3/` (the batch and the
 layout lesson are described there): qb `batch/quick-wins-3` `b29602bd` (QB-62 event-driven
 `ready_async`, QB-61 width `static_assert`, QB-84 abandoned-frame report, QB-66 doc) against
-`develop` `bb5b3e67`, both built from the same qb-vs-others tree by `cl` 19.51.36256, measured
+`develop` `ef89f175`, both built from the same qb-vs-others tree by `cl` 19.51.36256, measured
 2026-09-09 **04:55–04:57 UTC** in one quiet session (no build during the points, Docker Desktop
 quit, the WSL2 side idle at 0.01): six Savina cells × eight interleaved rounds (3 repetitions +
 1 warm-up, CPUs 0,2), three probes × five alternations (1.5 s, CPU 0).
@@ -15,7 +15,7 @@ quit, the WSL2 side idle at 0.01): six Savina cells × eight interleaved rounds 
 
 ## The cells (`work_p50 / work_units`, ns, medians of eight rounds)
 
-| cell | ctl `bb5b3e67` | cand `b29602bd` | Δ | the eight rounds ctl / cand |
+| cell | ctl `ef89f175` | cand `b29602bd` | Δ | the eight rounds ctl / cand |
 |---|---:|---:|---:|---|
 | bank-transaction 1c | 235.2 | 233.2 | −0.9 % | 229.5–263.4 / 229.4–241.4 |
 | big 1c | 17.4 | 17.4 | level | 16.8–19.5 / 16.8–20.3 |

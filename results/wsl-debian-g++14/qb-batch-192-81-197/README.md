@@ -9,11 +9,11 @@ functions, atomic gcov counters, a consumed `read()` in the shared fd fixture, `
 generator's order), **QB-81** (io_uring from 47× slower than epoll to parity: the deadline timerfd
 armed only for a poll that sleeps, `TASKRUN_FLAG`, the backend's timerfd out of `iocnt`; epoll stays
 the default) and **QB-197** (the coroutine scheduler owns no loop, an awaiter's loop is required — no
-global default loop created from a core thread). Control `c49868b9` (develop after QB-190/195, the
-last state censused), candidate `d20417f9` (develop now); the qb copy embeds its `qev` tree, so the
-qb SHA fixes the loop (`c387341` → `9b83760`). Measured 2026-09-08 **19:28–19:30 UTC** in one quiet
+global default loop created from a core thread). Control `ee34bb13` (develop after QB-190/195, the
+last state censused), candidate `57df433d` (develop now); the qb copy embeds its `qev` tree, so the
+qb SHA fixes the loop (`7eb4678` → `5fe159b`). Measured 2026-09-08 **19:28–19:30 UTC** in one quiet
 window (no build during the points, the Windows side idle), `~/qvo-ctl-batch` and `~/qvo-cand-batch`
-built from `git archive` of those SHAs against this harness at `33dcdfd`, same flags (`-O3 -DNDEBUG`),
+built from `git archive` of those SHAs against this harness at `45babe1`, same flags (`-O3 -DNDEBUG`),
 CPUs 0,2, candidate and control interleaved ten rounds, 3 repetitions + 1 warm-up per point.
 
 | file | what |
@@ -25,7 +25,7 @@ None of it is merged into the published tables.
 
 ## The census (`work_p50 / work_units`, ns, medians of ten interleaved rounds)
 
-| cell | control `c49868b9` | **candidate `d20417f9`** | Δ |
+| cell | control `ee34bb13` | **candidate `57df433d`** | Δ |
 |---|---:|---:|---:|
 | bank-transaction 2c park (the ask/coroutine cell) | 81.8 (79.3–83.4) | 82.8 (80.3–85.9) | +1.2 %, spreads overlap |
 | ping-pong 1c park | 22.8 (22.5–23.0) | 22.7 (22.5–23.1) | level |

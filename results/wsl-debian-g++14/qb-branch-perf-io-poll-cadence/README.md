@@ -1,11 +1,11 @@
 # qb branch `perf/io-poll-cadence` — WSL2 Debian 13 / g++ 14.2
 
 The A/B for Huly **QB-191** (a core polls a quiet socket on a cadence, not on every pass; qev
-`perf/nopoll-pass`, `EVRUN_NOPOLL`) against the `develop` it forks from (qb `2f36cf3c`, qev
-`9cc40fe`: after QB-189), measured on 2026-09-08 **07:53–07:54 UTC** in one quiet window (load
+`perf/nopoll-pass`, `EVRUN_NOPOLL`) against the `develop` it forks from (qb `dc91e6bd`, qev
+`3c89e5a`: after QB-189), measured on 2026-09-08 **07:53–07:54 UTC** in one quiet window (load
 1.4 at the start, no build, no other probe, the Windows side idle). The candidate is
-`~/qvo/cand-191` built against `~/qb-191` (a clean LF clone at `2f36cf3c` plus the branch's
-patch and the branch's qev), the control `~/qvo/cand-189`, the same clone at `2f36cf3c`; same
+`~/qvo/cand-191` built against `~/qb-191` (a clean LF clone at `dc91e6bd` plus the branch's
+patch and the branch's qev), the control `~/qvo/cand-189`, the same clone at `dc91e6bd`; same
 flags (`-O3 -DNDEBUG`), CPU 0, candidate and control alternated five times, 1.5 s per point,
 then the candidate alone with the interval set to **0** (three times) as the knob's negative
 control.
@@ -18,7 +18,7 @@ None of it is merged into the published tables.
 
 ## The probes (one core, medians of five)
 
-| probe | control (`2f36cf3c`) | **branch** | Δ |
+| probe | control (`dc91e6bd`) | **branch** | Δ |
 |---|---:|---:|---:|
 | **pass with a quiet socket (ns)** | 124.2 | **48.5** | **−61 %** |
 | wake latency, a byte every 100 µs — p50 (µs) | 3.36 | 3.93 | +0.57 (half the 1 µs interval, as designed) |

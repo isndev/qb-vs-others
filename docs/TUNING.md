@@ -280,15 +280,15 @@ on an idle wepoll / epoll loop 370 / 300 ns, `cv.notify_all()` with no waiter 2 
 | **A. park policy** | spin credit = *events* seen last pass; a 1-event/pass workload parks after 2–3 empty passes | 2c-park 10.7 µs (Win) / 27.6 µs (WSL2) → **323 / 282 ns** with a 100-pass idle floor, = the spin figure | **dominant, fix first** |
 | **B. lost wakeup** | `Mailbox::wait()` = `cv.wait_for` with no predicate; `notify()` without the mutex | Win: each loss = ~13 ms (MSVC ms-ceiling + 15.6 ms tick), 50–95 % of wait time; Linux: bounded 1 ms, ~5 % | **correctness defect**, fix with A |
 | **C. `notify()` per event** | producer notifies on every cross-core enqueue | 1–2 ns when nobody waits | negligible; keep, gate on a `_waiting` flag when B lands |
-| **D. wall clock per pass** | `wall_now()` every loop pass (19 / 30 ns) | 1c: 124 → 93 ns (Win), 101 → 75 (Linux) reading it every 64 passes = **−25 %**; 2c: 0 alone, 232 → 209 ns on top of F (Linux) | worth taking; cadence or `steady_clock`. **Landed as `time()` on demand (`443c5976`) — which MOVED the read into the tick phase's `LoopEvent` rather than removing it, so the −25 % was never delivered by that commit; §14 is where it arrived, at −57 %.** |
+| **D. wall clock per pass** | `wall_now()` every loop pass (19 / 30 ns) | 1c: 124 → 93 ns (Win), 101 → 75 (Linux) reading it every 64 passes = **−25 %**; 2c: 0 alone, 232 → 209 ns on top of F (Linux) | worth taking; cadence or `steady_clock`. **Landed as `time()` on demand (`985cbb3a`) — which MOVED the read into the tick phase's `LoopEvent` rather than removing it, so the −25 % was never delivered by that commit; §14 is where it arrived, at −57 %.** |
 | **E. io poll per pass** | `listener::run(EVRUN_NOWAIT)` runs every pass once *any* coroutine scheduler exists, even with zero watchers | 1c: 124 → **694** (Win), 101 → **739** (Linux), 5.6–7.3× slower; 2c: 408 → 645, 271 → 594. A gate on `size() \|\| has_deferred()` (still draining deferred + `run_ready`) restores the figures | **large, hits any app that ever `co_await`ed**; also the ~300–380 ns/pass floor of any app with one watcher |
 | **F. spsc producer re-reads `read_index_`** | one remote cache-line read per hop | 2c-spin 404 → **290** ns (Win, −28 %), 281 → **232** (Linux, −17 %); 1c unchanged | take; mirror it on the consumer side. **Its other half landed with §16 (QB-184): the producer also re-read its OWN published line, `write_index_`, on every enqueue — 2c ping-pong −22 %, the cross-core ring −31 % once the working index moved to a private line.** |
 | **G. copies per hop** | event → pipe → mpsc ring → `consume_all` scratch → dispatch | analysed, not isolated; an in-place `consume_all(func)` exists in `mpsc.h` | minor, after F |
 | **H. SpinLock on the send path** | — | the indexed `enqueue(index, …)` used by `SharedCoreCommunication::send` takes **no** lock; the lock is only on the round-robin variants | **retired** — not a cost |
-| **K. store-buffer drain on the publish** | `notify()` returned before its fence at latency 0, so a spin-mode enqueue reached the polling peer only when the producer's store buffer drained on its own | 2c-**park** beat 2c-**spin** on BOTH platforms; fencing in spin mode too, interleaved A/B on a quiet host (3 pairs × 7 reps): Win 2c-spin 296–309 → **259–263** ns (park 256–272); WSL2 p50 a wash, 204–219 → 205–208, but the worst run 295 → 215; 1c and a 1M-event bulk push unchanged (18.6 M msg/s) | **taken** — one fence per cross-core publish; commit `39992047` on the branch |
-| **I. router double lookup** | `flat_hash` by EventId → virtual resolve → `flat_hash` by ActorId → fn ptr | both ids are dense (`_type_id_counter`, `ActorId::sid()`), so `router::dense_index<Key>` + `internal::key_table` (branch `router.h:87`, `:119`) index a vector directly and keep the full-key compare; interleaved A/B against L on Windows (9 reps): 1c counting 28.0 → 25.8, ring 51.4 → 45.6, big 29.8 → 24.0, fork-join 2c 42.2 → 37.0 — and **counting at two cores 30.6 → 43.5 (+42 %)**, which is finding M | **taken** — commit `cc7044eb`, with M in the same branch; never ship I without M |
-| **M. per-event publish on the cross-core pipe flush** | `__flush_all__` sent one event per `try_send`: one `enqueue`, one release store of the ring index, one `notify()` per event; the consumer's `consume_all` re-reads that index per batch, so a consumer FASTER than the producer turns every event into a coherence round trip on the index line | exposed by I: counting 2c with batch counters, sparse (3.1.0) consumer ~1.7k–3.9k batches of **250–600** events, dense (I) consumer ~108k–179k batches of **6–9**, both cores ~40 % slower (p50 30.6–32.1 → 38.8–41.9 ns). Fix: gather a run of whole events (≤ `kFlushRunBuckets` = 256 buckets, `VirtualCore.cpp:277`), one `write_room`, one `enqueue<true>`, one `notify` per run (`SharedCoreCommunication::send_run`, `Main.cpp:237`); the slow per-event path stays for zero-width, oversize, QoS-0 and back-off. A/B L vs I+M (4 passes): counting 2c 31.0 → **28.0** / 31.9 → **28.5**, ring 2c-spin 159 → **134**, big 2c 29.7 → **26.4**, ping-pong 2c level (±3 %), 1c cells −7…−27 % everywhere | **taken** — commit `f5c20eeb`; a batching regime that only a faster consumer can reveal, so it was invisible on 3.1.0 |
-| **L. out-of-line accessors on the per-event path** | `ActorId`'s constructors, `operator uint32_t`, `sid()`/`index()`/`is_broadcast()`/`is_valid()`, `Actor::is_alive()`, `CoreSet::resolve()`, `VirtualCore::__getPipe__()` defined in the archive, called from `Actor::push<T>` / the dispatch trampoline instantiated in the USER's TU — a call into the archive for a two-field load, opaque without LTO | found by `perf` on the four §9 benchmarks (WSL2): `ActorId(uint32_t)` + `is_broadcast` + `operator uint32_t` ~10 % of the counting profile, `is_alive` + `resolve` ~5 % more; in-class, 3-rep min: counting 1c 43.5 → 39.2, fork-join 2c 59.3 → 42.1, big 1c 31.6 → 25.2 ns | **taken** — commit `ba051409`; no behaviour change, three readme citations move with it |
+| **K. store-buffer drain on the publish** | `notify()` returned before its fence at latency 0, so a spin-mode enqueue reached the polling peer only when the producer's store buffer drained on its own | 2c-**park** beat 2c-**spin** on BOTH platforms; fencing in spin mode too, interleaved A/B on a quiet host (3 pairs × 7 reps): Win 2c-spin 296–309 → **259–263** ns (park 256–272); WSL2 p50 a wash, 204–219 → 205–208, but the worst run 295 → 215; 1c and a 1M-event bulk push unchanged (18.6 M msg/s) | **taken** — one fence per cross-core publish; commit `6a0897c0` on the branch |
+| **I. router double lookup** | `flat_hash` by EventId → virtual resolve → `flat_hash` by ActorId → fn ptr | both ids are dense (`_type_id_counter`, `ActorId::sid()`), so `router::dense_index<Key>` + `internal::key_table` (branch `router.h:87`, `:119`) index a vector directly and keep the full-key compare; interleaved A/B against L on Windows (9 reps): 1c counting 28.0 → 25.8, ring 51.4 → 45.6, big 29.8 → 24.0, fork-join 2c 42.2 → 37.0 — and **counting at two cores 30.6 → 43.5 (+42 %)**, which is finding M | **taken** — commit `44482a1d`, with M in the same branch; never ship I without M |
+| **M. per-event publish on the cross-core pipe flush** | `__flush_all__` sent one event per `try_send`: one `enqueue`, one release store of the ring index, one `notify()` per event; the consumer's `consume_all` re-reads that index per batch, so a consumer FASTER than the producer turns every event into a coherence round trip on the index line | exposed by I: counting 2c with batch counters, sparse (3.1.0) consumer ~1.7k–3.9k batches of **250–600** events, dense (I) consumer ~108k–179k batches of **6–9**, both cores ~40 % slower (p50 30.6–32.1 → 38.8–41.9 ns). Fix: gather a run of whole events (≤ `kFlushRunBuckets` = 256 buckets, `VirtualCore.cpp:277`), one `write_room`, one `enqueue<true>`, one `notify` per run (`SharedCoreCommunication::send_run`, `Main.cpp:237`); the slow per-event path stays for zero-width, oversize, QoS-0 and back-off. A/B L vs I+M (4 passes): counting 2c 31.0 → **28.0** / 31.9 → **28.5**, ring 2c-spin 159 → **134**, big 2c 29.7 → **26.4**, ping-pong 2c level (±3 %), 1c cells −7…−27 % everywhere | **taken** — commit `230c5035`; a batching regime that only a faster consumer can reveal, so it was invisible on 3.1.0 |
+| **L. out-of-line accessors on the per-event path** | `ActorId`'s constructors, `operator uint32_t`, `sid()`/`index()`/`is_broadcast()`/`is_valid()`, `Actor::is_alive()`, `CoreSet::resolve()`, `VirtualCore::__getPipe__()` defined in the archive, called from `Actor::push<T>` / the dispatch trampoline instantiated in the USER's TU — a call into the archive for a two-field load, opaque without LTO | found by `perf` on the four §9 benchmarks (WSL2): `ActorId(uint32_t)` + `is_broadcast` + `operator uint32_t` ~10 % of the counting profile, `is_alive` + `resolve` ~5 % more; in-class, 3-rep min: counting 1c 43.5 → 39.2, fork-join 2c 59.3 → 42.1, big 1c 31.6 → 25.2 ns | **taken** — commit `32b28130`; no behaviour change, three readme citations move with it |
 
 Two shapes to keep in mind when reading the table. A remote cache-line read on this machine costs
 60–110 ns, and it is the unit everything at two cores is priced in: the instrumentation's own
@@ -318,10 +318,10 @@ shipped v3.1.0 build measured in the same session** rather than quoted from the 
 | 2c-spin | 315 → **262** ns (236–278) | 275 → **206** ns (202–208) |
 | 2c-park | 7.6 µs → **259** ns (252–291) | 26.5 µs → **208** ns (201–217) |
 
-Every checksum verified. (This table is the branch at `39992047`, before axis L; the 2026-09-04
+Every checksum verified. (This table is the branch at `6a0897c0`, before axis L; the 2026-09-04
 re-measurement of all five benchmarks — shipped and branch in one session, 9 repetitions on
 Windows, 5 on WSL2 — is the pair of grids in README.md and the one `check-report.py` verifies,
-at `ba051409` first and at `f5c20eeb` since. The latter's ping-pong cells, 77 / 78 / 277 / 266 ns
+at `32b28130` first and at `230c5035` since. The latter's ping-pong cells, 77 / 78 / 277 / 266 ns
 on Windows and 69 / 67.5 / 233.5 / 214 ns on WSL2, are the figures to quote; the 2c-park cells there are 20–30 ns above this table's because
 the shipped and branch runs alternated on a host running the other three frameworks' cells in
 between, a spread this document's own §7 caution predicts.) The park row is now a framework
@@ -409,8 +409,8 @@ The two cells that carry a message across a core per hop (ping-pong, ring, at 2c
 or better; the counting regression of I alone is gone (43.5 → 28.5); and `big` gains the most
 because 120 actors × 60 handler-map entries was exactly the shape the hash tables missed on.
 
-**Official grids, shipped 3.1.0 → branch at `f5c20eeb`, same session, same protocol as the
-published tables** (Windows 9 reps, WSL2 5 reps; `M-f5c20eeb-shipped-3.1.0/` and `M-f5c20eeb/`
+**Official grids, shipped 3.1.0 → branch at `230c5035`, same session, same protocol as the
+published tables** (Windows 9 reps, WSL2 5 reps; `M-230c5035-shipped-3.1.0/` and `M-230c5035/`
 under each host's `qb-branch-perf-core-hot-path/`): on Windows ping-pong 112 → 77 / 113 → 78 /
 338 → 277 / 6624 → 266; counting 30 → 25.5 / 30 → 26 / 34 → 28 / 34 → 28; thread-ring
 63.5 → 46 / 63 → 43 / 206 → 146 / 2122 → 135; fork-join 42 → 35 / 42 → 35 / 45 → 40 / 42.5 → 36;
@@ -418,7 +418,7 @@ big 37 → 24 / 36 → 24 / 32 → 27 / 31 → 27. On WSL2 ping-pong 98 → 69 /
 26 523 → 214; counting 44 → 35 / 44 → 34 / 48 → 43 / 49 → 44; thread-ring 64 → 37 / 62 → 48 /
 191 → 123 / 13 273 → 130; fork-join 71 → 65 / 70 → 59 / 50 → 54 / 48.5 → 45; big 38 → 25 /
 40 → 26.5 / 29 → 23 / 32 → 23 (1c-spin / 1c-park / 2c-spin / 2c-park, ns per unit). Against the
-previous candidate `L-ba051409` every cell moves −5…−25 % except three that are level within
+previous candidate `L-32b28130` every cell moves −5…−25 % except three that are level within
 spread: Windows ping-pong 2c-spin (254 → 277) and ring 2c-spin (133 → 146), whose repetitions
 run 234–335 and 128–176 ns for L against 252–311 and 130–160 for M with the same minima, and
 which the interleaved A/B above puts at level or −16 %; and WSL2 fork-join 2c-spin (55 → 54).
@@ -483,7 +483,7 @@ the coin toss that run.
 `wait=0`; on shipped 3.1.0, which has no such knob, the adapter reports the cell **not applicable**
 rather than measuring the default under an experiment's label, and any document measured under the
 override carries a caveat saying it is not qb's configuration. Branch `perf/core-hot-path` @
-`39992047`, 7 repetitions + 2 warmup, CPUs 0 and 2, per round trip:
+`6a0897c0`, 7 repetitions + 2 warmup, CPUs 0 and 2, per round trip:
 
 | cell | Windows / MSVC 19.51 | WSL2 g++ 14.2 |
 |---|---:|---:|
@@ -525,30 +525,30 @@ long each one refuses to.
 The ping-pong axes of §7 were found on a two-actor round trip, which exercises one pipe in each
 direction and nothing else. On 2026-09-04 the four Savina benchmarks that add fan-in, a ring, a
 fan-out and an all-to-all were measured for every framework on both platforms — 84 cells per
-host, shipped qb 3.1.0 and the branch at `ba051409` through the same adapters in the same quiet
+host, shipped qb 3.1.0 and the branch at `32b28130` through the same adapters in the same quiet
 session, 9 repetitions on Windows and 5 on WSL2, checksums verified on every cell (the branch
 figures in the table are that measurement; the §7 subsection on axes I and M carries the
-re-measurement at `f5c20eeb`). The ranking is
+re-measurement at `230c5035`). The ranking is
 README.md's business; this section is the list of **qb-side costs** those four shapes exposed,
 each with where it is, what it measures and what was done. Figures are ns per unit of work
 (message, hop, message, round trip), p50, Windows / WSL2, shipped → branch unless stated. The
 `where` column cites **qb 3.1.0** coordinates: axis I rewrote `router.h` and axis M moved
-`__flush_all__`, so on the branch at `f5c20eeb` the same symbols live at `router.h:87`
+`__flush_all__`, so on the branch at `230c5035` the same symbols live at `router.h:87`
 (`dense_index`), `router.h:119` (`key_table`), `VirtualCore.cpp:277` (`kFlushRunBuckets`) and
 `Main.cpp:237` (`send_run`).
 
 | # | finding | where | measured | state |
 |---|---|---|---|---|
-| **9.1** | **Same-core dispatch costs ~27–30 ns on MSVC and ~40 ns on g++ against a 3 ns floor.** `counting` at one core is the purest measurement of it: one producer, one consumer, no core crossing, no reply — the cell is `push<>` + pipe + `consume_all` + route, and nothing else. | `VirtualCore.cpp:199` (`_router.route`), `system/event/router.h:471` (`_registered_events.at(id)->resolve`), `router.h:169` (the second `unordered_map` by handler id), `VirtualCore.cpp:224` (`consume_all`) | 1c-spin: 29.4 → **27.4** / 44.6 → **40.8** at `ba051409`; **25.5 / 34.9** at `f5c20eeb`; floor 3.2 / 2.8 | axis L took 2–4 ns, axis I another 2 (MSVC) to 6 (g++) — the g++/MSVC gap closed from 13 to 9 ns; what remains at 1 M messages (~22 / 32 ns over the floor) is NOT dispatch: the burst sweep of 9.11 measures the branch's same-core dispatch at **8.5 ns on g++ once the burst fits the cache** (30 000 messages; shipped 3.1.0: 37 — a 4.4× the 1 M cell reports as 20 %), and the rest of the 1 M cell is the memory system of a cold 64-MB pipe. **Taken** as far as the router goes; the remainder was 9.11, now taken — the 1 M cell is 9.2 ns on g++ and 9.5 on MSVC against the 2.8–3.0 floor — then 9.2 |
+| **9.1** | **Same-core dispatch costs ~27–30 ns on MSVC and ~40 ns on g++ against a 3 ns floor.** `counting` at one core is the purest measurement of it: one producer, one consumer, no core crossing, no reply — the cell is `push<>` + pipe + `consume_all` + route, and nothing else. | `VirtualCore.cpp:199` (`_router.route`), `system/event/router.h:471` (`_registered_events.at(id)->resolve`), `router.h:169` (the second `unordered_map` by handler id), `VirtualCore.cpp:224` (`consume_all`) | 1c-spin: 29.4 → **27.4** / 44.6 → **40.8** at `32b28130`; **25.5 / 34.9** at `230c5035`; floor 3.2 / 2.8 | axis L took 2–4 ns, axis I another 2 (MSVC) to 6 (g++) — the g++/MSVC gap closed from 13 to 9 ns; what remains at 1 M messages (~22 / 32 ns over the floor) is NOT dispatch: the burst sweep of 9.11 measures the branch's same-core dispatch at **8.5 ns on g++ once the burst fits the cache** (30 000 messages; shipped 3.1.0: 37 — a 4.4× the 1 M cell reports as 20 %), and the rest of the 1 M cell is the memory system of a cold 64-MB pipe. **Taken** as far as the router goes; the remainder was 9.11, now taken — the 1 M cell is 9.2 ns on g++ and 9.5 on MSVC against the 2.8–3.0 floor — then 9.2 |
 | **9.2** | **Every event is at least one 64-byte bucket, copied twice.** `QB_LOCKFREE_EVENT_BUCKET_BYTES` is the cache-line size, so a 16-byte payload is relocated as 64 bytes into the pipe and 64 bytes out of the ring into the `consume_all` scratch before dispatch. At 1 M messages that is 128 MB of memcpy per cell for a benchmark whose data is 16 MB. | `utility/prefix.h:68`, `Event.h:473` (`bucket_size * QB_LOCKFREE_EVENT_BUCKET_BYTES`), `VirtualCore.cpp:224` | not isolated — it is inside 9.1's 27 ns; the g++/MSVC gap (40 vs 27) is the one hint, g++'s `memcpy` of a 64-byte aligned block being the slower of the two here | **open**; a sub-cache-line bucket for small events changes the ABI fingerprint (`abi.h`) and is a major-version change. 9.11 re-weighs it: the traffic a 32-byte bucket halves is the traffic the growth path pays twice, so it is an experiment to run ON TOP of the segmented pipe, where its remaining half is the honest one |
-| **9.3** | **The out-of-line accessors — axis L.** Found by `perf` on these four, not on ping-pong, because a ring or a fan-out spends a larger share of its time in `push<T>` and the trampoline than a two-actor exchange does. | the §7 row | counting 1c 29.4 → 27.4 / 44.6 → 40.8; thread-ring 1c 62.9 → **51.0** / 62.5 → **48.0**; big 1c 36.2 → **31.3** / 37.4 → **31.0**; fork-join 2c-park 42.2 → 40.0 / 57.1 → **44.6** | **taken**, `ba051409` |
+| **9.3** | **The out-of-line accessors — axis L.** Found by `perf` on these four, not on ping-pong, because a ring or a fan-out spends a larger share of its time in `push<T>` and the trampoline than a two-actor exchange does. | the §7 row | counting 1c 29.4 → 27.4 / 44.6 → 40.8; thread-ring 1c 62.9 → **51.0** / 62.5 → **48.0**; big 1c 36.2 → **31.3** / 37.4 → **31.0**; fork-join 2c-park 42.2 → 40.0 / 57.1 → **44.6** | **taken**, `32b28130` |
 | **9.4** | **A ring crosses a core on every hop, and qb has no way to not.** `thread-ring` places actor i on VirtualCore i % cores, so at cores=2 every hop is a cross-core hop: 172 / 173 ns shipped against 63 / 62 ns on one core. CAF runs the receiver on the sender's worker (`worker::delay` → `queue.prepend`) and measures the same 236 / 140 ns at one core and two. qb's placement is static — an actor lives where it was built — so the framework cannot pull a ring onto one core; only the application can, by building it there. | `frameworks/qb/savina/thread-ring.cpp` (placement), `Actor.h:1068` (`forward`) | 2c-spin: 172.4 → **132.6** / 172.6 → **131.0** (floor 109.9 / 114.4, CAF 238.6 / 140.4); 1c: 62.9 → 51.0 / 62.5 → 48.0 | the branch closes 2c to 1.2× the floor; the remaining gap to CAF on WSL2 (131 vs 140, level within spread) is placement, not dispatch. **Open as a design question**: a `push<>` whose destination shares no core with the sender could migrate an actor with no other traffic, and qb has no such policy |
 | **9.5** | **The 2c-park collapse is on every cross-core-per-message shape, on both platforms.** §5 found it on ping-pong; the ring shows it bimodal on Windows — a repetition lands at ~565 ns or ~3.02 µs per hop and stays there (median 2446.5) — and on the hypervisor's floor on WSL2 (13 409 ns per hop, floor 13 008). counting, fork-join and big do NOT collapse (shipped 2c-park 33.0 / 42.2 / 33.2 on Windows) because a funnel or a fan-out never lets the consumer's pipe run dry. | §5 (`Mailbox::wait()`), §8.2 (the idle floor) | thread-ring 2c-park: 2446.5 → **145.0** / 13 409 → **130.0**; ping-pong 2c-park: 4225.5 → **278.3** / 26 780 → **241.5** | **taken** on the branch (A + B + K); the WSL2 figure is bought by the 50 µs idle floor, §8.2 |
 | **9.6** | **`send<>` is not faster than `push<>` on the all-to-all.** The eager cross-core variant was expected to win on `big` (one request in flight per actor, so nothing to batch) and measured slower: WSL2 3-rep min, send 26.1 / 25.9 / 26.2 against push 24.9 / 25.8 / 25.1 ns per round trip (1c-spin / 2c-spin / 2c-park). With 120 actors on two cores, the per-(core, core) pipe flush still carries a batch, and `send<>` gives that up for nothing. | `frameworks/qb/savina/big.cpp:61` (the comment carries the figures), `qb/llm/qb.llm.md` (`push` = ordered) | see left | recorded in the adapter; the `send<>` documentation should say when it wins (a single event with real idle behind it), which it does not |
 | **9.7** | **qb sits BELOW the raw-thread floor on the three shapes with parallelism, and the floor is why.** At two cores, counting 33.1 vs floor 42.3, fork-join 42.2 vs 48.5, big 33.2 vs 60.4 on Windows; the floor's SPSC ring pays one remote cache-line crossing per message, qb's staging pipe moves a batch per flush. This is the batching of `__getPipe__()` doing its job and is the strongest argument these four make for the engine — the report prints it as "below the floor" rather than as a ratio. | `VirtualCore.h` (`__getPipe__`), `Main.h:354` (`MaxRingEvents`) | 2c-spin counting 33.1 / 46.3, fork-join 46.0 / 58.4, big 30.8 / 32.8 (floors 42.3 / 23.7, 38.2 / 28.5, 43.3 / 25.4) | nothing to do; note the WSL2 floor is BELOW qb on counting and fork-join (23.7 / 28.5) — g++'s SPSC ring is cheaper and 9.2 is the suspect |
-| **9.8** | **fork-join at one core costs 1.4–1.6× counting at one core, and the difference is not isolated.** Same producer, same `push<>`, same core; the only change is 60 destinations instead of one, so 60 handler-map entries and 60 actors' state instead of one hot line. | `router.h:169` (`_subscribed_handlers` by handler id), `Actor.h` (`is_alive` on delivery) | 1c-spin 42.5 → 37.9 / 67.0 → 67.9 at `ba051409`, **34.8 / 65.0** at `f5c20eeb`, against counting 25.5 / 34.9; 1c-park 64.4 → **58.9** on WSL2 | **taken in part** — the dense table (axis I) took 8 % on MSVC and 4–9 % on g++, so the 60-key lookup was a cost but not the whole 1.4–1.6×; what remains is 60 actors' state against one hot line, which is the shape and not the engine |
+| **9.8** | **fork-join at one core costs 1.4–1.6× counting at one core, and the difference is not isolated.** Same producer, same `push<>`, same core; the only change is 60 destinations instead of one, so 60 handler-map entries and 60 actors' state instead of one hot line. | `router.h:169` (`_subscribed_handlers` by handler id), `Actor.h` (`is_alive` on delivery) | 1c-spin 42.5 → 37.9 / 67.0 → 67.9 at `32b28130`, **34.8 / 65.0** at `230c5035`, against counting 25.5 / 34.9; 1c-park 64.4 → **58.9** on WSL2 | **taken in part** — the dense table (axis I) took 8 % on MSVC and 4–9 % on g++, so the 60-key lookup was a cost but not the whole 1.4–1.6×; what remains is 60 actors' state against one hot line, which is the shape and not the engine |
 | **9.9** | **Windows 2c-park was the shipped engine's worst cell on every shape that crosses a core per message**, and on ping-pong it was worse than SObjectizer's `simple_lock` (4225.5 vs 1034.6) and 8.6× CAF; shipped 3.1.0 in park mode was, on this host, the slowest actor framework in the table for a cross-core round trip. | §5 | ping-pong 2c-park 4225.5 → 278.3; thread-ring 2446.5 → 145.0 | **taken**; the single most user-visible finding of the suite and the reason the branch exists |
-| **9.10** | **A faster consumer made the cross-core pipe SLOWER — the per-event publish.** The first candidate with axis I lost 42 % on counting at two cores while winning every one-core cell: `__flush_all__` published the mailbox ring's write index once per event and the consumer re-read it once per `consume_all` batch, a cost that is invisible while the consumer lags (250–600 events per batch at 3.1.0) and one coherence round trip per message once it keeps up (6–9 per batch with the dense router). 3.1.0 never showed it because 3.1.0's consumer was never fast enough. | `VirtualCore.cpp:277` (`kFlushRunBuckets`, branch), `Main.cpp:237` (`send_run`, branch), `spsc.h` (`write_room`) | counting 2c-spin, L → I → I+M: 30.6 → 43.5 → **28.3**; 2c-park 31.7 → 44.5 → **28.2**; big 2c 29.5 → **26.9** / 30.9 → **23.0**; ping-pong 2c level | **taken** — axis M, `f5c20eeb`; the general lesson is that a dispatch optimisation must be measured at two cores, where it can flip the pipe into a regime the ring was not tuned for |
+| **9.10** | **A faster consumer made the cross-core pipe SLOWER — the per-event publish.** The first candidate with axis I lost 42 % on counting at two cores while winning every one-core cell: `__flush_all__` published the mailbox ring's write index once per event and the consumer re-read it once per `consume_all` batch, a cost that is invisible while the consumer lags (250–600 events per batch at 3.1.0) and one coherence round trip per message once it keeps up (6–9 per batch with the dense router). 3.1.0 never showed it because 3.1.0's consumer was never fast enough. | `VirtualCore.cpp:277` (`kFlushRunBuckets`, branch), `Main.cpp:237` (`send_run`, branch), `spsc.h` (`write_room`) | counting 2c-spin, L → I → I+M: 30.6 → 43.5 → **28.3**; 2c-park 31.7 → 44.5 → **28.2**; big 2c 29.5 → **26.9** / 30.9 → **23.0**; ping-pong 2c level | **taken** — axis M, `230c5035`; the general lesson is that a dispatch optimisation must be measured at two cores, where it can flip the pipe into a regime the ring was not tuned for |
 | **9.11** | **The one-core cell at 1 M messages measures the memory system of a cold 64-MB pipe, not dispatch — and the pipe's growth is why.** A burst of N `push<>` in one handler is staged whole (nothing drains a core's own pipe while its handler runs), so the pipe's high-water mark IS the burst: 64 MB at 1 M events of one 64-byte bucket. `allocate_back` grows it by doubling — `_factor <<= 1`, a fresh `std::allocator::allocate`, a `memcpy` of the entire content, the old block freed — so a burst above the high-water mark copies every event it already holds (~64 MB of non-temporal `memmove` per 1 M-event burst), and because every block from 512 KB up is above the allocator's reuse threshold the doubling path re-faults them from the kernel on every fresh engine and every new high-water mark: 26 600 minor faults per repetition, 104 MB of first-touch for 64 MB of data. The sweep below is the measurement: on g++ the branch's same-core dispatch is **8.5 ns** at 30 000 messages and 35 at 1 M; shipped 3.1.0 is 37 → 43 on the same axis, so the branch's real dispatch gain is **4.4×** and the 1 M cell reports it as 20 %. CAF (118 → 118) and SObjectizer (94 → 106) do not have the cliff: a per-message heap allocation is reused by the allocator, a contiguous growable pipe is not. | `system/allocator/pipe.h:356` (`allocate_back`), `pipe.h:373` (`_factor <<= 1u`), `pipe.h:382` (the `memcpy`), `pipe.h:59` (`_SIZE = 4096` buckets = 256 KB), `Event.h:689` (`VirtualPipe = allocator::pipe<EventBucket>` — the mono pipe of `VirtualCore.cpp:220` and every cross-core `_pipes` entry alike) | WSL2 1c-spin, branch: 2 k **6.5**, 10 k 8.0, 30 k 8.5, 100 k 12.5, 300 k 31.8, 1 M 35.2, 4 M 38.8 ns; `time` at 1 M: user 90 ms, **sys 140–160 ms** over six runs; `perf` user share: 32 % libc `memmove` (non-temporal path, called from `allocate_back` under the producer's trampoline), 25 % the push loop, 17 % `__receive_events__`, 9 % `resolve`, 9 % the consumer trampoline. Windows: kernel 47 ms of 172 at 1 M, 312 of 656 at 4 M (six runs, 15.6 ms timer) — the shape there is in the subsection | **taken — `perf/event-pipe-segmented`**: a segmented pipe over a process-wide slab pool (growth appends, copies nothing; slabs stay warm across engines; `push<>` references stable, the `Pipe.h:118` contract retired). g++ 1 M: 35.0 → **9.2** ns, 4 M 40.1 → 9.3; MSVC 1 M 25.8 → **9.5**; page faults per 1 M process 230 942 → **291**. The subsection carries the two-host sweep, the five-benchmark grid, the launch census and the 4K-aliasing defect the A/B caught |
 | **9.12** | **On MSVC the dispatch itself is 20–25 ns where g++'s is 6.5–8.5.** The same sweep on Windows: 2 k 20.6, 30 k 25.0, 1 M 25.3, 4 M 25.7 — flat, with no cliff and a non-monotonic 10 k–300 k stretch (29.9 / 25.0 / 28.3 / 32.8) that is recorded, not explained. Windows pays the growth too (kernel 8–13 ns per message at 1 M–4 M) but its faults and copies are cheap enough to hide under a dispatch that is 3× g++'s at cache-resident bursts. Whether that 3× is the compiler (inlining of the trampoline / `allocate_back` chain, the `std::span` walk) or the OS is the open question; the discriminating experiment is a clang-cl build of the same tree on the same host, which no cell here has. | the §9.1 path | Windows 1c-spin branch 20.6 (2 k) → 25.3 (1 M); shipped 32.7 → 31.4; CAF 174 → 186; SObjectizer 137 → 142; floor 3.0 / 3.4 | **closed by 9.11** — with the pipe's memory warm the same MSVC binary dispatches at 6.6–10.4 ns from 2 k to 4 M against g++'s 5.9–9.3; the "flat 20–25" was fresh pipe pages faulted per repetition, not the compiler. The clang-cl A/B has no premise left |
 
@@ -577,7 +577,7 @@ messages (`results/*/qb-branch-perf-core-hot-path/burst-sweep/`, 7 repetitions +
 and 2, quiet host, 2026-09-04, checksums verified on every document). The published cell is the
 1 M column. ns per message, p50:
 
-| burst | qb branch `f5c20eeb` | qb 3.1.0 | CAF | SObjectizer | floor |
+| burst | qb branch `230c5035` | qb 3.1.0 | CAF | SObjectizer | floor |
 |---:|---:|---:|---:|---:|---:|
 | **WSL2 g++ 14.2** | | | | | |
 | 2 000 | **6.5** | | | | |
@@ -620,16 +620,16 @@ Three things this says, each verified in the source or by a second instrument:
   but Windows' demand-zero faults and MSVC's `memcpy` are cheap enough that the cliff never
   shows above a dispatch that is 3× g++'s at 2 000 messages (20.6 vs 6.5). That gap is 9.12.
 
-**What was done about it — `perf/event-pipe-segmented`, measured against `f5c20eeb` on both
+**What was done about it — `perf/event-pipe-segmented`, measured against `230c5035` on both
 hosts with this sweep as its instrument** (`results/*/qb-branch-perf-event-pipe-segmented/`,
 2026-09-05, one quiet session per host and never the two at once: Windows 01:07–01:16 UTC for
 the pass quoted, WSL2 01:18–01:26 UTC, the Windows grid-order census 01:27–01:29 UTC; the earlier
 passes are kept as `*-pass<N>/` and every document carries its `env.utc`). The
-branch is two local commits over `perf/core-hot-path`: `518d956e`, the segmented pipe itself —
+branch is two local commits over `perf/core-hot-path`: `b34fbc23`, the segmented pipe itself —
 growth links a 256 KB segment and copies nothing, segments are retained at the high-water mark,
 `__receive_events__` / `__flush_all__` walk segments, and the reference `push<>` returns is
 stable for the event's life, which retires the `Pipe.h:118` contract rather than documenting it
-(`PushReferenceStability.*` asserts the opposite) — and `a017b8a5`, where the segments come from:
+(`PushReferenceStability.*` asserts the opposite) — and `279e6cd4`, where the segments come from:
 a process-wide `slab_cache` (`qb/system/allocator/slab.h`) of 2 MB slabs mapped by the platform
 (`mmap` on POSIX, `madvise(MADV_HUGEPAGE)`d and prefaulted with `MADV_POPULATE_WRITE`;
 `VirtualAlloc` on Windows), carved eight segments to a slab by each core's `segment_pool` and
@@ -639,7 +639,7 @@ kept warm across pools and engines. The A/B is what put the slabs there: with se
 (`burst-sweep-prehoist/pass1-malloc-segments/`). ns per message, p50, 7 repetitions + 2 warmup,
 both qb binaries in the same session:
 
-| burst | qb `perf/event-pipe-segmented` | qb `f5c20eeb` | qb 3.1.0 | CAF | SObjectizer | floor |
+| burst | qb `perf/event-pipe-segmented` | qb `230c5035` | qb 3.1.0 | CAF | SObjectizer | floor |
 |---:|---:|---:|---:|---:|---:|---:|
 | **WSL2 g++ 14.2** | | | | | | |
 | 2 000 | **5.9** | 9.7 | | | | |
@@ -662,13 +662,13 @@ The cliff is gone on both compilers: the 1 M cell is 9.2 ns on g++ against 35.0,
 against 25.8, both within a few ns of the cache-resident 30 000 figure and 3× the raw floor
 rather than 12×. `perf stat` on the whole process (2 warmup + 7 repetitions, 1c-spin counting,
 WSL2) puts the mechanism in one number: **291 page faults** at 1 M for the branch against
-230 942 for `f5c20eeb` and 287 732 for shipped 3.1.0 — and 290 at 30 000, i.e. the count no
+230 942 for `230c5035` and 287 732 for shipped 3.1.0 — and 290 at 30 000, i.e. the count no
 longer depends on the burst at all, because a slab is faulted once per 2 MB by the kernel and
 never again. CAF and SObjectizer do not move.
 
-**The five-benchmark grid is the regression check**, same protocol as `M-f5c20eeb/` (7 + 2 here
-against 9 + 2 / 5 + 2 there; `grid-final/` beside `grid-f5c20eeb/` and `grid-shipped-3.1.0/`,
-the three binaries in one session). ns per unit, p50, branch vs `f5c20eeb`:
+**The five-benchmark grid is the regression check**, same protocol as `M-230c5035/` (7 + 2 here
+against 9 + 2 / 5 + 2 there; `grid-final/` beside `grid-230c5035/` and `grid-shipped-3.1.0/`,
+the three binaries in one session). ns per unit, p50, branch vs `230c5035`:
 
 | | 1c-spin | 1c-park | 2c-spin | 2c-park |
 |---|---:|---:|---:|---:|
@@ -696,7 +696,7 @@ cell, and on Windows the two `2c-spin` cells of ping-pong and thread-ring are bi
 launch: the per-repetition sequence of either binary alternates between ~245–255 and ~300–345 ns
 per round trip (ring ~120–145 vs ~165–180), and a 7-repetition median lands wherever the majority
 fell. Over four grid passes the branch's ping-pong 2c-spin medians were 274–319 ns against
-`f5c20eeb`'s 258–263, the ring's 141–173 against 134–152, and a difference that survives four
+`230c5035`'s 258–263, the ring's 141–173 against 134–152, and a difference that survives four
 passes is not dismissed by calling it noise. The **launch census** is the instrument for that —
 the same binaries, the same arguments, launched standalone N times interleaved, 3 + 1 repetitions
 each (`census-win-*/` under the scratch results, not kept as documents): ping-pong 2c-spin
@@ -705,8 +705,8 @@ then 262.3 → 259.7 over 16; thread-ring 2c-spin 130.3 → 124.7 and 126.6 → 
 137.7 → 134.0 and 138.1 → 129.8; and the one-core ping-pong cells, which are the sensitive
 same-core path, 77.3 → 77.8 (spin) and 78.1 → 78.6 (park) — within 1 %, distributions
 overlapping. The census was then re-run as a KEPT document with `tools/launch-census.py` — the macOS host's protocol, 12 launches interleaved, 3 + 1, pinned `0,2`, on all eight cells of ping-pong and thread-ring (`launch-census/`, 2026-09-06, `census.log` beside it): ping-pong 1c-spin 82.2 vs 82.5, 1c-park 84.5 vs 83.6, 2c-spin 269.8 vs 265.9, 2c-park 271.9 vs 271.3; thread-ring 1c-spin 49.0 vs 47.8, 1c-park 48.0 vs 47.4, 2c-spin 133.3 vs 138.8, 2c-park 142.9 vs 146.1 — every pair's distributions overlap, the ring's two-core cells 2–4 % in the branch's favour and nothing outside a spread. That session's absolute level sits 5–8 % above the scratch censuses on BOTH sides (an evening host with a browser open), which is the case interleaving exists for: it moves the pair, not the difference. A **mode census** under the grid's own 7 + 2 protocol, six launches per binary,
-puts the branch's per-launch ping-pong medians at 216–267 against `f5c20eeb`'s 249–283 and the
-ring's at 120–135 against 125–130. The third instrument is the grid's own launcher with the sequence changed and nothing else: `run.py`, 7 + 2, the same cell order, over a `bin/` holding ONLY ping-pong and thread-ring, four interleaved rounds per binary (`grid-order-census/`, kept, with its log). With big, counting and fork-join no longer run first, the branch's ping-pong 2c-spin round medians read 236–256 against `f5c20eeb`'s 223–255 (medians of medians 251.8 vs 238.3, one bimodal step apart), 2c-park 251.5 vs 254.5, and the ring's 2c-spin 122.8 vs 129.5, 2c-park 132.9 vs 134.6 — the 274–319 of the full grid appears in no instrument that does not run the three burst benchmarks first. Each cell is its own process, so what carries from one cell to the next is the host's state, not the pipe's; the mechanism is not identified, and the finding is recorded as what it is: a property of the sequence, not of the build. The grid cell is kept as measured and the census is the figure
+puts the branch's per-launch ping-pong medians at 216–267 against `230c5035`'s 249–283 and the
+ring's at 120–135 against 125–130. The third instrument is the grid's own launcher with the sequence changed and nothing else: `run.py`, 7 + 2, the same cell order, over a `bin/` holding ONLY ping-pong and thread-ring, four interleaved rounds per binary (`grid-order-census/`, kept, with its log). With big, counting and fork-join no longer run first, the branch's ping-pong 2c-spin round medians read 236–256 against `230c5035`'s 223–255 (medians of medians 251.8 vs 238.3, one bimodal step apart), 2c-park 251.5 vs 254.5, and the ring's 2c-spin 122.8 vs 129.5, 2c-park 132.9 vs 134.6 — the 274–319 of the full grid appears in no instrument that does not run the three burst benchmarks first. Each cell is its own process, so what carries from one cell to the next is the host's state, not the pipe's; the mechanism is not identified, and the finding is recorded as what it is: a property of the sequence, not of the build. The grid cell is kept as measured and the census is the figure
 to quote for those two cells; on WSL2 the same census (10 launches) reads ping-pong 2c-spin
 217.2 → 210.1, 2c-park 214.8 → 214.0, 1c 66.8 → 65.1 and 67.5 → 65.6; thread-ring 1c-spin
 37.7 → 35.9, 2c-spin 116.4 → 105.9, 2c-park 120.1 → 117.9; big 21.3–22.1 → 20.9–21.4 at all
@@ -731,13 +731,13 @@ before the segmented pipe on both hosts (the grid and the census above), and
 **9.12 closes with this.** The "MSVC dispatch gap" was fresh pipe pages faulted per repetition,
 not the compiler: with the pipe's memory warm the same MSVC binary dispatches at 6.6–9.5 ns from
 2 000 to 4 M against g++'s 5.9–9.3, and the flat 20–25 ns that made a clang-cl A/B look
-informative is gone. What MSVC keeps is a one-core ping-pong 1–2 % slower than `f5c20eeb`
+informative is gone. What MSVC keeps is a one-core ping-pong 1–2 % slower than `230c5035`
 in three instruments that agree on the sign (census 77.3 → 77.8 ns, 24 launches 77.2 → 78.0,
 grid-order 76.3 → 77.7) where g++ gains 3 % — inside each instrument's spread, recorded, not
 explained, and the one open item this branch leaves on the same-core path.
 
 **And the A/B was run anyway, on 2026-09-08, against the 3.2.0 tree — the answer is "both,
-in halves"** (`results/desktop-b67osn6-win-msvc/qb-46-clang-cl/`, Huly QB-46). qb `9366384b` built
+in halves"** (`results/desktop-b67osn6-win-msvc/qb-46-clang-cl/`, Huly QB-46). qb `381e4995` built
 twice from the same directory by `cl` 19.51 and by `clang-cl` 22.1.7 — LLVM's Clang behind MSVC's
 command line, ABI, CRT and STL — and measured in one quiet session: on every dispatch-bound shape
 the clang-cl binary is **10–18 % faster** (ping-pong 1c 31.6 → 27.4 ns, big 17.1 → 14.8, fib
@@ -804,7 +804,7 @@ framework that parks across cores pays it (qb 3.1.0 6.85 µs, SObjectizer 5.61 �
 the three qb binaries launched interleaved at each burst, 7 + 2, page reclaims from
 `/usr/bin/time -l` beside each document). ns per message, p50, counting 1c-spin:
 
-| burst | `perf/event-pipe-segmented` `a017b8a5` | `f5c20eeb` | 3.1.0 | CAF | SObjectizer | floor |
+| burst | `perf/event-pipe-segmented` `279e6cd4` | `230c5035` | 3.1.0 | CAF | SObjectizer | floor |
 |---:|---:|---:|---:|---:|---:|---:|
 | 2 000 | **5.9** | 6.9 | 9.3 | | | |
 | 10 000 | 6.2 | 8.0 | 10.4 | | | |
@@ -814,12 +814,12 @@ the three qb binaries launched interleaved at each burst, 7 + 2, page reclaims f
 | 1 000 000 | **6.2** | 8.2 | 11.3 | 74.8 | 64.2 | 4.4 |
 | 4 000 000 | 6.1 | 8.6 | 11.3 | | | |
 
-**There was no cliff to remove on macOS.** `f5c20eeb`, which climbed 9.7 → 40 on g++ and
+**There was no cliff to remove on macOS.** `230c5035`, which climbed 9.7 → 40 on g++ and
 19 → 27 on MSVC, reads 6.9 → 8.6 here, and 3.1.0 9.3 → 11.3 where it read 43. The mechanism
 §9.11 describes — the doubling ladder re-faulting fresh pages at every rung because the block is
 above the allocator's reuse threshold — costs XNU almost nothing: its zero-fill fault is cheap and
 `malloc`'s large-block path hands the ladder back warm. What the candidate buys here is the
-dispatch, not the faults: **5.6–6.2 flat**, fastest at every burst, −25 % against `f5c20eeb` and
+dispatch, not the faults: **5.6–6.2 flat**, fastest at every burst, −25 % against `230c5035` and
 −45 % against 3.1.0, 1.4× the raw floor. The page-reclaim count says where the residual is: at
 1 M the candidate takes **4 344** against 8 364 / 8 365 (16 256 against 32 374 at 4 M) — halved,
 where Linux divided by 800 — because `MADV_POPULATE_WRITE` does not exist on Darwin and
@@ -828,10 +828,10 @@ first touch. Touching each page once at carve time would close that gap on this 
 recorded as an option, not taken, because the slabs are retained at the high-water mark and the
 faults are paid in warmup.
 
-**The three grids** (`grid-final/`, `grid-f5c20eeb/`, `grid-shipped-3.1.0/`, 7 + 2, 19:06–19:08 UTC).
+**The three grids** (`grid-final/`, `grid-230c5035/`, `grid-shipped-3.1.0/`, 7 + 2, 19:06–19:08 UTC).
 One-core cells, ns per unit, p50 (min–max spread 1–4 %, quotable as they are):
 
-| | candidate | `f5c20eeb` | 3.1.0 | candidate vs `f5c20eeb` |
+| | candidate | `230c5035` | 3.1.0 | candidate vs `230c5035` |
 |---|---:|---:|---:|---:|
 | ping-pong 1c-spin | **49.7** | 53.8 | 84.9 | −7.6 % |
 | ping-pong 1c-park | 50.4 | 53.3 | 84.5 | −5.4 % |
@@ -842,10 +842,10 @@ One-core cells, ns per unit, p50 (min–max spread 1–4 %, quotable as they are
 
 The one-core ping-pong cell — the sensitive same-core path where MSVC kept +1–2 % — reads
 **−7.6 % for the candidate** on clang/arm64, in both spin and park. Two-core cells, from the
-**launch census** (`launch-census/`: 12 launches interleaved candidate/`f5c20eeb`, 3 + 1 each,
+**launch census** (`launch-census/`: 12 launches interleaved candidate/`230c5035`, 3 + 1 each,
 median of per-launch medians, and whether the two distributions overlap):
 
-| | candidate | `f5c20eeb` | | distributions |
+| | candidate | `230c5035` | | distributions |
 |---|---:|---:|---:|---|
 | ping-pong 2c-spin | **156.3** | 187.4 | −16.6 % | overlap (142–209 vs 156–218) |
 | ping-pong 2c-park | 210.6 | **186.9** | +12.7 % | overlap (196–235 vs 172–241) |
@@ -857,7 +857,7 @@ median of per-launch medians, and whether the two distributions overlap):
 Every pair overlaps, so by this repository's own rule none of these is a measured difference;
 the medians favour the candidate on ping-pong 2c-spin and both big cells (the slabs' locality,
 as on the other hosts) and are level on the ring. **The one residual is ping-pong 2c-park**: the
-candidate's median is 12 % above `f5c20eeb`'s in the grid (209.6 vs 185.4), in the 12-launch
+candidate's median is 12 % above `230c5035`'s in the grid (209.6 vs 185.4), in the 12-launch
 census (210.6 vs 186.9) and in a third instrument built for it — 24 launches × 5 repetitions
 (`launch-census-pingpong-2cpark-24x5/`: 209.7 vs 187.5, +11.8 %, candidate 185–228, control
 166–241). Three instruments agree on the sign and all three distributions overlap. Nothing in the
@@ -867,8 +867,8 @@ block), and a cross-core wake that reads it is the one cell where that placement
 Recorded, not explained — the same standing as MSVC's one-core +1–2 %. Against shipped 3.1.0 the
 same cell is 6.85 µs → 0.21 µs, the branch's largest single move on this host (axes A/B/C).
 
-**Axis K on `dmb ish`** (`axis-k/`: qb at `39992047`, the commit that made `Mailbox::notify()`
-fence in spin mode too, against its parent `e995973f`; three interleaved grid rounds, then the
+**Axis K on `dmb ish`** (`axis-k/`: qb at `6a0897c0`, the commit that made `Mailbox::notify()`
+fence in spin mode too, against its parent `61b0b4cf`; three interleaved grid rounds, then the
 12-launch census that is the figure to quote):
 
 | | with fence | without | | distributions |
@@ -936,7 +936,7 @@ lands — sends one line, and times the round trip. Twelve cells, `latency` ∈ 
 10000} µs × `gap` ∈ {10, 200, 2000} µs, 2000 rounds after 50 warm-ups, control and candidate
 interleaved twice per cell. The `latency=0` column is the busy-poll floor (the core never parks)
 and the `gap=10us` row keeps the core inside its idle-spin floor (it polls); every other cell
-parks. Control is qb `develop` at `f0da4e32`, the tree axis N branches from; candidate is
+parks. Control is qb `develop` at `d1897d3c`, the tree axis N branches from; candidate is
 `perf/park-in-ev-loop`.
 
 **The probe pins its own two threads, and the difference between that and a process mask is the
@@ -1100,7 +1100,7 @@ that joined the published tables the same evening (`results/<host>/savina-fib/`,
 
 ### 11.1 fib's first run: 43 seconds
 
-qb `develop` (`22c9bf6e`, every axis through N) measured fib at **43.2 s** per repetition on
+qb `develop` (`00b60afe`, every axis through N) measured fib at **43.2 s** per repetition on
 Windows/MSVC against CAF's 86 ms — three orders of magnitude, super-linear in the live count.
 The dense router of axis I grew its `key_table` with `reserve(max(idx + 1, size() * 2))` on
 each insert: one element past the previous doubling, so every subscription of a NEW id copied
@@ -1117,18 +1117,18 @@ actor after start-up.
 | qb commit | fib | what the profile showed next |
 |---|---|---|
 | shipped **3.1.0** | **159 / 459 ms** | no dense table — the LOGGER: 9 `LOG_INFO` lines per actor lifetime at the shipped `QB_WITH_LOGGING=ON` default (`registerEvent` × 7, `New`, `Delete`), 515 819 lines and 60.9 MB per repetition, formatted on the actor's core inside the window; see 11.5 |
-| `develop` `22c9bf6e` | 43.2 s (Windows) | the O(n²) table growth of 11.1 |
-| `b4baba33` | 178 ms → 28 ms (Windows) | growth by capacity; then every per-lifecycle `LOG_INFO` line (the nine above) demoted to VERBOSE |
-| `3ea9a2ae` | **8.49 / 12.13 ms** | `ActorMap` a hash map keyed by what is already a per-core slot; the kill queue a hash set; a `dynamic_cast` per subscription |
-| `8362a4b8` | **7.08 / 11.09 ms** | `active_coroutines_` `make_shared`'d in every constructor — ~30 % of a non-spawning actor's lifetime |
+| `develop` `00b60afe` | 43.2 s (Windows) | the O(n²) table growth of 11.1 |
+| `5665b6f8` | 178 ms → 28 ms (Windows) | growth by capacity; then every per-lifecycle `LOG_INFO` line (the nine above) demoted to VERBOSE |
+| `d44e7b44` | **8.49 / 12.13 ms** | `ActorMap` a hash map keyed by what is already a per-core slot; the kill queue a hash set; a `dynamic_cast` per subscription |
+| `001be013` | **7.08 / 11.09 ms** | `active_coroutines_` `make_shared`'d in every constructor — ~30 % of a non-spawning actor's lifetime |
 
-Field at `8362a4b8`, fib 2c-spin: floor 3.3 / 4.0, **qb 7.1 / 11.1**, CAF 38.6 / 52.5,
+Field at `001be013`, fib 2c-spin: floor 3.3 / 4.0, **qb 7.1 / 11.1**, CAF 38.6 / 52.5,
 SObjectizer 328 / 188 ms. One core: floor 1.7 / 3.7, **qb 11.4 / 17.6**, CAF 68.5 / 84.0,
 SObjectizer 148 / 154. Per actor lifetime on one core that is **200 ns** for qb against 30 for a
 malloc-and-free node, 1.2 µs for CAF and 2.6 µs for SObjectizer.
 
 Against shipped 3.1.0 in the SAME session (the pair FAIRNESS.md asks for —
-`grid-8362a4b8-session2/` beside `savina-fib/`, 18:13 UTC on WSL2 and 18:14–18:16 on Windows):
+`grid-001be013-session2/` beside `savina-fib/`, 18:13 UTC on WSL2 and 18:14–18:16 on Windows):
 fib 2c-spin **159 → 7.6 ms** (21×) and 1c-spin **205 → 11.9** (17×) on WSL2; **459 → 10.5**
 (44×) and **558 → 17.2** (32×) on Windows. Chameneos, which creates 101 actors and logs nothing
 per meeting, moves 15.3 → 11.1 / 12.0 → 6.5 (WSL2) and 20.8 → 12.8 / 13.2 → 7.6 (Windows) —
@@ -1143,7 +1143,7 @@ on that path.
 
 ### 11.3 What is left in an actor's lifetime, and what is not this branch's
 
-`perf --call-graph dwarf` on fib 1c at `8362a4b8`: the actor object's own `new`/`delete` is the
+`perf --call-graph dwarf` on fib 1c at `001be013`: the actor object's own `new`/`delete` is the
 last heap traffic on the path. The rest is the router — `registerEvent` × 7 per actor
 (5 default + 2 of the benchmark's) ≈ 29 %, `unregisterEvents` ≈ 12 % because it walks EVERY
 resolver on the core asking each to forget an id it mostly never held, `removeActor` 23 %
@@ -1174,7 +1174,7 @@ subscribed to <E>` for the five default events and the benchmark's two, `[append
 Actor[...]`, `[removeActor] Delete Actor[...]` — **515 819 lines, 60.9 MB of `qb.1.log` per
 repetition**, counted. On an ext4 cwd the run is 522 ms wall for one repetition; on the
 9p-mounted checkout nanolog's per-line flush makes every `write()` a round trip to the Windows
-host and the EXIT of a one-repetition run takes minutes. `b4baba33` demotes all nine to VERBOSE.
+host and the EXIT of a one-repetition run takes minutes. `5665b6f8` demotes all nine to VERBOSE.
 That is a user-visible 3.1.0 characteristic and it is recorded as such: the published cell is
 the qb a 3.1.0 user builds, and the 21× / 44× above is what 3.2.0 changes for a program that
 creates actors — most of it the logger, the rest the registry.
@@ -1194,9 +1194,9 @@ Every shape through §11 pushes and forgets. `savina/bank-transaction`
 transfers, each a request nested inside a request: the source account `co_await`s a
 `qb::ask<Deposit>` to the destination and acknowledges the teller when the reply lands. It is the
 first benchmark to sit on the coroutine request path — `ScopedCoroContext`, `ask_awaiter`, the
-cancellation token, `reply()` — and its one-core `perf` profile on qb `develop` (`203cfb56`,
+cancellation token, `reply()` — and its one-core `perf` profile on qb `develop` (`9d4aa94c`,
 every axis of §7–§11 in) read as a list of things that should not be on a request path. Written
-2026-09-06, the five fixes landed on `develop` as one commit (`9814c2a1`, Huly QB-42), and the
+2026-09-06, the five fixes landed on `develop` as one commit (`fa1c5ce3`, Huly QB-42), and the
 field, shipped 3.1.0 and the two `develop` builds were measured in ONE quiet session per host on
 2026-09-07 (WSL2 02:21 UTC, 5 + 1; Windows 02:24 UTC, 9 + 2, each host idle while the other ran):
 `results/<host>/savina-bank-transaction/` and
@@ -1204,7 +1204,7 @@ field, shipped 3.1.0 and the two `develop` builds were measured in ONE quiet ses
 
 ### 12.1 The five, and the sixth they exposed
 
-| # | what the profile showed (1c spin, g++-14, `203cfb56`) | what changed |
+| # | what the profile showed (1c spin, g++-14, `9d4aa94c`) | what changed |
 |---|---|---|
 | 1 | `ScopedCoroContext` copied a `shared_ptr` on every ask and every spawn — **29 % of the core, 24 % on the single `lock xadd` of `_M_release`**, on a state its own contract calls single-threaded | the cancellation token's state carries an intrusive non-atomic `refs`; the actor's coroutine census is `detail::coro_census {active, refs}` behind `coro_census_ref` — zero atomics on a counter only the owning core's thread touches |
 | 2 | `ask_awaiter` registered through `on_cancel`: a `std::function` + vector push per ask, a linear `remove_on_cancel` per completion | `cancellation_token::cancel_hook` + `token.link(hook)`: an intrusive, allocation-free node the awaiter owns, unlinked on completion |
@@ -1224,12 +1224,12 @@ warnings.
 |---|---|---|
 | shipped **3.1.0** | 14.71 / 14.58 / 9.21 / 9.31 | 25.48 / 25.45 / 29.20 / 33.45 |
 | shipped 3.1.0, `QB_WITH_LOGGING=OFF` | 15.80 / 16.28 / 8.99 / 9.75 | — |
-| `develop` `203cfb56` — the base | 9.40 / 9.44 / 5.09 / 5.02 | 13.65 / 13.86 / 7.97 / 7.78 |
-| `develop` `9814c2a1` — the five | **8.06 / 8.80 / 4.56 / 4.77** | **12.91 / 12.82 / 7.57 / 7.56** |
+| `develop` `9d4aa94c` — the base | 9.40 / 9.44 / 5.09 / 5.02 | 13.65 / 13.86 / 7.97 / 7.78 |
+| `develop` `fa1c5ce3` — the five | **8.06 / 8.80 / 4.56 / 4.77** | **12.91 / 12.82 / 7.57 / 7.56** |
 
 Field in the same sessions: floor 1.10 / 2.59 / 6.30 / 4.63 and 3.47 / 3.92 / 32.2 / 7.25; CAF
 41.5 / 43.0 / 36.6 / 36.6 and 57.8 / 58.0 / 57.5 / 58.1; SObjectizer 19.5 / 20.5 / 25.5 / 27.7
-and 29.6 / 31.5 / 38.0 / 44.4. Per transfer on one core, spin: **qb 161 ns** at `9814c2a1`
+and 29.6 / 31.5 / 38.0 / 44.4. Per transfer on one core, spin: **qb 161 ns** at `fa1c5ce3`
 (294 at 3.1.0), SObjectizer 391, CAF 830, the floor 22.
 
 Three readings. The five fixes alone are **−14 % / −10 %** (1c / 2c spin) on g++ and **−5 % /
@@ -1243,9 +1243,9 @@ session read 7.54–8.08.
 ### 12.3 Two things the controls said
 
 **The control in the commit message was mislabelled, and the same-session pair is what caught
-it.** `9814c2a1`'s message and qb's `[Unreleased]` quoted "shipped 3.1.0" at 9.74 / 9.60 ms (1c
+it.** `fa1c5ce3`'s message and qb's `[Unreleased]` quoted "shipped 3.1.0" at 9.74 / 9.60 ms (1c
 spin / park). Shipped 3.1.0 measures 14.7 in the same session, three times over; 9.4 is
-`203cfb56`, the commit the work branched from — which is what that "shipped" build had been all
+`9d4aa94c`, the commit the work branched from — which is what that "shipped" build had been all
 along. It changes nothing about the five (base → candidate is the delta they own) and it is why
 the bank page presents three controls rather than one, and why the CHANGELOG entry names the base
 by SHA. The rule this repository already had — shipped and candidate in the same quiet session,
@@ -1261,13 +1261,13 @@ by-value ask frame at 3.75 %, `malloc` at 2.8 % and `ask_awaiter` at 2.4 % of th
 
 ### 12.4 What is left, and the Windows 2c cells
 
-`perf` on `9814c2a1`, 1c spin: the ask registry — a hash map keyed by correlation id,
+`perf` on `fa1c5ce3`, 1c spin: the ask registry — a hash map keyed by correlation id,
 inserted on every ask and erased on every reply — was **≈10–12 % of the core** and the largest
 single item. It was recorded as the follow-up (a slot table keyed by what is already a per-core
 counter, the shape §11.3 gave `ActorMap`), not done in the commit. **Done since, as QB-178**
-(`perf/ask-slot-table`, two commits over `develop` `ba9b1a81`; the A/B documents are
+(`perf/ask-slot-table`, two commits over `develop` `1ec7e794`; the A/B documents are
 `results/<host>/qb-branch-perf-ask-slot-table/`, each README with its chain), and the branch is
-a lesson in what a profile percentage buys. `dfa303ec` made the registry a slot table the
+a lesson in what a profile percentage buys. `8f28e7bf` made the registry a slot table the
 correlation id itself indexes — `[core:16][generation:26][slot:22]`, a FIFO free list, nothing
 hashed — and the registry fell 12.8 → 8.4 % of the core (`perf record -F 20000 -g`, 1c spin,
 30 repetitions, registry symbols only) while bank-transaction moved 1–4 %, less than the 4.4
@@ -1276,7 +1276,7 @@ instructions, 15 % of it on one `jne`, 9.5 % on the epilogue, 7.5 % on the prolo
 miss signature anywhere. That is the cost of the CALL — a `thread_local` with a destructor is
 a `__tls_init` guard check per access on g++ — and the path paid it five times per ask:
 `ask_next_id`, `ask_register`, `ask_deliver`, `ask_unregister` from `await_resume` and
-`ask_unregister` again from the awaiter's destructor. `82ea03a8` makes it three (`ask_take(owner,
+`ask_unregister` again from the awaiter's destructor. `a61bded8` makes it three (`ask_take(owner,
 slot)` pops and binds in one call, `finish()` keeps a byte so the destructor's pass is a compare,
 the awaiter takes its entry in its constructor before the send so the throw-window guard is
 deleted): registry **4.36 %**, and the 1c gain arrives — WSL2 same-session p50, control →
@@ -1293,7 +1293,7 @@ Windows measurement, since no Windows profile is in this protocol.
 On Windows, three of the `2c` cells that cross a core per transfer are WIDE: the floor's 2c-spin
 spans 20.0–62.2 ms over nine repetitions (IQR 29.5), shipped qb's 2c-spin 24.3–49.6 (IQR 13.0)
 and its 2c-park 19.2–42.1 (IQR 18.5), while every 1c cell and both `develop` builds' 2c cells sit
-inside a tenth of that (`9814c2a1`: 7.57 / 7.56, IQR 0.2). The report's bimodality rule does not
+inside a tenth of that (`fa1c5ce3`: 7.57 / 7.56, IQR 0.2). The report's bimodality rule does not
 fire on them — no gap of 2× between clusters — so they render as medians, and the page quotes
 them with their spread. What makes a busy-polling ring floor and a 3.1.0 that crosses a core per
 transfer spread 3× on MSVC where the `develop` builds do not is not measured; it is the same
@@ -1303,23 +1303,23 @@ host, the same session and the same CPU set.
 
 ## 13. The 3.2.0 candidate grid — eight shapes, two hosts, one session each
 
-Everything §7–§12 produced is one branch now: qb `develop` at **`f8eba11d`**, 29 commits over
-the shipped v3.1.0 (`eac739ff`) — axes A–N (§7, §10), the segmented pipe (§9.11, QB-43), the
+Everything §7–§12 produced is one branch now: qb `develop` at **`43f62afe`**, 29 commits over
+the shipped v3.1.0 (`830ea244`) — axes A–N (§7, §10), the segmented pipe (§9.11, QB-43), the
 dense router (axes I / M), the default-event registry (QB-174), the dense-table growth chain
 fib produced (§11), the five ask-path fixes bank-transaction produced and the ask slot table
 (§12, QB-178). On 2026-09-07 it was measured through the unmodified adapters on **all eight
 Savina shapes**, candidate / shipped 3.1.0 / candidate, **9 repetitions + 2 warmup**, in one
 quiet session per host with the other host idle: Windows / MSVC 19.51 08:21:40–08:26:18 UTC
-(`build/final` rebuilt at `f8eba11d` against `build/shipped-win`), WSL2 / g++-14 08:45:23–
+(`build/final` rebuilt at `43f62afe` against `build/shipped-win`), WSL2 / g++-14 08:45:23–
 08:54:36 UTC (`~/qvo/linux` against `~/qvo/shipped`, both on ext4 — shipped 3.1.0's fib
 writes 61 MB of log per repetition, §11.5, which is 8 min 40 s of that session). The three
 grids per host are `results/<host>/qb-branch-develop/`, each 32 / 32 verified; README.md's
-two `framework=qb` grids render `grid-f8eba11d/` and `check-report.py` holds them to the
+two `framework=qb` grids render `grid-43f62afe/` and `check-report.py` holds them to the
 JSON. The field columns below are the published `savina-*/` cells of each host (their own
 sessions, 2026-09-04 / -06 / -07); "× floor" is the candidate over the raw-thread floor, "×
 best other" is the better of CAF and SObjectizer over the candidate.
 
-| shape (per unit) | config | Windows: 3.1.0 → `f8eba11d` | WSL2: 3.1.0 → `f8eba11d` | × floor (W / L) | × best other (W / L) |
+| shape (per unit) | config | Windows: 3.1.0 → `43f62afe` | WSL2: 3.1.0 → `43f62afe` | × floor (W / L) | × best other (W / L) |
 |---|---|---|---|---|---|
 | `ping-pong` (round trip) | 1c-spin | 117.4 → **84.2** (-28 %) | 100.3 → **66.0** (-34 %) | 49 / 40 | 2.2 / 2.2 |
 |  | 1c-park | 118.7 → **83.4** (-30 %) | 99.8 → **66.4** (-33 %) | 49 / 40 | 2.6 / 2.5 |
@@ -1364,7 +1364,7 @@ answers a cross-core round trip in 274 / 227 ns where 3.1.0 took 7.79 / 29.03 µ
 parked core no longer sleeps outside its loop (§10, axis N — the park is `ev_run` capped by
 a timer, and a producer's `ev_async_send` ends it). The two shapes that stage a burst are
 3–8× cheaper at every cell — that is the segmented pipe, and its burst sweep (§9.11) is
-unchanged by the 18 commits since `a017b8a5`: counting 1c is 10.0 / 8.7 ns here against
+unchanged by the 18 commits since `279e6cd4`: counting 1c is 10.0 / 8.7 ns here against
 9.5 / 9.2 there. fib is the largest delta the repository has recorded — **44× / 70×** on
 Windows, **25× / 29×** on WSL2 — and §11.5 says what 3.1.0's cell was (nine `LOG_INFO` lines
 per actor lifetime, then an O(n²) table growth): a defect a benchmark had to exist to see.
@@ -1429,19 +1429,19 @@ Nothing in the grid argues for another core axis before the train: the collapses
 every shape is ahead of the field on both compilers, and the residuals are each a named
 figure with a named instrument. This is the grid 3.2.0 ships with (`docs/ROADMAP.md`).
 
-### 13.4 The final candidate — the same grid at `693c5892` (2026-09-09), and what the second half bought
+### 13.4 The final candidate — the same grid at `77b358d8` (2026-09-09), and what the second half bought
 
 The grid of §13 was the programme's midpoint. The release measurement is the same protocol at
-the last commit before the train — qb `develop` `693c5892`, 66 commits over 3.1.0 and 37 over
-`f8eba11d`: the loop clock (§14), the pass's fixed cost and the ring's private lines (§15, §16),
+the last commit before the train — qb `develop` `77b358d8`, 66 commits over 3.1.0 and 37 over
+`43f62afe`: the loop clock (§14), the pass's fixed cost and the ring's private lines (§15, §16),
 the request/reply machinery and the loop under a timer (§17), the qev programme (QB-187 to
 QB-195), the one loop reference (QB-199), the sub-millisecond park (§19) — candidate / shipped
 3.1.0 / candidate, 9 + 2, one quiet session per host (Windows 15:39:09–15:42:12 UTC, WSL2
 14:19:38–14:27:51 UTC, the other side idle each time), `results/<host>/qb-branch-develop/
-grid-693c5892/`, `grid-shipped-3.1.0-final/`, `grid-693c5892-pass2/`, 32 / 32 verified in each.
-ns per unit, p50; shipped 3.1.0 is this session's control, `f8eba11d` the midpoint's own session:
+grid-77b358d8/`, `grid-shipped-3.1.0-final/`, `grid-77b358d8-pass2/`, 32 / 32 verified in each.
+ns per unit, p50; shipped 3.1.0 is this session's control, `43f62afe` the midpoint's own session:
 
-| shape, config | Win 3.1.0 | Win `f8eba11d` | **Win final** | pass 2 | WSL2 3.1.0 | WSL2 `f8eba11d` | **WSL2 final** | pass 2 |
+| shape, config | Win 3.1.0 | Win `43f62afe` | **Win final** | pass 2 | WSL2 3.1.0 | WSL2 `43f62afe` | **WSL2 final** | pass 2 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | ping-pong 1c-spin | 112.0 | 84.2 | **29.7** | 30.4 | 96.0 | 66.0 | **22.6** | 22.9 |
 | ping-pong 1c-park | 113.5 | 83.4 | **29.8** | 30.3 | 96.8 | 66.4 | **22.7** | 22.7 |
@@ -1495,8 +1495,8 @@ sessions by up to 11 % (chameneos 2c-park 105 → 117): every Windows two-core c
 within a launch (counting 2c's nine repetitions sort 10.6, 10.8, 12.3, 13.3 … 13.5 — a lower
 mode at 10.6 and an upper at 13.4, and the median lands wherever the majority fell). So the
 final build was censused against the midpoint build in ONE session — ten alternated launches of
-3 + 1 on CPUs 0 and 2, `build/final` (`693c5892`) against `build/ab180-ctl` (`f8eba11d`, the same
-adapters), `results/desktop-b67osn6-win-msvc/qb-branch-develop/census-693c5892-vs-f8eba11d/`
+3 + 1 on CPUs 0 and 2, `build/final` (`77b358d8`) against `build/ab180-ctl` (`43f62afe`, the same
+adapters), `results/desktop-b67osn6-win-msvc/qb-branch-develop/census-77b358d8-vs-43f62afe/`
 — median of the ten launch medians, [min … max]: counting 2c **13.6** [10.0 … 13.9] against
 **13.5** [10.9 … 14.0]; chameneos 2c **66.9** [46.8 … 74.7] against **67.8** [55.2 … 81.0]; ping-pong
 2c **189.3** [187.0 … 192.5] against **242.7** [215.9 … 249.7]; thread-ring 2c **107.2** [91.2 … 114.7]
@@ -1517,7 +1517,7 @@ cell of the 64 the second half did not move. The published tables' `qb` column s
 
 §13.3 named the per-pass cost of a core with ONE event in flight as the first residual and `perf`
 on g++ as its instrument. The first profile answered in one line. `perf record -e cpu-clock
--F 25000` (WSL2 has no PMU) on `f8eba11d`'s `savina/ping-pong` at one core, spin:
+-F 25000` (WSL2 has no PMU) on `43f62afe`'s `savina/ping-pong` at one core, spin:
 
 ```
 39.56%  [vdso] __vdso_clock_gettime
@@ -1529,7 +1529,7 @@ on g++ as its instrument. The first profile answered in one line. `perf record -
  3.62%  VirtualCore::send(Event const&)   3.39% send<Ball>   2.97% __flush_all__   1.42% time()
 ```
 
-Axis D (§7) had been "landed" as `443c5976`, `VirtualCore::time()` sampled on demand and keyed on
+Axis D (§7) had been "landed" as `985cbb3a`, `VirtualCore::time()` sampled on demand and keyed on
 the pass counter, with a field comment promising that a pass nobody asks costs nothing. It had
 moved the read, not removed it: `__workflow__` still built `const qb::LoopEvent loop_ev{time(),
 _loop_count}` on every pass — the event handed to `ICallback::on()` — whether or not a single
@@ -1540,7 +1540,7 @@ and `LoopEvent` included, sits behind `if (!_callback_list.empty())`.
 
 ### 14.1 The guard alone: −56 % at one core, +25 % on the cross-core spin cells
 
-Measured through the unmodified adapters, qb-only builds, candidate / control (`f8eba11d`) /
+Measured through the unmodified adapters, qb-only builds, candidate / control (`43f62afe`) /
 shipped 3.1.0 / candidate in one quiet WSL2 session (9 + 2, CPUs 0,2;
 `results/wsl-debian-g++14/qb-branch-perf-loop-clock-on-demand/grid-guard-only*/`): ping-pong
 1c-spin **64.9 → 28.4 ns** per round trip and thread-ring 1c-spin **37.9 → 17.5 ns** per hop —
@@ -1561,7 +1561,7 @@ from a pinned micro-benchmark on the same CPUs: `_mm_pause` **33.4 ns** on the i
 
 | idle spin pass | ping-pong 2c-spin | thread-ring 2c-spin | ping-pong 1c-spin |
 |---|---:|---:|---:|
-| `f8eba11d` (the control: a wall clock read per pass, everywhere) | 205.8 | 105.6 | 65.0 |
+| `43f62afe` (the control: a wall clock read per pass, everywhere) | 205.8 | 105.6 | 65.0 |
 | guard only (~20 ns, unserialized) | 259.9 | 134.4 | 28.3 |
 | + bounded tight `has_data()` poll, ×256 | **271.6** | **144.3** | 28.9 |
 | + `spin_loop_pause()` (33 ns) | 228.2 | 123.5 | 28.6 |
@@ -1586,7 +1586,7 @@ measures, and nothing here has tried it.
 
 ### 14.2 The branch head, both hosts, one session each
 
-| cell (per unit) | Windows/MSVC: `f8eba11d` → head | WSL2/g++: `f8eba11d` → head | census (10 / 15 launches, ctl vs head) |
+| cell (per unit) | Windows/MSVC: `43f62afe` → head | WSL2/g++: `43f62afe` → head | census (10 / 15 launches, ctl vs head) |
 |---|---|---|---|
 | ping-pong 1c-spin (round trip) | 80.7 → **41.6** (−48 %) | 65.8 → **28.3** (−57 %) | 80.7 vs 41.9 / 64.8 vs 28.2 |
 | ping-pong 1c-park | 81.5 → **42.8** (−47 %) | 66.5 → **28.4** (−57 %) | — |
@@ -1621,7 +1621,7 @@ fixed part of a pass had to be ~6 ns; but neither number could be read off a ben
 `tools/probes/pass-cost.cpp` (Huly QB-182) is the instrument: one actor on one pinned core with
 k independent self-event chains, so every pass carries exactly k events through the self pipe,
 the router and the handler — no tick, no clock inside the window — and k = 1, 2, 4 separate the
-per-pass and per-event costs. On `0f7994e6` (the §14 head), g++-14: **14.6 / 23.1 / 41.0 ns**
+per-pass and per-event costs. On `c42abddf` (the §14 head), g++-14: **14.6 / 23.1 / 41.0 ns**
 for k = 1 / 2 / 4 — a fixed pass of ~6 ns and **8.4–8.9 ns per event**; MSVC 19.51: 20.4 /
 28.4 / 44.8.
 
@@ -1640,12 +1640,12 @@ divide-by-24 in the router's bounds check. Five changes, each kept only after th
 
 | step | k = 1 | k = 2 | k = 4 |
 |---|---:|---:|---:|
-| `0f7994e6` | 14.55 | 23.15 | 40.99 |
+| `c42abddf` | 14.55 | 23.15 | 40.99 |
 | io counters read inline (qev `ev_active_count_addr` / `ev_pending_count_addr`), swap gated on a non-empty self pipe | 14.46 | 23.35 | — |
 | + `_pipe_of_core[CoreId]` (one indexed load), `allocate_back_slow` out of line | 14.08 | 20.88 | — |
 | + the self pipe walked in place up to a fence — no second pipe, no swap | 13.80 | 20.24 | 33.25 |
 | + inline peer scan before the flush drain, broadcast walk out of line | 12.68 | 17.12 | 25.37 |
-| + cached slot count in `key_table::find` (**`2771cd67`**) | **12.9** | **16.6** | **24.6** |
+| + cached slot count in `key_table::find` (**`670e9433`**) | **12.9** | **16.6** | **24.6** |
 
 The pass with one event is **−12 %** and the marginal event **8.9 → 4.2 ns**; on MSVC 20.4 →
 15.6 / 28.4 → 22.9 / 44.8 → 37.0. The fence is the design change: `__receive__` used to swap a
@@ -1655,7 +1655,7 @@ same guarantee on ONE pipe (pushes land behind it and are the next pass's), and 
 to its fence rewinds its resident segment, so a one-event pass reads and writes the same 64
 bytes every time.
 
-### 15.1 Both hosts, one session each, against `0f7994e6` (p50 per unit; the per-directory READMEs carry every cell and the censuses)
+### 15.1 Both hosts, one session each, against `c42abddf` (p50 per unit; the per-directory READMEs carry every cell and the censuses)
 
 | cell | Windows/MSVC | WSL2/g++ |
 |---|---|---|
@@ -1784,7 +1784,7 @@ peer's index, and a PUBLISHED line with nothing but the index the peer polls. Th
 layout encodes is that a side only ever *writes* the line it publishes on. 512 bytes of header
 per ring instead of 128, against 64 KiB of slots.
 
-Same host, one quiet session per host, candidate / control / candidate against `2771cd67` (p50
+Same host, one quiet session per host, candidate / control / candidate against `670e9433` (p50
 per unit; the per-directory READMEs carry every cell, the censuses and the bench cells):
 
 | cell | WSL2 / g++-14 | Windows / MSVC 19.51 |
@@ -1832,7 +1832,7 @@ idiom.
 
 ### 17.1 What an `ask` pays over a push, and where the queue was
 
-On `develop` `4a0b62be`, g++-14: push **24.0 ns**, ask **53.6** — ~30 ns of machinery over the
+On `develop` `c4f9d439`, g++-14: push **24.0 ns**, ask **53.6** — ~30 ns of machinery over the
 two passes an ask cannot avoid. The cpu-clock profile: the `qb::ask<E>` coroutine's ramp 16 %,
 `__workflow__` 21 % (the scheduler's `run_ready()`: a ready-queue pop and a hash-set erase),
 `deliver_thunk` 5 %, the registry (`ask_take` / `ask_deliver` / `ask_unregister`) 9 %,
@@ -1877,7 +1877,7 @@ Two libev defaults, both in qev now (qev `CHANGELOG.md` `[Unreleased]`, Huly QB-
 with `qev/bench/bench-pass.c` — N `ev_run(EVRUN_NOWAIT)` over a loop whose watchers never fire,
 what a core with one watcher pays on EVERY pass:
 
-| shape (ns per non-blocking pass, WSL2 g++-14) | qev `ec16b7c` | qev after QB-187 |
+| shape (ns per non-blocking pass, WSL2 g++-14) | qev `47a4151` | qev after QB-187 |
 |---|---:|---:|
 | empty loop | 297 | **50** |
 | one far timer (a pending request timeout) | 297 | **51** |
@@ -2123,7 +2123,7 @@ loop that runs only when something is due has a stale clock the rest of the time
 
 ### 17.8 Phase 4 delivered — io_uring measured, and at parity
 
-QB-81 (qb `readme/6_guides/performance_tuning.md`, "io_uring, measured (3.2.0)"; qev `9b83760`).
+QB-81 (qb `readme/6_guides/performance_tuning.md`, "io_uring, measured (3.2.0)"; qev `5fe159b`).
 `QB_EV_BACKEND=iouring` had shipped since 3.1 with no figure behind it, and the `io-pass` probe was
 the first to ask: a core's pass over one quiet socket read **1345 ns against epoll's 28.5** — a
 syscall storm inside the backend, not a slow backend. `iouring_poll` armed its deadline timerfd at
@@ -2283,8 +2283,8 @@ neither is the one the issue was written on:
 - **What a parked core pays to be woken by a socket is the CPU's idle-state exit, and it is the
   same on every tree.** §10 had recorded 62–69 µs for the `latency = 1 ms, gap = 2 ms` cell on
   axis N; a first run of the same cell this session read 122 µs, and by the protocol that is an
-  A/B, not a number. `parked-io-wake-ab.txt`: qb at axis N (`a3bc19c6`) against `develop`
-  (`279ec219`), five interleaved repetitions per cell, p50 in µs, control → candidate:
+  A/B, not a number. `parked-io-wake-ab.txt`: qb at axis N (`7761b0c5`) against `develop`
+  (`67f4efb6`), five interleaved repetitions per cell, p50 in µs, control → candidate:
 
   | cell | control (5 reps) | candidate (5 reps) |
   |---|---|---|
@@ -2341,7 +2341,7 @@ minimum; a non-blocking poll keeps `epoll_wait` on every kernel — both enter t
 `epoll_wait` copies nothing in, so the NOWAIT pass of §17 pays nothing), with `backend_mintime`
 at the select backend's microsecond. Windows compiles the same backend over wepoll, whose
 `epoll_wait` is the millisecond one, and keeps it. `probe-196-wsl-ab.txt`: qb `develop`
-(`279ec219`) against `perf/epoll-pwait2` (`acbb1829`), five interleaved repetitions per cell,
+(`67f4efb6`) against `perf/epoll-pwait2` (`9c401070`), five interleaved repetitions per cell,
 60 s after the build, p50 in µs (ns per pass for `io-pass`), medians of the five:
 
 | cell | control | candidate |
@@ -2392,7 +2392,7 @@ millisecond and hands it to `SleepConditionVariableSRW`, so a `latency` under 1 
 again on the next pass), wakes counted over 2 s — through the CONDITION-VARIABLE park (no io watcher:
 `std::condition_variable::wait_for`) and through the LOOP park (a far `async::callback` on the core:
 `ev_run(EVRUN_ONCE)` capped at `latency`). Mean sleep between two looks at the mailbox, three runs
-per cell, both hosts on qb `develop` `9dcee7fb` (`results/<host>/qb-196-park-cap/parked-cadence.txt`):
+per cell, both hosts on qb `develop` `70354b35` (`results/<host>/qb-196-park-cap/parked-cadence.txt`):
 
 | `setLatency` | Windows cv park | Windows loop park | WSL2 cv park | WSL2 loop park |
 |---|---:|---:|---:|---:|
@@ -2423,7 +2423,7 @@ moments — before `Main::start()`, once the engine is idle after the traffic, a
 (core 0 broadcasts once, N pipes used), `mesh` (every actor pushes once to every other, N × (N − 1)
 pipes used). Each line carries the model it is read against: `N² × 64 KiB` of mailbox rings (one
 SPSC ring of `MaxRingEvents` buckets per producer core in every mailbox, value-initialised) plus
-256 KiB per pipe that carried an event. Both hosts on qb `develop` `a1a1212e`, 2026-09-09, resident
+256 KiB per pipe that carried an event. Both hosts on qb `develop` `c15d9d9d`, 2026-09-09, resident
 growth over the baseline (Windows: private commit in brackets where it differs):
 
 | cores | idle | broadcast | mesh | destroyed, mesh |

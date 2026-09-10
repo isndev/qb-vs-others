@@ -1,4 +1,4 @@
-start 2026-09-09T10:38:55 ctl=279ec219 cand=acbb1829 host=6.6.87.2-microsoft-standard-WSL2
+start 2026-09-09T10:38:55 ctl=67f4efb6 cand=9c401070 host=6.6.87.2-microsoft-standard-WSL2
 # cell qvoprobe-parked-timer-wake 100 100 2000 -1 0 0
 ctl rep1  latency=100us delay=100us idle_spin=default period=0ms rounds=2000  lateness min=1008.2 p50=1012.0 mean=1018.2 p90=1028.5 p99=1066.0 max=2432.2 (us)
 cand rep1  latency=100us delay=100us idle_spin=default period=0ms rounds=2000  lateness min=17.9 p50=60.2 mean=63.0 p90=69.0 p99=79.8 max=155.2 (us)

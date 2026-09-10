@@ -1,6 +1,6 @@
 # The quick-win batch — release neutrality on WSL2 Debian 13 g++ 14.2
 
-qb `batch/quick-wins-3` = `develop` `bb5b3e67` + four branches, none of which touches a hot path:
+qb `batch/quick-wins-3` = `develop` `ef89f175` + four branches, none of which touches a hot path:
 QB-62 (`ActorHandle::ready_async` event-driven: an intrusive waiter list per Activating entry,
 fired by the pass that ends the activation, instead of a 1 ms poll), QB-61 (an event type wider
 than the mailbox ring refused at compile time), QB-84 (abandoned coroutine frames reported in
@@ -21,7 +21,7 @@ cand/ctl per round, 3 repetitions + 1 warm-up, CPUs 0,2; probes 2 s on CPU 2.
 
 ## The final candidate (`b29602bd`, `work_p50 / work_units`, ns, medians of eight rounds)
 
-| cell | ctl `bb5b3e67` | cand `b29602bd` | Δ | quartiles ctl / cand |
+| cell | ctl `ef89f175` | cand `b29602bd` | Δ | quartiles ctl / cand |
 |---|---:|---:|---:|---|
 | bank-transaction 1c | 144.1 | 142.8 | −0.9 % | 141.0–145.1 / 140.8–144.8 |
 | big 1c | 18.2 | 18.0 | −0.9 % | 18.0–18.2 / 17.6–18.1 |

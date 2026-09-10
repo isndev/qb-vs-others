@@ -1,4 +1,4 @@
-start 2026-09-09T14:39:36  qb develop 9dcee7fb
+start 2026-09-09T14:39:36  qb develop 70354b35
 rep1  park=cv latency=100us passes=1310 seconds=2.00 wakes_per_s=654.5 mean_park=1528.0us
 rep2  park=cv latency=100us passes=1308 seconds=2.00 wakes_per_s=653.8 mean_park=1529.4us
 rep3  park=cv latency=100us passes=1369 seconds=2.00 wakes_per_s=684.4 mean_park=1461.1us

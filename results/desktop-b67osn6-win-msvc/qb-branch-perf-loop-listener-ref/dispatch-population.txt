@@ -1,4 +1,4 @@
-session 2026-09-09T00:35:06 cand=acf2dd77 ctl=d20417f9 batch=256 1.5 s CPU 0
+session 2026-09-09T00:35:06 cand=acf2dd77 ctl=57df433d batch=256 1.5 s CPU 0
 ctl actors=16 batch=256 rounds=949248 events=243007488 elapsed_ns=1500322100 ns_per_event=6.17
 ctl actors=64 batch=256 rounds=998400 events=255590400 elapsed_ns=1500267400 ns_per_event=5.87
 ctl actors=256 batch=256 rounds=948224 events=242745344 elapsed_ns=1500105100 ns_per_event=6.18

@@ -1,6 +1,6 @@
 # QB-46 — the same qb tree under MSVC 19.51 and clang-cl 22.1.7, Windows 11
 
-The discriminating experiment Huly **QB-46** asked for: qb `develop` `9366384b` built twice from
+The discriminating experiment Huly **QB-46** asked for: qb `develop` `381e4995` built twice from
 `D:\repo\qb-dev\qb` by `cl` 19.51.36256 (`build/ab46-msvc`) and by `clang-cl` 22.1.7 (`build/ab46-clang`
 — LLVM's Clang behind MSVC's command line, ABI, CRT and STL, same allocator, same vcpkg), measured
 2026-09-08 **23:01–23:05 UTC** in one quiet session (no build during the points, Docker Desktop quit,

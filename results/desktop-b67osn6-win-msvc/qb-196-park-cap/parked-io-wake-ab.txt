@@ -1,4 +1,4 @@
-start 2026-09-09T11:58:10  ctl=a3bc19c6 cand=279ec219
+start 2026-09-09T11:58:10  ctl=7761b0c5 cand=67f4efb6
 # cell qvoprobe-parked-io-wake 1000 2000 2000
 ctl rep1  latency=1000us gap=2000us idle_spin=default rounds=2000  min=24.0 p50=118.1 mean=102.7 p90=129.1 p99=145.2 max=1800.4 (us)
 cand rep1  latency=1000us gap=2000us idle_spin=default rounds=2000  min=23.6 p50=117.6 mean=101.8 p90=126.7 p99=145.7 max=196.7 (us)

@@ -1,8 +1,8 @@
-# qb `develop` `f8eba11d` — the 3.2.0 candidate grid, WSL2 / Debian 13 / g++ 14.2
+# qb `develop` `43f62afe` — the 3.2.0 candidate grid, WSL2 / Debian 13 / g++ 14.2
 
 The WSL2 half of the **3.2.0 candidate grid** (the Windows half is
-`../../desktop-b67osn6-win-msvc/qb-branch-develop/`): qb `develop` at **`f8eba11d`** — 29
-commits over the shipped v3.1.0 (`eac739ff`), every perf branch of `docs/TUNING.md` §7–§12
+`../../desktop-b67osn6-win-msvc/qb-branch-develop/`): qb `develop` at **`43f62afe`** — 29
+commits over the shipped v3.1.0 (`830ea244`), every perf branch of `docs/TUNING.md` §7–§12
 merged (axes A–N, QB-43 the segmented pipe, axis I the dense router, QB-174 the default-event
 registry, the dense-table-growth chain fib produced, the five ask-path fixes bank-transaction
 produced and QB-178 the ask slot table) — measured through the unmodified adapters on **all
@@ -14,7 +14,7 @@ are 9 + 2 on both hosts), candidate / control / candidate on 2026-09-07,
 UTC, no build and no test suite running on either side). The candidate is `~/qvo/linux` — the
 full field build whose `QVO_QB_DIR` is this superproject's qb submodule, the same tree that
 measured CAF, SObjectizer and the floor of the eight `savina-*/` directories — rebuilt at
-`f8eba11d` (0 dirty, 08:28 UTC); the control is `~/qvo/shipped`, built from `~/qb-head`, the
+`43f62afe` (0 dirty, 08:28 UTC); the control is `~/qvo/shipped`, built from `~/qb-head`, the
 v3.1.0 source tree (`QB_FRAMEWORK_VERSION "3.1.0"`, frameworks off). Both harnesses ran with
 `$HOME` (ext4) as their working directory: shipped 3.1.0's fib writes a ~61 MB `qb.1.log` per
 repetition, which is what makes the control leg 8 min 40 s of a 9-minute session, and which
@@ -22,15 +22,15 @@ on a 9p mount would have been the measurement.
 
 | directory | when (UTC) | what |
 |---|---|---|
-| `grid-693c5892/` | 2026-09-09 14:19:38–14:19:48 | **the FINAL candidate**, qb `develop` `693c5892` (66 commits over 3.1.0, 37 over `f8eba11d`; `~/qvo/linux` rebuilt at it at 14:18:38 — qb-core, qb-io, ev and the eight adapters recompiled), 32 / 32 verified — README.md's WSL2 `framework=qb` grid since; `docs/TUNING.md` §13.4 reads it against the midpoint grid below and this session's control. The Windows half ran first (15:39–15:42 local), this side idle. |
+| `grid-77b358d8/` | 2026-09-09 14:19:38–14:19:48 | **the FINAL candidate**, qb `develop` `77b358d8` (66 commits over 3.1.0, 37 over `43f62afe`; `~/qvo/linux` rebuilt at it at 14:18:38 — qb-core, qb-io, ev and the eight adapters recompiled), 32 / 32 verified — README.md's WSL2 `framework=qb` grid since; `docs/TUNING.md` §13.4 reads it against the midpoint grid below and this session's control. The Windows half ran first (15:39–15:42 local), this side idle. |
 | `grid-shipped-3.1.0-final/` | 14:19:48–14:27:41 | the control of the final session, v3.1.0 through the same adapters (`~/qvo/shipped`, `$HOME` as the working directory for its fib log), 32 / 32 verified; agrees with `grid-shipped-3.1.0/` within the launch spread. |
-| `grid-693c5892-pass2/` | 14:27:41–14:27:51 | the final candidate again, after the control — 32 / 32 verified, every cell within its pass-1 spread. |
-| `grid-f8eba11d/` | 08:45:23–08:45:39 | **the candidate**, 32 cells, 32 / 32 verified — README.md's WSL2 `framework=qb` grid. |
+| `grid-77b358d8-pass2/` | 14:27:41–14:27:51 | the final candidate again, after the control — 32 / 32 verified, every cell within its pass-1 spread. |
+| `grid-43f62afe/` | 08:45:23–08:45:39 | **the candidate**, 32 cells, 32 / 32 verified — README.md's WSL2 `framework=qb` grid. |
 | `grid-shipped-3.1.0/` | 08:45:39–08:54:19 | **the control**, v3.1.0 through the same adapters, same session, 32 / 32 verified. |
-| `grid-f8eba11d-pass2/` | 08:54:19–08:54:36 | the candidate again, after the control — the repeatability column below, 32 / 32 verified. |
+| `grid-43f62afe-pass2/` | 08:54:19–08:54:36 | the candidate again, after the control — the repeatability column below, 32 / 32 verified. |
 
 This is the grid that **joins the tables**: README.md's candidate grids for Windows and WSL2
-render `grid-f8eba11d/`, and `docs/TUNING.md` §13 reads the two hosts side by side. Every
+render `grid-43f62afe/`, and `docs/TUNING.md` §13 reads the two hosts side by side. Every
 earlier branch directory beside this one (`qb-branch-perf-*/`) is the A/B that produced one of
 the 29 commits and stays as its provenance.
 
@@ -39,7 +39,7 @@ the 29 commits and stays as its provenance.
 The field columns are the published `../savina-<shape>/` cells (2026-09-04, -06 and -07, each
 its own quiet session, 5 + 1); the three qb columns are this session.
 
-| shape (per unit) | config | shipped 3.1.0 | **`f8eba11d`** | pass 2 | Δ (p50) | min: 3.1.0 / cand / pass 2 | CAF / SObjectizer / floor |
+| shape (per unit) | config | shipped 3.1.0 | **`43f62afe`** | pass 2 | Δ (p50) | min: 3.1.0 / cand / pass 2 | CAF / SObjectizer / floor |
 |---|---|---|---|---|---|---|---|
 | `ping-pong` (round trip) | 1c-spin | 100.3 | **66.0** | 65.9 | -34.2 % / -34.3 % | 99.1 / 65.2 / 64.9 | 283.7 / 145.1 / 1.6 |
 |  | 1c-park | 99.8 | **66.4** | 66.5 | -33.4 % / -33.4 % | 99.2 / 65.7 / 66.0 | 276.2 / 166.2 / 1.6 |
@@ -86,7 +86,7 @@ ns per hop — the §5 defect, gone, and gone under a hypervisor whose futex wak
 −41 / −49 % at one core, and bank-transaction is −48 % at one core and −48 % at two (14.18 /
 13.94 ms → 7.18 / 7.29, 8.96 / 8.88 → 4.64 / 4.82) — the same 2 : 1 as the ask-slot-table
 session that produced its last commit (`../qb-branch-perf-ask-slot-table/`, 145.0 / 144.9 /
-93.7 / 92.2 there for `82ea03a8` against 143.5 / 145.7 / 92.8 / 96.4 here: two sessions, two
+93.7 / 92.2 there for `a61bded8` against 143.5 / 145.7 / 92.8 / 96.4 here: two sessions, two
 builds, one level).
 
 **Against the field, the candidate is the fastest framework in every one of the 32 cells**,
@@ -142,9 +142,9 @@ cells 1.52–1.54 × (creation, not messaging) and bank-transaction 2c-park 1.04
   what remains is the two dispatches of every ask and the reply's route back, the same
   per-pass cost as the first residual.
 
-At `f8eba11d` all nine of qb's own GitHub lanes are green (`cmake`, `sanitize`,
+At `43f62afe` all nine of qb's own GitHub lanes are green (`cmake`, `sanitize`,
 `sanitize-thread`, `coverage`, `abi-fingerprint`, `install-consume`, `doc-lint`,
-`format-check`, `scaffold`); the g++-14 suite at the chain's last core commit `82ea03a8` is
+`format-check`, `scaffold`); the g++-14 suite at the chain's last core commit `a61bded8` is
 in `../qb-branch-perf-ask-slot-table/README.md` (Release / ASan+UBSan / TSan 192 / 192 / 0
 each, standalone SSL-off qb). `docs/TUNING.md` §13 carries the two-host
 reading and the deltas against the Windows half.

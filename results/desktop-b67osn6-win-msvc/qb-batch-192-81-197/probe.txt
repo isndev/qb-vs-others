@@ -1,4 +1,4 @@
-session 2026-09-08T21:41:45 cand=d20417f9 (D:/repo/qb-dev/qb develop) ctl=c49868b9 (D:/repo/qb-ctl-batch)
+session 2026-09-08T21:41:45 cand=57df433d (D:/repo/qb-dev/qb develop) ctl=ee34bb13 (D:/repo/qb-ctl-batch)
 cand io-pass timer timer passes=50098176 elapsed_ns=1500054300 ns_per_pass=29.94
 cand io-pass pass pass passes=29241344 elapsed_ns=1500167600 ns_per_pass=51.30
 cand io-pass wake gap=100 wake bytes=814 passes=19074560 elapsed_ns=1500015000 ns_per_pass=78.64 wake_p50_ns=24800 wake_p99_ns=373700 wake_max_ns=1729000

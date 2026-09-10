@@ -6,19 +6,19 @@ fence instead of swapping a second pipe in, resolves the outbound pipe of a `Cor
 indexed load, scans the peer pipes inline before entering the flush drain, reads the io loop's
 counters inline through qev's new `ev_active_count_addr()` / `ev_pending_count_addr()`, and
 keeps the router's broadcast walk out of the unicast path — measured against the `develop` it
-forks from (`0f7994e6`, the QB-180 head) on `savina/ping-pong`, `counting`, `thread-ring`,
+forks from (`c42abddf`, the QB-180 head) on `savina/ping-pong`, `counting`, `thread-ring`,
 `fork-join` and `big`, 4 configurations each, plus the four core `dev/bench` binaries and a
 **new probe**, `tools/probes/pass-cost.cpp`. Same host, CPUs and build flags as the published
 directories beside this one: `-O3 -DNDEBUG`, `taskset -c 0,2`, **9 repetitions + 2 warmup**,
 qb-only builds, candidate / control / candidate in ONE quiet session on 2026-09-07, the Windows
 side idle throughout. The candidate is `~/qvo/cand-pass`, built against the working tree that
-became `2771cd67`; the control `~/qvo/ctl-0f7994e6`, a clean LF clone at `0f7994e6` (0 dirty).
+became `670e9433`; the control `~/qvo/ctl-c42abddf`, a clean LF clone at `c42abddf` (0 dirty).
 
 | directory | qb at | what |
 |---|---|---|
-| `grid-2771cd67/`, `grid-2771cd67-pass2/` | **the branch head `2771cd67`** — measured first and third | **20 cells** each, qb only, all verified: five shapes × {1c-spin, 1c-park, 2c-spin, 2c-park}. 14:53:18–14:53:52 UTC. |
-| `grid-0f7994e6/` | `develop` `0f7994e6` — the control, measured second | same 20 cells, same session. |
-| `census/` | `2771cd67` vs `0f7994e6`, **12 interleaved launches** each, 3 reps + 1 warmup, on the four 2c cells of ping-pong and thread-ring and the three 1c anchors | 14:53:52–14:55:02 UTC. |
+| `grid-670e9433/`, `grid-670e9433-pass2/` | **the branch head `670e9433`** — measured first and third | **20 cells** each, qb only, all verified: five shapes × {1c-spin, 1c-park, 2c-spin, 2c-park}. 14:53:18–14:53:52 UTC. |
+| `grid-c42abddf/` | `develop` `c42abddf` — the control, measured second | same 20 cells, same session. |
+| `census/` | `670e9433` vs `c42abddf`, **12 interleaved launches** each, 3 reps + 1 warmup, on the four 2c cells of ping-pong and thread-ring and the three 1c anchors | 14:53:52–14:55:02 UTC. |
 | `bench/` | the four core `dev/bench` binaries, candidate and control alternated three times (`cand-N/` / `ctl-N/`, one process per run, 5 repetitions, every iteration recorded) | 14:55:02–14:58:41 UTC. |
 | `probe.txt` | `qvoprobe-pass-cost` k = 1, 2, 4, candidate and control alternated three times, CPU 2, 2 s windows | 14:58:41–14:59:17 UTC. |
 
@@ -37,7 +37,7 @@ cost alone, because the tick phase samples the wall clock for `LoopEvent::now` a
 reads the idle clock (the pacing QB-180 measured), and it reads 40 ns on the control for that
 reason.
 
-The control (`0f7994e6`), before any change: k = 1 **14.6 ns**, k = 2 **23.1**, k = 4 **41.0** —
+The control (`c42abddf`), before any change: k = 1 **14.6 ns**, k = 2 **23.1**, k = 4 **41.0** —
 a fixed pass of ~6 ns and **8.4–8.9 ns per event**, consistent with a one-core ping-pong round
 trip of 28.3 ns being two such passes. The profile of that pass (cpu-clock, per instruction)
 put a third of it in the handler's `push`: a four-deep dependent-load chain to find the outbound
@@ -54,7 +54,7 @@ pass, medians of three):
 
 | step | k = 1 | k = 2 | k = 4 |
 |---|---:|---:|---:|
-| control `0f7994e6` | 14.55 | 23.15 | 40.99 |
+| control `c42abddf` | 14.55 | 23.15 | 40.99 |
 | + inline io counters, swap gated on a non-empty self pipe | 14.46 | 23.35 | — |
 | + pipe-of-core table, `allocate_back_slow` out of line | 14.08 | 20.88 | — |
 | + the in-place walk up to a fence (no second pipe, no swap) | 13.80 | 20.24 | 33.25 |
@@ -67,7 +67,7 @@ batched shapes gain per message, the sparse ones per pass. The same probe on Win
 
 ## The grids, same session (p50 per unit, ns; candidate pass 1 / pass 2 against the control)
 
-| cell | `0f7994e6` | **`2771cd67`** p1 / p2 | Δ |
+| cell | `c42abddf` | **`670e9433`** p1 / p2 | Δ |
 |---|---:|---:|---:|
 | ping-pong 1c-spin (round trip) | 28.68 | **22.59 / 22.80** | **−21 %** |
 | ping-pong 1c-park | 28.44 | **22.93 / 22.59** | **−20 %** |
@@ -107,7 +107,7 @@ same census (`/tmp` variants, transcribed; eight launches each):
 
 | thread-ring 2c-spin | ping-pong 2c-spin | |
 |---|---:|---:|
-| control `0f7994e6` | 107.1 | 212.2 |
+| control `c42abddf` | 107.1 | 212.2 |
 | the head | 111.3 | 201.2 |
 | head, flush drain entered every pass (no inline scan) | **105.1** | 200.6 |
 | head, `__getPipe__` through `CoreSet::resolve` (no table) | 108.7 | 203.7 |
@@ -123,7 +123,7 @@ question; the ring is now its most sensitive instrument.
 
 ## `dev/bench` — the four core binaries (median of three run medians, ns; `bench/`)
 
-| cell | `0f7994e6` | **`2771cd67`** | Δ |
+| cell | `c42abddf` | **`670e9433`** | Δ |
 |---|---:|---:|---:|
 | `BM_PINGPONG<TinyEvent>` 64 actors, 1 core (per round trip) | 26.5 | **21.3** | **−20 %** |
 | `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores | 24.3 | 23.6 | −3 % |

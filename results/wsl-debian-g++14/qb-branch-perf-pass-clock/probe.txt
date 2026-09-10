@@ -1,4 +1,4 @@
-quiet: load=9.32 3.73 1.91 qvo=0 ninja=0 2026-09-08T11:59:44Z  cand=~/qb-191 (ae09da3a+patch) ctl=~/qb-ctl (ae09da3a)
+quiet: load=9.32 3.73 1.91 qvo=0 ninja=0 2026-09-08T11:59:44Z  cand=~/qb-191 (4903750e+patch) ctl=~/qb-ctl (4903750e)
 cand-191  io-pass timer timer passes=57647104 elapsed_ns=1500054639 ns_per_pass=26.02
 cand-191  io-pass pass pass passes=52965376 elapsed_ns=1500014550 ns_per_pass=28.32
 cand-191  io-pass wake gap=100 wake bytes=8957 passes=27033344 elapsed_ns=1500002926 ns_per_pass=55.49 wake_p50_ns=4061 wake_p99_ns=19904 wake_max_ns=2603621

@@ -3,7 +3,7 @@
 The MSVC half of the neutrality measurement for Huly **QB-200** / **QB-201** (see the WSL2 half for
 what the branch does), measured 2026-09-09 **00:03–00:05 UTC** in one quiet session (no build during
 the points, Docker Desktop quit, the WSL2 side idle at 0.23). Control = `build/ab200-ctl` against
-`D:\repo\qb-dev\qb` (`develop` `9366384b`), candidate = `build/ab200-cand` against the worktree
+`D:\repo\qb-dev\qb` (`develop` `381e4995`), candidate = `build/ab200-cand` against the worktree
 `D:\repo\qb-200` at `ce39584a`, both asserted by SHA and by marker (`promise_access.h` 0 / 1,
 `promise_of` 0 / 8 in `task.h`); `/O2 /Ob2 /DNDEBUG`, CPUs 0,2, eight interleaved rounds, five
 alternations of 1.5 s per probe. `cl` takes the standard calls here — clang-cl's path is

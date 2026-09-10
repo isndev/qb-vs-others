@@ -26,7 +26,7 @@ Usage
 -----
     python3 tools/burst-sweep.py --out results/<host>/qb-branch-x/burst-sweep \\
         --bin qb-segmented=build/cand/bin/qvo-qb-savina-counting \\
-        --bin qb-f5c20eeb=build/f5c/bin/qvo-qb-savina-counting \\
+        --bin qb-230c5035=build/f5c/bin/qvo-qb-savina-counting \\
         --bursts 2000,10000,30000,100000,300000,1000000,4000000 \\
         --repetitions 7 --warmup 2 --no-pin --faults
 

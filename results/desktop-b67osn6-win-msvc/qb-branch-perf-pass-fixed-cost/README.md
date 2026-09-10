@@ -6,20 +6,20 @@ the qb branch that walks the self pipe in place up to a fence instead of swappin
 in, resolves a `CoreId`'s outbound pipe with one indexed load, scans the peer pipes inline before
 entering the flush drain, reads the io loop's counters inline (qev `ev_active_count_addr()` /
 `ev_pending_count_addr()`) and keeps the broadcast walk out of the unicast route — measured
-against the `develop` it forks from (`0f7994e6`) on `savina/ping-pong`, `counting`, `thread-ring`,
+against the `develop` it forks from (`c42abddf`) on `savina/ping-pong`, `counting`, `thread-ring`,
 `fork-join` and `big`, 4 configurations each, plus the four core `dev/bench` binaries and the
 `pass-cost` probe. Same host, CPUs and flags as the published directories beside this one:
 `/O2 /Ob2 /DNDEBUG`, CPUs 0,2, **9 repetitions + 2 warmup**, qb-only builds (`build/ab182-cand`
-against the working tree that became `2771cd67`, `build/ab182-ctl` against
-`D:\repo\qb-ctl-0f7994e6`, a clean clone at `0f7994e6`, 0 dirty), candidate / control /
+against the working tree that became `670e9433`, `build/ab182-ctl` against
+`D:\repo\qb-ctl-c42abddf`, a clean clone at `c42abddf`, 0 dirty), candidate / control /
 candidate in ONE quiet session on 2026-09-07 with the WSL2 side idle (its own session had ended
 14:59 UTC):
 
 | directory | qb at | what |
 |---|---|---|
-| `grid-2771cd67/`, `grid-2771cd67-pass2/` | **the branch head `2771cd67`** — measured first and third | **20 cells** each, qb only, all verified: five shapes × {1c-spin, 1c-park, 2c-spin, 2c-park}. 15:16:10–15:16:50 UTC. |
-| `grid-0f7994e6/` | `develop` `0f7994e6` — the control, measured second | same 20 cells, same session. |
-| `census/` | `2771cd67` vs `0f7994e6`, **10 interleaved launches** each, 3 reps + 1 warmup, on the four 2c cells of ping-pong and thread-ring and the three 1c anchors | 15:16:50–15:17:59 UTC. |
+| `grid-670e9433/`, `grid-670e9433-pass2/` | **the branch head `670e9433`** — measured first and third | **20 cells** each, qb only, all verified: five shapes × {1c-spin, 1c-park, 2c-spin, 2c-park}. 15:16:10–15:16:50 UTC. |
+| `grid-c42abddf/` | `develop` `c42abddf` — the control, measured second | same 20 cells, same session. |
+| `census/` | `670e9433` vs `c42abddf`, **10 interleaved launches** each, 3 reps + 1 warmup, on the four 2c cells of ping-pong and thread-ring and the three 1c anchors | 15:16:50–15:17:59 UTC. |
 | `bench/` | the four core `dev/bench` binaries, candidate and control alternated three times (`cand-N/` / `ctl-N/`, one process per run, 5 repetitions, every iteration recorded) | 15:17:59–15:21:40 UTC. |
 | `probe.txt` | `qvoprobe-pass-cost` k = 1, 2, 4, candidate and control alternated three times, CPU 2, 2 s windows | 15:21:54 UTC. |
 
@@ -37,7 +37,7 @@ profiler joins the protocol (§13.2).
 
 ## The grids, same session (p50 per unit, ns; candidate pass 1 / pass 2 against the control)
 
-| cell | `0f7994e6` | **`2771cd67`** p1 / p2 | Δ |
+| cell | `c42abddf` | **`670e9433`** p1 / p2 | Δ |
 |---|---:|---:|---:|
 | ping-pong 1c-spin (round trip) | 41.35 | **30.56 / 30.83** | **−26 %** |
 | ping-pong 1c-park | 41.63 | **30.72 / 31.20** | **−26 / −25 %** |
@@ -77,7 +77,7 @@ shapes is ahead, ping-pong and thread-ring by a quarter and a fifth.
 
 ## `dev/bench` — the four core binaries (median of three run medians, ns; `bench/`)
 
-| cell | `0f7994e6` | **`2771cd67`** | Δ |
+| cell | `c42abddf` | **`670e9433`** | Δ |
 |---|---:|---:|---:|
 | `BM_Mono_PingPong_Latency` (same-core round trip) | 76.6 | **66.4** | **−13 %** |
 | `BM_Multi_PingPong_Latency` (cross-core) | 293.8 | 300.1 | +2 % (both bimodal) |

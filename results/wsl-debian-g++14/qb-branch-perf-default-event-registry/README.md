@@ -11,13 +11,13 @@ field is not re-measured here — it is in `../qb-branch-perf-dense-table-growth
 in ONE quiet session, 21:06:00–21:06:04 UTC on 2026-09-06, the Windows side idle throughout (its
 own three grids ran 21:06:26–21:06:30 UTC, after this host's had ended). The candidate is
 `~/qvo/qb174`, built against a git worktree of `qb/` at the branch; the control is
-`~/qvo/ctl-a6663641`, built against a clean LF clone checked out at `a6663641` (0 dirty).
+`~/qvo/ctl-e814df06`, built against a clean LF clone checked out at `e814df06` (0 dirty).
 
 | directory | qb at | what |
 |---|---|---|
-| `grid-dc1ac56e/` | `perf/default-event-registry` = `develop` `a6663641` + **`dc1ac56e`** (the five default events dispatch through the actor registry, QB-174) — **the candidate**, measured FIRST | **8 cells**, qb only, all verified: fib × chameneos × {2c-spin, 2c-park, 1c-spin, 1c-park}. |
-| `grid-a6663641/` | `develop` `a6663641` — **the control**, measured second, a clean clone at that commit | **8 cells**, same protocol, the same session. |
-| `grid-dc1ac56e-pass2/` | `dc1ac56e` again, measured third | **8 cells**: the candidate's second pass, so a gain has to reproduce on both sides of the control before it is one. |
+| `grid-494d54a5/` | `perf/default-event-registry` = `develop` `e814df06` + **`494d54a5`** (the five default events dispatch through the actor registry, QB-174) — **the candidate**, measured FIRST | **8 cells**, qb only, all verified: fib × chameneos × {2c-spin, 2c-park, 1c-spin, 1c-park}. |
+| `grid-e814df06/` | `develop` `e814df06` — **the control**, measured second, a clean clone at that commit | **8 cells**, same protocol, the same session. |
+| `grid-494d54a5-pass2/` | `494d54a5` again, measured third | **8 cells**: the candidate's second pass, so a gain has to reproduce on both sides of the control before it is one. |
 
 Candidate / control / candidate is the order, not control / candidate: a drift in the host over
 the minute the three grids take would then show as the two candidate passes disagreeing, and
@@ -27,7 +27,7 @@ measured for all seven shapes in one session.
 
 ## Control against the candidate, same session (p50 ms)
 
-| shape · config | `a6663641` | **`dc1ac56e`** | pass 2 | Δ (pass 1 / pass 2) |
+| shape · config | `e814df06` | **`494d54a5`** | pass 2 | Δ (pass 1 / pass 2) |
 |---|---|---|---|---|
 | fib · 2c-spin | 6.96 | **5.21** | 5.31 | -25 % / -24 % |
 | fib · 2c-park | 7.06 | **5.13** | 5.37 | -27 % / -24 % |
@@ -44,7 +44,7 @@ creates 101 actors and pushes 400 000 events through a broker, and neither the f
 inserts per actor lifetime nor the resolver walk at removal is on that path. That is the shape of
 the change — an actor's construction and destruction, nothing per message.
 
-What `dc1ac56e` does (qb `CHANGELOG.md`, `[Unreleased]`): the five default events
+What `494d54a5` does (qb `CHANGELOG.md`, `[Unreleased]`): the five default events
 (`KillEvent`, `SignalEvent`, `UnregisterCallbackEvent`, `PingEvent`, `RequireEvent`) no longer
 have a per-type handler table each — 65 536 × 32-byte slots per core per event, whose key set was
 exactly the set of live actors, which the per-core `ActorMap` already is. `VirtualCore` installs
@@ -52,6 +52,6 @@ one `DefaultEventResolver<E>` per default event into the router at construction;
 registry's own `__actor_slot__(dest)` lookup and then the actor's dispatch pointer
 (`Actor::_default_on[k]`), a broadcast walks the registry. `registerEvent<E>` stores a trampoline
 pointer instead of inserting into a table; `unregisterEvents()` no longer visits a resolver that
-owns nothing. The `perf` profile at `8362a4b8` had put those five inserts at ≈ 29 % of an actor's
+owns nothing. The `perf` profile at `001be013` had put those five inserts at ≈ 29 % of an actor's
 lifetime and the resolver walk at ≈ 12 % (`../qb-branch-perf-dense-table-growth/README.md`);
 the measured −25 % at two cores and −22 % at one on fib is that share, less the registry lookup the unicast now pays.

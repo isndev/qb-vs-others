@@ -3,19 +3,19 @@
 The A/B for Huly **QB-184**: the qb branch that gives each side of the mailbox's SPSC ring a
 PRIVATE line for its working index and its snapshot of the peer's index, and leaves the published
 index ALONE on the line the peer polls — so that a producer never reads the line it publishes on.
-Measured against the `develop` it forks from (`2771cd67`, the QB-182 head) on all eight shapes,
+Measured against the `develop` it forks from (`670e9433`, the QB-182 head) on all eight shapes,
 4 configurations each, plus the four core `dev/bench` binaries and two probes. Same host, CPUs
 and build flags as the published directories beside this one: `-O3 -DNDEBUG`, `taskset -c 0,2`,
 **9 repetitions + 2 warmup**, qb-only builds, candidate / control / candidate in ONE quiet session
 on 2026-09-07, the Windows side idle throughout. The candidate is `~/qvo/cand-pass`, built against
-the working tree of the branch; the control `~/qvo/ctl-2771cd67`, a clean LF clone at `2771cd67`
+the working tree of the branch; the control `~/qvo/ctl-670e9433`, a clean LF clone at `670e9433`
 (0 dirty).
 
 | directory | qb at | what |
 |---|---|---|
 | `grid-worktree/`, `grid-worktree-pass2/` | **the branch** — measured first and third | **32 cells** each, qb only, all verified: eight shapes × {1c-spin, 1c-park, 2c-spin, 2c-park}. 18:41:21–18:41:55 UTC. |
-| `grid-2771cd67/` | `develop` `2771cd67` — the control, measured second | same 32 cells, same session. |
-| `census/` | branch vs `2771cd67`, **10 interleaved launches** each, 3 reps + 1 warmup, on the 2c cells of all eight shapes (ping-pong and thread-ring in both wait modes) and the ping-pong 1c anchor | 18:41:55–18:42:53 UTC. |
+| `grid-670e9433/` | `develop` `670e9433` — the control, measured second | same 32 cells, same session. |
+| `census/` | branch vs `670e9433`, **10 interleaved launches** each, 3 reps + 1 warmup, on the 2c cells of all eight shapes (ping-pong and thread-ring in both wait modes) and the ping-pong 1c anchor | 18:41:55–18:42:53 UTC. |
 | `bench/` | the four core `dev/bench` binaries, candidate and control alternated three times (`cand-N/` / `ctl-N/`, one process per run, 5 repetitions, every iteration recorded) | 18:42:53–18:46:23 UTC. |
 | `probe.txt` | `qvoprobe-pass-cost` k = 1, 2, 4 and `qvoprobe-xcore-hop` send / push, phase-averaged (jitter 150 ns) and locked, candidate and control alternated three times | 18:46:23–18:47:48 UTC. |
 | `census-throughput/` | the cells whose GRID readings had moved +2 to +10 % — counting 1c (both modes) and 2c-spin, fib 2c (both modes), fork-join 1c and 2c-spin, bank-transaction 1c-park — **15 interleaved launches** each, same protocol, a second quiet window | 18:48:41–18:48:51 UTC. |
@@ -45,7 +45,7 @@ variant read ±10 % from one binary's memory layout to the next (`../qb-branch-p
 
 ## The probes, same session (ns per round trip, cand / ctl, three alternations)
 
-| probe | control `2771cd67` | **branch** | Δ |
+| probe | control `670e9433` | **branch** | Δ |
 |---|---:|---:|---:|
 | `xcore-hop` send, phase-averaged (jitter 150) | 233.5 / 240.1 / 242.9 | **188.9 / 197.7 / 210.1** | **−17 %** |
 | `xcore-hop` push, phase-averaged | 228.4 / 240.3 / 241.2 | **158.8 / 159.1 / 164.2** | **−34 %** |
@@ -55,7 +55,7 @@ variant read ±10 % from one binary's memory layout to the next (`../qb-branch-p
 
 ## The grids, same session (p50 per unit, ns; candidate pass 1 / pass 2 against the control)
 
-| cell | `2771cd67` | **branch** p1 / p2 | Δ |
+| cell | `670e9433` | **branch** p1 / p2 | Δ |
 |---|---:|---:|---:|
 | ping-pong 2c-park (round trip) | 208.99 | **164.92 / 159.35** | **−21 / −24 %** |
 | ping-pong 2c-spin | 221.36 | **162.87 / 172.66** | **−26 / −22 %** |
@@ -89,7 +89,7 @@ events per ring write, where one load per publish is invisible.
 
 ## `dev/bench` — the four core binaries (median of three run medians, ns; `bench/`)
 
-| cell | `2771cd67` | **branch** | Δ |
+| cell | `670e9433` | **branch** | Δ |
 |---|---:|---:|---:|
 | `BM_Multi_PingPong_Latency` (cross-core round trip) | 253.3 | **202.8** | **−20 %** |
 | `BM_Pipeline_Chain_Latency` 8 actors / 8 cores (per delivery) | 321.9 | **264.5** | **−18 %** |

@@ -1,4 +1,4 @@
-session 2026-09-09T01:02:23 qb=9366384b msvc=cl 19.51 clang=clang-cl 22.1.7
+session 2026-09-09T01:02:23 qb=381e4995 msvc=cl 19.51 clang=clang-cl 22.1.7
 msvc ask-cost push push trips=47099904 elapsed_ns=1500098500 ns_per_trip=31.85
 msvc ask-cost ask timeout=500 ask+timeout trips=16801792 elapsed_ns=1500147900 ns_per_trip=89.28
 msvc pass-cost k=1 chains=1 passes=96272384 elapsed_ns=1500365600 ns_per_pass=15.58 events=96272384

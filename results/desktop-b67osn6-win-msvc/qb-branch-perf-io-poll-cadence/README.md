@@ -4,7 +4,7 @@ The Windows half of the A/B for Huly **QB-191** (a core polls a quiet socket on 
 on every pass; qev `perf/nopoll-pass`, `EVRUN_NOPOLL`), measured on 2026-09-08 ending
 **07:58 UTC** in one quiet session (no build during the points, no leftover probe, Docker
 Desktop quit), the WSL2 side idle — its own run had ended at 07:54. Control = `build/ab189-cand`
-against `D:\repo\qb-189-dev` (= `develop` `2f36cf3c` after QB-189, with its ev copy), candidate
+against `D:\repo\qb-189-dev` (= `develop` `dc91e6bd` after QB-189, with its ev copy), candidate
 = `build/ab191-cand` against `D:\repo\qb-191-dev` (the branch, final code, the branch's qev).
 Same flags as the published directories (`/O2 /Ob2 /DNDEBUG`), CPU 0, candidate and control
 alternated five times, 1.5 s per point, then the candidate alone with the interval set to **0**
@@ -18,7 +18,7 @@ None of it is merged into the published tables.
 
 ## The probes (one core, medians of five)
 
-| probe | control (`2f36cf3c`) | **branch** | Δ |
+| probe | control (`dc91e6bd`) | **branch** | Δ |
 |---|---:|---:|---:|
 | **pass with a quiet socket (ns)** | 275.0 | **83.1** | **−70 %** |
 | wake latency, a byte every 100 µs — p50 (µs) | 17.7 | 18.9 | inside the spread (both bimodal between ~10 and ~20; the same binary at interval 0 reads 20.1) |

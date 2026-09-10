@@ -2,9 +2,9 @@
 
 The A/B for Huly **QB-188** (qev: the non-blocking pass at its floor — one clock read, no
 wake-up handshake, the evpipe not counted as a pollable fd) on the probes it moves, measured
-against the batch it forks from (qb `1ee542df` with qev `e9b1d80`, i.e. QB-185 + QB-187) on
+against the batch it forks from (qb `5de4b363` with qev `ea565d1`, i.e. QB-185 + QB-187) on
 2026-09-08 in one quiet window (load 1.9, both gates finished, the Windows side idle). The
-candidate is `~/qvo/cand-188` built against `~/qb-188` — a clean LF clone of qb `1ee542df`
+candidate is `~/qvo/cand-188` built against `~/qb-188` — a clean LF clone of qb `5de4b363`
 whose `src/qb/ev/` copy carries the branch — and the control `~/qvo/ctl-185`, the same clone
 without it; same flags (`-O3 -DNDEBUG`), same CPU 0, candidate and control alternated five
 times. **QB-193** (the Windows clock) is in the same qev commit and changes nothing on Linux.
@@ -12,13 +12,13 @@ times. **QB-193** (the Windows clock) is in the same qev commit and changes noth
 | file | what |
 |---|---|
 | `probe.txt` | `qvoprobe-ask-cost`: `ask` and one- and 64-chunk `ask_stream` **with a 500 ms timeout**, the untimed `ask`, `push`; `qvoprobe-pass-cost` k = 1 — cand / ctl × 5, 1.5 s each. 01:02:02–01:03:32 UTC. |
-| `bench-pass.txt` | qev's own `bench/bench-pass.c` (2 000 000 `ev_run(EVRUN_NOWAIT)` per shape), `taskset -c 2`, the QB-187 build (`/tmp/bench-pass`, qev `e9b1d80`) against the branch build (`~/qev-build`), × 5 alternations. |
+| `bench-pass.txt` | qev's own `bench/bench-pass.c` (2 000 000 `ev_run(EVRUN_NOWAIT)` per shape), `taskset -c 2`, the QB-187 build (`/tmp/bench-pass`, qev `ea565d1`) against the branch build (`~/qev-build`), × 5 alternations. |
 
 None of it is merged into the published tables.
 
 ## What one non-blocking pass costs (ns, medians of five)
 
-| shape | qev `e9b1d80` (QB-187) | **branch** | Δ |
+| shape | qev `ea565d1` (QB-187) | **branch** | Δ |
 |---|---:|---:|---:|
 | empty loop | 50.1 | **21.6** | −57 % |
 | one far timer (a pending request timeout) | 51.5 | **22.1** | −57 % |

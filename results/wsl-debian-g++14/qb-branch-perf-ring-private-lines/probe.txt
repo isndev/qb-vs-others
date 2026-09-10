@@ -5,13 +5,13 @@ cand-pass     xcore-hop jitter150 send trips=7020544 elapsed_ns=2000123261 ns_pe
 cand-pass     xcore-hop locked    send trips=11096064 elapsed_ns=2000433408 ns_per_trip=180.28 jitter_ns=0 net_ns_per_trip=180.28
 cand-pass     xcore-hop jitter150 push trips=8368128 elapsed_ns=2000039126 ns_per_trip=239.01 jitter_ns=626214186 net_ns_per_trip=164.17
 cand-pass     xcore-hop locked    push trips=12922880 elapsed_ns=2000448092 ns_per_trip=154.80 jitter_ns=0 net_ns_per_trip=154.80
-ctl-2771cd67  pass-cost chains=1 passes=155320320 elapsed_ns=2000236642 ns_per_pass=12.88 events=155320320
-ctl-2771cd67  pass-cost chains=2 passes=117669888 elapsed_ns=2000170840 ns_per_pass=17.00 events=235339776
-ctl-2771cd67  pass-cost chains=4 passes=80199680 elapsed_ns=2000067552 ns_per_pass=24.94 events=320798720
-ctl-2771cd67  xcore-hop jitter150 send trips=6295552 elapsed_ns=2000447024 ns_per_trip=317.76 jitter_ns=471057798 net_ns_per_trip=242.93
-ctl-2771cd67  xcore-hop locked    send trips=8708096 elapsed_ns=2000039844 ns_per_trip=229.68 jitter_ns=0 net_ns_per_trip=229.68
-ctl-2771cd67  xcore-hop jitter150 push trips=6328320 elapsed_ns=2000013847 ns_per_trip=316.04 jitter_ns=473519233 net_ns_per_trip=241.22
-ctl-2771cd67  xcore-hop locked    push trips=9474048 elapsed_ns=2000744074 ns_per_trip=211.18 jitter_ns=0 net_ns_per_trip=211.18
+ctl-670e9433  pass-cost chains=1 passes=155320320 elapsed_ns=2000236642 ns_per_pass=12.88 events=155320320
+ctl-670e9433  pass-cost chains=2 passes=117669888 elapsed_ns=2000170840 ns_per_pass=17.00 events=235339776
+ctl-670e9433  pass-cost chains=4 passes=80199680 elapsed_ns=2000067552 ns_per_pass=24.94 events=320798720
+ctl-670e9433  xcore-hop jitter150 send trips=6295552 elapsed_ns=2000447024 ns_per_trip=317.76 jitter_ns=471057798 net_ns_per_trip=242.93
+ctl-670e9433  xcore-hop locked    send trips=8708096 elapsed_ns=2000039844 ns_per_trip=229.68 jitter_ns=0 net_ns_per_trip=229.68
+ctl-670e9433  xcore-hop jitter150 push trips=6328320 elapsed_ns=2000013847 ns_per_trip=316.04 jitter_ns=473519233 net_ns_per_trip=241.22
+ctl-670e9433  xcore-hop locked    push trips=9474048 elapsed_ns=2000744074 ns_per_trip=211.18 jitter_ns=0 net_ns_per_trip=211.18
 cand-pass     pass-cost chains=1 passes=153878528 elapsed_ns=2000113255 ns_per_pass=13.00 events=153878528
 cand-pass     pass-cost chains=2 passes=116490240 elapsed_ns=2000000961 ns_per_pass=17.17 events=232980480
 cand-pass     pass-cost chains=4 passes=80363520 elapsed_ns=2000041169 ns_per_pass=24.89 events=321454080
@@ -19,13 +19,13 @@ cand-pass     xcore-hop jitter150 send trips=7340032 elapsed_ns=2000594115 ns_pe
 cand-pass     xcore-hop locked    send trips=12275712 elapsed_ns=2000027909 ns_per_trip=162.93 jitter_ns=0 net_ns_per_trip=162.93
 cand-pass     xcore-hop jitter150 push trips=8564736 elapsed_ns=2000964554 ns_per_trip=233.63 jitter_ns=640931722 net_ns_per_trip=158.79
 cand-pass     xcore-hop locked    push trips=13021184 elapsed_ns=2000320890 ns_per_trip=153.62 jitter_ns=0 net_ns_per_trip=153.62
-ctl-2771cd67  pass-cost chains=1 passes=153157632 elapsed_ns=2000541039 ns_per_pass=13.06 events=153157632
-ctl-2771cd67  pass-cost chains=2 passes=116752384 elapsed_ns=2000452195 ns_per_pass=17.13 events=233504768
-ctl-2771cd67  pass-cost chains=4 passes=79200256 elapsed_ns=2000129618 ns_per_pass=25.25 events=316801024
-ctl-2771cd67  xcore-hop jitter150 send trips=6352896 elapsed_ns=2000362036 ns_per_trip=314.87 jitter_ns=475363574 net_ns_per_trip=240.05
-ctl-2771cd67  xcore-hop locked    send trips=8425472 elapsed_ns=2000459762 ns_per_trip=237.43 jitter_ns=0 net_ns_per_trip=237.43
-ctl-2771cd67  xcore-hop jitter150 push trips=6348800 elapsed_ns=2000361353 ns_per_trip=315.08 jitter_ns=475054707 net_ns_per_trip=240.25
-ctl-2771cd67  xcore-hop locked    push trips=8904704 elapsed_ns=2000668101 ns_per_trip=224.68 jitter_ns=0 net_ns_per_trip=224.68
+ctl-670e9433  pass-cost chains=1 passes=153157632 elapsed_ns=2000541039 ns_per_pass=13.06 events=153157632
+ctl-670e9433  pass-cost chains=2 passes=116752384 elapsed_ns=2000452195 ns_per_pass=17.13 events=233504768
+ctl-670e9433  pass-cost chains=4 passes=79200256 elapsed_ns=2000129618 ns_per_pass=25.25 events=316801024
+ctl-670e9433  xcore-hop jitter150 send trips=6352896 elapsed_ns=2000362036 ns_per_trip=314.87 jitter_ns=475363574 net_ns_per_trip=240.05
+ctl-670e9433  xcore-hop locked    send trips=8425472 elapsed_ns=2000459762 ns_per_trip=237.43 jitter_ns=0 net_ns_per_trip=237.43
+ctl-670e9433  xcore-hop jitter150 push trips=6348800 elapsed_ns=2000361353 ns_per_trip=315.08 jitter_ns=475054707 net_ns_per_trip=240.25
+ctl-670e9433  xcore-hop locked    push trips=8904704 elapsed_ns=2000668101 ns_per_trip=224.68 jitter_ns=0 net_ns_per_trip=224.68
 cand-pass     pass-cost chains=1 passes=157548544 elapsed_ns=2000082916 ns_per_pass=12.70 events=157548544
 cand-pass     pass-cost chains=2 passes=116817920 elapsed_ns=2000004602 ns_per_pass=17.12 events=233635840
 cand-pass     pass-cost chains=4 passes=79216640 elapsed_ns=2000059488 ns_per_pass=25.25 events=316866560
@@ -33,10 +33,10 @@ cand-pass     xcore-hop jitter150 send trips=7585792 elapsed_ns=2000405418 ns_pe
 cand-pass     xcore-hop locked    send trips=12279808 elapsed_ns=2000320930 ns_per_trip=162.90 jitter_ns=0 net_ns_per_trip=162.90
 cand-pass     xcore-hop jitter150 push trips=8548352 elapsed_ns=2000059464 ns_per_trip=233.97 jitter_ns=639701968 net_ns_per_trip=159.14
 cand-pass     xcore-hop locked    push trips=13185024 elapsed_ns=2000009101 ns_per_trip=151.69 jitter_ns=0 net_ns_per_trip=151.69
-ctl-2771cd67  pass-cost chains=1 passes=155582464 elapsed_ns=2000815122 ns_per_pass=12.86 events=155582464
-ctl-2771cd67  pass-cost chains=2 passes=114884608 elapsed_ns=2000403465 ns_per_pass=17.41 events=229769216
-ctl-2771cd67  pass-cost chains=4 passes=80052224 elapsed_ns=2000006934 ns_per_pass=24.98 events=320208896
-ctl-2771cd67  xcore-hop jitter150 send trips=6488064 elapsed_ns=2000411456 ns_per_trip=308.32 jitter_ns=485469064 net_ns_per_trip=233.50
-ctl-2771cd67  xcore-hop locked    send trips=9224192 elapsed_ns=2000592096 ns_per_trip=216.89 jitter_ns=0 net_ns_per_trip=216.89
-ctl-2771cd67  xcore-hop jitter150 push trips=6598656 elapsed_ns=2000771806 ns_per_trip=303.21 jitter_ns=493763625 net_ns_per_trip=228.38
-ctl-2771cd67  xcore-hop locked    push trips=9367552 elapsed_ns=2000055121 ns_per_trip=213.51 jitter_ns=0 net_ns_per_trip=213.51
+ctl-670e9433  pass-cost chains=1 passes=155582464 elapsed_ns=2000815122 ns_per_pass=12.86 events=155582464
+ctl-670e9433  pass-cost chains=2 passes=114884608 elapsed_ns=2000403465 ns_per_pass=17.41 events=229769216
+ctl-670e9433  pass-cost chains=4 passes=80052224 elapsed_ns=2000006934 ns_per_pass=24.98 events=320208896
+ctl-670e9433  xcore-hop jitter150 send trips=6488064 elapsed_ns=2000411456 ns_per_trip=308.32 jitter_ns=485469064 net_ns_per_trip=233.50
+ctl-670e9433  xcore-hop locked    send trips=9224192 elapsed_ns=2000592096 ns_per_trip=216.89 jitter_ns=0 net_ns_per_trip=216.89
+ctl-670e9433  xcore-hop jitter150 push trips=6598656 elapsed_ns=2000771806 ns_per_trip=303.21 jitter_ns=493763625 net_ns_per_trip=228.38
+ctl-670e9433  xcore-hop locked    push trips=9367552 elapsed_ns=2000055121 ns_per_trip=213.51 jitter_ns=0 net_ns_per_trip=213.51

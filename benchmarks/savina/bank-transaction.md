@@ -97,13 +97,13 @@ inside a tenth of that. The report's bimodality rule
 their spread, never as a median alone. The qb `develop` cells of the same session, below, do not
 show it (7.57 / 7.56 ms, IQR 0.2).
 
-The shape was written on 2026-09-06 against qb `develop` (`203cfb56`, every axis of
+The shape was written on 2026-09-06 against qb `develop` (`9d4aa94c`, every axis of
 `docs/TUNING.md` §7–§11 already in), and its one-core `perf` profile read as a list of things that
 should not be on a request path: a `shared_ptr` copied on every ask and every spawn (29 % of the
 core, 24 % on one `lock xadd`), a `std::function` + vector push per ask for the cancellation
 registration, a 64-byte request temporary moved three times and read back wide over narrow
 stores, the same store-forwarding stall in `reply()`'s header writes, and an `alive = 0` byte
-store into every arriving event before routing. Five defects, one commit (`9814c2a1`, Huly QB-42),
+store into every arriving event before routing. Five defects, one commit (`fa1c5ce3`, Huly QB-42),
 and removing the fifth exposed a sixth the store had been masking — a cross-core `forward()` of an
 already-`reply()`ed event leaked a copy per relay. `docs/TUNING.md` §12 carries the chain. Measured
 in ONE quiet session per host, three qb builds back to back beside the field
@@ -113,10 +113,10 @@ on Windows), p50 ms as 1c spin / 1c park / 2c spin / 2c park:
 | qb | WSL2 g++-14 (5 + 1) | Windows MSVC (9 + 2) |
 |---|---|---|
 | shipped **3.1.0** | 14.71 / 14.58 / 9.21 / 9.31 | 25.48 / 25.45 / 29.20 / 33.45 |
-| `develop` `203cfb56`, the base | 9.40 / 9.44 / 5.09 / 5.02 | 13.65 / 13.86 / 7.97 / 7.78 |
-| `develop` `9814c2a1`, the five fixes | **8.06 / 8.80 / 4.56 / 4.77** | **12.91 / 12.82 / 7.57 / 7.56** |
+| `develop` `9d4aa94c`, the base | 9.40 / 9.44 / 5.09 / 5.02 | 13.65 / 13.86 / 7.97 / 7.78 |
+| `develop` `fa1c5ce3`, the five fixes | **8.06 / 8.80 / 4.56 / 4.77** | **12.91 / 12.82 / 7.57 / 7.56** |
 
-3.1.0 → `9814c2a1` is 1.8× / 2.0× on WSL2 and 2.0× / 3.9× on Windows (1c / 2c spin, the last
+3.1.0 → `fa1c5ce3` is 1.8× / 2.0× on WSL2 and 2.0× / 3.9× on Windows (1c / 2c spin, the last
 over the wide shipped cell); the five fixes alone are −14 % / −10 % on WSL2 and −5 % / −5 % on
 Windows. Why the fixes buy g++ more than MSVC is not measured: the profile that found them was
 taken on Linux and no Windows profile was. The 3.1.0 → base gap is the §7–§11 work landing on a request path for the

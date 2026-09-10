@@ -1,10 +1,10 @@
 # qb branch `perf/request-deadlines` — WSL2 Debian 13 / g++ 14.2
 
 The A/B for Huly **QB-189** (a request timeout is a deadline in the core's own clock, not a
-libev timer) against the `develop` it forks from (qb `6c3a9e0b`, qev `9cc40fe`: the QB-185 /
+libev timer) against the `develop` it forks from (qb `639d1708`, qev `3c89e5a`: the QB-185 /
 187 / 188 / 193 batch), measured on 2026-09-08 in quiet windows (no build, the Windows side
 idle, load < 1 at the start of each). The candidate is `~/qvo/cand-189` built against `~/qb-189`
-(a clean LF clone at the branch), the control `~/qvo/cand-188`, the same clone at `6c3a9e0b`;
+(a clean LF clone at the branch), the control `~/qvo/cand-188`, the same clone at `639d1708`;
 same flags (`-O3 -DNDEBUG`), CPU 0 for the probes and CPUs 0,2 for the cells, candidate and
 control alternated.
 
@@ -18,7 +18,7 @@ None of it is merged into the published tables.
 
 ## The probes (ns per round trip, one core, medians of five)
 
-| probe | control (`6c3a9e0b`) | **branch** | Δ |
+| probe | control (`639d1708`) | **branch** | Δ |
 |---|---:|---:|---:|
 | **ask with a 500 ms timeout** | 111.6 | **67.8** | **−39 %** |
 | stream, 1 chunk, with a 500 ms timeout | 173.6 | **131.3** | −24 % |

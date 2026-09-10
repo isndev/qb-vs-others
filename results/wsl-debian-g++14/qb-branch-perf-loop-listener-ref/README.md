@@ -5,9 +5,9 @@ instead of three times a pass — it is an inline thread_local with a non-trivia
 routes every access through its TLS wrapper, the init guard `__tls_init`, 2.2 % of savina/ping-pong
 1c under `perf`), measured 2026-09-08 **22:29–22:32 UTC** in one quiet session: 60 s of quiet after
 the last build, no build during the points, the Windows side idle, Docker Desktop quit. Control =
-`~/qvo-cand-batch` (`develop` `d20417f9`), candidate = `~/qvo-198-C` (`bd0858a2`, QB-199 alone — the
+`~/qvo-cand-batch` (`develop` `57df433d`), candidate = `~/qvo-198-C` (`bd0858a2`, QB-199 alone — the
 code the branch ships, before the test and the changelog joined it), both from `git archive` into
-ext4 against this harness at `1f88232`, same flags (`-O3 -DNDEBUG`), CPUs 0,2, asserted by marker
+ext4 against this harness at `d98b8dc`, same flags (`-O3 -DNDEBUG`), CPUs 0,2, asserted by marker
 (`listener::current` 5 / 7 occurrences in `VirtualCore.cpp`).
 
 | file | what |
@@ -21,7 +21,7 @@ eight rounds, and inside `A4`) with the same reading.
 
 ## The census (`work_p50 / work_units`, ns, medians of twelve interleaved rounds)
 
-| cell | control `d20417f9` | **candidate `bd0858a2`** | Δ | quartiles ctl / cand |
+| cell | control `57df433d` | **candidate `bd0858a2`** | Δ | quartiles ctl / cand |
 |---|---:|---:|---:|---|
 | bank-transaction 1c | 145.0 | 144.6 | level | 142.8–147.1 / 141.3–146.9 |
 | bank-transaction 2c | 81.8 | 80.3 | −1.8 %, spreads overlap | 78.7–82.2 / 78.8–84.0 |

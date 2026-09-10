@@ -15,8 +15,8 @@ ambition has already misled the reader.
   the reason in `frameworks/caf-detached/CMakeLists.txt`): **84 cells per platform, 82 verified
   + 2 `n/a`**, both platforms measured in one quiet session each on 2026-09-04, with the
   candidate qb branch measured through the same adapters minutes after the shipped build (the
-  20-cell grids under `results/*/qb-branch-perf-core-hot-path/M-f5c20eeb/`, with the
-  same-session shipped control beside each; `L-ba051409/` is the previous candidate, kept).
+  20-cell grids under `results/*/qb-branch-perf-core-hot-path/M-230c5035/`, with the
+  same-session shipped control beside each; `L-32b28130/` is the previous candidate, kept).
   Every qb-side cost the four new shapes exposed is in `docs/TUNING.md` §9, and the one
   the candidate itself exposed — a dispatch made fast enough to flip the cross-core pipe
   into a per-event publish regime — is 9.10, fixed on the same branch.
@@ -65,7 +65,7 @@ ambition has already misled the reader.
 Everything performance-side is aimed at qb **3.2.0** (a minor: the 2c-park collapse is a
 user-reachable defect, and the branch changes no observable behaviour). **Merged on qb
 `develop` since 2026-09-06** — axes A–N, QB-43, the ask/coroutine work, QB-171..178 — and
-**measured as one grid on 2026-09-07**: `develop` `f8eba11d` (29 commits over v3.1.0) on all
+**measured as one grid on 2026-09-07**: `develop` `43f62afe` (29 commits over v3.1.0) on all
 eight shapes against shipped 3.1.0 in one quiet session per host
 (`results/<host>/qb-branch-develop/`, README.md's candidate grids, `docs/TUNING.md` §13). What
 is left of the pipeline is the train itself.
@@ -73,9 +73,9 @@ is left of the pipeline is the train itself.
 1. **Record and re-read** — done at each step: `docs/TUNING.md` §7 and §9 carry every axis with
    its A/B, the shipped control of the same session beside every candidate grid, and the burst
    sweep (§9.11) that says what the one-core cell measures.
-2. **`perf/event-pipe-segmented`** — done, local (`518d956e` + `a017b8a5` over
+2. **`perf/event-pipe-segmented`** — done, local (`b34fbc23` + `279e6cd4` over
    `perf/core-hot-path`): the pipe's growth (§9.11) taken by a segmented pipe over a process-wide
-   slab cache, A/B'd against `f5c20eeb` on both hosts with the burst sweep as the instrument
+   slab cache, A/B'd against `230c5035` on both hosts with the burst sweep as the instrument
    (g++ 1 M: 35.0 → 9.2 ns, MSVC 25.8 → 9.5; page faults per 1 M process 230 942 → 291) and the
    five-benchmark grid plus a launch census as the regression check — no cell slower beyond the
    instrument's spread, the two cross-core `2c-spin` cells on Windows read through the census
@@ -158,7 +158,7 @@ tables with the 3.2.0 grid on 2026-09-07 (`qb-branch-develop/`, §13). fib alone
 run, and then found that shipped 3.1.0 logs nine INFO lines per actor lifetime inside the window
 — 159 / 459 ms against the branch's 7.6 / 10.5; bank-transaction put a `perf` profile on the
 coroutine request path for the first time and found five defects on it in one afternoon (qb
-`9814c2a1`) — the argument for writing the rest. None of the eight carries a pipeline. The ones
+`fa1c5ce3`) — the argument for writing the rest. None of the eight carries a pipeline. The ones
 that would change the picture most, roughly in order of what they would teach:
 
 | benchmark | what it adds that the eight cannot show |
@@ -176,7 +176,7 @@ that basis.
 ### Actor creation cost and memory footprint
 
 The spawn side is measured now — `savina/fib` is 57 312 spawn-and-die cycles per repetition, and
-at `8362a4b8` qb pays **~200 ns per actor lifetime** on one core (11.4 ms / 57 312 on WSL2 — the
+at `001be013` qb pays **~200 ns per actor lifetime** on one core (11.4 ms / 57 312 on WSL2 — the
 floor's malloc-and-free node is 30 ns) against CAF's 1.2 µs and SObjectizer's 2.6 µs. The
 footprint side is not: "how many bytes does an actor occupy" needs an RSS probe
 the harness does not have.
@@ -218,14 +218,14 @@ the JDK unpacks from a zip, and Erlang is the awkward one.
 
 - **`docs/TUNING.md` is not figure-checked.** `check-report.py` deliberately parses README.md
   only: TUNING's numbers come from side experiments (`caf-spin-sweep/`, the `ab-*` and
-  `idlespin*` documents, `L-ba051409/`, `ab-axis-I/`, `ab-axis-IM/`) that are not cells of a
+  `idlespin*` documents, `L-32b28130/`, `ab-axis-I/`, `ab-axis-IM/`) that are not cells of a
   published table, and a guard
   that pretended to verify them would verify nothing. Each subsection names the directory its
   numbers came from; a marker grammar for "this figure is `<document>.summary.work_p50 /
   work_units`" would close it and has not been written.
 - **The qb-side findings in `docs/TUNING.md` §9 are not tied to a qb commit.** A finding that
-  names `VirtualCore.cpp:199` is true of qb 3.1.0 and of the branch at `ba051409`, and already
-  false of the branch at `f5c20eeb` (axis M moved `__flush_all__`; §9 says so in prose, which
+  names `VirtualCore.cpp:199` is true of qb 3.1.0 and of the branch at `32b28130`, and already
+  false of the branch at `230c5035` (axis M moved `__flush_all__`; §9 says so in prose, which
   is all it can do); nothing here re-checks the citation when either moves. qb-dev's `llm-guard.py` does exactly that for its own
   docs and does not read this repository.
 - **A footprint probe.** See "Actor creation cost and memory footprint".

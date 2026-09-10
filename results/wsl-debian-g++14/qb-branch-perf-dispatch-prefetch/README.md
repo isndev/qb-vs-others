@@ -4,7 +4,7 @@ The investigation behind Huly **QB-198** (the dispatch loop prefetching the acto
 while the current handler runs, on a core serving a population) — four sessions on 2026-09-08/09,
 every one a quiet session (no build during the points, 60 s of quiet after the builds, the Windows
 side idle, Docker Desktop quit), every tree from `git archive` into ext4 against this harness at
-`1f88232`, same flags (`-O3 -DNDEBUG`), CPUs 0,2. The control everywhere is `develop` **`d20417f9`**.
+`d98b8dc`, same flags (`-O3 -DNDEBUG`), CPUs 0,2. The control everywhere is `develop` **`57df433d`**.
 It ends in a negative result with numbers on both sides, which is why it is kept: the prefetch hid
 the miss it targeted on the one workload that opened the issue and cost everything cheaper, and
 no cheap gate tells the two apart. What shipped out of it is **QB-199** (one `listener::current`

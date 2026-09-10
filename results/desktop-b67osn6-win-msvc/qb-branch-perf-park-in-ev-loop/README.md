@@ -1,7 +1,7 @@
 # qb branch `perf/park-in-ev-loop` (axis N) — Windows 11 / MSVC 19.51
 
 Same host and build flags as the published directories beside this one. **Control** is qb
-`develop` at `f0da4e32` (every axis through M and QB-43 merged, the tree axis N branches from),
+`develop` at `d1897d3c` (every axis through M and QB-43 merged, the tree axis N branches from),
 exported with `git archive` and built clean under `build/ctl-f0da-win/`; **candidate** is the
 working tree of `perf/park-in-ev-loop` built under `build/final/`. Both measured 2026-09-06
 03:02–03:27 UTC in one quiet session — no build, no test suite, the WSL2 side idle throughout —

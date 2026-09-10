@@ -3,11 +3,11 @@
 The A/B for Huly **QB-190** (the pass that does not run the loop: a non-blocking pass with nothing
 pending, no wake, no poll to make and no timer within reach calls `ev_run` not at all; qev
 `perf/embedder-clock`: `ev_now_set`, `ev_clock_now`, `ev_timer_count_addr`, `ev_timer_next`,
-`ev_wake_pending_addr`) against the `develop` it forks from (qb `ae09da3a`, qev `6e98c0e`: after
+`ev_wake_pending_addr`) against the `develop` it forks from (qb `4903750e`, qev `2b27a6c`: after
 QB-191), measured on 2026-09-08 **11:59–12:01 UTC** in one quiet window (no build during the points,
 no other probe, the Windows side idle). The candidate is `~/qvo/cand-191` built against `~/qb-191`
-(a clean LF clone at `ae09da3a` plus the branch's patch and the branch's qev), the control
-`~/qvo/ctl-191` against `~/qb-ctl`, a clone at `ae09da3a`; same flags (`-O3 -DNDEBUG`), CPU 0,
+(a clean LF clone at `4903750e` plus the branch's patch and the branch's qev), the control
+`~/qvo/ctl-191` against `~/qb-ctl`, a clone at `4903750e`; same flags (`-O3 -DNDEBUG`), CPU 0,
 candidate and control alternated five times, 1.5 s per point.
 
 | file | what |
@@ -19,7 +19,7 @@ None of it is merged into the published tables.
 
 ## The probes (one core, medians of five)
 
-| probe | control (`ae09da3a`) | **branch** | Δ |
+| probe | control (`4903750e`) | **branch** | Δ |
 |---|---:|---:|---:|
 | **busy pass with a far timer (ns)** | 36.9 | **26.2** | **−29 %** |
 | **pass with a quiet socket, cold (ns)** | 48.6 | **28.5** | **−41 %** |

@@ -1,8 +1,8 @@
-# qb `develop` `f8eba11d` — the 3.2.0 candidate grid, Windows 11 / MSVC 19.51
+# qb `develop` `43f62afe` — the 3.2.0 candidate grid, Windows 11 / MSVC 19.51
 
 The Windows half of the **3.2.0 candidate grid** (the WSL2 half is
-`../../wsl-debian-g++14/qb-branch-develop/`): qb `develop` at **`f8eba11d`** — 29 commits over
-the shipped v3.1.0 (`eac739ff`), every perf branch of `docs/TUNING.md` §7–§12 merged (axes A–N,
+`../../wsl-debian-g++14/qb-branch-develop/`): qb `develop` at **`43f62afe`** — 29 commits over
+the shipped v3.1.0 (`830ea244`), every perf branch of `docs/TUNING.md` §7–§12 merged (axes A–N,
 QB-43 the segmented pipe, axis I the dense router, QB-174 the default-event registry, the
 dense-table-growth chain fib produced, the five ask-path fixes bank-transaction produced and
 QB-178 the ask slot table) — measured through the unmodified adapters on **all eight Savina
@@ -12,20 +12,20 @@ as the published directories beside this one: `/O2 /DNDEBUG`, CPUs 0 and 2 (two 
 **08:21:40–08:26:18 UTC**, no build, no test suite and no WSL measurement running anywhere on
 the host (the WSL2 half ran afterwards, 08:45:23–08:54:36 UTC, with this side idle). The candidate is
 `build/final` — the full field build, the same tree that measured CAF, SObjectizer and the floor
-of the eight `savina-*/` directories — rebuilt at `f8eba11d` (0 dirty; nine TUs recompiled, the
+of the eight `savina-*/` directories — rebuilt at `43f62afe` (0 dirty; nine TUs recompiled, the
 eight adapters and qb-core); the control is `build/shipped-win`, the v3.1.0 `git archive` build
 every `savina-*/` directory's `qb` row comes from.
 
 | directory | qb at | what |
 |---|---|---|
-| `grid-693c5892/`, `grid-693c5892-pass2/` | `develop` **`693c5892`** — **the FINAL candidate**, 66 commits over 3.1.0 and 37 over `f8eba11d`, measured first and third on 2026-09-09, **15:39:09–15:42:12 UTC** (the build of `build/final` at `693c5892` ended 15:38:09, 0 dirty; the WSL2 half ran afterwards, 14:19:38–14:27:51 UTC, this side idle) | **32 cells** each, qb only, all verified — the release measurement; `docs/TUNING.md` §13.4 reads it against the midpoint grid below and against this session's control |
-| `grid-shipped-3.1.0-final/` | v3.1.0 `eac739ff` — the control of the final session, measured second | same 32 cells, same session; agrees with `grid-shipped-3.1.0/` within the launch spread |
-| `census-693c5892-vs-f8eba11d/` | `693c5892` (`build/final`) against `f8eba11d` (`build/ab180-ctl`, the same adapters) | the interleaved launch census the bimodal two-core cells need: ten alternated launches of 3 + 1 per cell on CPUs 0 and 2, counting, chameneos, ping-pong and thread-ring 2c-spin, `census.log` the summary — level on counting (13.6 vs 13.5) and chameneos (66.9 vs 67.8, lower mode 46.8 vs 55.2), −22 % on ping-pong (189 vs 243), −10 % on the ring (107 vs 120). |
-| `grid-f8eba11d/`, `grid-f8eba11d-pass2/` | `develop` **`f8eba11d`** — **the candidate**, measured first (08:21:40–08:21:59 UTC) and third (08:25:59–08:26:18) | **32 cells** each, qb only, all verified: the eight shapes × {1c-spin, 1c-park, 2c-spin, 2c-park}. The first pass is the `framework=qb` grid README.md carries and `check-report.py` verifies. |
-| `grid-shipped-3.1.0/` | v3.1.0 `eac739ff` — **the control**, measured second (08:22:00–08:25:58 UTC; the two collapsed 2c-park cells and the logging fib are where its four minutes go) | same 32 cells, same session. Agrees with the published `savina-*/` `qb` rows within their spread (ping-pong 2c-park 7.79 µs here against 4.23 µs on 2026-09-04 — a collapsed cell has no stable figure). |
+| `grid-77b358d8/`, `grid-77b358d8-pass2/` | `develop` **`77b358d8`** — **the FINAL candidate**, 66 commits over 3.1.0 and 37 over `43f62afe`, measured first and third on 2026-09-09, **15:39:09–15:42:12 UTC** (the build of `build/final` at `77b358d8` ended 15:38:09, 0 dirty; the WSL2 half ran afterwards, 14:19:38–14:27:51 UTC, this side idle) | **32 cells** each, qb only, all verified — the release measurement; `docs/TUNING.md` §13.4 reads it against the midpoint grid below and against this session's control |
+| `grid-shipped-3.1.0-final/` | v3.1.0 `830ea244` — the control of the final session, measured second | same 32 cells, same session; agrees with `grid-shipped-3.1.0/` within the launch spread |
+| `census-77b358d8-vs-43f62afe/` | `77b358d8` (`build/final`) against `43f62afe` (`build/ab180-ctl`, the same adapters) | the interleaved launch census the bimodal two-core cells need: ten alternated launches of 3 + 1 per cell on CPUs 0 and 2, counting, chameneos, ping-pong and thread-ring 2c-spin, `census.log` the summary — level on counting (13.6 vs 13.5) and chameneos (66.9 vs 67.8, lower mode 46.8 vs 55.2), −22 % on ping-pong (189 vs 243), −10 % on the ring (107 vs 120). |
+| `grid-43f62afe/`, `grid-43f62afe-pass2/` | `develop` **`43f62afe`** — **the candidate**, measured first (08:21:40–08:21:59 UTC) and third (08:25:59–08:26:18) | **32 cells** each, qb only, all verified: the eight shapes × {1c-spin, 1c-park, 2c-spin, 2c-park}. The first pass is the `framework=qb` grid README.md carries and `check-report.py` verifies. |
+| `grid-shipped-3.1.0/` | v3.1.0 `830ea244` — **the control**, measured second (08:22:00–08:25:58 UTC; the two collapsed 2c-park cells and the logging fib are where its four minutes go) | same 32 cells, same session. Agrees with the published `savina-*/` `qb` rows within their spread (ping-pong 2c-park 7.79 µs here against 4.23 µs on 2026-09-04 — a collapsed cell has no stable figure). |
 
 This is the grid that **joins the tables**: README.md's candidate grids for Windows and WSL2
-render `grid-f8eba11d/`, and `docs/TUNING.md` §13 reads the two hosts side by side. Every
+render `grid-43f62afe/`, and `docs/TUNING.md` §13 reads the two hosts side by side. Every
 earlier branch directory beside this one (`qb-branch-perf-*/`) is the A/B that produced one of
 the 29 commits and stays as its provenance.
 
@@ -34,7 +34,7 @@ the 29 commits and stays as its provenance.
 The field columns are the published `../savina-<shape>/` cells (2026-09-04, -06 and -07, each
 its own quiet session); the three qb columns are this session.
 
-| shape (per unit) | config | shipped 3.1.0 | **`f8eba11d`** | pass 2 | Δ (p50) | min: 3.1.0 / cand / pass 2 | CAF / SObjectizer / floor |
+| shape (per unit) | config | shipped 3.1.0 | **`43f62afe`** | pass 2 | Δ (p50) | min: 3.1.0 / cand / pass 2 | CAF / SObjectizer / floor |
 |---|---|---|---|---|---|---|---|
 | `ping-pong` (round trip) | 1c-spin | 117.4 | **84.2** | 82.4 | -28.2 % / -29.8 % | 114.3 / 80.7 / 79.7 | 481.9 / 183.6 / 1.7 |
 |  | 1c-park | 118.7 | **83.4** | 84.2 | -29.8 % / -29.1 % | 116.4 / 82.3 / 82.7 | 488.7 / 213.6 / 1.7 |
@@ -122,8 +122,8 @@ that cross a core per message with nothing to batch: ping-pong 2c-spin 1.63 ×, 
   one 233.8 / 222.0 outlier in nine on both passes, over a 145–165 body. Recorded, not
   explained.
 
-At `f8eba11d` all nine of qb's own GitHub lanes are green (`cmake`, `sanitize`,
+At `43f62afe` all nine of qb's own GitHub lanes are green (`cmake`, `sanitize`,
 `sanitize-thread`, `coverage`, `abi-fingerprint`, `install-consume`, `doc-lint`,
-`format-check`, `scaffold`); the Windows/MSVC suite at the chain's last core commit `82ea03a8`
+`format-check`, `scaffold`); the Windows/MSVC suite at the chain's last core commit `a61bded8`
 is in `../qb-branch-perf-ask-slot-table/README.md` (Release 188 / 188 / 0, standalone SSL-off
 qb). `docs/TUNING.md` §13 carries the two-host reading and the deltas against the WSL2 half.

@@ -6,7 +6,7 @@ every document but the two profile controls carries `SWEEP DOCUMENT, NOT A TABLE
 first caveat, written by the adapter itself. The reading is in `docs/TUNING.md` §1.2; this
 directory is the evidence for it, the symmetric of `caf-spin-sweep/`.
 
-Windows 11 / MSVC 19.51, i9-12900K, quiet host (Docker Desktop quit, the WSL2 side idle), 2026-09-09 13:14–13:16 UTC. Binaries: `build/win-release/bin/qvo-sobjectizer-savina-{ping-pong,counting}.exe` (SObjectizer 5.8.5.1, the harness at qb-vs-others `335edcc` plus the override). Driver: `tools/so-sweep.sh`, which sets `QVO_SO_SPIN_WAIT_US` (the combined lock's
+Windows 11 / MSVC 19.51, i9-12900K, quiet host (Docker Desktop quit, the WSL2 side idle), 2026-09-09 13:14–13:16 UTC. Binaries: `build/win-release/bin/qvo-sobjectizer-savina-{ping-pong,counting}.exe` (SObjectizer 5.8.5.1, the harness at qb-vs-others `b693a21` plus the override). Driver: `tools/so-sweep.sh`, which sets `QVO_SO_SPIN_WAIT_US` (the combined lock's
 waiting time in microseconds, 0 = `simple_lock_factory`) and runs the same harness command —
 `--repetitions 7 --warmup 2 --cpus 0,2 --param messages=1000000 --param cores=2 --param wait=1` —
 once per budget, the adapter's own profile (unset, 10 s) first and last; `sweep.log` is its

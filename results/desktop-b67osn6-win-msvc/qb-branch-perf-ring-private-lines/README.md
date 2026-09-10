@@ -5,19 +5,19 @@ profile and the two censuses, is `../../wsl-debian-g++14/qb-branch-perf-ring-pri
 the qb branch that gives each side of the mailbox's SPSC ring a private line for its working
 index and its snapshot of the peer's index, and leaves the published index alone on the line
 the peer polls — so that a producer never reads the line it publishes on. Measured against the
-`develop` it forks from (`2771cd67`) on all eight shapes, 4 configurations each, plus the four
+`develop` it forks from (`670e9433`) on all eight shapes, 4 configurations each, plus the four
 core `dev/bench` binaries and the two probes. Same host, CPUs and flags as the published
 directories beside this one: `/O2 /Ob2 /DNDEBUG`, CPUs 0,2, **9 repetitions + 2 warmup**,
 qb-only builds (`build/ab184-cand` against the working tree of the branch, `build/ab184-ctl`
-against `D:\repo\qb-ctl-2771cd67`, a clean clone at `2771cd67`, 0 dirty), candidate / control /
+against `D:\repo\qb-ctl-670e9433`, a clean clone at `670e9433`, 0 dirty), candidate / control /
 candidate in ONE quiet session on 2026-09-07 with the WSL2 side idle (its own session had ended
 18:48 UTC and its suites 18:56):
 
 | directory | qb at | what |
 |---|---|---|
 | `grid-worktree/`, `grid-worktree-pass2/` | **the branch** — measured first and third | **32 cells** each, qb only, all verified: eight shapes × {1c-spin, 1c-park, 2c-spin, 2c-park}. 18:59:20–19:00:04 UTC. |
-| `grid-2771cd67/` | `develop` `2771cd67` — the control, measured second | same 32 cells, same session. |
-| `census/` | branch vs `2771cd67`, **10 interleaved launches** each, 3 reps + 1 warmup, on the 2c cells of all eight shapes (ping-pong and thread-ring in both wait modes) and the ping-pong 1c anchor | 19:00:04–19:01:18 UTC. |
+| `grid-670e9433/` | `develop` `670e9433` — the control, measured second | same 32 cells, same session. |
+| `census/` | branch vs `670e9433`, **10 interleaved launches** each, 3 reps + 1 warmup, on the 2c cells of all eight shapes (ping-pong and thread-ring in both wait modes) and the ping-pong 1c anchor | 19:00:04–19:01:18 UTC. |
 | `bench/` | the four core `dev/bench` binaries, candidate and control alternated three times (`cand-N/` / `ctl-N/`, one process per run, 5 repetitions, every iteration recorded) | 19:01:18–19:04:54 UTC. |
 | `probe.txt` | `qvoprobe-pass-cost` k = 1, 2, 4 and `qvoprobe-xcore-hop` send / push, phase-averaged (jitter 150 ns) and locked, candidate and control alternated three times | 19:04:54–19:06:50 UTC. |
 | `census-throughput/` | the cells whose grid or census readings had moved the other way — fib 2c (both modes), bank-transaction 2c-park, big 2c-park, counting 2c-park and 1c-spin — **15 interleaved launches** each, a second quiet window | 19:10–19:14 UTC. |
@@ -27,7 +27,7 @@ when the final candidate is measured on all eight shapes.
 
 ## The grids, same session (p50 per unit, ns; candidate pass 1 / pass 2 against the control)
 
-| cell | `2771cd67` | **branch** p1 / p2 | Δ |
+| cell | `670e9433` | **branch** p1 / p2 | Δ |
 |---|---:|---:|---:|
 | ping-pong 2c-park (round trip) | 257.5 | **209.4 / 206.1** | **−19 / −20 %** |
 | ping-pong 2c-spin | 258.0 | **217.5 / 198.5** | **−16 / −23 %** |
@@ -60,7 +60,7 @@ not see one load per publish, and the same-core shapes never touch this ring.
 
 ## `dev/bench` — the four core binaries (median of three run medians, ns; `bench/`)
 
-| cell | `2771cd67` | **branch** | Δ |
+| cell | `670e9433` | **branch** | Δ |
 |---|---:|---:|---:|
 | `BM_Multi_PingPong_Latency` (cross-core round trip) | 317.8 | **245.6** | **−23 %** |
 | `BM_Reference_Multi_PingPong_Latency` (raw spsc ring, tight poll, no actor) | 285.6 | **222.9** | **−22 %** — MSVC's tight poll sees the fix too |
