@@ -34,6 +34,13 @@
 //   qvoprobe-xcore-hop <push|send> [seconds=2] [cpu_a=0] [cpu_b=2] [latency_us=0] [jitter_ns=0]
 //
 // One line on stdout: mode, round trips, elapsed ns, ns per round trip, jitter, net ns per trip.
+//
+// x86-64 only for real (the jitter is `rdtsc`-paced and the TSC is what it calibrates); elsewhere
+// the same source builds to a stub that says so and exits 2, like raw-ring.cpp -- measured on
+// arm64/AppleClang 21, where <x86intrin.h> does not compile and, with QVO_BUILD_PROBES on by
+// default, this one TU took the whole qb-vs-others build with it.
+
+#if defined(__x86_64__) || defined(_M_X64)
 
 #include <qb/actor.h>
 #include <qb/main.h>
@@ -191,3 +198,15 @@ main(int argc, char **argv) {
     engine.join();
     return engine.hasError() ? 1 : 0;
 }
+
+#else
+
+#include <cstdio>
+
+int
+main() {
+    std::fprintf(stderr, "qvoprobe-xcore-hop: x86-64 only (the jitter is rdtsc-paced)\n");
+    return 2;
+}
+
+#endif
