@@ -91,7 +91,7 @@ public:
     }
 
     void
-    on(const qb::LoopEvent &) {
+    on(const qb::LoopEvent &) override {
         ++_passes;
         if ((_passes & 0xFFu) == 0 && elapsed_ns() >= _window_ns)
             finish();
