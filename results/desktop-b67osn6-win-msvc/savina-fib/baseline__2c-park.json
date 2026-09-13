@@ -22,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-06T18:14:23Z"
+    "utc": "2026-09-13T01:23:11Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. An actor is one `new`, one slot and one `delete`, with no mailbox, no registry and no lifecycle beyond the slot: the floor for what creating and destroying an actor can cost", "a child is allocated on its parent's worker (id = slot * cores + worker), the same static placement qb's addRefActor has: with cores=2 the two sub-trees never balance, so this floor is a bound for the placing frameworks and NOT for the pools", "cores=1 is one thread with every node in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with tens of thousands of nodes in flight never happens inside the window"],
   "failures": [],
-  "work_ns": [3193700.0, 3559700.0, 4055800.0, 4639300.0, 4133900.0, 4028700.0, 3658400.0, 4497500.0, 4251900.0],
-  "total_ns": [4926400.0, 6178500.0, 5644100.0, 7691100.0, 5782800.0, 5671200.0, 5275600.0, 6031900.0, 5943400.0],
-  "outside_window_ns": [1732700.0, 2618800.0, 1588300.0, 3051800.0, 1648900.0, 1642500.0, 1617200.0, 1534400.0, 1691500.0],
+  "work_ns": [4370800.0, 4086300.0, 3894300.0, 3880400.0, 3947900.0, 3899000.0, 3765900.0, 4095700.0, 4118500.0],
+  "total_ns": [5818600.0, 5425100.0, 5206300.0, 5217000.0, 5351500.0, 5247300.0, 5083900.0, 5448000.0, 6117000.0],
+  "outside_window_ns": [1447800.0, 1338800.0, 1312000.0, 1336600.0, 1403600.0, 1348300.0, 1318000.0, 1352300.0, 1998500.0],
   "summary": {
-    "work_min": 3193700.0,
-    "work_p50": 4055800.0,
-    "work_p99": 4627956.0,
-    "work_iqr": 593500.0
+    "work_min": 3765900.0,
+    "work_p50": 3947900.0,
+    "work_p99": 4350616.0,
+    "work_iqr": 201400.0
   }
 }

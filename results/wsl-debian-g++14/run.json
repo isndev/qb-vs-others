@@ -3,10 +3,34 @@
   "host": "DESKTOP-B67OSN6",
   "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
   "cpus": "0,2",
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "cells": [
     {
+      "benchmark": "savina/bank-transaction",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bank-transaction",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bank-transaction",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bank-transaction",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
       "benchmark": "savina/big",
       "framework": "baseline",
       "config": "2c-spin",
@@ -31,6 +55,30 @@
       "status": "ok"
     },
     {
+      "benchmark": "savina/chameneos",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
       "benchmark": "savina/counting",
       "framework": "baseline",
       "config": "2c-spin",
@@ -50,6 +98,30 @@
     },
     {
       "benchmark": "savina/counting",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
       "framework": "baseline",
       "config": "1c-park",
       "status": "ok"
@@ -153,6 +225,30 @@
       "status": "ok"
     },
     {
+      "benchmark": "savina/bank-transaction",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bank-transaction",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bank-transaction",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bank-transaction",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
       "benchmark": "savina/big",
       "framework": "caf",
       "config": "2c-spin",
@@ -177,6 +273,30 @@
       "status": "ok"
     },
     {
+      "benchmark": "savina/chameneos",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
       "benchmark": "savina/counting",
       "framework": "caf",
       "config": "2c-spin",
@@ -196,6 +316,30 @@
     },
     {
       "benchmark": "savina/counting",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
       "framework": "caf",
       "config": "1c-park",
       "status": "ok"
@@ -273,122 +417,26 @@
       "status": "ok"
     },
     {
-      "benchmark": "savina/big",
-      "framework": "sobjectizer",
+      "benchmark": "savina/bank-transaction",
+      "framework": "qb",
       "config": "2c-spin",
       "status": "ok"
     },
     {
-      "benchmark": "savina/big",
-      "framework": "sobjectizer",
+      "benchmark": "savina/bank-transaction",
+      "framework": "qb",
       "config": "2c-park",
       "status": "ok"
     },
     {
-      "benchmark": "savina/big",
-      "framework": "sobjectizer",
+      "benchmark": "savina/bank-transaction",
+      "framework": "qb",
       "config": "1c-spin",
       "status": "ok"
     },
     {
-      "benchmark": "savina/big",
-      "framework": "sobjectizer",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/counting",
-      "framework": "sobjectizer",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/counting",
-      "framework": "sobjectizer",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/counting",
-      "framework": "sobjectizer",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/counting",
-      "framework": "sobjectizer",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/fork-join",
-      "framework": "sobjectizer",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/fork-join",
-      "framework": "sobjectizer",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/fork-join",
-      "framework": "sobjectizer",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/fork-join",
-      "framework": "sobjectizer",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/ping-pong",
-      "framework": "sobjectizer",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/ping-pong",
-      "framework": "sobjectizer",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/ping-pong",
-      "framework": "sobjectizer",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/ping-pong",
-      "framework": "sobjectizer",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/thread-ring",
-      "framework": "sobjectizer",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/thread-ring",
-      "framework": "sobjectizer",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/thread-ring",
-      "framework": "sobjectizer",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/thread-ring",
-      "framework": "sobjectizer",
+      "benchmark": "savina/bank-transaction",
+      "framework": "qb",
       "config": "1c-park",
       "status": "ok"
     },
@@ -417,6 +465,30 @@
       "status": "ok"
     },
     {
+      "benchmark": "savina/chameneos",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
       "benchmark": "savina/counting",
       "framework": "qb",
       "config": "2c-spin",
@@ -436,6 +508,30 @@
     },
     {
       "benchmark": "savina/counting",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
       "framework": "qb",
       "config": "1c-park",
       "status": "ok"
@@ -513,98 +609,50 @@
       "status": "ok"
     },
     {
-      "benchmark": "savina/chameneos",
-      "framework": "baseline",
+      "benchmark": "savina/bank-transaction",
+      "framework": "sobjectizer",
       "config": "2c-spin",
       "status": "ok"
     },
     {
-      "benchmark": "savina/chameneos",
-      "framework": "baseline",
+      "benchmark": "savina/bank-transaction",
+      "framework": "sobjectizer",
       "config": "2c-park",
       "status": "ok"
     },
     {
-      "benchmark": "savina/chameneos",
-      "framework": "baseline",
+      "benchmark": "savina/bank-transaction",
+      "framework": "sobjectizer",
       "config": "1c-spin",
       "status": "ok"
     },
     {
-      "benchmark": "savina/chameneos",
-      "framework": "baseline",
+      "benchmark": "savina/bank-transaction",
+      "framework": "sobjectizer",
       "config": "1c-park",
       "status": "ok"
     },
     {
-      "benchmark": "savina/fib",
-      "framework": "baseline",
+      "benchmark": "savina/big",
+      "framework": "sobjectizer",
       "config": "2c-spin",
       "status": "ok"
     },
     {
-      "benchmark": "savina/fib",
-      "framework": "baseline",
+      "benchmark": "savina/big",
+      "framework": "sobjectizer",
       "config": "2c-park",
       "status": "ok"
     },
     {
-      "benchmark": "savina/fib",
-      "framework": "baseline",
+      "benchmark": "savina/big",
+      "framework": "sobjectizer",
       "config": "1c-spin",
       "status": "ok"
     },
     {
-      "benchmark": "savina/fib",
-      "framework": "baseline",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/chameneos",
-      "framework": "caf",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/chameneos",
-      "framework": "caf",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/chameneos",
-      "framework": "caf",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/chameneos",
-      "framework": "caf",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/fib",
-      "framework": "caf",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/fib",
-      "framework": "caf",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/fib",
-      "framework": "caf",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/fib",
-      "framework": "caf",
+      "benchmark": "savina/big",
+      "framework": "sobjectizer",
       "config": "1c-park",
       "status": "ok"
     },
@@ -628,6 +676,30 @@
     },
     {
       "benchmark": "savina/chameneos",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/counting",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/counting",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/counting",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/counting",
       "framework": "sobjectizer",
       "config": "1c-park",
       "status": "ok"
@@ -657,149 +729,76 @@
       "status": "ok"
     },
     {
-      "benchmark": "savina/chameneos",
-      "framework": "qb",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/chameneos",
-      "framework": "qb",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/chameneos",
-      "framework": "qb",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/chameneos",
-      "framework": "qb",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/fib",
-      "framework": "qb",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/fib",
-      "framework": "qb",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/fib",
-      "framework": "qb",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/fib",
-      "framework": "qb",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/bank-transaction",
-      "framework": "baseline",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/bank-transaction",
-      "framework": "baseline",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/bank-transaction",
-      "framework": "baseline",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/bank-transaction",
-      "framework": "baseline",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/bank-transaction",
-      "framework": "caf",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/bank-transaction",
-      "framework": "caf",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/bank-transaction",
-      "framework": "caf",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/bank-transaction",
-      "framework": "caf",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/bank-transaction",
+      "benchmark": "savina/fork-join",
       "framework": "sobjectizer",
       "config": "2c-spin",
       "status": "ok"
     },
     {
-      "benchmark": "savina/bank-transaction",
+      "benchmark": "savina/fork-join",
       "framework": "sobjectizer",
       "config": "2c-park",
       "status": "ok"
     },
     {
-      "benchmark": "savina/bank-transaction",
+      "benchmark": "savina/fork-join",
       "framework": "sobjectizer",
       "config": "1c-spin",
       "status": "ok"
     },
     {
-      "benchmark": "savina/bank-transaction",
+      "benchmark": "savina/fork-join",
       "framework": "sobjectizer",
       "config": "1c-park",
       "status": "ok"
     },
     {
-      "benchmark": "savina/bank-transaction",
-      "framework": "qb",
+      "benchmark": "savina/ping-pong",
+      "framework": "sobjectizer",
       "config": "2c-spin",
       "status": "ok"
     },
     {
-      "benchmark": "savina/bank-transaction",
-      "framework": "qb",
+      "benchmark": "savina/ping-pong",
+      "framework": "sobjectizer",
       "config": "2c-park",
       "status": "ok"
     },
     {
-      "benchmark": "savina/bank-transaction",
-      "framework": "qb",
+      "benchmark": "savina/ping-pong",
+      "framework": "sobjectizer",
       "config": "1c-spin",
       "status": "ok"
     },
     {
-      "benchmark": "savina/bank-transaction",
-      "framework": "qb",
+      "benchmark": "savina/ping-pong",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/thread-ring",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/thread-ring",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/thread-ring",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/thread-ring",
+      "framework": "sobjectizer",
       "config": "1c-park",
       "status": "ok"
     }
-  ],
-  "merged_partial_runs": 16
+  ]
 }

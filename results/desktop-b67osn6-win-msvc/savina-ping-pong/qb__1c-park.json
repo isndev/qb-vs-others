@@ -22,21 +22,21 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-04T16:17:15Z"
+    "utc": "2026-09-13T01:28:37Z"
   },
   "idiom": {
     "source": "qb/tests/core/benchmark/messaging/ping-pong-latency.cpp",
     "note": "send<> hot path, require<>() bootstrap, busy-spin cores -- qb's own benchmark idiom"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction"],
   "failures": [],
-  "work_ns": [112900400.0, 112156300.0, 111986700.0, 113456800.0, 111971700.0, 117223600.0, 113832900.0, 112643900.0, 112027100.0],
-  "total_ns": [113601400.0, 124149200.0, 145197200.0, 140736200.0, 113137000.0, 130797900.0, 139243300.0, 113246300.0, 118035000.0],
-  "outside_window_ns": [701000.0, 11992900.0, 33210500.0, 27279400.0, 1165300.0, 13574300.0, 25410400.0, 602400.0, 6007900.0],
+  "work_ns": [30039800.0, 30211400.0, 30180400.0, 30921300.0, 32865100.0, 29880000.0, 29973500.0, 30202400.0, 30336900.0],
+  "total_ns": [30712300.0, 30853200.0, 30751700.0, 31482600.0, 33432000.0, 30500000.0, 30593100.0, 30764900.0, 30897100.0],
+  "outside_window_ns": [672500.0, 641800.0, 571300.0, 561300.0, 566900.0, 620000.0, 619600.0, 562500.0, 560200.0],
   "summary": {
-    "work_min": 111971700.0,
-    "work_p50": 112643900.0,
-    "work_p99": 116952344.0,
-    "work_iqr": 1429700.0
+    "work_min": 29880000.0,
+    "work_p50": 30202400.0,
+    "work_p99": 32709596.0,
+    "work_iqr": 297100.0
   }
 }

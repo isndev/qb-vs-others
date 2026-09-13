@@ -22,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-04T16:10:09Z"
+    "utc": "2026-09-13T01:23:23Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a hop is one ring push and one ring pop, and there is no scheduler: the floor for a hand-off, not for finding the next actor", "actor i lives on worker i % cores, so with cores=2 every hop crosses a core -- the same placement qb gets, and the worst case for a shard-per-core design", "cores=1 is one thread pushing the token into its own ring and popping it back -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with one token and two workers means one park and one wake per hop"],
   "failures": [],
-  "work_ns": [8402400.0, 8554500.0, 8479500.0, 8590900.0, 8487700.0, 8605600.0, 8461600.0, 8509800.0, 8475000.0],
-  "total_ns": [8744200.0, 8890700.0, 8807200.0, 8916200.0, 8816900.0, 8925100.0, 8782300.0, 8842500.0, 8805400.0],
-  "outside_window_ns": [341800.0, 336200.0, 327700.0, 325300.0, 329200.0, 319500.0, 320700.0, 332700.0, 330400.0],
+  "work_ns": [8752800.0, 8828200.0, 8683100.0, 8565200.0, 8826900.0, 8866200.0, 8721600.0, 8756200.0, 8752700.0],
+  "total_ns": [9080000.0, 9132300.0, 8996200.0, 8873800.0, 9131300.0, 9186800.0, 9043100.0, 9069400.0, 9056800.0],
+  "outside_window_ns": [327200.0, 304100.0, 313100.0, 308600.0, 304400.0, 320600.0, 321500.0, 313200.0, 304100.0],
   "summary": {
-    "work_min": 8402400.0,
-    "work_p50": 8487700.0,
-    "work_p99": 8604424.0,
-    "work_iqr": 79500.0
+    "work_min": 8565200.0,
+    "work_p50": 8752800.0,
+    "work_p99": 8863160.0,
+    "work_iqr": 105300.0
   }
 }

@@ -8,8 +8,8 @@
   "expected_messages": 4800240,
   "work_unit": "round trip",
   "work_units": 2400000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"actors": 120, "cores": 2, "pings": 20000, "wait": 1},
   "pinned": true,
   "cpus": "0,2",
@@ -22,21 +22,21 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T16:00:29Z"
+    "utc": "2026-09-13T01:55:06Z"
   },
   "idiom": {
     "source": "the ping-pong adapter (reply() recycling) + qb/llm/qb.llm.md",
     "note": "one Ping event per round trip, answered in place with reply(); actor a on VirtualCore a % cores"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "actor a lives on VirtualCore a % cores, fixed before start: no load balancing, and with cores=2 each core's inbound queue is written by the ~60 actors of the other core"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "actor a lives on VirtualCore a % cores, fixed before start: no load balancing, and with cores=2 each core's inbound queue is written by the ~60 actors of the other core"],
   "failures": [],
-  "work_ns": [80247327.0, 78175552.0, 80232133.0, 78436205.0, 78630302.0],
-  "total_ns": [86675439.0, 81909913.0, 86027684.0, 82233146.0, 84176961.0],
-  "outside_window_ns": [6428112.0, 3734361.0, 5795551.0, 3796941.0, 5546659.0],
+  "work_ns": [43734916.0, 42229206.0, 43049454.0, 42604398.0, 42696175.0, 43259122.0, 45032794.0, 43959221.0, 42802452.0],
+  "total_ns": [44394755.0, 42829181.0, 43627016.0, 43192676.0, 43308561.0, 43863238.0, 45596175.0, 44423040.0, 43226969.0],
+  "outside_window_ns": [659839.0, 599975.0, 577562.0, 588278.0, 612386.0, 604116.0, 563381.0, 463819.0, 424517.0],
   "summary": {
-    "work_min": 78175552.0,
-    "work_p50": 78630302.0,
-    "work_p99": 80246719.2,
-    "work_iqr": 1795928.0
+    "work_min": 42229206.0,
+    "work_p50": 43049454.0,
+    "work_p99": 44946908.2,
+    "work_iqr": 1038741.0
   }
 }

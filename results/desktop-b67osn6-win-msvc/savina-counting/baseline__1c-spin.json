@@ -22,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-04T16:09:57Z"
+    "utc": "2026-09-13T01:23:11Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. It has no supervision, no addressing, no dynamic actor lifetime, no mailbox fairness and no backpressure beyond a full ring. It bounds how much of each framework's cost is inherent to streaming a million messages through one queue", "cores=1 is one thread pushing into a 65536-slot ring and draining it inline whenever it is full -- the floor for single-threaded dispatch, still a real queue", "the threads are pinned one per CPU from the harness's set, exactly as every framework's workers are", "wait=1 busy-polls the rings; wait=0 parks the consumer on a condition variable and the producer notifies it after a push only while it announces itself asleep"],
   "failures": [],
-  "work_ns": [2770200.0, 3174600.0, 2997400.0, 3397000.0, 3172400.0, 3211000.0, 2978200.0, 3350800.0, 2816300.0],
-  "total_ns": [3092700.0, 3516200.0, 3345100.0, 3743300.0, 3518300.0, 3543200.0, 3315100.0, 3706300.0, 3156600.0],
-  "outside_window_ns": [322500.0, 341600.0, 347700.0, 346300.0, 345900.0, 332200.0, 336900.0, 355500.0, 340300.0],
+  "work_ns": [2791400.0, 2812000.0, 2741000.0, 2723600.0, 2740100.0, 2731100.0, 2843200.0, 2911800.0, 2733400.0],
+  "total_ns": [3113400.0, 3126900.0, 3090500.0, 3046800.0, 3051300.0, 3045500.0, 3172800.0, 3231000.0, 3049300.0],
+  "outside_window_ns": [322000.0, 314900.0, 349500.0, 323200.0, 311200.0, 314400.0, 329600.0, 319200.0, 315900.0],
   "summary": {
-    "work_min": 2770200.0,
-    "work_p50": 3172400.0,
-    "work_p99": 3393304.0,
-    "work_iqr": 232800.0
+    "work_min": 2723600.0,
+    "work_p50": 2741000.0,
+    "work_p99": 2906312.0,
+    "work_iqr": 78600.0
   }
 }

@@ -8,8 +8,8 @@
   "expected_messages": 1000001,
   "work_unit": "hop",
   "work_units": 1000000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"actors": 100, "cores": 2, "hops": 1000000, "wait": 1},
   "pinned": true,
   "cpus": "0,2",
@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T15:52:57Z"
+    "utc": "2026-09-13T01:46:44Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a hop is one ring push and one ring pop, and there is no scheduler: the floor for a hand-off, not for finding the next actor", "actor i lives on worker i % cores, so with cores=2 every hop crosses a core -- the same placement qb gets, and the worst case for a shard-per-core design", "cores=1 is one thread pushing the token into its own ring and popping it back -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with one token and two workers means one park and one wake per hop"],
   "failures": [],
-  "work_ns": [102035371.0, 114444664.0, 110515785.0, 118789960.0, 116091214.0],
-  "total_ns": [104227585.0, 116508416.0, 112579307.0, 121000013.0, 118201686.0],
-  "outside_window_ns": [2192214.0, 2063752.0, 2063522.0, 2210053.0, 2110472.0],
+  "work_ns": [102370816.0, 100809175.0, 103275823.0, 100863510.0, 105156873.0, 102179476.0, 95525785.0, 102061076.0, 103610219.0],
+  "total_ns": [104107458.0, 102672823.0, 105241224.0, 102724355.0, 107065213.0, 104069757.0, 97299261.0, 103796925.0, 105451190.0],
+  "outside_window_ns": [1736642.0, 1863648.0, 1965401.0, 1860845.0, 1908340.0, 1890281.0, 1773476.0, 1735849.0, 1840971.0],
   "summary": {
-    "work_min": 102035371.0,
-    "work_p50": 114444664.0,
-    "work_p99": 118682010.2,
-    "work_iqr": 5575429.0
+    "work_min": 95525785.0,
+    "work_p50": 102179476.0,
+    "work_p99": 105033140.7,
+    "work_iqr": 2412313.0
   }
 }

@@ -22,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-07T02:24:24Z"
+    "utc": "2026-09-13T01:26:46Z"
   },
   "idiom": {
     "source": "caf/event_based_mail.hpp request().then() + the chameneos adapter",
@@ -30,13 +30,13 @@
   },
   "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship", "request().then() is CAF's multiplexed request: the continuation is a heap-allocated behavior keyed by the response id and the reply is a typed response message, so each transfer that starts allocates the continuation and the account keeps serving its mailbox meanwhile -- the primitive under test, on the same terms as qb::ask", "the teller and the 1000 accounts are placed by the work-stealing pool; qb's cell pins the teller on core 0 and account a on core (1 + a) % cores -- see benchmarks/savina/bank-transaction.md"],
   "failures": [],
-  "work_ns": [54880500.0, 57520900.0, 59180400.0, 57163700.0, 58229300.0, 56428300.0, 59204200.0, 57479900.0, 58154600.0],
-  "total_ns": [65878800.0, 68248000.0, 69855900.0, 68148700.0, 69107000.0, 67503700.0, 70187200.0, 68328600.0, 69101600.0],
-  "outside_window_ns": [10998300.0, 10727100.0, 10675500.0, 10985000.0, 10877700.0, 11075400.0, 10983000.0, 10848700.0, 10947000.0],
+  "work_ns": [55581100.0, 55099000.0, 55178500.0, 56068100.0, 55732800.0, 56450300.0, 55528400.0, 56028200.0, 54583200.0],
+  "total_ns": [65947600.0, 65678000.0, 65496000.0, 66379900.0, 66855600.0, 67866700.0, 66664700.0, 67151600.0, 65848300.0],
+  "outside_window_ns": [10366500.0, 10579000.0, 10317500.0, 10311800.0, 11122800.0, 11416400.0, 11136300.0, 11123400.0, 11265100.0],
   "summary": {
-    "work_min": 54880500.0,
-    "work_p50": 57520900.0,
-    "work_p99": 59202296.0,
-    "work_iqr": 1065600.0
+    "work_min": 54583200.0,
+    "work_p50": 55581100.0,
+    "work_p99": 56419724.0,
+    "work_iqr": 849700.0
   }
 }

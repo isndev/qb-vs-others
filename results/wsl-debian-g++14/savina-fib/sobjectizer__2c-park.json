@@ -8,8 +8,8 @@
   "expected_messages": 114624,
   "work_unit": "actor",
   "work_units": 57312,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"cores": 2, "n": 23, "wait": 0},
   "pinned": true,
   "cpus": "0,2",
@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-06T17:40:52Z"
+    "utc": "2026-09-13T01:55:55Z"
   },
   "idiom": {
     "source": "the big adapter + so_5::introduce_child_coop (environment.hpp) + so_deregister_agent_coop_normally",
@@ -30,13 +30,13 @@
   },
   "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "SObjectizer creates agents only inside a cooperation registered with the environment, so every node here pays one coop registration and one deregistration on top of the agent itself -- that is the framework's own dynamic-agent idiom, not an adapter choice (two siblings cannot share a coop: an agent ends by deregistering its coop, which would take the sibling down with it -- measured as error 185 on the pool)", "children bind to the same thread_pool as their parent and the pool places them, so with cores=2 the tree is balanced by the dispatcher; qb's cell keeps each sub-tree on its seed's core because qb has no cross-core spawn -- see benchmarks/savina/fib.md"],
   "failures": [],
-  "work_ns": [359278351.0, 364560671.0, 316306786.0, 302048977.0, 277497447.0],
-  "total_ns": [416143461.0, 393064304.0, 360532945.0, 354292253.0, 295989576.0],
-  "outside_window_ns": [56865110.0, 28503633.0, 44226159.0, 52243276.0, 18492129.0],
+  "work_ns": [217585223.0, 240170010.0, 248425511.0, 221349381.0, 301522602.0, 261900665.0, 254942594.0, 265003602.0, 247476248.0],
+  "total_ns": [235404931.0, 260033863.0, 277221169.0, 230687725.0, 332968397.0, 281861028.0, 276028857.0, 286266836.0, 280669640.0],
+  "outside_window_ns": [17819708.0, 19863853.0, 28795658.0, 9338344.0, 31445795.0, 19960363.0, 21086263.0, 21263234.0, 33193392.0],
   "summary": {
-    "work_min": 277497447.0,
-    "work_p50": 316306786.0,
-    "work_p99": 364349378.2,
-    "work_iqr": 57229374.0
+    "work_min": 217585223.0,
+    "work_p50": 248425511.0,
+    "work_p99": 298601082.0,
+    "work_iqr": 21730655.0
   }
 }

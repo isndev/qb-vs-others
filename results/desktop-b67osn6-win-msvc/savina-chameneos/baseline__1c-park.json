@@ -22,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-06T18:14:22Z"
+    "utc": "2026-09-13T01:23:09Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Creatures are slots of a vector and the mall has no mailbox: the 100 creatures share one SPSC ring into worker 0, so the 100-producer fan-in the frameworks pay for is engineered out here by placement", "the mall lives on thread 0 and every creature on thread 1 % cores, so with cores=2 every request and every announcement crosses a core -- the same placement qb's cell fixes", "cores=1 is one thread with the mall and the creatures in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 100 creatures in flight is rare"],
   "failures": [],
-  "work_ns": [9161000.0, 9178600.0, 9259900.0, 8975900.0, 8921800.0, 9379400.0, 8962900.0, 8896500.0, 9458300.0],
-  "total_ns": [9539800.0, 9537300.0, 9621100.0, 9342200.0, 9285600.0, 9773400.0, 9342000.0, 9266000.0, 9846400.0],
-  "outside_window_ns": [378800.0, 358700.0, 361200.0, 366300.0, 363800.0, 394000.0, 379100.0, 369500.0, 388100.0],
+  "work_ns": [9949700.0, 9646700.0, 9580400.0, 9666400.0, 9640800.0, 9578200.0, 9608100.0, 9721400.0, 9697900.0],
+  "total_ns": [10272200.0, 9967900.0, 9884600.0, 9978200.0, 9947000.0, 9893400.0, 9918800.0, 10037700.0, 10014700.0],
+  "outside_window_ns": [322500.0, 321200.0, 304200.0, 311800.0, 306200.0, 315200.0, 310700.0, 316300.0, 316800.0],
   "summary": {
-    "work_min": 8896500.0,
-    "work_p50": 9161000.0,
-    "work_p99": 9451988.0,
-    "work_iqr": 297000.0
+    "work_min": 9578200.0,
+    "work_p50": 9646700.0,
+    "work_p99": 9931436.0,
+    "work_iqr": 89800.0
   }
 }

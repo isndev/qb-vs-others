@@ -8,8 +8,8 @@
   "expected_messages": 4800240,
   "work_unit": "round trip",
   "work_units": 2400000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"actors": 120, "cores": 2, "pings": 20000, "wait": 1},
   "pinned": true,
   "cpus": "0,2",
@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T15:50:19Z"
+    "utc": "2026-09-13T01:42:02Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Actors are slots of a vector and there is no per-actor mailbox: a worker's inbound ring is shared by every actor it owns, so the 120-producer mailbox contention the frameworks pay for is engineered out here by static placement", "actor a lives on thread a % cores, so with cores=2 roughly half the pings and half the pongs cross a core", "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 120 actors in flight is rare"],
   "failures": [],
-  "work_ns": [55759808.0, 60947648.0, 65017802.0, 59834817.0, 64994897.0],
-  "total_ns": [57753026.0, 62907470.0, 66993495.0, 61856623.0, 66967274.0],
-  "outside_window_ns": [1993218.0, 1959822.0, 1975693.0, 2021806.0, 1972377.0],
+  "work_ns": [60932306.0, 60085009.0, 58350050.0, 60404023.0, 56109327.0, 59239756.0, 58940393.0, 57668090.0, 60003895.0],
+  "total_ns": [62914380.0, 61900244.0, 60260171.0, 62221302.0, 57909929.0, 60941514.0, 60747649.0, 59455018.0, 61768639.0],
+  "outside_window_ns": [1982074.0, 1815235.0, 1910121.0, 1817279.0, 1800602.0, 1701758.0, 1807256.0, 1786928.0, 1764744.0],
   "summary": {
-    "work_min": 55759808.0,
-    "work_p50": 60947648.0,
-    "work_p99": 65016885.8,
-    "work_iqr": 5160080.0
+    "work_min": 56109327.0,
+    "work_p50": 59239756.0,
+    "work_p99": 60890043.4,
+    "work_iqr": 1734959.0
   }
 }

@@ -8,8 +8,8 @@
   "expected_messages": 114624,
   "work_unit": "actor",
   "work_units": 57312,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"cores": 1, "n": 23, "wait": 0},
   "pinned": true,
   "cpus": "0,2",
@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-06T17:40:40Z"
+    "utc": "2026-09-13T01:42:07Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. An actor is one `new`, one slot and one `delete`, with no mailbox, no registry and no lifecycle beyond the slot: the floor for what creating and destroying an actor can cost", "a child is allocated on its parent's worker (id = slot * cores + worker), the same static placement qb's addRefActor has: with cores=2 the two sub-trees never balance, so this floor is a bound for the placing frameworks and NOT for the pools", "cores=1 is one thread with every node in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with tens of thousands of nodes in flight never happens inside the window"],
   "failures": [],
-  "work_ns": [3337780.0, 2967378.0, 3122020.0, 3048474.0, 3048328.0],
-  "total_ns": [3627507.0, 3056846.0, 3201562.0, 3136147.0, 3129491.0],
-  "outside_window_ns": [289727.0, 89468.0, 79542.0, 87673.0, 81163.0],
+  "work_ns": [3072759.0, 3120261.0, 2972012.0, 2975898.0, 3099177.0, 3044596.0, 3055202.0, 3069441.0, 3033745.0],
+  "total_ns": [3144758.0, 3194811.0, 3045903.0, 3048076.0, 3172866.0, 3118742.0, 3128780.0, 3144040.0, 3116548.0],
+  "outside_window_ns": [71999.0, 74550.0, 73891.0, 72178.0, 73689.0, 74146.0, 73578.0, 74599.0, 82803.0],
   "summary": {
-    "work_min": 2967378.0,
-    "work_p50": 3048474.0,
-    "work_p99": 3329149.6,
-    "work_iqr": 73692.0
+    "work_min": 2972012.0,
+    "work_p50": 3055202.0,
+    "work_p99": 3118574.3,
+    "work_iqr": 39014.0
   }
 }

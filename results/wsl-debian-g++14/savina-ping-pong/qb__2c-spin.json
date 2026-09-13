@@ -8,8 +8,8 @@
   "expected_messages": 2000000,
   "work_unit": "round trip",
   "work_units": 1000000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"cores": 2, "messages": 1000000, "wait": 1},
   "pinned": true,
   "cpus": "0,2",
@@ -22,21 +22,21 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T16:00:36Z"
+    "utc": "2026-09-13T01:55:11Z"
   },
   "idiom": {
     "source": "qb/tests/core/benchmark/messaging/ping-pong-latency.cpp",
     "note": "send<> hot path, require<>() bootstrap, busy-spin cores -- qb's own benchmark idiom"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction"],
   "failures": [],
-  "work_ns": [255569822.0, 288149668.0, 262465111.0, 319677104.0, 268007949.0],
-  "total_ns": [261942305.0, 288541562.0, 266262624.0, 325218458.0, 272313664.0],
-  "outside_window_ns": [6372483.0, 391894.0, 3797513.0, 5541354.0, 4305715.0],
+  "work_ns": [156903171.0, 161672746.0, 162736075.0, 151946644.0, 160546151.0, 163078640.0, 159809926.0, 151449273.0, 150481752.0],
+  "total_ns": [157600654.0, 162318650.0, 163469003.0, 152514393.0, 161138225.0, 163672098.0, 160472118.0, 152089411.0, 151076093.0],
+  "outside_window_ns": [697483.0, 645904.0, 732928.0, 567749.0, 592074.0, 593458.0, 662192.0, 640138.0, 594341.0],
   "summary": {
-    "work_min": 255569822.0,
-    "work_p50": 268007949.0,
-    "work_p99": 318416006.6,
-    "work_iqr": 25684557.0
+    "work_min": 150481752.0,
+    "work_p50": 159809926.0,
+    "work_p99": 163051234.8,
+    "work_iqr": 9726102.0
   }
 }

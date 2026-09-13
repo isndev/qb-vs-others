@@ -8,8 +8,8 @@
   "expected_messages": 600060,
   "work_unit": "message",
   "work_units": 600000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"actors": 60, "cores": 1, "messages": 10000, "wait": 1, "work": 0},
   "pinned": true,
   "cpus": "0,2",
@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T15:50:22Z"
+    "utc": "2026-09-13T01:42:07Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Workers are slots of a vector, a job is one ring push and one ring pop, and nothing balances load: the floor for a fire-and-forget dispatch, not for scheduling 60 runnable actors on 2 threads", "worker w lives on thread w % cores, so with cores=2 half the jobs stay on the master's own thread (drained inline when its ring fills) and half cross a core", "cores=1 is one thread pushing every job into its own 65536-slot ring and draining it inline whenever it is full -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
   "failures": [],
-  "work_ns": [1968016.0, 1957055.0, 1977014.0, 1960275.0, 1946909.0],
-  "total_ns": [2345691.0, 2008388.0, 2028996.0, 2011079.0, 1999229.0],
-  "outside_window_ns": [377675.0, 51333.0, 51982.0, 50804.0, 52320.0],
+  "work_ns": [1960231.0, 1931724.0, 1973500.0, 1906713.0, 2038856.0, 1915467.0, 2013148.0, 1906612.0, 1923132.0],
+  "total_ns": [2011054.0, 1982295.0, 2024624.0, 1960221.0, 2097086.0, 1975902.0, 2063919.0, 1957563.0, 1973449.0],
+  "outside_window_ns": [50823.0, 50571.0, 51124.0, 53508.0, 58230.0, 60435.0, 50771.0, 50951.0, 50317.0],
   "summary": {
-    "work_min": 1946909.0,
-    "work_p50": 1960275.0,
-    "work_p99": 1976654.1,
-    "work_iqr": 10961.0
+    "work_min": 1906612.0,
+    "work_p50": 1931724.0,
+    "work_p99": 2036799.4,
+    "work_iqr": 58033.0
   }
 }

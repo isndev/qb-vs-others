@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/ping-pong",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 6535945399557740267,
+  "expected_messages": 2000000,
+  "work_unit": "round trip",
+  "work_units": 1000000,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"cores": 2, "messages": 1000000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-09-13T01:30:53Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw std::thread + an independently written bounded SPSC ring, busy-spinning; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. It has no supervision, no addressing, no dynamic actor lifetime, no mailbox fairness and no backpressure. It exists to bound how much of each framework's cost is inherent to the workload rather than to the framework", "cores=1 is one thread passing each message through a real queue in both directions -- the floor for single-threaded dispatch, not a bare assignment", "the two threads are pinned one per CPU from the harness's set, exactly as every framework's workers are -- a floating floor would move every ratio computed against it", "wait=1 is two threads busy-spinning on SPSC rings; wait=0 is two threads parked on condition variables. Both floors exist so that neither column of the spin/park axis is published without one"],
+  "failures": [],
+  "work_ns": [181915700.0, 180949900.0, 171554600.0],
+  "total_ns": [182035900.0, 181024900.0, 171628200.0],
+  "outside_window_ns": [120200.0, 75000.0, 73600.0],
+  "summary": {
+    "work_min": 171554600.0,
+    "work_p50": 180949900.0,
+    "work_p99": 181896384.0,
+    "work_iqr": 5180550.0
+  }
+}

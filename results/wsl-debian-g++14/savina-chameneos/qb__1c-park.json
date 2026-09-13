@@ -8,8 +8,8 @@
   "expected_messages": 800400,
   "work_unit": "meeting",
   "work_units": 200000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"chameneos": 100, "cores": 1, "meetings": 200000, "wait": 0},
   "pinned": true,
   "cpus": "0,2",
@@ -22,21 +22,21 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-06T18:13:23Z"
+    "utc": "2026-09-13T01:55:08Z"
   },
   "idiom": {
     "source": "the big adapter (reply() recycling, getSource()) + qb/llm/qb.llm.md",
     "note": "one Meet event per request, mutated into the announcement or the exit and reply()ed; the waiting creature gets a fresh push<>; mall alone on VirtualCore 0, creatures on the others"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "placement is fixed before start: the mall alone on VirtualCore 0 and the creatures on the remaining cores (all on core 0 when cores=1), so with cores=2 the mall's mailbox is one cross-core pipe written by 100 actors on the far side and nothing balances it -- the pools place the mall and the creatures wherever stealing puts them"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "placement is fixed before start: the mall alone on VirtualCore 0 and the creatures on the remaining cores (all on core 0 when cores=1), so with cores=2 the mall's mailbox is one cross-core pipe written by 100 actors on the far side and nothing balances it -- the pools place the mall and the creatures wherever stealing puts them"],
   "failures": [],
-  "work_ns": [13772819.0, 13592910.0, 13543592.0, 13197194.0, 13035575.0],
-  "total_ns": [14357567.0, 14284169.0, 16555221.0, 13795513.0, 13664013.0],
-  "outside_window_ns": [584748.0, 691259.0, 3011629.0, 598319.0, 628438.0],
+  "work_ns": [5308662.0, 5241078.0, 5353398.0, 5228652.0, 5332369.0, 5480217.0, 5378031.0, 5080195.0, 5166181.0],
+  "total_ns": [5680445.0, 5582463.0, 5714299.0, 5590606.0, 5689691.0, 5824860.0, 5746758.0, 5562612.0, 5521360.0],
+  "outside_window_ns": [371783.0, 341385.0, 360901.0, 361954.0, 357322.0, 344643.0, 368727.0, 482417.0, 355179.0],
   "summary": {
-    "work_min": 13035575.0,
-    "work_p50": 13543592.0,
-    "work_p99": 13765622.6,
-    "work_iqr": 395716.0
+    "work_min": 5080195.0,
+    "work_p50": 5308662.0,
+    "work_p99": 5472042.1,
+    "work_iqr": 124746.0
   }
 }

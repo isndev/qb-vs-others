@@ -9,7 +9,7 @@ Read [FAIRNESS.md](../../FAIRNESS.md) before reading any table below. In particu
 - host: `DESKTOP-B67OSN6`
 - platform: `Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.41`
 - pinned CPUs: `0,2`
-- repetitions: 5 (+1 warmup), one process per cell
+- repetitions: 9 (+2 warmup), one process per cell
 
 - toolchain: `GNU 14.2.0`, flags `-O3 -DNDEBUG` — identical for every framework
 
@@ -29,15 +29,15 @@ Read [FAIRNESS.md](../../FAIRNESS.md) before reading any table below. In particu
 
 | framework | verified | median | per transfer | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 14.58 ms | 292 ns | 1.20 ms | 14.81 ms |
-| `sobjectizer` | yes | 20.47 ms | 409 ns | 431.77 us | 21.42 ms |
-| `caf` | yes | 43.00 ms | 860 ns | 3.47 ms | 43.54 ms |
+| `qb` | yes | 7.27 ms | 145 ns | 138.16 us | 7.41 ms |
+| `sobjectizer` | yes | 20.38 ms | 408 ns | 533.68 us | 20.98 ms |
+| `caf` | yes | 37.40 ms | 748 ns | 499.95 us | 38.42 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 2.59 ms | 52 ns | 141.30 us | 2.70 ms |
+| `baseline` *(floor)* | yes | 2.61 ms | 52 ns | 257.15 us | 2.96 ms |
 
-`qb` is **1.40x** faster than `sobjectizer` in this configuration.
+`qb` is **2.80x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **5.62x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **2.78x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -72,15 +72,15 @@ The fastest framework costs **5.62x the floor** — that multiple is what being 
 
 | framework | verified | median | per transfer | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 14.71 ms | 294 ns | 1.23 ms | 14.98 ms |
-| `sobjectizer` | yes | 19.54 ms | 391 ns | 504.48 us | 20.02 ms |
-| `caf` | yes | 41.52 ms | 830 ns | 941.57 us | 42.91 ms |
+| `qb` | yes | 7.22 ms | 144 ns | 231.52 us | 7.62 ms |
+| `sobjectizer` | yes | 19.32 ms | 386 ns | 206.64 us | 19.72 ms |
+| `caf` | yes | 37.75 ms | 755 ns | 613.75 us | 38.59 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 1.10 ms | 22 ns | 32.34 us | 1.34 ms |
+| `baseline` *(floor)* | yes | 1.12 ms | 22 ns | 25.77 us | 1.19 ms |
 
-`qb` is **1.33x** faster than `sobjectizer` in this configuration.
+`qb` is **2.67x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **13.32x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **6.48x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -115,15 +115,15 @@ The fastest framework costs **13.32x the floor** — that multiple is what being
 
 | framework | verified | median | per transfer | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 9.31 ms | 186 ns | 146.93 us | 9.69 ms |
-| `sobjectizer` | yes | 27.67 ms | 553 ns | 79.91 us | 28.76 ms |
-| `caf` | yes | 36.61 ms | 732 ns | 2.50 ms | 38.82 ms |
+| `qb` | yes | 4.14 ms | 83 ns | 217.18 us | 4.52 ms |
+| `sobjectizer` | yes | 28.38 ms | 568 ns | 2.61 ms | 31.19 ms |
+| `caf` | yes | 35.94 ms | 719 ns | 382.03 us | 36.54 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 4.63 ms | 93 ns | 151.14 us | 4.84 ms |
+| `baseline` *(floor)* | yes | 5.17 ms | 103 ns | 482.07 us | 5.45 ms |
 
-`qb` is **2.97x** faster than `sobjectizer` in this configuration.
+`qb` is **6.85x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **2.01x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework sits **below the floor** (0.80x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -158,15 +158,15 @@ The fastest framework costs **2.01x the floor** — that multiple is what being 
 
 | framework | verified | median | per transfer | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 9.21 ms | 184 ns | 13.51 us | 9.53 ms |
-| `sobjectizer` | yes | 25.50 ms | 510 ns | 922.82 us | 26.75 ms |
-| `caf` | yes | 36.63 ms | 733 ns | 2.10 ms | 38.90 ms |
+| `qb` | yes | 3.98 ms | 80 ns | 361.05 us | 4.28 ms |
+| `sobjectizer` | yes | 24.51 ms | 490 ns | 861.32 us | 26.04 ms |
+| `caf` | yes | 35.62 ms | 712 ns | 2.22 ms | 37.86 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 6.30 ms | 126 ns | 461.26 us | 6.33 ms |
+| `baseline` *(floor)* | yes | 6.22 ms | 124 ns | 640.34 us | 6.35 ms |
 
-`qb` is **2.77x** faster than `sobjectizer` in this configuration.
+`qb` is **6.15x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.46x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework sits **below the floor** (0.64x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -203,15 +203,15 @@ The fastest framework costs **1.46x the floor** — that multiple is what being 
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 94.58 ms | 39 ns | 1.02 ms | 96.51 ms |
-| `sobjectizer` | yes | 345.41 ms | 144 ns | 1.90 ms | 351.97 ms |
-| `caf` | yes | 706.58 ms | 294 ns | 19.39 ms | 729.53 ms |
+| `qb` | yes | 42.37 ms | 18 ns | 1.03 ms | 42.98 ms |
+| `sobjectizer` | yes | 341.46 ms | 142 ns | 5.13 ms | 345.79 ms |
+| `caf` | yes | 691.13 ms | 288 ns | 1.07 ms | 696.14 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 33.13 ms | 14 ns | 843.45 us | 35.15 ms |
+| `baseline` *(floor)* | yes | 35.53 ms | 15 ns | 873.98 us | 37.31 ms |
 
-`qb` is **3.65x** faster than `sobjectizer` in this configuration.
+`qb` is **8.06x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **2.85x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **1.19x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -227,7 +227,7 @@ The fastest framework costs **2.85x the floor** — that multiple is what being 
 - *(caf)* the 120 actors are placed by the work-stealing pool, so how many pings cross a core is the scheduler's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/big.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* actor a lives on VirtualCore a % cores, fixed before start: no load balancing, and with cores=2 each core's inbound queue is written by the ~60 actors of the other core
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -242,15 +242,15 @@ The fastest framework costs **2.85x the floor** — that multiple is what being 
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 89.69 ms | 37 ns | 539.15 us | 90.83 ms |
-| `sobjectizer` | yes | 320.61 ms | 134 ns | 345.70 us | 324.35 ms |
-| `caf` | yes | 697.69 ms | 291 ns | 1.53 ms | 698.10 ms |
+| `qb` | yes | 42.01 ms | 18 ns | 502.28 us | 43.58 ms |
+| `sobjectizer` | yes | 318.53 ms | 133 ns | 609.85 us | 320.74 ms |
+| `caf` | yes | 698.55 ms | 291 ns | 3.83 ms | 700.85 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 17.33 ms | 7 ns | 238.85 us | 18.80 ms |
+| `baseline` *(floor)* | yes | 17.07 ms | 7 ns | 147.10 us | 17.69 ms |
 
-`qb` is **3.57x** faster than `sobjectizer` in this configuration.
+`qb` is **7.58x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **5.18x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **2.46x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -266,7 +266,7 @@ The fastest framework costs **5.18x the floor** — that multiple is what being 
 - *(caf)* the 120 actors are placed by the work-stealing pool, so how many pings cross a core is the scheduler's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/big.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* actor a lives on VirtualCore a % cores, fixed before start: no load balancing, and with cores=2 each core's inbound queue is written by the ~60 actors of the other core
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -281,15 +281,15 @@ The fastest framework costs **5.18x the floor** — that multiple is what being 
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 80.35 ms | 33 ns | 4.23 ms | 86.06 ms |
-| `caf` | yes | 601.10 ms | 250 ns | 6.60 ms | 607.21 ms |
-| `sobjectizer` | yes | 671.95 ms | 280 ns | 42.67 ms | 752.54 ms |
+| `qb` | yes | 42.06 ms | 18 ns | 1.12 ms | 44.04 ms |
+| `caf` | yes | 593.17 ms | 247 ns | 4.92 ms | 598.74 ms |
+| `sobjectizer` | yes | 667.92 ms | 278 ns | 91.84 ms | 768.38 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 136.54 ms | 57 ns | 11.55 ms | 140.58 ms |
+| `baseline` *(floor)* | yes | 124.23 ms | 52 ns | 2.49 ms | 127.86 ms |
 
-`qb` is **7.48x** faster than `caf` in this configuration.
+`qb` is **14.10x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.59x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+The fastest framework sits **below the floor** (0.34x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -305,7 +305,7 @@ The fastest framework sits **below the floor** (0.59x) — which means it is not
 - *(caf)* the 120 actors are placed by the work-stealing pool, so how many pings cross a core is the scheduler's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/big.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* actor a lives on VirtualCore a % cores, fixed before start: no load balancing, and with cores=2 each core's inbound queue is written by the ~60 actors of the other core
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -320,15 +320,15 @@ The fastest framework sits **below the floor** (0.59x) — which means it is not
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 78.63 ms | 33 ns | 1.80 ms | 80.25 ms |
-| `sobjectizer` | yes | 545.01 ms | 227 ns | 39.77 ms | 594.73 ms |
-| `caf` | yes | 596.36 ms | 248 ns | 15.32 ms | 613.83 ms |
+| `qb` | yes | 43.05 ms | 18 ns | 1.04 ms | 44.95 ms |
+| `sobjectizer` | yes | 527.79 ms | 220 ns | 15.83 ms | 533.75 ms |
+| `caf` | yes | 592.79 ms | 247 ns | 3.43 ms | 598.72 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 60.95 ms | 25 ns | 5.16 ms | 65.02 ms |
+| `baseline` *(floor)* | yes | 59.24 ms | 25 ns | 1.73 ms | 60.89 ms |
 
-`qb` is **6.93x** faster than `sobjectizer` in this configuration.
+`qb` is **12.26x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.29x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework sits **below the floor** (0.73x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -344,7 +344,7 @@ The fastest framework costs **1.29x the floor** — that multiple is what being 
 - *(caf)* the 120 actors are placed by the work-stealing pool, so how many pings cross a core is the scheduler's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/big.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* actor a lives on VirtualCore a % cores, fixed before start: no load balancing, and with cores=2 each core's inbound queue is written by the ~60 actors of the other core
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -361,15 +361,15 @@ The fastest framework costs **1.29x the floor** — that multiple is what being 
 
 | framework | verified | median | per meeting | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 13.54 ms | 68 ns | 395.72 us | 13.77 ms |
-| `sobjectizer` | yes | 59.30 ms | 297 ns | 1.11 ms | 60.73 ms |
-| `caf` | yes | 123.40 ms | 617 ns | 1.71 ms | 124.05 ms |
+| `qb` | yes | 5.31 ms | 27 ns | 124.75 us | 5.47 ms |
+| `sobjectizer` | yes | 56.23 ms | 281 ns | 730.56 us | 57.02 ms |
+| `caf` | yes | 116.45 ms | 582 ns | 758.27 us | 118.88 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 5.56 ms | 28 ns | 74.43 us | 5.68 ms |
+| `baseline` *(floor)* | yes | 5.44 ms | 27 ns | 77.58 us | 5.56 ms |
 
-`qb` is **4.38x** faster than `sobjectizer` in this configuration.
+`qb` is **10.59x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **2.44x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework sits **below the floor** (0.98x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -385,7 +385,7 @@ The fastest framework costs **2.44x the floor** — that multiple is what being 
 - *(caf)* the mall and the 100 creatures are placed by the work-stealing pool, so whether the mall's mailbox is a cross-core queue is the scheduler's decision; qb's cell pins the mall alone on core 0 and every creature on the far side -- see benchmarks/savina/chameneos.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* placement is fixed before start: the mall alone on VirtualCore 0 and the creatures on the remaining cores (all on core 0 when cores=1), so with cores=2 the mall's mailbox is one cross-core pipe written by 100 actors on the far side and nothing balances it -- the pools place the mall and the creatures wherever stealing puts them
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -400,15 +400,15 @@ The fastest framework costs **2.44x the floor** — that multiple is what being 
 
 | framework | verified | median | per meeting | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 11.96 ms | 60 ns | 215.34 us | 12.09 ms |
-| `sobjectizer` | yes | 53.82 ms | 269 ns | 142.70 us | 54.55 ms |
-| `caf` | yes | 122.66 ms | 613 ns | 1.30 ms | 123.52 ms |
+| `qb` | yes | 5.11 ms | 26 ns | 113.64 us | 5.33 ms |
+| `sobjectizer` | yes | 52.14 ms | 261 ns | 455.79 us | 52.91 ms |
+| `caf` | yes | 116.31 ms | 582 ns | 1.12 ms | 119.79 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 2.94 ms | 15 ns | 92.99 us | 3.19 ms |
+| `baseline` *(floor)* | yes | 2.83 ms | 14 ns | 125.41 us | 3.01 ms |
 
-`qb` is **4.50x** faster than `sobjectizer` in this configuration.
+`qb` is **10.20x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **4.07x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **1.81x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -424,7 +424,7 @@ The fastest framework costs **4.07x the floor** — that multiple is what being 
 - *(caf)* the mall and the 100 creatures are placed by the work-stealing pool, so whether the mall's mailbox is a cross-core queue is the scheduler's decision; qb's cell pins the mall alone on core 0 and every creature on the far side -- see benchmarks/savina/chameneos.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* placement is fixed before start: the mall alone on VirtualCore 0 and the creatures on the remaining cores (all on core 0 when cores=1), so with cores=2 the mall's mailbox is one cross-core pipe written by 100 actors on the far side and nothing balances it -- the pools place the mall and the creatures wherever stealing puts them
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -439,15 +439,15 @@ The fastest framework costs **4.07x the floor** — that multiple is what being 
 
 | framework | verified | median | per meeting | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 16.10 ms | 81 ns | 760.62 us | 17.44 ms |
-| `caf` | yes | 127.66 ms | 638 ns | 2.06 ms | 129.18 ms |
-| `sobjectizer` | yes | 192.49 ms | 962 ns | 14.81 ms | 211.07 ms |
+| `qb` | yes | 8.88 ms | 44 ns | 170.50 us | 9.18 ms |
+| `caf` | yes | 117.05 ms | 585 ns | 1.46 ms | 119.35 ms |
+| `sobjectizer` | yes | 200.41 ms | 1.00 us | 20.91 ms | 212.89 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 73.08 ms | 365 ns | 12.95 ms | 81.36 ms |
+| `baseline` *(floor)* | yes | 59.53 ms | 298 ns | 3.08 ms | 63.80 ms |
 
-`qb` is **7.93x** faster than `caf` in this configuration.
+`qb` is **13.18x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.22x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+The fastest framework sits **below the floor** (0.15x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -463,7 +463,7 @@ The fastest framework sits **below the floor** (0.22x) — which means it is not
 - *(caf)* the mall and the 100 creatures are placed by the work-stealing pool, so whether the mall's mailbox is a cross-core queue is the scheduler's decision; qb's cell pins the mall alone on core 0 and every creature on the far side -- see benchmarks/savina/chameneos.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* placement is fixed before start: the mall alone on VirtualCore 0 and the creatures on the remaining cores (all on core 0 when cores=1), so with cores=2 the mall's mailbox is one cross-core pipe written by 100 actors on the far side and nothing balances it -- the pools place the mall and the creatures wherever stealing puts them
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -478,15 +478,15 @@ The fastest framework sits **below the floor** (0.22x) — which means it is not
 
 | framework | verified | median | per meeting | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 15.30 ms | 77 ns | 854.27 us | 16.74 ms |
-| `caf` | yes | 126.14 ms | 631 ns | 175.39 us | 127.62 ms |
-| `sobjectizer` | yes | 153.53 ms | 768 ns | 8.96 ms | 157.45 ms |
+| `qb` | yes | 8.91 ms | 45 ns | 333.37 us | 10.39 ms |
+| `caf` | yes | 116.81 ms | 584 ns | 472.16 us | 118.92 ms |
+| `sobjectizer` | yes | 135.68 ms | 678 ns | 10.04 ms | 141.43 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 28.84 ms | 144 ns | 1.16 ms | 31.44 ms |
+| `baseline` *(floor)* | yes | 29.73 ms | 149 ns | 4.82 ms | 31.29 ms |
 
-`qb` is **8.24x** faster than `caf` in this configuration.
+`qb` is **13.10x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.53x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+The fastest framework sits **below the floor** (0.30x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -502,7 +502,7 @@ The fastest framework sits **below the floor** (0.53x) — which means it is not
 - *(caf)* the mall and the 100 creatures are placed by the work-stealing pool, so whether the mall's mailbox is a cross-core queue is the scheduler's decision; qb's cell pins the mall alone on core 0 and every creature on the far side -- see benchmarks/savina/chameneos.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* placement is fixed before start: the mall alone on VirtualCore 0 and the creatures on the remaining cores (all on core 0 when cores=1), so with cores=2 the mall's mailbox is one cross-core pipe written by 100 actors on the far side and nothing balances it -- the pools place the mall and the creatures wherever stealing puts them
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -519,15 +519,15 @@ The fastest framework sits **below the floor** (0.53x) — which means it is not
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 43.96 ms | 44 ns | 525.61 us | 44.59 ms |
-| `sobjectizer` | yes | 109.59 ms | 110 ns | 414.10 us | 111.24 ms |
-| `caf` | yes | 117.47 ms | 117 ns | 27.21 ms | 149.35 ms |
+| `qb` | yes | 7.79 ms | 8 ns | 627.58 us | 9.75 ms |
+| `sobjectizer` | yes | 112.77 ms | 113 ns | 2.47 ms | 120.64 ms |
+| `caf` | yes | 113.55 ms | 114 ns | 1.98 ms | 176.24 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 6.47 ms | 6 ns | 50.92 us | 6.50 ms |
+| `baseline` *(floor)* | yes | 7.77 ms | 8 ns | 96.18 us | 7.91 ms |
 
-`qb` is **2.49x** faster than `sobjectizer` in this configuration.
+`qb` is **14.48x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **6.79x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **1.00x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -542,7 +542,7 @@ The fastest framework costs **6.79x the floor** — that multiple is what being 
 - *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(sobjectizer)* cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating
 - *(sobjectizer)* wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose
@@ -553,15 +553,15 @@ The fastest framework costs **6.79x the floor** — that multiple is what being 
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 44.63 ms | 45 ns | 1.51 ms | 45.76 ms |
-| `sobjectizer` | yes | 108.03 ms | 108 ns | 2.32 ms | 111.68 ms |
-| `caf` | yes | 116.25 ms | 116 ns | 46.05 ms | 160.11 ms |
+| `qb` | yes | 7.37 ms | 7 ns | 97.17 us | 7.56 ms |
+| `sobjectizer` | yes | 104.99 ms | 105 ns | 1.34 ms | 108.19 ms |
+| `caf` | yes | 114.35 ms | 114 ns | 5.35 ms | 159.28 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 2.78 ms | 3 ns | 26.84 us | 2.83 ms |
+| `baseline` *(floor)* | yes | 2.81 ms | 3 ns | 49.39 us | 2.89 ms |
 
-`qb` is **2.42x** faster than `sobjectizer` in this configuration.
+`qb` is **14.25x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **16.03x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **2.62x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -576,7 +576,7 @@ The fastest framework costs **16.03x the floor** — that multiple is what being
 - *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(sobjectizer)* cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating
 - *(sobjectizer)* wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose
@@ -587,15 +587,15 @@ The fastest framework costs **16.03x the floor** — that multiple is what being
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 45.68 ms | 46 ns | 229.18 us | 46.30 ms |
-| `caf` | yes | 167.01 ms | 167 ns | 2.15 ms | 169.20 ms |
-| `sobjectizer` | yes | 172.55 ms | 173 ns | 15.09 ms | 188.47 ms |
+| `qb` | yes | 9.08 ms | 9 ns | 132.85 us | 9.18 ms |
+| `caf` | yes | 167.03 ms | 167 ns | 4.20 ms | 170.57 ms |
+| `sobjectizer` | yes | 185.09 ms | 185 ns | 9.48 ms | 193.57 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 59.78 ms | 60 ns | 181.22 us | 61.70 ms |
+| `baseline` *(floor)* | yes | 67.48 ms | 67 ns | 2.73 ms | 73.66 ms |
 
-`qb` is **3.66x** faster than `caf` in this configuration.
+`qb` is **18.39x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.76x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+The fastest framework sits **below the floor** (0.13x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -610,7 +610,7 @@ The fastest framework sits **below the floor** (0.76x) — which means it is not
 - *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(sobjectizer)* cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating
 - *(sobjectizer)* wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose
@@ -621,15 +621,15 @@ The fastest framework sits **below the floor** (0.76x) — which means it is not
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 46.30 ms | 46 ns | 1.04 ms | 47.11 ms |
-| `sobjectizer` | yes | 162.80 ms | 163 ns | 2.28 ms | 184.25 ms |
-| `caf` | yes | 170.78 ms | 171 ns | 4.20 ms | 176.20 ms |
+| `qb` | yes | 9.07 ms | 9 ns | 112.47 us | 9.75 ms |
+| `caf` | yes | 164.55 ms | 165 ns | 2.29 ms | 172.45 ms |
+| `sobjectizer` | yes | 171.17 ms | 171 ns | 2.28 ms | 172.68 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 23.68 ms | 24 ns | 9.78 ms | 40.76 ms |
+| `baseline` *(floor)* | yes | 20.76 ms | 21 ns | 7.37 ms | 39.60 ms |
 
-`qb` is **3.52x** faster than `sobjectizer` in this configuration.
+`qb` is **18.14x** faster than `caf` in this configuration.
 
-The fastest framework costs **1.96x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework sits **below the floor** (0.44x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -644,7 +644,7 @@ The fastest framework costs **1.96x the floor** — that multiple is what being 
 - *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(sobjectizer)* cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating
 - *(sobjectizer)* wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose
@@ -657,15 +657,15 @@ The fastest framework costs **1.96x the floor** — that multiple is what being 
 
 | framework | verified | median | per actor | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `caf` | yes | 70.13 ms | 1.22 us | 2.14 ms | 70.89 ms |
-| `sobjectizer` | yes | 158.21 ms | 2.76 us | 3.37 ms | 161.74 ms |
-| `qb` | yes | 208.71 ms | 3.64 us | 957.95 us | 212.43 ms |
+| `qb` | yes | 7.04 ms | 123 ns | 204.97 us | 7.98 ms |
+| `caf` | yes | 65.60 ms | 1.14 us | 249.81 us | 66.34 ms |
+| `sobjectizer` | yes | 131.45 ms | 2.29 us | 1.52 ms | 136.12 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 3.05 ms | 53 ns | 73.69 us | 3.33 ms |
+| `baseline` *(floor)* | yes | 3.06 ms | 53 ns | 39.01 us | 3.12 ms |
 
-`caf` is **2.26x** faster than `sobjectizer` in this configuration.
+`qb` is **9.31x** faster than `caf` in this configuration.
 
-The fastest framework costs **23.00x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **2.31x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -681,7 +681,7 @@ The fastest framework costs **23.00x the floor** — that multiple is what being
 - *(caf)* a child spawned from a worker is enqueued on THAT worker and stolen from there, so with cores=2 the tree is balanced dynamically; qb's cell keeps each sub-tree on its seed's core because qb has no cross-core spawn -- see benchmarks/savina/fib.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* qb has no cross-core spawn: a child is created on its parent's VirtualCore, so with cores=2 the tree is two independent sub-trees (fib(n-1) on core 0, fib(n-2) on core 1) that never balance -- core 0 does ~62% of the work and the window closes when it does
 - *(qb)* qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors); the tree is expanded breadth-first by the FIFO mailbox, so n=23 keeps 57 313 alive on one core at the cores=1 peak and n=24 (92 735) would not fit -- the reason the parameter deviates from Savina's 25
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
@@ -698,15 +698,15 @@ The fastest framework costs **23.00x the floor** — that multiple is what being
 
 | framework | verified | median | per actor | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `caf` | yes | 68.78 ms | 1.20 us | 555.32 us | 71.28 ms |
-| `sobjectizer` | yes | 154.59 ms | 2.70 us | 1.74 ms | 159.59 ms |
-| `qb` | yes | 205.23 ms | 3.58 us | 11.79 ms | 214.81 ms |
+| `qb` | yes | 7.12 ms | 124 ns | 137.36 us | 7.27 ms |
+| `caf` | yes | 64.09 ms | 1.12 us | 650.92 us | 72.53 ms |
+| `sobjectizer` | yes | 129.08 ms | 2.25 us | 1.09 ms | 130.24 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 1.72 ms | 30 ns | 29.79 us | 1.90 ms |
+| `baseline` *(floor)* | yes | 1.62 ms | 28 ns | 32.33 us | 2.04 ms |
 
-`caf` is **2.25x** faster than `sobjectizer` in this configuration.
+`qb` is **9.01x** faster than `caf` in this configuration.
 
-The fastest framework costs **40.07x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **4.38x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -722,7 +722,7 @@ The fastest framework costs **40.07x the floor** — that multiple is what being
 - *(caf)* a child spawned from a worker is enqueued on THAT worker and stolen from there, so with cores=2 the tree is balanced dynamically; qb's cell keeps each sub-tree on its seed's core because qb has no cross-core spawn -- see benchmarks/savina/fib.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* qb has no cross-core spawn: a child is created on its parent's VirtualCore, so with cores=2 the tree is two independent sub-trees (fib(n-1) on core 0, fib(n-2) on core 1) that never balance -- core 0 does ~62% of the work and the window closes when it does
 - *(qb)* qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors); the tree is expanded breadth-first by the FIFO mailbox, so n=23 keeps 57 313 alive on one core at the cores=1 peak and n=24 (92 735) would not fit -- the reason the parameter deviates from Savina's 25
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
@@ -739,15 +739,15 @@ The fastest framework costs **40.07x the floor** — that multiple is what being
 
 | framework | verified | median | per actor | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `caf` | yes | 38.44 ms | 671 ns | 900.91 us | 39.46 ms |
-| `qb` | yes | 147.14 ms | 2.57 us | 1.52 ms | 153.12 ms |
-| `sobjectizer` | yes | 316.31 ms | 5.52 us | 57.23 ms | 364.35 ms |
+| `qb` | yes | 4.77 ms | 83 ns | 108.09 us | 4.96 ms |
+| `caf` | yes | 35.47 ms | 619 ns | 327.51 us | 36.24 ms |
+| `sobjectizer` | yes | 248.43 ms | 4.33 us | 21.73 ms | 298.60 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 3.35 ms | 58 ns | 114.53 us | 3.68 ms |
+| `baseline` *(floor)* | yes | 3.42 ms | 60 ns | 32.14 us | 3.49 ms |
 
-`caf` is **3.83x** faster than `qb` in this configuration.
+`qb` is **7.44x** faster than `caf` in this configuration.
 
-The fastest framework costs **11.47x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **1.39x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -763,7 +763,7 @@ The fastest framework costs **11.47x the floor** — that multiple is what being
 - *(caf)* a child spawned from a worker is enqueued on THAT worker and stolen from there, so with cores=2 the tree is balanced dynamically; qb's cell keeps each sub-tree on its seed's core because qb has no cross-core spawn -- see benchmarks/savina/fib.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* qb has no cross-core spawn: a child is created on its parent's VirtualCore, so with cores=2 the tree is two independent sub-trees (fib(n-1) on core 0, fib(n-2) on core 1) that never balance -- core 0 does ~62% of the work and the window closes when it does
 - *(qb)* qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors); the tree is expanded breadth-first by the FIFO mailbox, so n=23 keeps 57 313 alive on one core at the cores=1 peak and n=24 (92 735) would not fit -- the reason the parameter deviates from Savina's 25
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
@@ -780,15 +780,15 @@ The fastest framework costs **11.47x the floor** — that multiple is what being
 
 | framework | verified | median | per actor | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `caf` | yes | 38.95 ms | 680 ns | 1.83 ms | 40.52 ms |
-| `qb` | yes | 159.38 ms | 2.78 us | 6.93 ms | 166.37 ms |
-| `sobjectizer` | yes | 300.81 ms | 5.25 us | 29.95 ms | 324.79 ms |
+| `qb` | yes | 4.81 ms | 84 ns | 54.68 us | 5.12 ms |
+| `caf` | yes | 35.74 ms | 624 ns | 542.68 us | 36.19 ms |
+| `sobjectizer` | yes | 305.00 ms | 5.32 us | 53.31 ms | 324.42 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 3.40 ms | 59 ns | 74.54 us | 5.57 ms |
+| `baseline` *(floor)* | yes | 3.59 ms | 63 ns | 225.72 us | 6.38 ms |
 
-`caf` is **4.09x** faster than `qb` in this configuration.
+`qb` is **7.43x** faster than `caf` in this configuration.
 
-The fastest framework costs **11.45x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **1.34x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -804,7 +804,7 @@ The fastest framework costs **11.45x the floor** — that multiple is what being
 - *(caf)* a child spawned from a worker is enqueued on THAT worker and stolen from there, so with cores=2 the tree is balanced dynamically; qb's cell keeps each sub-tree on its seed's core because qb has no cross-core spawn -- see benchmarks/savina/fib.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* qb has no cross-core spawn: a child is created on its parent's VirtualCore, so with cores=2 the tree is two independent sub-trees (fib(n-1) on core 0, fib(n-2) on core 1) that never balance -- core 0 does ~62% of the work and the window closes when it does
 - *(qb)* qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors); the tree is expanded breadth-first by the FIFO mailbox, so n=23 keeps 57 313 alive on one core at the cores=1 peak and n=24 (92 735) would not fit -- the reason the parameter deviates from Savina's 25
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
@@ -823,15 +823,15 @@ The fastest framework costs **11.45x the floor** — that multiple is what being
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 42.15 ms | 70 ns | 4.39 ms | 43.24 ms |
-| `sobjectizer` | yes | 64.15 ms | 107 ns | 953.39 us | 65.12 ms |
-| `caf` | yes | 102.21 ms | 170 ns | 12.35 ms | 164.01 ms |
+| `qb` | yes | 4.31 ms | 7 ns | 87.02 us | 4.53 ms |
+| `sobjectizer` | yes | 64.23 ms | 107 ns | 1.86 ms | 69.69 ms |
+| `caf` | yes | 140.61 ms | 234 ns | 76.67 ms | 183.07 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 4.21 ms | 7 ns | 27.81 us | 4.26 ms |
+| `baseline` *(floor)* | yes | 4.24 ms | 7 ns | 342.63 us | 5.93 ms |
 
-`qb` is **1.52x** faster than `sobjectizer` in this configuration.
+`qb` is **14.91x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **10.01x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **1.02x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -847,7 +847,7 @@ The fastest framework costs **10.01x the floor** — that multiple is what being
 - *(caf)* the sixty workers are placed by the work-stealing pool: whichever worker thread is idle steals the next runnable actor, which is the balancing qb's static placement does not do -- see benchmarks/savina/fork-join.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* worker w lives on VirtualCore w % cores, fixed before start: qb does not balance load, so with cores=2 the master's own core runs half the workers AND the master's dispatch loop while the other core runs the other half -- see benchmarks/savina/fork-join.md
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -862,15 +862,15 @@ The fastest framework costs **10.01x the floor** — that multiple is what being
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 40.19 ms | 67 ns | 544.95 us | 41.00 ms |
-| `sobjectizer` | yes | 60.37 ms | 101 ns | 5.74 ms | 66.26 ms |
-| `caf` | yes | 102.35 ms | 171 ns | 14.45 ms | 175.45 ms |
+| `qb` | yes | 4.89 ms | 8 ns | 401.46 us | 4.99 ms |
+| `sobjectizer` | yes | 61.65 ms | 103 ns | 1.39 ms | 67.16 ms |
+| `caf` | yes | 155.12 ms | 259 ns | 59.90 ms | 184.82 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 1.96 ms | 3 ns | 10.96 us | 1.98 ms |
+| `baseline` *(floor)* | yes | 1.93 ms | 3 ns | 58.03 us | 2.04 ms |
 
-`qb` is **1.50x** faster than `sobjectizer` in this configuration.
+`qb` is **12.60x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **20.50x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **2.53x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -886,7 +886,7 @@ The fastest framework costs **20.50x the floor** — that multiple is what being
 - *(caf)* the sixty workers are placed by the work-stealing pool: whichever worker thread is idle steals the next runnable actor, which is the balancing qb's static placement does not do -- see benchmarks/savina/fork-join.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* worker w lives on VirtualCore w % cores, fixed before start: qb does not balance load, so with cores=2 the master's own core runs half the workers AND the master's dispatch loop while the other core runs the other half -- see benchmarks/savina/fork-join.md
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -901,15 +901,15 @@ The fastest framework costs **20.50x the floor** — that multiple is what being
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 34.25 ms | 57 ns | 740.04 us | 34.53 ms |
-| `caf` | yes | 102.15 ms | 170 ns | 12.86 ms | 123.14 ms |
-| `sobjectizer` | yes | 185.73 ms | 310 ns | 2.57 ms | 188.92 ms |
+| `qb` | yes | 4.79 ms | 8 ns | 45.42 us | 4.93 ms |
+| `caf` | yes | 114.74 ms | 191 ns | 21.02 ms | 123.87 ms |
+| `sobjectizer` | yes | 189.97 ms | 317 ns | 6.61 ms | 199.08 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 25.28 ms | 42 ns | 2.70 ms | 27.58 ms |
+| `baseline` *(floor)* | yes | 24.78 ms | 41 ns | 2.30 ms | 25.95 ms |
 
-`qb` is **2.98x** faster than `caf` in this configuration.
+`qb` is **23.96x** faster than `caf` in this configuration.
 
-The fastest framework costs **1.35x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework sits **below the floor** (0.19x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -925,7 +925,7 @@ The fastest framework costs **1.35x the floor** — that multiple is what being 
 - *(caf)* the sixty workers are placed by the work-stealing pool: whichever worker thread is idle steals the next runnable actor, which is the balancing qb's static placement does not do -- see benchmarks/savina/fork-join.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* worker w lives on VirtualCore w % cores, fixed before start: qb does not balance load, so with cores=2 the master's own core runs half the workers AND the master's dispatch loop while the other core runs the other half -- see benchmarks/savina/fork-join.md
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -940,15 +940,15 @@ The fastest framework costs **1.35x the floor** — that multiple is what being 
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 35.06 ms | 58 ns | 1.50 ms | 37.03 ms |
-| `caf` | yes | 96.25 ms | 160 ns | 7.63 ms | 119.08 ms |
-| `sobjectizer` | yes | 168.97 ms | 282 ns | 4.31 ms | 186.16 ms |
+| `qb` | yes | 4.88 ms | 8 ns | 132.03 us | 5.61 ms |
+| `caf` | yes | 121.34 ms | 202 ns | 10.24 ms | 134.16 ms |
+| `sobjectizer` | yes | 172.14 ms | 287 ns | 8.44 ms | 181.35 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 17.08 ms | 28 ns | 2.59 ms | 18.81 ms |
+| `baseline` *(floor)* | yes | 14.72 ms | 25 ns | 992.49 us | 18.35 ms |
 
-`qb` is **2.75x** faster than `caf` in this configuration.
+`qb` is **24.87x** faster than `caf` in this configuration.
 
-The fastest framework costs **2.05x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework sits **below the floor** (0.33x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -964,7 +964,7 @@ The fastest framework costs **2.05x the floor** — that multiple is what being 
 - *(caf)* the sixty workers are placed by the work-stealing pool: whichever worker thread is idle steals the next runnable actor, which is the balancing qb's static placement does not do -- see benchmarks/savina/fork-join.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* worker w lives on VirtualCore w % cores, fixed before start: qb does not balance load, so with cores=2 the master's own core runs half the workers AND the master's dispatch loop while the other core runs the other half -- see benchmarks/savina/fork-join.md
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -981,16 +981,16 @@ The fastest framework costs **2.05x the floor** — that multiple is what being 
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 98.60 ms | 99 ns | 3.19 ms | 101.12 ms |
-| `sobjectizer` | yes | 166.22 ms | 166 ns | 1.33 ms | 171.02 ms |
-| `caf` | yes | 276.16 ms | 276 ns | 3.30 ms | 278.12 ms |
-| `caf-detached` | yes | 3,542.79 ms | 3.54 us | 156.81 ms | 3,641.52 ms |
+| `qb` | yes | 22.45 ms | 22 ns | 180.85 us | 22.81 ms |
+| `sobjectizer` | yes | 162.72 ms | 163 ns | 1.03 ms | 164.58 ms |
+| `caf` | yes | 276.08 ms | 276 ns | 1.44 ms | 277.38 ms |
+| `caf-detached` | yes | 3,306.45 ms | 3.31 us | 242.54 ms | 3,536.50 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 1.65 ms | 2 ns | 9.52 us | 1.66 ms |
+| `baseline` *(floor)* | yes | 1.64 ms | 2 ns | 41.78 us | 1.77 ms |
 
-`qb` is **1.69x** faster than `sobjectizer` in this configuration.
+`qb` is **7.25x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **59.91x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **13.69x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1006,7 +1006,7 @@ The fastest framework costs **59.91x the floor** — that multiple is what being
 - *(caf)* in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on one thread and never pays a cross-core hand-off; read this row as CAF's best-case locality, and caf-detached as its cross-core cost
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(sobjectizer)* cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating
 - *(sobjectizer)* wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose
@@ -1017,17 +1017,17 @@ The fastest framework costs **59.91x the floor** — that multiple is what being
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 97.95 ms | 98 ns | 1.02 ms | 98.87 ms |
-| `sobjectizer` | yes | 145.14 ms | 145 ns | 386.95 us | 149.00 ms |
-| `caf` | yes | 283.70 ms | 284 ns | 9.23 ms | 290.51 ms |
+| `qb` | yes | 22.32 ms | 22 ns | 141.22 us | 22.90 ms |
+| `sobjectizer` | yes | 138.77 ms | 139 ns | 787.36 us | 140.22 ms |
+| `caf` | yes | 275.49 ms | 275 ns | 5.90 ms | 278.94 ms |
 | `caf-detached` | n/a | — | — | — | — |
 | | <sub>caf::detached actors park on a condition variable between messages (caf/detail/private_thread.cpp); CAF has no spin mode for a private thread, so wait=1 has no honest counterpart here -- read the caf row for CAF's spin profile and this row for its cross-core park cost</sub> | | | | |
 | | | | | | |
-| `baseline` *(floor)* | yes | 1.64 ms | 2 ns | 9.34 us | 1.66 ms |
+| `baseline` *(floor)* | yes | 1.65 ms | 2 ns | 62.18 us | 1.78 ms |
 
-`qb` is **1.48x** faster than `sobjectizer` in this configuration.
+`qb` is **6.22x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **59.69x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **13.51x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1043,7 +1043,7 @@ The fastest framework costs **59.69x the floor** — that multiple is what being
 - *(caf)* in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on one thread and never pays a cross-core hand-off; read this row as CAF's best-case locality, and caf-detached as its cross-core cost
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(sobjectizer)* cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating
 - *(sobjectizer)* wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose
@@ -1054,15 +1054,15 @@ The fastest framework costs **59.69x the floor** — that multiple is what being
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `caf` | yes | 290.00 ms | 290 ns | 8.08 ms | 297.59 ms |
-| `caf-detached` | yes | 25,809.55 ms | 25.81 us | 3.22 ms | 25,837.94 ms |
-| | <sub>**bimodal**: 1 of 5 repetitions at ~3.63 us per round trip, 4 at ~25.81 us. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
-| `sobjectizer` | yes | 26,525.18 ms | 26.53 us | 216.54 ms | 26,674.67 ms |
-| `qb` | yes | 26,779.95 ms | 26.78 us | 213.01 ms | 27,130.81 ms |
+| `qb` | yes | 153.40 ms | 153 ns | 5.15 ms | 161.87 ms |
+| `caf` | yes | 279.95 ms | 280 ns | 2.41 ms | 283.43 ms |
+| `caf-detached` | yes | 25,314.15 ms | 25.31 us | 42.18 ms | 25,405.75 ms |
+| | <sub>**bimodal**: 1 of 9 repetitions at ~3.34 us per round trip, 8 at ~25.32 us. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
+| `sobjectizer` | yes | 26,207.98 ms | 26.21 us | 79.29 ms | 26,310.61 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 25,467.40 ms | 25.47 us | 80.64 ms | 25,564.07 ms |
+| `baseline` *(floor)* | yes | 24,818.37 ms | 24.82 us | 224.51 ms | 24,995.59 ms |
 
-**No ordering is claimed between `caf` and `caf-detached`** — one of them is bimodal, and a ratio of two medians where one median is a coin toss is not a result.
+`qb` is **1.82x** faster than `caf` in this configuration.
 
 The fastest framework sits **below the floor** (0.01x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
@@ -1080,7 +1080,7 @@ The fastest framework sits **below the floor** (0.01x) — which means it is not
 - *(caf)* in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on one thread and never pays a cross-core hand-off; read this row as CAF's best-case locality, and caf-detached as its cross-core cost
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(sobjectizer)* cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating
 - *(sobjectizer)* wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose
@@ -1091,17 +1091,17 @@ The fastest framework sits **below the floor** (0.01x) — which means it is not
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 268.01 ms | 268 ns | 25.68 ms | 318.42 ms |
-| `caf` | yes | 297.67 ms | 298 ns | 10.61 ms | 299.69 ms |
-| `sobjectizer` | yes | 629.80 ms | 630 ns | 10.98 ms | 668.40 ms |
+| `qb` | yes | 159.81 ms | 160 ns | 9.73 ms | 163.05 ms |
+| `caf` | yes | 283.59 ms | 284 ns | 15.90 ms | 299.17 ms |
+| `sobjectizer` | yes | 665.90 ms | 666 ns | 5.29 ms | 716.91 ms |
 | `caf-detached` | n/a | — | — | — | — |
 | | <sub>caf::detached actors park on a condition variable between messages (caf/detail/private_thread.cpp); CAF has no spin mode for a private thread, so wait=1 has no honest counterpart here -- read the caf row for CAF's spin profile and this row for its cross-core park cost</sub> | | | | |
 | | | | | | |
-| `baseline` *(floor)* | yes | 210.10 ms | 210 ns | 6.55 ms | 218.65 ms |
+| `baseline` *(floor)* | yes | 185.18 ms | 185 ns | 4.17 ms | 189.96 ms |
 
-**`qb` and `caf` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
+`qb` is **1.77x** faster than `caf` in this configuration.
 
-The fastest framework costs **1.28x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework sits **below the floor** (0.86x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1117,7 +1117,7 @@ The fastest framework costs **1.28x the floor** — that multiple is what being 
 - *(caf)* in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on one thread and never pays a cross-core hand-off; read this row as CAF's best-case locality, and caf-detached as its cross-core cost
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(sobjectizer)* cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating
 - *(sobjectizer)* wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose
@@ -1130,15 +1130,15 @@ The fastest framework costs **1.28x the floor** — that multiple is what being 
 
 | framework | verified | median | per hop | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 61.98 ms | 62 ns | 217.68 us | 62.11 ms |
-| `sobjectizer` | yes | 82.46 ms | 82 ns | 1.11 ms | 83.81 ms |
-| `caf` | yes | 139.82 ms | 140 ns | 481.75 us | 142.05 ms |
+| `qb` | yes | 16.77 ms | 17 ns | 209.27 us | 16.99 ms |
+| `sobjectizer` | yes | 81.73 ms | 82 ns | 1.47 ms | 85.74 ms |
+| `caf` | yes | 139.01 ms | 139 ns | 1.38 ms | 139.82 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 12.87 ms | 13 ns | 153.07 us | 12.91 ms |
+| `baseline` *(floor)* | yes | 12.96 ms | 13 ns | 122.33 us | 13.17 ms |
 
-`qb` is **1.33x** faster than `sobjectizer` in this configuration.
+`qb` is **4.87x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **4.81x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **1.29x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1154,7 +1154,7 @@ The fastest framework costs **4.81x the floor** — that multiple is what being 
 - *(caf)* the ring's actors are placed by the work-stealing pool: a hop stays on the sender's worker (worker::delay) unless the idle worker steals it, so with cores=2 CAF measures mostly same-thread hand-offs where qb measures a cross-core pipe on EVERY hop -- see benchmarks/savina/thread-ring.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* actor i lives on VirtualCore i % cores: with cores=2 EVERY hop is a cross-core hand-off. CAF and SObjectizer receive the same 2-thread budget but their schedulers decide where each hop runs, so the same cell measures qb's cross-core pipe against their intra-thread hand-off -- see benchmarks/savina/thread-ring.md
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -1169,15 +1169,15 @@ The fastest framework costs **4.81x the floor** — that multiple is what being 
 
 | framework | verified | median | per hop | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 62.51 ms | 63 ns | 463.24 us | 62.77 ms |
-| `sobjectizer` | yes | 70.94 ms | 71 ns | 758.31 us | 71.77 ms |
-| `caf` | yes | 139.63 ms | 140 ns | 427.90 us | 141.00 ms |
+| `qb` | yes | 16.85 ms | 17 ns | 103.68 us | 17.08 ms |
+| `sobjectizer` | yes | 69.60 ms | 70 ns | 728.95 us | 71.22 ms |
+| `caf` | yes | 137.77 ms | 138 ns | 1.66 ms | 139.22 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 2.91 ms | 3 ns | 18.84 us | 3.02 ms |
+| `baseline` *(floor)* | yes | 2.85 ms | 3 ns | 147.18 us | 3.08 ms |
 
-`qb` is **1.13x** faster than `sobjectizer` in this configuration.
+`qb` is **4.13x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **21.47x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **5.91x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1193,7 +1193,7 @@ The fastest framework costs **21.47x the floor** — that multiple is what being
 - *(caf)* the ring's actors are placed by the work-stealing pool: a hop stays on the sender's worker (worker::delay) unless the idle worker steals it, so with cores=2 CAF measures mostly same-thread hand-offs where qb measures a cross-core pipe on EVERY hop -- see benchmarks/savina/thread-ring.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* actor i lives on VirtualCore i % cores: with cores=2 EVERY hop is a cross-core hand-off. CAF and SObjectizer receive the same 2-thread budget but their schedulers decide where each hop runs, so the same cell measures qb's cross-core pipe against their intra-thread hand-off -- see benchmarks/savina/thread-ring.md
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -1208,13 +1208,13 @@ The fastest framework costs **21.47x the floor** — that multiple is what being
 
 | framework | verified | median | per hop | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `caf` | yes | 141.38 ms | 141 ns | 1.51 ms | 143.34 ms |
-| `sobjectizer` | yes | 264.63 ms | 265 ns | 30.63 ms | 321.65 ms |
-| `qb` | yes | 13,409.07 ms | 13.41 us | 19.57 ms | 13,428.84 ms |
+| `qb` | yes | 75.07 ms | 75 ns | 2.40 ms | 76.56 ms |
+| `caf` | yes | 140.05 ms | 140 ns | 1.34 ms | 141.22 ms |
+| `sobjectizer` | yes | 245.36 ms | 245 ns | 26.20 ms | 267.83 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 13,008.22 ms | 13.01 us | 138.38 ms | 13,064.66 ms |
+| `baseline` *(floor)* | yes | 12,627.13 ms | 12.63 us | 55.69 ms | 12,716.02 ms |
 
-`caf` is **1.87x** faster than `sobjectizer` in this configuration.
+`qb` is **1.87x** faster than `caf` in this configuration.
 
 The fastest framework sits **below the floor** (0.01x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
@@ -1232,7 +1232,7 @@ The fastest framework sits **below the floor** (0.01x) — which means it is not
 - *(caf)* the ring's actors are placed by the work-stealing pool: a hop stays on the sender's worker (worker::delay) unless the idle worker steals it, so with cores=2 CAF measures mostly same-thread hand-offs where qb measures a cross-core pipe on EVERY hop -- see benchmarks/savina/thread-ring.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* actor i lives on VirtualCore i % cores: with cores=2 EVERY hop is a cross-core hand-off. CAF and SObjectizer receive the same 2-thread budget but their schedulers decide where each hop runs, so the same cell measures qb's cross-core pipe against their intra-thread hand-off -- see benchmarks/savina/thread-ring.md
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
@@ -1247,15 +1247,15 @@ The fastest framework sits **below the floor** (0.01x) — which means it is not
 
 | framework | verified | median | per hop | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `caf` | yes | 140.44 ms | 140 ns | 1.85 ms | 143.67 ms |
-| `qb` | yes | 172.63 ms | 173 ns | 5.44 ms | 174.56 ms |
-| `sobjectizer` | yes | 304.36 ms | 304 ns | 4.44 ms | 313.75 ms |
+| `qb` | yes | 73.37 ms | 73 ns | 1.36 ms | 80.22 ms |
+| `caf` | yes | 140.53 ms | 141 ns | 1.13 ms | 142.85 ms |
+| `sobjectizer` | yes | 275.65 ms | 276 ns | 9.56 ms | 286.82 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 114.44 ms | 114 ns | 5.58 ms | 118.68 ms |
+| `baseline` *(floor)* | yes | 102.18 ms | 102 ns | 2.41 ms | 105.03 ms |
 
-`caf` is **1.23x** faster than `qb` in this configuration.
+`qb` is **1.92x** faster than `caf` in this configuration.
 
-The fastest framework costs **1.23x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework sits **below the floor** (0.72x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1271,7 +1271,7 @@ The fastest framework costs **1.23x the floor** — that multiple is what being 
 - *(caf)* the ring's actors are placed by the work-stealing pool: a hop stays on the sender's worker (worker::delay) unless the idle worker steals it, so with cores=2 CAF measures mostly same-thread hand-offs where qb measures a cross-core pipe on EVERY hop -- see benchmarks/savina/thread-ring.md
 - *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
 - *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
-- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* actor i lives on VirtualCore i % cores: with cores=2 EVERY hop is a cross-core hand-off. CAF and SObjectizer receive the same 2-thread budget but their schedulers decide where each hop runs, so the same cell measures qb's cross-core pipe against their intra-thread hand-off -- see benchmarks/savina/thread-ring.md
 - *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores

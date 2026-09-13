@@ -8,8 +8,8 @@
   "expected_messages": 202000,
   "work_unit": "transfer",
   "work_units": 50000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"accounts": 1000, "cores": 2, "transactions": 50000, "wait": 0},
   "pinned": true,
   "cpus": "0,2",
@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-07T02:21:42Z"
+    "utc": "2026-09-13T01:55:16Z"
   },
   "idiom": {
     "source": "the chameneos adapter + dev/so_5/disp/thread_pool/pub.hpp",
@@ -30,13 +30,13 @@
   },
   "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "SObjectizer 5.8 has no asynchronous request/reply with a continuation (request_value was removed in 5.6, so_5::extra::async_op is a separate library), so the deposit is two plain messages and the caller's continuation is hand-written state -- this cell measures the dispatch alone and pays no request frame, unlike qb::ask and CAF's request().then()", "the teller and the 1000 accounts are placed by the thread_pool; qb's cell pins the teller on core 0 and account a on core (1 + a) % cores -- see benchmarks/savina/bank-transaction.md"],
   "failures": [],
-  "work_ns": [27488586.0, 28803669.0, 27596644.0, 27676550.0, 27665195.0],
-  "total_ns": [30047307.0, 31273171.0, 30319051.0, 30022167.0, 30231359.0],
-  "outside_window_ns": [2558721.0, 2469502.0, 2722407.0, 2345617.0, 2566164.0],
+  "work_ns": [28569894.0, 27102092.0, 26279086.0, 26724318.0, 27162275.0, 29709736.0, 29923117.0, 31303817.0, 28379146.0],
+  "total_ns": [31142662.0, 29672867.0, 28895715.0, 29196437.0, 29625013.0, 32667323.0, 31944498.0, 33497940.0, 30464025.0],
+  "outside_window_ns": [2572768.0, 2570775.0, 2616629.0, 2472119.0, 2462738.0, 2957587.0, 2021381.0, 2194123.0, 2084879.0],
   "summary": {
-    "work_min": 27488586.0,
-    "work_p50": 27665195.0,
-    "work_p99": 28758584.2,
-    "work_iqr": 79906.0
+    "work_min": 26279086.0,
+    "work_p50": 28379146.0,
+    "work_p99": 31193361.0,
+    "work_iqr": 2607644.0
   }
 }

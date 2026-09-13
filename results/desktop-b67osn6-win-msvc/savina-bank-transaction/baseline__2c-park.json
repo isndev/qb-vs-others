@@ -22,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-07T02:24:23Z"
+    "utc": "2026-09-13T01:23:04Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Accounts are slots of a vector with no mailbox, and a transfer has no request frame: the continuation is a flag and a deque the handler reads, so the per-transfer allocation qb::ask and CAF's request().then() pay is engineered out", "the teller lives on thread 0 and account a on thread (1 + a) % cores -- the same placement qb's cell fixes -- so with cores=2 about half the deposits and half the transfers and acknowledgements cross a core", "the 50 000 transfers are pushed into the rings BEFORE worker 0 runs, from the caller's thread, so the teller's burst is the ring capacity the spec keeps N under, not a mailbox that grows", "cores=1 is one thread with the teller and the accounts in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with a thousand accounts in flight is rare"],
   "failures": [],
-  "work_ns": [6974500.0, 7415700.0, 7245800.0, 7547800.0, 6510900.0, 6300500.0, 7603800.0, 5633500.0, 7319600.0],
-  "total_ns": [9424000.0, 9814200.0, 9625200.0, 9936200.0, 8894000.0, 8631600.0, 10105900.0, 8135600.0, 9803700.0],
-  "outside_window_ns": [2449500.0, 2398500.0, 2379400.0, 2388400.0, 2383100.0, 2331100.0, 2502100.0, 2502100.0, 2484100.0],
+  "work_ns": [5974000.0, 5926700.0, 6060400.0, 6881500.0, 6449300.0, 5834900.0, 5936900.0, 5993400.0, 6339800.0],
+  "total_ns": [8813300.0, 8368300.0, 8340200.0, 9501000.0, 9080400.0, 8291700.0, 8379100.0, 8461900.0, 8973400.0],
+  "outside_window_ns": [2839300.0, 2441600.0, 2279800.0, 2619500.0, 2631100.0, 2456800.0, 2442200.0, 2468500.0, 2633600.0],
   "summary": {
-    "work_min": 5633500.0,
-    "work_p50": 7245800.0,
-    "work_p99": 7599320.0,
-    "work_iqr": 904800.0
+    "work_min": 5834900.0,
+    "work_p50": 5993400.0,
+    "work_p99": 6846924.0,
+    "work_iqr": 402900.0
   }
 }

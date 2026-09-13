@@ -22,21 +22,21 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-06T18:16:18Z"
+    "utc": "2026-09-13T01:28:31Z"
   },
   "idiom": {
     "source": "qb/llm/qb.llm.md: addRefActor<T>() (same-core child, onInit run synchronously) + kill()",
     "note": "every node is a FibActor created by its parent with addRefActor, answered with one push<Response>, and killed right after; seed s on VirtualCore s % cores"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "qb has no cross-core spawn: a child is created on its parent's VirtualCore, so with cores=2 the tree is two independent sub-trees (fib(n-1) on core 0, fib(n-2) on core 1) that never balance -- core 0 does ~62% of the work and the window closes when it does", "qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors); the tree is expanded breadth-first by the FIFO mailbox, so n=23 keeps 57 313 alive on one core at the cores=1 peak and n=24 (92 735) would not fit -- the reason the parameter deviates from Savina's 25"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "qb has no cross-core spawn: a child is created on its parent's VirtualCore, so with cores=2 the tree is two independent sub-trees (fib(n-1) on core 0, fib(n-2) on core 1) that never balance -- core 0 does ~62% of the work and the window closes when it does", "qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors); the tree is expanded breadth-first by the FIFO mailbox, so n=23 keeps 57 313 alive on one core at the cores=1 peak and n=24 (92 735) would not fit -- the reason the parameter deviates from Savina's 25"],
   "failures": [],
-  "work_ns": [578693000.0, 609911100.0, 602370500.0, 511809200.0, 503413400.0, 512794000.0, 518945200.0, 507519500.0, 496511400.0],
-  "total_ns": [588954000.0, 678397600.0, 669030500.0, 520067100.0, 511066500.0, 518783900.0, 526974900.0, 514257100.0, 506610400.0],
-  "outside_window_ns": [10261000.0, 68486500.0, 66660000.0, 8257900.0, 7653100.0, 5989900.0, 8029700.0, 6737600.0, 10099000.0],
+  "work_ns": [10068200.0, 9853900.0, 10386500.0, 10447000.0, 10189300.0, 11057100.0, 10156200.0, 10005900.0, 10078800.0],
+  "total_ns": [10768900.0, 10537200.0, 11048100.0, 11218100.0, 11085200.0, 11876500.0, 10938600.0, 10714200.0, 10779900.0],
+  "outside_window_ns": [700700.0, 683300.0, 661600.0, 771100.0, 895900.0, 819400.0, 782400.0, 708300.0, 701100.0],
   "summary": {
-    "work_min": 496511400.0,
-    "work_p50": 512794000.0,
-    "work_p99": 609307852.0,
-    "work_iqr": 71173500.0
+    "work_min": 9853900.0,
+    "work_p50": 10156200.0,
+    "work_p99": 11008292.0,
+    "work_iqr": 318300.0
   }
 }

@@ -1510,8 +1510,99 @@ floor of 65 / 30 (creation, not messaging — §11's remaining term is the regis
 default subscriptions); MSVC's two-core cells, wide by the host and not by the build; the
 two-core round trip at 191 on Windows against 159 on WSL2, the cross-core hop's cost now the
 platform's (§16's private lines took the build's share); and bank-transaction 1c at 143, the one
-cell of the 64 the second half did not move. The published tables' `qb` column stays shipped
-3.1.0 until the train ships 3.2.0 and the field is re-measured against it.
+cell of the 64 the second half did not move. The published tables' `qb` column stayed shipped
+3.1.0 until the field was re-measured with the candidate in its own session — §13.5.
+
+### 13.5 The whole field re-measured with the release candidate (2026-09-13), and where qb still loses
+
+The 2026-09-09 grid measured the candidate beside 3.1.0; the published field tables still carried
+the shipped 3.1.0 of 2026-09-04, measured in another session with 5 + 1. On 2026-09-13 the whole
+field was re-measured **in the candidate's own session**, once per host, at qb `develop`
+**`f2779605`** — the 3.2.0 release candidate as it will ship: `77b358d8` plus the documentation
+commits of the train and QB-211's CMake, `git diff 77b358d8..f2779605 -- src/` touching
+comments only. Four legs, in this order, the other host idle, Docker Desktop stopped, the harness
+rebuilt at the candidate then 60 s of quiet: (A) the candidate, `--only qb`, 9 + 2, CPUs 0 and 2
+→ `qb-branch-develop/grid-f2779605/`; (B) shipped 3.1.0 through the same adapters →
+`grid-shipped-3.1.0-20260913/`; (C) **every framework** — qb, CAF, CAF-detached, SObjectizer, the
+raw-thread floor — 9 + 2, 132 cells → `results/<host>/` (a fresh `run.json`, the README tables
+re-transcribed from it, `check-report` 367 figures verified); (D) a 12-launch interleaved census
+of 3 + 1 on the four two-core cells that decide a ranking — ping-pong and thread-ring, spin and
+park — qb against CAF and the floor → `census-f2779605-field/`. Windows 03:19–03:32, WSL2
+03:33–04:02 (UTC+2). 132 / 132 cells verified on each host, 2 declared `n/a` (CAF-detached has
+no spin mode), 0 census launch unverified.
+
+**The candidate did not move.** Every cell of `grid-f2779605/` sits inside the launch spread
+of `grid-77b358d8/` on both hosts: ping-pong 1c 22.5 against 22.6 ns (WSL2), 31.0 against 29.7
+(Windows); 2c-spin 154.9 against 159.1 and 185.9 against 190.9; thread-ring 1c 16.9 against 17.1
+and 18.3 against 17.9; fib 1c 123.7 against 124.0 and 184.4 against 175.9. The hot path is
+byte-identical and the measurement says so.
+
+**Against the other three, qb is the fastest framework in all 64 cells**, and the ratio to the
+best other framework in the cell — CAF or SObjectizer, whichever won second place — has a
+geometric mean of **0.13 on both hosts** (one core and two); the narrowest cells of the field
+are thread-ring 2c-spin on Windows (96 against CAF's 236, 0.41) and ping-pong 2c-spin on WSL2
+(160 against 284, 0.56) — hops CAF runs on one thread and qb across two. **Against 3.1.0, in
+the same session, no cell is slower**: the two smallest gains are the Windows `big` and
+`chameneos` 2c-park cells (−27 % and −26 %), the largest is −99.4 % (WSL2 ping-pong 2c-park,
+26.24 µs → 153 ns), and the other 62 of the 64 are beyond −34 %.
+
+**The census** (median of the twelve launch medians, [min … max], ns per unit):
+
+| cell | qb | CAF | floor |
+|---|---|---|---|
+| ping-pong 2c-spin, Windows | **186.8** [179.6 … 199.7] | 475.8 [472.9 … 480.8] | 180.8 [175.8 … 187.2] |
+| ping-pong 2c-park, Windows | **205.5** [191.1 … 213.9] | 476.2 [474.0 … 481.6] | — |
+| thread-ring 2c-spin, Windows | **105.1** [87.4 … 112.9] | 235.4 [230.8 … 241.9] | 112.4 [108.3 … 116.9] |
+| thread-ring 2c-park, Windows | **105.6** [94.4 … 110.2] | 235.6 [232.0 … 240.0] | — |
+| ping-pong 2c-spin, WSL2 | **155.9** [148.1 … 161.5] | 279.6 [277.0 … 291.6] | 182.9 [178.2 … 186.4] |
+| ping-pong 2c-park, WSL2 | **154.0** [146.6 … 161.2] | 284.4 [281.0 … 290.0] | — |
+| thread-ring 2c-spin, WSL2 | **75.4** [72.9 … 80.9] | 140.3 [139.7 … 145.6] | 103.1 [100.2 … 107.9] |
+| thread-ring 2c-park, WSL2 | **74.3** [71.3 … 84.3] | 141.9 [141.1 … 142.4] | — |
+
+qb sits ON the raw-thread floor on the Windows ping-pong (187 against 181, the distributions
+overlap: a two-thread cache-line handoff is what that cell costs and the runtime adds nothing
+measurable to it) and **under** it on the three others — the floor's SPSC ring pays one line per
+message where qb's producer publishes a batch. The park cells read the spin cells: the 50 µs
+idle-spin floor keeps a ping-pong from ever sleeping, so "park" is a policy label there, not a
+mechanism (§8.2 for what sleeping costs). CAF's 2c cells are one-thread cells (§13, point 3 of
+the README) and still lose to a two-thread one by 2.5× (Windows) and 1.8× (WSL2).
+
+**Where qb loses — the report the maintainer asked for.** Not against any framework, and not
+against 3.1.0. It loses against the raw-thread floor in exactly two kinds of cell, and against
+itself between the two compilers:
+
+1. **The one-core cells whose floor is a bare function call.** The floor of a one-core
+   ping-pong is 2 ns (a call and a return), of a one-core counting 3 ns; qb pays 22 / 30 ns and
+   7 / 10 ns (WSL2 / Windows) — the mailbox, the pipe, the dispatch: the price of the model,
+   11–18× a function call and 96–113 ns at 3.1.0. The geometric mean of qb over the floor across
+   the sixteen one-core cells is 2.7 (WSL2) and 2.4 (Windows). The two cells that stand out are
+   the two whose unit is not a message: **fib**, an actor created and destroyed per unit —
+   124 / 179 ns against a floor of 28 / 58 (4.4× / 3.1×): `addRefActor`'s `new`, the registry
+   entry, the five default subscriptions, the reap (§11; QB-175's per-core slab for the actor
+   object is the named next step) — and **bank-transaction**, an `ask` round trip per transfer —
+   144 / 230 ns against 22 / 74 (6.5× / 3.1×): the request event, the slot, the coroutine frame,
+   the reply event, two dispatches (§12; five ask-path defects came out of this shape already;
+   what is left is the frame and the second dispatch). The remaining one-core cells sit at
+   1.0–2.7× floors of 5–28 ns, and at 5.9× the 3 ns floor of the WSL2 ring — every one of them
+   the same ~10–20 ns of runtime above a floor that is itself a few nanoseconds.
+2. **Almost nothing at two cores** — the cross-core hop is the floor's own cost, and qb is at
+   it or under it in every two-core cell whose unit is a message. The exceptions are the same
+   two shapes: fib 2c at 1.3–1.4× on WSL2 (84 / 83 against 63 / 60) and 1.6× on Windows park
+   (112 against 69; the Windows raw-thread fib at 2c-spin reads 446 and is the floor's own
+   oddity), and bank-transaction 2c on Windows at 143 against a floor of 120 (1.19×;
+   0.64–0.80× on WSL2) — the actor object and the `ask` again.
+3. **MSVC against g++ on the same source**, one core: ping-pong +35 %, counting +32 %,
+   fork-join +41 %, fib +45 %, bank-transaction +59 %, chameneos +17 %, thread-ring +7 %, big
+   −2 % — a geometric mean of **+28 %** at one core and +40 % at two (where the Windows
+   cross-core hop itself is 16–79 % dearer, chameneos and bank the widest). QB-46 answered half
+   of it: clang-cl runs qb's dispatch 10–18 % faster than cl 19.51 on this host (§9.12), and the
+   clang-cl preset ships in 3.2; the other half is the platform (the wake, the timer, the
+   scheduler). The field is measured with cl because that is what a Windows user builds with.
+
+What that leaves as the next axes, in order of what a nanosecond buys: the actor object's
+allocation (fib, both hosts), the ask frame and its second dispatch (bank, both hosts), and
+the MSVC codegen gap on the dispatch (every one-core cell, Windows only). None of the three
+is a regression, none is a loss to a competitor, and none belongs to the 3.2.0 train.
 
 ## 14. The loop clock — what one line cost, and what an idle spin pass needs
 

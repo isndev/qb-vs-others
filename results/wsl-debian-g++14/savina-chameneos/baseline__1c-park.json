@@ -8,8 +8,8 @@
   "expected_messages": 800400,
   "work_unit": "meeting",
   "work_units": 200000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"chameneos": 100, "cores": 1, "meetings": 200000, "wait": 0},
   "pinned": true,
   "cpus": "0,2",
@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-06T17:40:40Z"
+    "utc": "2026-09-13T01:42:06Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Creatures are slots of a vector and the mall has no mailbox: the 100 creatures share one SPSC ring into worker 0, so the 100-producer fan-in the frameworks pay for is engineered out here by placement", "the mall lives on thread 0 and every creature on thread 1 % cores, so with cores=2 every request and every announcement crosses a core -- the same placement qb's cell fixes", "cores=1 is one thread with the mall and the creatures in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 100 creatures in flight is rare"],
   "failures": [],
-  "work_ns": [5682110.0, 5587103.0, 5560135.0, 5501056.0, 5512675.0],
-  "total_ns": [6103296.0, 5697624.0, 5623752.0, 5559996.0, 5570973.0],
-  "outside_window_ns": [421186.0, 110521.0, 63617.0, 58940.0, 58298.0],
+  "work_ns": [5435613.0, 5459393.0, 5438120.0, 5491618.0, 5381813.0, 5371240.0, 5370383.0, 5399044.0, 5568596.0],
+  "total_ns": [5488769.0, 5511994.0, 5491487.0, 5549149.0, 5435048.0, 5423559.0, 5422311.0, 5450616.0, 5621077.0],
+  "outside_window_ns": [53156.0, 52601.0, 53367.0, 57531.0, 53235.0, 52319.0, 51928.0, 51572.0, 52481.0],
   "summary": {
-    "work_min": 5501056.0,
-    "work_p50": 5560135.0,
-    "work_p99": 5678309.7,
-    "work_iqr": 74428.0
+    "work_min": 5370383.0,
+    "work_p50": 5435613.0,
+    "work_p99": 5562437.8,
+    "work_iqr": 77580.0
   }
 }

@@ -22,21 +22,21 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-04T16:16:17Z"
+    "utc": "2026-09-13T01:28:30Z"
   },
   "idiom": {
     "source": "qb/llm/qb.llm.md (push = ordered) + the ping-pong adapter",
     "note": "push<> for the ordered increment stream (send<> may reorder across cores), require<>() bootstrap, one VirtualCore per actor"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction"],
   "failures": [],
-  "work_ns": [34811200.0, 33123200.0, 33112300.0, 32898300.0, 32954800.0, 33442000.0, 33378600.0, 32299200.0, 32619600.0],
-  "total_ns": [37026500.0, 35516100.0, 49332300.0, 34893500.0, 34952200.0, 44753300.0, 67790800.0, 34340800.0, 37370300.0],
-  "outside_window_ns": [2215300.0, 2392900.0, 16220000.0, 1995200.0, 1997400.0, 11311300.0, 34412200.0, 2041600.0, 4750700.0],
+  "work_ns": [13598400.0, 13597700.0, 13478100.0, 13508700.0, 13349600.0, 13498700.0, 9724800.0, 13366100.0, 13299600.0],
+  "total_ns": [16514800.0, 16490300.0, 15818600.0, 16007700.0, 16527600.0, 16168500.0, 10885900.0, 17133100.0, 16434200.0],
+  "outside_window_ns": [2916400.0, 2892600.0, 2340500.0, 2499000.0, 3178000.0, 2669800.0, 1161100.0, 3767000.0, 3134600.0],
   "summary": {
-    "work_min": 32299200.0,
-    "work_p50": 33112300.0,
-    "work_p99": 34701664.0,
-    "work_iqr": 480300.0
+    "work_min": 9724800.0,
+    "work_p50": 13478100.0,
+    "work_p99": 13598344.0,
+    "work_iqr": 159100.0
   }
 }

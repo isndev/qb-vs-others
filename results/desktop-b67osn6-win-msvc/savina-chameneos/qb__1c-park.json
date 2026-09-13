@@ -22,21 +22,21 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-06T18:14:55Z"
+    "utc": "2026-09-13T01:28:30Z"
   },
   "idiom": {
     "source": "the big adapter (reply() recycling, getSource()) + qb/llm/qb.llm.md",
     "note": "one Meet event per request, mutated into the announcement or the exit and reply()ed; the waiting creature gets a fresh push<>; mall alone on VirtualCore 0, creatures on the others"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "placement is fixed before start: the mall alone on VirtualCore 0 and the creatures on the remaining cores (all on core 0 when cores=1), so with cores=2 the mall's mailbox is one cross-core pipe written by 100 actors on the far side and nothing balances it -- the pools place the mall and the creatures wherever stealing puts them"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "placement is fixed before start: the mall alone on VirtualCore 0 and the creatures on the remaining cores (all on core 0 when cores=1), so with cores=2 the mall's mailbox is one cross-core pipe written by 100 actors on the far side and nothing balances it -- the pools place the mall and the creatures wherever stealing puts them"],
   "failures": [],
-  "work_ns": [13545900.0, 13594600.0, 13617700.0, 13696100.0, 13258400.0, 13530200.0, 13047400.0, 13166100.0, 13670300.0],
-  "total_ns": [25014900.0, 16952700.0, 14995300.0, 32165500.0, 46032900.0, 14750300.0, 14735700.0, 14544100.0, 18573300.0],
-  "outside_window_ns": [11469000.0, 3358100.0, 1377600.0, 18469400.0, 32774500.0, 1220100.0, 1688300.0, 1378000.0, 4903000.0],
+  "work_ns": [5927500.0, 6189300.0, 5948900.0, 6041400.0, 6004000.0, 5826900.0, 5908700.0, 5911400.0, 5900900.0],
+  "total_ns": [6440200.0, 6691700.0, 6455100.0, 6531000.0, 6518700.0, 6300600.0, 6762800.0, 6544800.0, 6660400.0],
+  "outside_window_ns": [512700.0, 502400.0, 506200.0, 489600.0, 514700.0, 473700.0, 854100.0, 633400.0, 759500.0],
   "summary": {
-    "work_min": 13047400.0,
-    "work_p50": 13545900.0,
-    "work_p99": 13694036.0,
-    "work_iqr": 359300.0
+    "work_min": 5826900.0,
+    "work_p50": 5927500.0,
+    "work_p99": 6177468.0,
+    "work_iqr": 95300.0
   }
 }

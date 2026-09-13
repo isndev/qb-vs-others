@@ -8,8 +8,8 @@
   "expected_messages": 1000002,
   "work_unit": "message",
   "work_units": 1000000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"cores": 1, "messages": 1000000, "wait": 0},
   "pinned": true,
   "cpus": "0,2",
@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T15:50:21Z"
+    "utc": "2026-09-13T01:42:07Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. It has no supervision, no addressing, no dynamic actor lifetime, no mailbox fairness and no backpressure beyond a full ring. It bounds how much of each framework's cost is inherent to streaming a million messages through one queue", "cores=1 is one thread pushing into a 65536-slot ring and draining it inline whenever it is full -- the floor for single-threaded dispatch, still a real queue", "the threads are pinned one per CPU from the harness's set, exactly as every framework's workers are", "wait=1 busy-polls the rings; wait=0 parks the consumer on a condition variable and the producer notifies it after a push only while it announces itself asleep"],
   "failures": [],
-  "work_ns": [6419231.0, 6474237.0, 6486337.0, 6500270.0, 6435412.0],
-  "total_ns": [6774287.0, 6526377.0, 6538871.0, 6552906.0, 6487546.0],
-  "outside_window_ns": [355056.0, 52140.0, 52534.0, 52636.0, 52134.0],
+  "work_ns": [7848832.0, 7842730.0, 7729899.0, 7913132.0, 7735719.0, 7757730.0, 7746554.0, 7766721.0, 7769283.0],
+  "total_ns": [7901693.0, 7895030.0, 7783032.0, 7963955.0, 7787899.0, 7808192.0, 7796943.0, 7817124.0, 7819900.0],
+  "outside_window_ns": [52861.0, 52300.0, 53133.0, 50823.0, 52180.0, 50462.0, 50389.0, 50403.0, 50617.0],
   "summary": {
-    "work_min": 6419231.0,
-    "work_p50": 6474237.0,
-    "work_p99": 6499712.7,
-    "work_iqr": 50925.0
+    "work_min": 7729899.0,
+    "work_p50": 7766721.0,
+    "work_p99": 7907988.0,
+    "work_iqr": 96176.0
   }
 }

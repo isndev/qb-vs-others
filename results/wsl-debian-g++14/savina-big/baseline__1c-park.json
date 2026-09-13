@@ -8,8 +8,8 @@
   "expected_messages": 4800240,
   "work_unit": "round trip",
   "work_units": 2400000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"actors": 120, "cores": 1, "pings": 20000, "wait": 0},
   "pinned": true,
   "cpus": "0,2",
@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T15:50:21Z"
+    "utc": "2026-09-13T01:42:04Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Actors are slots of a vector and there is no per-actor mailbox: a worker's inbound ring is shared by every actor it owns, so the 120-producer mailbox contention the frameworks pay for is engineered out here by static placement", "actor a lives on thread a % cores, so with cores=2 roughly half the pings and half the pongs cross a core", "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 120 actors in flight is rare"],
   "failures": [],
-  "work_ns": [32701202.0, 33128807.0, 33544647.0, 31867255.0, 35217103.0],
-  "total_ns": [33170640.0, 33207596.0, 33610365.0, 31929502.0, 35273439.0],
-  "outside_window_ns": [469438.0, 78789.0, 65718.0, 62247.0, 56336.0],
+  "work_ns": [35527660.0, 35354723.0, 36608685.0, 36121825.0, 36228706.0, 37369905.0, 32635939.0, 31144143.0, 35456932.0],
+  "total_ns": [35582761.0, 35416229.0, 36665296.0, 36175774.0, 36286466.0, 37423061.0, 32691805.0, 31199817.0, 35513955.0],
+  "outside_window_ns": [55101.0, 61506.0, 56611.0, 53949.0, 57760.0, 53156.0, 55866.0, 55674.0, 57023.0],
   "summary": {
-    "work_min": 31867255.0,
-    "work_p50": 33128807.0,
-    "work_p99": 35150204.8,
-    "work_iqr": 843445.0
+    "work_min": 31144143.0,
+    "work_p50": 35527660.0,
+    "work_p99": 37309007.4,
+    "work_iqr": 873983.0
   }
 }

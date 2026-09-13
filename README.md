@@ -34,14 +34,14 @@ argument it exists to win:
 | | state |
 |---|---|
 | Harness, verification, pinning, reporting | **done**, and negative-controlled: 7 CAUGHT / 4 CONFIRMED / **0 MISSED** |
-| `savina/ping-pong`, `counting`, `thread-ring`, `fork-join`, `big` × qb, CAF, SObjectizer, floor (+ CAF-detached on ping-pong) | **done**, 84 cells per host: 82 verified + 2 declared `n/a` (a `caf::detached` actor has no spin mode) |
+| `savina/ping-pong`, `counting`, `thread-ring`, `fork-join`, `big` × qb, CAF, SObjectizer, floor (+ CAF-detached on ping-pong) | **done**, 84 cells per host: 82 verified + 2 declared `n/a` (a `caf::detached` actor has no spin mode) — first with shipped 3.1.0 (2026-09-04), **re-measured whole on 2026-09-13 with the 3.2.0 candidate `f2779605` in the candidate's own session** (every framework, 9 + 2, both hosts), which is what the tables below show |
 | The document guards (`tools/check-roster.py`, `tools/check-report.py`) | **done**, and negative-controlled: 33 CAUGHT / 3 CONFIRMED / **0 MISSED** (`tools/guards-negative-control.py`) |
 | Feature comparison, cited to the three sources | [docs/FEATURES.md](docs/FEATURES.md) |
 | `savina/fib`, `savina/chameneos` × the same four (+ CAF-detached declared omitted) | **done on Windows and WSL2**: 16 cells each per host, shipped qb 3.1.0 like the five before them (`results/<host>/savina-fib/`, `savina-chameneos/`, rendered in each host's `REPORT.md`), **116 cells per host**; macOS not yet. Written against the qb branch they produced (`results/<host>/qb-branch-perf-dense-table-growth/`): fib found a 43 s defect in unreleased `develop` and drove three qb commits, and its shipped-3.1.0 cell is a LOGGING figure — nine `LOG_INFO` lines per actor lifetime, 515 819 lines per repetition, 159 / 459 ms (WSL2 / Windows, 2c-spin) against the branch's 7.6 / 10.5 in the same session, CAF 39 / 53, floor 3.4 / 4.0 (`docs/TUNING.md` §11) |
 | `savina/bank-transaction` × the same four (+ CAF-detached declared omitted) | **done on Windows and WSL2** (2026-09-07): 16 cells per host, shipped qb 3.1.0 (`results/<host>/savina-bank-transaction/`, rendered in each host's `REPORT.md`), **132 cells per host**; macOS not yet. The first shape that WAITS for a reply — one `qb::ask` / CAF `request().then()` per transfer, 50 000 of them — and it found five defects on qb's ask path in one afternoon (`docs/TUNING.md` §12, qb `fa1c5ce3`): shipped 3.1.0 measures 14.7 / 9.2 ms (WSL2, 1c / 2c spin) and 25.5 / 29.2 (Windows), qb `develop` before the fixes 9.4 / 5.1 and 13.7 / 8.0, after them **8.1 / 4.6** and **12.9 / 7.6** in the same session (`results/<host>/qb-branch-perf-coro-scope-local-refcount/`), against CAF 41.5 / 36.6 and 57.8 / 57.5, SObjectizer 19.5 / 25.5 and 29.6 / 38.0, floor 1.1 / 6.3 and 3.5 / 32.2 |
-| **The 3.2.0 candidate grid** — qb `develop` × all eight shapes | **done on Windows and WSL2, twice**: at the midpoint (`43f62afe`, 2026-09-07) and at the final commit (**`77b358d8`**, 2026-09-09) — 96 qb cells per host each time (candidate / shipped 3.1.0 / candidate, 9 + 2, one quiet session per host, `results/<host>/qb-branch-develop/`), the fastest framework in all 64 cells both times, every WSL2 cell faster at the end than at the midpoint (ping-pong 1c 66 → 23 ns, ring 1c 39 → 17), the Windows two-core cells level-or-better under the interleaved census; the two `framework=qb` grids below, `docs/TUNING.md` §13 and §13.4. macOS not yet: its machine measures the candidate when it is next on. |
+| **The 3.2.0 candidate grid** — qb `develop` × all eight shapes | **done on Windows and WSL2, twice**: at the midpoint (`43f62afe`, 2026-09-07) and at the final commit (**`77b358d8`**, 2026-09-09) — 96 qb cells per host each time (candidate / shipped 3.1.0 / candidate, 9 + 2, one quiet session per host, `results/<host>/qb-branch-develop/`), the fastest framework in all 64 cells both times, every WSL2 cell faster at the end than at the midpoint (ping-pong 1c 66 → 23 ns, ring 1c 39 → 17), the Windows two-core cells level-or-better under the interleaved census; the two `framework=qb` grids below, `docs/TUNING.md` §13 and §13.4. macOS not yet: its machine measures the candidate when it is next on. — and **a third time on 2026-09-13**, at the release candidate **`f2779605`**, with the WHOLE field in the same session (`grid-f2779605/`, `grid-shipped-3.1.0-20260913/`, `census-f2779605-field/`; point 7 and §13.5): fastest in all 64 cells, no cell slower than 3.1.0, at or under the raw-thread floor on the two-core census cells |
 | The other 17 Savina benchmarks | **not yet written** — see [docs/ROADMAP.md](docs/ROADMAP.md) |
-| Linux axis (WSL2 Debian 13 / g++ 14.2) | **run**, the same 84 cells — with the WSL2 caveat below; native Linux not yet |
+| Linux axis (WSL2 Debian 13 / g++ 14.2) | **run**, the same 132 cells, re-measured with the candidate on 2026-09-13 — with the WSL2 caveat below; native Linux not yet |
 | macOS axis (Apple M4 Pro / AppleClang 21, arm64) | **run**, the same 84 cells — **unpinned** (macOS has no verified affinity API; every document says `pinned:false`); the candidate branch measured beside shipped 3.1.0 in the same session, `docs/TUNING.md` §9.13 |
 | Seastar | not yet — Linux-only, and its dependencies need root on this host |
 | Cross-language references (Erlang, Pekko, Actix, Orleans) | not yet |
@@ -52,8 +52,13 @@ ranking.
 
 ## What five benchmarks have shown so far
 
-MSVC 19.51, i9-12900K, pinned to two P-cores, 9 repetitions, every cell measured in one quiet
-session on 2026-09-04. Full tables in [REPORT.md](REPORT.md), all regenerated from `results/`;
+MSVC 19.51, i9-12900K, pinned to two P-cores, 9 repetitions + 2 warmup, every cell of every
+framework measured in ONE quiet session on 2026-09-13 (03:23–03:30 UTC+2), with qb `develop`
+**`f2779605`** — the 3.2.0 release candidate — as the `qb` column; shipped 3.1.0 is the
+same-session control beside it (point 7, `results/<host>/qb-branch-develop/`). Until that day
+these tables carried the shipped 3.1.0 measured on 2026-09-04; what 3.1.0 read is kept in the
+control directories and in points 2 and 6 below. Full tables in [REPORT.md](REPORT.md), all
+regenerated from `results/`;
 the figures below are **per unit of work** — a round trip, a message, a hop, a message, a round trip —
 and the unit is declared once, in each benchmark's spec header, never chosen by an adapter.
 A **bold floor** is a floor the fastest framework sits *below*: it is not beating raw threads,
@@ -64,130 +69,134 @@ it is not doing what the floor does (there, crossing a core on every message).
 <!-- check-report: results/desktop-b67osn6-win-msvc benchmark=savina/ping-pong -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 112 ns** | SObjectizer 184 ns | 2 ns | CAF 482 ns · qb 1.64× |
-| 1 core, park | **qb 113 ns** | SObjectizer 214 ns | 2 ns | CAF 489 ns · CAF-detached 10.63 µs · qb 1.90× |
-| 2 cores, spin | **qb 308 ns** | CAF 485 ns | 183 ns | SObjectizer 922 ns · qb 1.57× |
-| 2 cores, park | **CAF 490 ns** | SObjectizer 1.03 µs | 469 ns | qb 4.23 µs · CAF-detached **bimodal**, ~1.07 µs or ~10.65 µs · CAF 2.11× |
+| 1 core, spin | **qb 30 ns** | SObjectizer 182 ns | 2 ns | CAF 477 ns · qb 6.02× |
+| 1 core, park | **qb 30 ns** | SObjectizer 210 ns | 2 ns | CAF 480 ns · CAF-detached 10.46 µs · qb 6.96× |
+| 2 cores, spin | **qb 185 ns** | CAF 478 ns | 178 ns | SObjectizer 894 ns · qb 2.58× |
+| 2 cores, park | **qb 208 ns** | CAF 476 ns | **354 ns** | SObjectizer 995 ns · CAF-detached **bimodal**, ~979 ns or ~10.42 µs · qb 2.29× |
 
 `savina/counting` — 1 000 000 messages from a producer into one counter, then one retrieve; per message:
 
 <!-- check-report: results/desktop-b67osn6-win-msvc benchmark=savina/counting -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 29 ns** | SObjectizer 139 ns | 3 ns | CAF 182 ns · qb 4.75× |
-| 1 core, park | **qb 30 ns** | SObjectizer 146 ns | 8 ns | CAF 182 ns · qb 4.85× |
-| 2 cores, spin | **qb 33 ns** | CAF 127 ns | **42 ns** | SObjectizer 289 ns · qb 3.83× |
-| 2 cores, park | **qb 33 ns** | CAF 150 ns | **53 ns** | SObjectizer 308 ns · qb 4.54× |
+| 1 core, spin | **qb 10 ns** | SObjectizer 139 ns | 3 ns | CAF 180 ns · qb 14.26× |
+| 1 core, park | **qb 11 ns** | SObjectizer 146 ns | 7 ns | CAF 179 ns · qb 12.70× |
+| 2 cores, spin | **qb 13 ns** | CAF 129 ns | **40 ns** | SObjectizer 288 ns · qb 9.56× |
+| 2 cores, park | **qb 14 ns** | CAF 173 ns | **100 ns** | SObjectizer 309 ns · qb 12.75× |
 
 `savina/thread-ring` — 100 actors in a ring, a token making 1 000 000 hops; per hop:
 
 <!-- check-report: results/desktop-b67osn6-win-msvc benchmark=savina/thread-ring -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 63 ns** | SObjectizer 91 ns | 8 ns | CAF 236 ns · qb 1.45× |
-| 1 core, park | **qb 63 ns** | SObjectizer 106 ns | 10 ns | CAF 235 ns · qb 1.68× |
-| 2 cores, spin | **qb 172 ns** | CAF 239 ns | 110 ns | SObjectizer 482 ns · qb 1.38× |
-| 2 cores, park | **CAF 236 ns** | SObjectizer 474 ns | **271 ns** | qb **bimodal**, ~565 ns or ~3.02 µs · CAF 2.01× |
+| 1 core, spin | **qb 18 ns** | SObjectizer 91 ns | 9 ns | CAF 232 ns · qb 5.01× |
+| 1 core, park | **qb 18 ns** | SObjectizer 105 ns | 10 ns | CAF 231 ns · qb 5.80× |
+| 2 cores, spin | **qb 96 ns** | CAF 236 ns | **109 ns** | SObjectizer 501 ns · qb 2.47× |
+| 2 cores, park | **qb 107 ns** | CAF 233 ns | **238 ns** | SObjectizer 427 ns · qb 2.18× |
 
 `savina/fork-join` — 10 000 messages fanned out to each of 60 workers, 600 000 in all, each worker acknowledged once at the end; per message:
 
 <!-- check-report: results/desktop-b67osn6-win-msvc benchmark=savina/fork-join -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 43 ns** | SObjectizer 140 ns | 3 ns | CAF 309 ns · qb 3.28× |
-| 1 core, park | **qb 40 ns** | SObjectizer 150 ns | 7 ns | CAF 310 ns · qb 3.74× |
-| 2 cores, spin | **qb 46 ns** | CAF 171 ns | 38 ns | SObjectizer 289 ns · qb 3.72× |
-| 2 cores, park | **qb 42 ns** | CAF 168 ns | **49 ns** | SObjectizer 268 ns · qb 3.98× |
+| 1 core, spin | **qb 11 ns** | SObjectizer 139 ns | 5 ns | CAF 309 ns · qb 12.12× |
+| 1 core, park | **qb 12 ns** | SObjectizer 144 ns | 9 ns | CAF 310 ns · qb 12.21× |
+| 2 cores, spin | **qb 11 ns** | CAF 187 ns | **29 ns** | SObjectizer 283 ns · qb 17.35× |
+| 2 cores, park | **qb 11 ns** | CAF 171 ns | **63 ns** | SObjectizer 292 ns · qb 15.01× |
 
 `savina/big` — 120 actors each sending 20 000 pings to random peers, every ping answered; per round trip (2 400 000 of them):
 
 <!-- check-report: results/desktop-b67osn6-win-msvc benchmark=savina/big -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 36 ns** | SObjectizer 187 ns | 11 ns | CAF 497 ns · qb 5.15× |
-| 1 core, park | **qb 36 ns** | SObjectizer 200 ns | 19 ns | CAF 502 ns · qb 5.47× |
-| 2 cores, spin | **qb 31 ns** | CAF 308 ns | **43 ns** | SObjectizer 378 ns · qb 10.00× |
-| 2 cores, park | **qb 33 ns** | CAF 308 ns | **60 ns** | SObjectizer 443 ns · qb 9.26× |
+| 1 core, spin | **qb 17 ns** | SObjectizer 183 ns | 11 ns | CAF 479 ns · qb 10.68× |
+| 1 core, park | **qb 17 ns** | SObjectizer 195 ns | **20 ns** | CAF 479 ns · qb 11.34× |
+| 2 cores, spin | **qb 23 ns** | CAF 305 ns | **44 ns** | SObjectizer 357 ns · qb 13.20× |
+| 2 cores, park | **qb 24 ns** | CAF 306 ns | **57 ns** | SObjectizer 423 ns · qb 12.94× |
 
-The same 84 cells on Linux — WSL2 Debian 13, g++ 14.2, `-O3 -DNDEBUG`, the same two CPUs, 5
-repetitions, one quiet session on 2026-09-04 (`results/wsl-debian-g++14/`):
+The same cells on Linux — WSL2 Debian 13, g++ 14.2, `-O3 -DNDEBUG`, the same two vCPUs, 9 + 2,
+one quiet session on 2026-09-13 (03:42–04:01 UTC+2, the Windows side idle), the same candidate
+(`results/wsl-debian-g++14/`):
 
 <!-- check-report: results/wsl-debian-g++14 benchmark=savina/ping-pong -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 98 ns** | SObjectizer 145 ns | 2 ns | CAF 284 ns · qb 1.48× |
-| 1 core, park | **qb 99 ns** | SObjectizer 166 ns | 2 ns | CAF 276 ns · CAF-detached 3.54 µs · qb 1.69× |
-| 2 cores, spin | **qb 268 ns** | CAF 298 ns | 210 ns | SObjectizer 630 ns · **no measurable difference** qb/CAF |
-| 2 cores, park | **CAF 290 ns** | CAF-detached **bimodal**, ~3.63 µs or ~25.81 µs | **25.47 µs** | SObjectizer 26.53 µs · qb 26.78 µs |
+| 1 core, spin | **qb 22 ns** | SObjectizer 139 ns | 2 ns | CAF 275 ns · qb 6.22× |
+| 1 core, park | **qb 22 ns** | SObjectizer 163 ns | 2 ns | CAF 276 ns · CAF-detached 3.31 µs · qb 7.25× |
+| 2 cores, spin | **qb 160 ns** | CAF 284 ns | **185 ns** | SObjectizer 666 ns · qb 1.77× |
+| 2 cores, park | **qb 153 ns** | CAF 280 ns | **24.82 µs** | CAF-detached **bimodal**, ~3.34 µs or ~25.32 µs · SObjectizer 26.21 µs · qb 1.82× |
 
 <!-- check-report: results/wsl-debian-g++14 benchmark=savina/counting -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 45 ns** | SObjectizer 108 ns | 3 ns | CAF 116 ns · qb 2.42× |
-| 1 core, park | **qb 44 ns** | SObjectizer 110 ns | 6 ns | CAF 117 ns · qb 2.49× |
-| 2 cores, spin | **qb 46 ns** | SObjectizer 163 ns | 24 ns | CAF 171 ns · qb 3.52× |
-| 2 cores, park | **qb 46 ns** | CAF 167 ns | **60 ns** | SObjectizer 173 ns · qb 3.66× |
+| 1 core, spin | **qb 7 ns** | SObjectizer 105 ns | 3 ns | CAF 114 ns · qb 14.25× |
+| 1 core, park | **qb 8 ns** | SObjectizer 113 ns | 8 ns | CAF 114 ns · qb 14.48× |
+| 2 cores, spin | **qb 9 ns** | CAF 165 ns | **21 ns** | SObjectizer 171 ns · qb 18.14× |
+| 2 cores, park | **qb 9 ns** | CAF 167 ns | **67 ns** | SObjectizer 185 ns · qb 18.39× |
 
 <!-- check-report: results/wsl-debian-g++14 benchmark=savina/thread-ring -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 63 ns** | SObjectizer 71 ns | 3 ns | CAF 140 ns · qb 1.13× |
-| 1 core, park | **qb 62 ns** | SObjectizer 82 ns | 13 ns | CAF 140 ns · qb 1.33× |
-| 2 cores, spin | **CAF 140 ns** | qb 173 ns | 114 ns | SObjectizer 304 ns · CAF 1.23× |
-| 2 cores, park | **CAF 141 ns** | SObjectizer 265 ns | **13.01 µs** | qb 13.41 µs · CAF 1.87× |
+| 1 core, spin | **qb 17 ns** | SObjectizer 70 ns | 3 ns | CAF 138 ns · qb 4.13× |
+| 1 core, park | **qb 17 ns** | SObjectizer 82 ns | 13 ns | CAF 139 ns · qb 4.87× |
+| 2 cores, spin | **qb 73 ns** | CAF 141 ns | **102 ns** | SObjectizer 276 ns · qb 1.92× |
+| 2 cores, park | **qb 75 ns** | CAF 140 ns | **12.63 µs** | SObjectizer 245 ns · qb 1.87× |
 
 <!-- check-report: results/wsl-debian-g++14 benchmark=savina/fork-join -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 67 ns** | SObjectizer 101 ns | 3 ns | CAF 171 ns · qb 1.50× |
-| 1 core, park | **qb 70 ns** | SObjectizer 107 ns | 7 ns | CAF 170 ns · qb 1.52× |
-| 2 cores, spin | **qb 58 ns** | CAF 160 ns | 28 ns | SObjectizer 282 ns · qb 2.75× |
-| 2 cores, park | **qb 57 ns** | CAF 170 ns | 42 ns | SObjectizer 310 ns · qb 2.98× |
+| 1 core, spin | **qb 8 ns** | SObjectizer 103 ns | 3 ns | CAF 259 ns · qb 12.60× |
+| 1 core, park | **qb 7 ns** | SObjectizer 107 ns | 7 ns | CAF 234 ns · qb 14.91× |
+| 2 cores, spin | **qb 8 ns** | CAF 202 ns | **25 ns** | SObjectizer 287 ns · qb 24.87× |
+| 2 cores, park | **qb 8 ns** | CAF 191 ns | **41 ns** | SObjectizer 317 ns · qb 23.96× |
 
 <!-- check-report: results/wsl-debian-g++14 benchmark=savina/big -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 37 ns** | SObjectizer 134 ns | 7 ns | CAF 291 ns · qb 3.57× |
-| 1 core, park | **qb 39 ns** | SObjectizer 144 ns | 14 ns | CAF 294 ns · qb 3.65× |
-| 2 cores, spin | **qb 33 ns** | SObjectizer 227 ns | 25 ns | CAF 248 ns · qb 6.93× |
-| 2 cores, park | **qb 33 ns** | CAF 250 ns | **57 ns** | SObjectizer 280 ns · qb 7.48× |
+| 1 core, spin | **qb 18 ns** | SObjectizer 133 ns | 7 ns | CAF 291 ns · qb 7.58× |
+| 1 core, park | **qb 18 ns** | SObjectizer 142 ns | 15 ns | CAF 288 ns · qb 8.06× |
+| 2 cores, spin | **qb 18 ns** | SObjectizer 220 ns | **25 ns** | CAF 247 ns · qb 12.26× |
+| 2 cores, park | **qb 18 ns** | CAF 247 ns | **52 ns** | SObjectizer 278 ns · qb 14.10× |
 
 **Read the Linux park rows with their caveat.** WSL2 is a Hyper-V guest: a futex wake of a
 parked thread on another vCPU is a virtualised IPI and costs ~12 µs here, so the raw
-`std::thread` + condition-variable **floor itself** is 25.47 µs per ping-pong round trip and
-13.01 µs per ring hop. qb 3.1.0, SObjectizer's `simple_lock` and CAF's own detached threads (in
-their slow mode) all sit on that floor on the two benchmarks that cross a core on every message
-— on Linux qb's parked path is a plain condition variable and nothing worse — while the pooled
-CAF row stays at ~290 ns because it never crosses a core (see point 3). Native Linux puts a futex
-wake at 2–5 µs; that axis is not yet run, and until it is the Linux park rows bound the
-hypervisor, not the frameworks.
+`std::thread` + condition-variable **floor itself** is 24.82 µs per ping-pong round trip and
+12.63 µs per ring hop. SObjectizer's `simple_lock` and CAF's own detached threads (in their
+slow mode) sit on that floor on the two benchmarks that cross a core on every message, and qb
+3.1.0 sat there too (26.24 µs and 13.09 µs in the same-session control) — its parked path was a
+plain condition variable and nothing worse. The candidate does not: 153 ns and 75 ns, because
+it spins for 50 µs before it parks (point 2) and a ping-pong never leaves that window. The
+pooled CAF row stays at ~280 ns because it never crosses a core (point 3). Native Linux puts a
+futex wake at 2–5 µs; that axis is not yet run, and until it is the Linux park rows of the
+frameworks that DO sleep bound the hypervisor, not them.
 
 Seven things in those tables are worth more than the ranking:
 
 1. **Every framework that crosses a core on every message is faster on ONE core than on two.**
    A ping-pong and a ring have no parallelism, so a second core buys nothing and costs a cache
-   line crossing on every hop: qb goes 112 → 308 ns on ping-pong and 63 → 172 ns on the ring;
-   SObjectizer 184 → 922 and 91 → 482. The three benchmarks that DO carry parallelism —
+   line crossing on every hop: qb goes 30 → 185 ns on ping-pong and 18 → 96 ns on the ring;
+   SObjectizer 182 → 894 and 91 → 501. The three benchmarks that DO carry parallelism —
    counting, fork-join, big — are the ones where two cores cost qb a few nanoseconds or gain it some, and
    where qb sits **below the raw-thread floor** at two cores: the floor's SPSC ring pays one
    cache-line crossing per message, qb's staging pipe moves them in batches. Anyone quoting a
    two-core ping-pong as evidence of scalability is quoting the wrong number.
-2. **qb 3.1.0's parked mode collapses on a cross-core hop, on both platforms, and it is the most
-   useful thing here.** Ping-pong 2c-park: **4.23 µs** against CAF's 490 ns and SObjectizer's
-   1.03 µs on Windows; thread-ring 2c-park: **bimodal, ~565 ns or ~3.02 µs** per hop, where CAF
-   holds 236 ns. On WSL2 both cells sit on the hypervisor's floor. It is **explained and
-   reproduced** — [docs/TUNING.md §5](docs/TUNING.md): qb parks after two or three empty passes
-   because its spin credit counts events rather than time, and its `Mailbox::wait()` has a
-   lost-wakeup race that MSVC's millisecond `wait_for` turns into ~13 ms stalls. It is **fixed**
-   on the local qb branch `perf/core-hot-path` — a race-free park handshake, a time-based
-   idle-spin floor and a store-buffer-draining fence on every cross-core publish — and
-   re-measured through these unmodified adapters, on the same quiet host, minutes after the
-   shipped build, for all five benchmarks (the grids below). What the branch does NOT change is
-   the price of actually sleeping: with its idle-spin floor set to 0 the ping-pong cell measures
-   **386 ns** on Windows and **25.8 µs** on WSL2 — the OS wake cost, the same one every other
-   parked framework pays ([§8.2](docs/TUNING.md)). The branch's gain on Linux is entirely the
-   50 µs of spinning before the park, which is a policy, not a mechanism. The tables above stay
-   at the shipped 3.1.0 until that branch ships.
+2. **qb 3.1.0's parked mode collapsed on a cross-core hop, on both platforms, and finding it
+   was the most useful thing this repository did.** Ping-pong 2c-park read **4.23 µs** against
+   CAF's 490 ns and SObjectizer's 1.03 µs on Windows (2.26 µs in the 2026-09-13 control, the
+   cell being bimodal by launch); thread-ring 2c-park was **bimodal, ~565 ns or ~3.02 µs** per
+   hop where CAF holds 236 ns; on WSL2 both cells sat on the hypervisor's floor. It is
+   **explained and reproduced** — [docs/TUNING.md §5](docs/TUNING.md): qb parked after two or
+   three empty passes because its spin credit counted events rather than time, and its
+   `Mailbox::wait()` had a lost-wakeup race that MSVC's millisecond `wait_for` turned into
+   ~13 ms stalls. It is **fixed** in the 3.2.0 candidate — a race-free park handshake, a
+   time-based idle-spin floor, a store-buffer-draining fence on every cross-core publish, then
+   the park moved inside the event loop (axis N) — and the same cells now read **208 ns** and
+   **107 ns** on Windows, **153 ns** and **75 ns** on WSL2, through the unmodified adapters, in
+   the same session as the 3.1.0 control. What the fix does NOT change is the price of actually
+   sleeping: with the idle-spin floor set to 0 the ping-pong cell measures **386 ns** on Windows
+   and **25.8 µs** on WSL2 — the OS wake cost, the same one every other parked framework pays
+   ([§8.2](docs/TUNING.md)). The gain on Linux is entirely the 50 µs of spinning before the
+   park, which is a policy, not a mechanism.
 3. **CAF's flat figure per benchmark is one configuration, measured four times, that never
    crosses a core.** Its `wait=1` profile (`aggressive-poll-attempts=100, steal-interval=10`) is
    CAF's **own shipped default** (`libcaf_core/caf/defaults.hpp`), and a ten-point sweep found
@@ -195,35 +204,46 @@ Seven things in those tables are worth more than the ranking:
    adapter declares the two columns identical rather than measuring one thing twice. And on a
    ping-pong or a ring CAF runs the receiver on the **sender's worker** (`worker::delay` →
    `queue.prepend`, `scheduled_actor.cpp`), so its "2 cores" cells are one-thread cells, immune
-   to the park cost every other framework pays — which is why CAF wins every 2c-park cell of
-   the two benchmarks that cross a core per message, and, on WSL2, thread-ring at 2 cores
-   outright (140 ns against qb 3.1.0's 173). The **`caf-detached`** row is CAF's honest
+   to the park cost every other framework pays — which is why CAF won every 2c-park cell of
+   the two benchmarks that cross a core per message against qb 3.1.0, and, on WSL2, thread-ring
+   at 2 cores outright (140 ns against 3.1.0's 173). Against the candidate it wins none: 476 ns
+   against 208 and 233 against 107 on Windows, 280 against 153 and 140 against 75 on WSL2 — a
+   one-thread cell beaten by a two-thread one. The **`caf-detached`** row is CAF's honest
    cross-core cost — one pinned OS thread per actor, CAF's own placement primitive — and it is
    **bimodal**: a repetition lands at ~1.07 µs or at ~10.65 µs on Windows (~3.6 or ~25.8 µs on
    WSL2) and stays there, so the report prints both modes and refuses to rank against it
    ([frameworks/caf-detached/README.md](frameworks/caf-detached/README.md), [§8.1](docs/TUNING.md)).
    Read the two CAF rows together: the pool is the best case, detached is the cross-core case,
    and neither is "CAF's number" alone.
-4. **The floor matters.** At 2 cores spinning on ping-pong, the fastest framework is 1.68× the
-   floor; at 1 core it is 66×. The same frameworks, the same code, and a completely different
-   story about what "framework overhead" means. And a framework can sit *below* the floor —
-   pooled CAF at 2c-park on WSL2 is 0.01× a floor that crosses a core; qb on counting, fork-join
-   and big at two cores is 0.55–0.87× a floor that crosses it per message — which the report now says out loud
-   instead of printing as a ratio.
+4. **The floor matters.** At 2 cores spinning on ping-pong, the fastest framework is 1.04×
+   the floor on Windows (185 against 178 ns) and 0.86× on WSL2 (160 against 185); at 1 core it
+   is 15× (30 against 2 ns) and 11×. The same framework, the same code, and a completely
+   different story about what "framework overhead" means: a raw thread handing a cache line to
+   another raw thread is what a cross-core hop costs, and an actor runtime that sits on it has
+   nothing left to remove there; a function call is what the one-core floor costs, and the
+   ~20–30 ns above it is the price of the model — a mailbox, a pipe, a dispatch — which is
+   where 3.2.0 spent its effort (96–113 ns at 3.1.0). And a framework can sit *below* the
+   floor — pooled CAF at 2c-park on WSL2 is 0.01× a floor that crosses a core; qb on counting,
+   fork-join, big and chameneos at two cores is 0.13–0.73× a floor that crosses it per message,
+   on the ring 0.72–0.88× where the floor spins (0.01× where it sleeps), bank-transaction
+   0.64–1.20× — which the report says out loud instead of printing as a ratio.
 5. **The widest margins are on the funnel and the all-to-all, and they are qb's dispatch, not
    its scheduler.** On `big`, every one of 120 actors sends to a random peer, so every message is
-   a hash lookup and a type-erased dispatch in every framework; qb's 31–36 ns per round trip against
-   CAF's 308–502 and SObjectizer's 187–443 is the cost of `EventBucket` relocation plus one
-   `unordered_map` lookup against a mailbox enqueue, a work-item allocation and a
-   `std::function`-shaped handler call. The margin is the same on both compilers (WSL2: 33–39 ns vs
-   248–294 vs 134–280).
-6. **The narrowest margin is the ring, and it names qb's own cost.** thread-ring is one hop per
-   message with nothing to batch; qb 3.1.0's 63 ns per hop on one core is only 1.13× (WSL2) to
-   1.45× (Windows) faster than SObjectizer and 7–22× the floor; the branch's 43–46 ns on Windows
-   and 37–48 ns on WSL2 (a spread the ring shows between runs there, spin and park alike) is
-   what removing the out-of-line accessors, the two hash lookups per dispatch and the
-   per-event publish on that path is worth. Every qb-side finding from these five benchmarks — what
-   it costs, where, and what was done about it — is in [docs/TUNING.md §9](docs/TUNING.md).
+   a hash lookup and a type-erased dispatch in every framework; qb's 17–24 ns per round trip
+   against CAF's 305–479 and SObjectizer's 183–423 is the cost of `EventBucket` relocation plus
+   one dense-table lookup against a mailbox enqueue, a work-item allocation and a
+   `std::function`-shaped handler call. The margin is the same on both compilers (WSL2: 18 ns
+   vs 247–291 vs 133–278).
+6. **The narrowest margin was the ring, and it named qb's own cost.** thread-ring is one hop
+   per message with nothing to batch; qb 3.1.0's 63 ns per hop on one core was only 1.13×
+   (WSL2) to 1.45× (Windows) faster than SObjectizer and 7–22× the floor. The candidate's
+   **18 ns** on Windows and **17 ns** on WSL2 is 4–6× SObjectizer and 2× (Windows, a 9 ns
+   floor) to 6× (WSL2, a 3 ns one) the floor: what removing the out-of-line accessors, the
+   two hash lookups per dispatch, the per-event publish, the clock read per pass and the pass's
+   own fixed cost was worth. Where the margin is narrowest NOW is the cross-core ring at two
+   cores (1.9–2.5× CAF, at or under the raw-thread floor) — a hop that is a cache-line
+   handoff, which nobody batches. Every qb-side finding — what it costs, where, and what was
+   done about it — is in [docs/TUNING.md §9–§14](docs/TUNING.md).
 7. **The 3.2.0 candidate is measured for all EIGHT shapes, on both hosts, in one session each,
    and it is the fastest framework in every one of the 64 cells — twice.** The grid was taken
    at the programme's midpoint and again at its end. **Midpoint, 2026-09-07:** qb `develop` at
@@ -239,37 +259,56 @@ Seven things in those tables are worth more than the ranking:
    (QB-196) — the same protocol, the same adapters, candidate / shipped 3.1.0 / candidate back
    to back (Windows 15:39:09–15:42:12 UTC, WSL2 14:19:38–14:27:51 UTC, the other side idle each
    time; `grid-77b358d8/`, `grid-shipped-3.1.0-final/`, `grid-77b358d8-pass2/`; §13.4). The
-   `qb` items above are the published shipped runs; the same-session controls agree with them
-   within the spread, except where a collapsed cell has no stable figure — which was the point.
+   `qb` items above WERE the published shipped runs until 2026-09-13; the same-session controls
+   agreed with them within the spread, except where a collapsed cell has no stable figure —
+   which was the point. **Re-measured in full on 2026-09-13**, at **`f2779605`** — the release
+   candidate as it will ship: `77b358d8` plus documentation commits and QB-211's CMake, the hot
+   path byte-identical (`git diff 77b358d8..f2779605 -- src/` touches comments only) — and this
+   time the WHOLE field in the candidate's session: candidate / shipped 3.1.0 / then every
+   framework, 132 cells per host, 9 + 2, then a 12-launch interleaved census on the four
+   two-core cells that decide a ranking (Windows 03:19–03:32, WSL2 03:33–04:02 UTC+2, the
+   other side idle each time; `grid-f2779605/`, `grid-shipped-3.1.0-20260913/`,
+   `census-f2779605-field/`; §13.5). The tables above are that session, and they say: qb is
+   the fastest framework in **all 64 cells**, **no cell is slower than 3.1.0** (the smallest
+   gain −26 %, on Windows `big` 2c-park; the largest −99.4 %), the candidate agrees with the
+   2026-09-09 grid within the launch spread on every cell (the hot path did not move), and
+   the census puts qb at the raw-thread floor on the Windows ping-pong (187 against 181 ns,
+   overlapping) and **under** it everywhere else it was asked (thread-ring 105 against 112 on
+   Windows; ping-pong 156 against 183 and thread-ring 75 against 103 on WSL2). Where qb still
+   loses is only against the floor of the one-core cells whose floor is a bare function call —
+   `fib` (an actor created and destroyed per unit: 124 / 179 ns against 28 / 58) and
+   `bank-transaction` (an `ask` round trip per transfer: 144 / 230 ns against 22 / 74) — and,
+   between the two compilers, MSVC against g++ on the same source: +36 % on the one-core
+   ping-pong, +44 % on fib, +60 % on bank ([docs/TUNING.md §13.5](docs/TUNING.md)).
 
 <!-- the two grids below are the 3.2.0 candidate at its FINAL commit; check-report verifies them against their own directory -->
-The candidate on Windows (`results/desktop-b67osn6-win-msvc/qb-branch-develop/grid-77b358d8/`; per unit — round trip, message, hop, message, round trip, actor, meeting, transfer):
+The candidate on Windows (`results/desktop-b67osn6-win-msvc/qb-branch-develop/grid-f2779605/`; per unit — round trip, message, hop, message, round trip, actor, meeting, transfer):
 
-<!-- check-report: results/desktop-b67osn6-win-msvc/qb-branch-develop/grid-77b358d8 framework=qb -->
+<!-- check-report: results/desktop-b67osn6-win-msvc/qb-branch-develop/grid-f2779605 framework=qb -->
 | benchmark | 1 core, spin | 1 core, park | 2 cores, spin | 2 cores, park |
 |---|---|---|---|---|
-| ping-pong | 30 ns | 30 ns | 191 ns | 193 ns |
-| counting | 8 ns | 11 ns | 13 ns | 13 ns |
-| thread-ring | 18 ns | 18 ns | 100 ns | 104 ns |
-| fork-join | 9 ns | 8 ns | 11 ns | 12 ns |
-| big | 17 ns | 17 ns | 24 ns | 24 ns |
-| fib | 176 ns | 180 ns | 108 ns | 110 ns |
-| chameneos | 30 ns | 30 ns | 74 ns | 70 ns |
-| bank-transaction | 231 ns | 234 ns | 143 ns | 139 ns |
+| ping-pong | 31 ns | 31 ns | 186 ns | 200 ns |
+| counting | 8 ns | 9 ns | 14 ns | 14 ns |
+| thread-ring | 18 ns | 19 ns | 93 ns | 103 ns |
+| fork-join | 9 ns | 13 ns | 13 ns | 10 ns |
+| big | 17 ns | 17 ns | 19 ns | 25 ns |
+| fib | 184 ns | 182 ns | 117 ns | 111 ns |
+| chameneos | 30 ns | 30 ns | 74 ns | 75 ns |
+| bank-transaction | 250 ns | 237 ns | 151 ns | 146 ns |
 
-The candidate on WSL2 (`results/wsl-debian-g++14/qb-branch-develop/grid-77b358d8/`):
+The candidate on WSL2 (`results/wsl-debian-g++14/qb-branch-develop/grid-f2779605/`):
 
-<!-- check-report: results/wsl-debian-g++14/qb-branch-develop/grid-77b358d8 framework=qb -->
+<!-- check-report: results/wsl-debian-g++14/qb-branch-develop/grid-f2779605 framework=qb -->
 | benchmark | 1 core, spin | 1 core, park | 2 cores, spin | 2 cores, park |
 |---|---|---|---|---|
-| ping-pong | 23 ns | 23 ns | 159 ns | 152 ns |
-| counting | 7 ns | 7 ns | 9 ns | 9 ns |
-| thread-ring | 17 ns | 17 ns | 72 ns | 75 ns |
+| ping-pong | 22 ns | 22 ns | 155 ns | 155 ns |
+| counting | 8 ns | 8 ns | 9 ns | 10 ns |
+| thread-ring | 17 ns | 17 ns | 75 ns | 75 ns |
 | fork-join | 8 ns | 7 ns | 8 ns | 8 ns |
 | big | 18 ns | 18 ns | 18 ns | 18 ns |
-| fib | 124 ns | 123 ns | 83 ns | 83 ns |
-| chameneos | 26 ns | 25 ns | 44 ns | 44 ns |
-| bank-transaction | 143 ns | 141 ns | 79 ns | 85 ns |
+| fib | 124 ns | 123 ns | 84 ns | 86 ns |
+| chameneos | 26 ns | 26 ns | 44 ns | 46 ns |
+| bank-transaction | 140 ns | 142 ns | 76 ns | 84 ns |
 
 Against shipped 3.1.0 in the same session, **all 64 cells are faster and none is inside the
 spread**; against the midpoint grid, **every one of the 32 WSL2 cells is faster in both passes**

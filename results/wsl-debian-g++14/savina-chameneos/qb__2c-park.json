@@ -8,8 +8,8 @@
   "expected_messages": 800400,
   "work_unit": "meeting",
   "work_units": 200000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"chameneos": 100, "cores": 2, "meetings": 200000, "wait": 0},
   "pinned": true,
   "cpus": "0,2",
@@ -22,21 +22,21 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-06T18:13:22Z"
+    "utc": "2026-09-13T01:55:08Z"
   },
   "idiom": {
     "source": "the big adapter (reply() recycling, getSource()) + qb/llm/qb.llm.md",
     "note": "one Meet event per request, mutated into the announcement or the exit and reply()ed; the waiting creature gets a fresh push<>; mall alone on VirtualCore 0, creatures on the others"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "placement is fixed before start: the mall alone on VirtualCore 0 and the creatures on the remaining cores (all on core 0 when cores=1), so with cores=2 the mall's mailbox is one cross-core pipe written by 100 actors on the far side and nothing balances it -- the pools place the mall and the creatures wherever stealing puts them"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "placement is fixed before start: the mall alone on VirtualCore 0 and the creatures on the remaining cores (all on core 0 when cores=1), so with cores=2 the mall's mailbox is one cross-core pipe written by 100 actors on the far side and nothing balances it -- the pools place the mall and the creatures wherever stealing puts them"],
   "failures": [],
-  "work_ns": [16722914.0, 17474930.0, 15962292.0, 15959064.0, 16102821.0],
-  "total_ns": [20424008.0, 24570216.0, 22413368.0, 19997897.0, 20142372.0],
-  "outside_window_ns": [3701094.0, 7095286.0, 6451076.0, 4038833.0, 4039551.0],
+  "work_ns": [8645679.0, 8725364.0, 8994240.0, 9058843.0, 8955723.0, 8879798.0, 9189806.0, 8823744.0, 8858114.0],
+  "total_ns": [9069412.0, 9139035.0, 9427843.0, 9485407.0, 9341501.0, 9309851.0, 9595232.0, 9226767.0, 9280820.0],
+  "outside_window_ns": [423733.0, 413671.0, 433603.0, 426564.0, 385778.0, 430053.0, 405426.0, 403023.0, 422706.0],
   "summary": {
-    "work_min": 15959064.0,
-    "work_p50": 16102821.0,
-    "work_p99": 17444849.4,
-    "work_iqr": 760622.0
+    "work_min": 8645679.0,
+    "work_p50": 8879798.0,
+    "work_p99": 9179329.0,
+    "work_iqr": 170496.0
   }
 }

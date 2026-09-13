@@ -22,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-04T16:14:08Z"
+    "utc": "2026-09-13T01:27:50Z"
   },
   "idiom": {
     "source": "the ping-pong + counting adapters (stateful_actor, handshake outside the window)",
@@ -30,13 +30,13 @@
   },
   "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship", "the sixty workers are placed by the work-stealing pool: whichever worker thread is idle steals the next runnable actor, which is the balancing qb's static placement does not do -- see benchmarks/savina/fork-join.md"],
   "failures": [],
-  "work_ns": [129954600.0, 102897700.0, 121228500.0, 96399400.0, 100052300.0, 103622400.0, 95290400.0, 102578600.0, 100912600.0],
-  "total_ns": [130670000.0, 103404200.0, 121939700.0, 96981700.0, 100818700.0, 104380400.0, 95893100.0, 103193000.0, 108208500.0],
-  "outside_window_ns": [715400.0, 506500.0, 711200.0, 582300.0, 766400.0, 758000.0, 602700.0, 614400.0, 7295900.0],
+  "work_ns": [133990700.0, 95663400.0, 95060700.0, 84615100.0, 125546800.0, 133796500.0, 112368800.0, 131781600.0, 93953600.0],
+  "total_ns": [134650400.0, 96189400.0, 95590200.0, 85308400.0, 126408900.0, 134598900.0, 113320500.0, 132532300.0, 94624600.0],
+  "outside_window_ns": [659700.0, 526000.0, 529500.0, 693300.0, 862100.0, 802400.0, 951700.0, 750700.0, 671000.0],
   "summary": {
-    "work_min": 95290400.0,
-    "work_p50": 102578600.0,
-    "work_p99": 129256512.0,
-    "work_iqr": 3570100.0
+    "work_min": 84615100.0,
+    "work_p50": 112368800.0,
+    "work_p99": 133975164.0,
+    "work_iqr": 36720900.0
   }
 }

@@ -8,8 +8,8 @@
   "expected_messages": 1000001,
   "work_unit": "hop",
   "work_units": 1000000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"actors": 100, "cores": 1, "hops": 1000000, "wait": 0},
   "pinned": true,
   "cpus": "0,2",
@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T15:57:22Z"
+    "utc": "2026-09-13T01:55:06Z"
   },
   "idiom": {
     "source": "the ping-pong adapter + caf/type_id.hpp built-in put_atom/ok_atom",
@@ -30,13 +30,13 @@
   },
   "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship", "the ring's actors are placed by the work-stealing pool: a hop stays on the sender's worker (worker::delay) unless the idle worker steals it, so with cores=2 CAF measures mostly same-thread hand-offs where qb measures a cross-core pipe on EVERY hop -- see benchmarks/savina/thread-ring.md"],
   "failures": [],
-  "work_ns": [139424953.0, 138214976.0, 139906701.0, 142137527.0, 139816239.0],
-  "total_ns": [139901034.0, 138845112.0, 140606626.0, 142822393.0, 140440428.0],
-  "outside_window_ns": [476081.0, 630136.0, 699925.0, 684866.0, 624189.0],
+  "work_ns": [138111602.0, 139014477.0, 139703566.0, 137942088.0, 139504125.0, 138836049.0, 139734310.0, 139824520.0, 138327970.0],
+  "total_ns": [138603427.0, 139551952.0, 140318703.0, 138419087.0, 139970377.0, 139414235.0, 140194470.0, 140378990.0, 139107922.0],
+  "outside_window_ns": [491825.0, 537475.0, 615137.0, 476999.0, 466252.0, 578186.0, 460160.0, 554470.0, 779952.0],
   "summary": {
-    "work_min": 138214976.0,
-    "work_p50": 139816239.0,
-    "work_p99": 142048294.0,
-    "work_iqr": 481748.0
+    "work_min": 137942088.0,
+    "work_p50": 139014477.0,
+    "work_p99": 139817303.2,
+    "work_iqr": 1375596.0
   }
 }

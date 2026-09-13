@@ -8,8 +8,8 @@
   "expected_messages": 4800240,
   "work_unit": "round trip",
   "work_units": 2400000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"actors": 120, "cores": 2, "pings": 20000, "wait": 0},
   "pinned": true,
   "cpus": "0,2",
@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T15:56:57Z"
+    "utc": "2026-09-13T01:54:12Z"
   },
   "idiom": {
     "source": "the ping-pong adapter + caf/type_id.hpp built-in ping_atom/pong_atom",
@@ -30,13 +30,13 @@
   },
   "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship", "the 120 actors are placed by the work-stealing pool, so how many pings cross a core is the scheduler's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/big.md"],
   "failures": [],
-  "work_ns": [595237139.0, 601835253.0, 601097718.0, 607439073.0, 595192211.0],
-  "total_ns": [595996696.0, 602635805.0, 601896368.0, 608227527.0, 596064545.0],
-  "outside_window_ns": [759557.0, 800552.0, 798650.0, 788454.0, 872334.0],
+  "work_ns": [589301247.0, 593992725.0, 598798619.0, 598031810.0, 595914666.0, 589767374.0, 593171233.0, 592817528.0, 590989811.0],
+  "total_ns": [590294270.0, 594641071.0, 599402311.0, 598788100.0, 596579041.0, 590570766.0, 593795317.0, 593749410.0, 591661052.0],
+  "outside_window_ns": [993023.0, 648346.0, 603692.0, 756290.0, 664375.0, 803392.0, 624084.0, 931882.0, 671241.0],
   "summary": {
-    "work_min": 595192211.0,
-    "work_p50": 601097718.0,
-    "work_p99": 607214920.2,
-    "work_iqr": 6598114.0
+    "work_min": 589301247.0,
+    "work_p50": 593171233.0,
+    "work_p99": 598737274.3,
+    "work_iqr": 4924855.0
   }
 }

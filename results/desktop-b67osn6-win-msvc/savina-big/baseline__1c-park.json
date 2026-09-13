@@ -22,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-04T16:09:56Z"
+    "utc": "2026-09-13T01:23:07Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Actors are slots of a vector and there is no per-actor mailbox: a worker's inbound ring is shared by every actor it owns, so the 120-producer mailbox contention the frameworks pay for is engineered out here by static placement", "actor a lives on thread a % cores, so with cores=2 roughly half the pings and half the pongs cross a core", "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 120 actors in flight is rare"],
   "failures": [],
-  "work_ns": [46392000.0, 46650800.0, 46876200.0, 47844000.0, 46869300.0, 46662400.0, 46323900.0, 46820800.0, 46481000.0],
-  "total_ns": [46729600.0, 46997500.0, 47220300.0, 48183900.0, 47204100.0, 46992800.0, 46645500.0, 47150400.0, 46819100.0],
-  "outside_window_ns": [337600.0, 346700.0, 344100.0, 339900.0, 334800.0, 330400.0, 321600.0, 329600.0, 338100.0],
+  "work_ns": [46940300.0, 45943900.0, 46358600.0, 45804300.0, 46386000.0, 47360400.0, 50475700.0, 49966600.0, 53001000.0],
+  "total_ns": [47283700.0, 46266100.0, 46680000.0, 46156600.0, 46739400.0, 47697000.0, 50818800.0, 50343400.0, 53397000.0],
+  "outside_window_ns": [343400.0, 322200.0, 321400.0, 352300.0, 353400.0, 336600.0, 343100.0, 376800.0, 396000.0],
   "summary": {
-    "work_min": 46323900.0,
-    "work_p50": 46662400.0,
-    "work_p99": 47766576.0,
-    "work_iqr": 388300.0
+    "work_min": 45804300.0,
+    "work_p50": 46940300.0,
+    "work_p99": 52798976.0,
+    "work_iqr": 3608000.0
   }
 }

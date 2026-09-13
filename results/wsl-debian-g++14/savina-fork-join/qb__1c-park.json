@@ -8,8 +8,8 @@
   "expected_messages": 600060,
   "work_unit": "message",
   "work_units": 600000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"actors": 60, "cores": 1, "messages": 10000, "wait": 0, "work": 0},
   "pinned": true,
   "cpus": "0,2",
@@ -22,21 +22,21 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T16:00:34Z"
+    "utc": "2026-09-13T01:55:09Z"
   },
   "idiom": {
     "source": "qb/llm/qb.llm.md (push = ordered) + the counting adapter",
     "note": "push<> job stream into per-core pipes; master on VirtualCore 0, worker w on core w % cores"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "worker w lives on VirtualCore w % cores, fixed before start: qb does not balance load, so with cores=2 the master's own core runs half the workers AND the master's dispatch loop while the other core runs the other half -- see benchmarks/savina/fork-join.md"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "worker w lives on VirtualCore w % cores, fixed before start: qb does not balance load, so with cores=2 the master's own core runs half the workers AND the master's dispatch loop while the other core runs the other half -- see benchmarks/savina/fork-join.md"],
   "failures": [],
-  "work_ns": [42719806.0, 43263793.0, 38329386.0, 36088901.0, 42152412.0],
-  "total_ns": [45563800.0, 45983189.0, 40861130.0, 38482921.0, 44465069.0],
-  "outside_window_ns": [2843994.0, 2719396.0, 2531744.0, 2394020.0, 2312657.0],
+  "work_ns": [4307735.0, 4213581.0, 4543540.0, 4304682.0, 4333964.0, 4231455.0, 4246948.0, 4319375.0, 4336346.0],
+  "total_ns": [4783835.0, 4659268.0, 5008843.0, 4769622.0, 4918236.0, 4677928.0, 4692337.0, 4763912.0, 4867240.0],
+  "outside_window_ns": [476100.0, 445687.0, 465303.0, 464940.0, 584272.0, 446473.0, 445389.0, 444537.0, 530894.0],
   "summary": {
-    "work_min": 36088901.0,
-    "work_p50": 42152412.0,
-    "work_p99": 43242033.5,
-    "work_iqr": 4390420.0
+    "work_min": 4213581.0,
+    "work_p50": 4307735.0,
+    "work_p99": 4526964.5,
+    "work_iqr": 87016.0
   }
 }

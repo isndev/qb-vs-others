@@ -22,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-07T02:24:33Z"
+    "utc": "2026-09-13T01:28:27Z"
   },
   "idiom": {
     "source": "qb/src/qb/core/patterns/request.h (qb::ask) + qb/tests/core/benchmark/messaging/ask-roundtrip.cpp",
@@ -30,13 +30,13 @@
   },
   "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "qb::ask is a coroutine: each transfer that starts while the account is idle allocates a coroutine frame and registers a pending-ask slot on the core, and each reply is routed by correlation id and resumed through the scheduler -- that is the primitive under test, and it is the only shape in this suite where qb allocates per work unit", "placement is fixed before start: the teller on VirtualCore 0 and account a on core (1 + a) % cores, so with cores=2 about half the deposits and half the transfers and acknowledgements cross a core and nothing rebalances it -- the pools place freely"],
   "failures": [],
-  "work_ns": [25235400.0, 25343100.0, 25644000.0, 25691000.0, 25768000.0, 25272400.0, 25555900.0, 25454100.0, 25430300.0],
-  "total_ns": [97966000.0, 68938200.0, 100245200.0, 49622100.0, 57302000.0, 98023000.0, 98912900.0, 132005700.0, 59376000.0],
-  "outside_window_ns": [72730600.0, 43595100.0, 74601200.0, 23931100.0, 31534000.0, 72750600.0, 73357000.0, 106551600.0, 33945700.0],
+  "work_ns": [11374900.0, 11317900.0, 11439100.0, 11381800.0, 11446700.0, 11448000.0, 11218500.0, 11566900.0, 11134100.0],
+  "total_ns": [13357900.0, 13389800.0, 13553700.0, 13414500.0, 13670400.0, 13497500.0, 13524100.0, 13596600.0, 13344200.0],
+  "outside_window_ns": [1983000.0, 2071900.0, 2114600.0, 2032700.0, 2223700.0, 2049500.0, 2305600.0, 2029700.0, 2210100.0],
   "summary": {
-    "work_min": 25235400.0,
-    "work_p50": 25454100.0,
-    "work_p99": 25761840.0,
-    "work_iqr": 300900.0
+    "work_min": 11134100.0,
+    "work_p50": 11381800.0,
+    "work_p99": 11557388.0,
+    "work_iqr": 128800.0
   }
 }

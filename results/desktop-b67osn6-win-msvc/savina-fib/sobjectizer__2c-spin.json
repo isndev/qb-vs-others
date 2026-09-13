@@ -22,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-06T18:14:46Z"
+    "utc": "2026-09-13T01:29:31Z"
   },
   "idiom": {
     "source": "the big adapter + so_5::introduce_child_coop (environment.hpp) + so_deregister_agent_coop_normally",
@@ -30,13 +30,13 @@
   },
   "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "SObjectizer creates agents only inside a cooperation registered with the environment, so every node here pays one coop registration and one deregistration on top of the agent itself -- that is the framework's own dynamic-agent idiom, not an adapter choice (two siblings cannot share a coop: an agent ends by deregistering its coop, which would take the sibling down with it -- measured as error 185 on the pool)", "children bind to the same thread_pool as their parent and the pool places them, so with cores=2 the tree is balanced by the dispatcher; qb's cell keeps each sub-tree on its seed's core because qb has no cross-core spawn -- see benchmarks/savina/fib.md"],
   "failures": [],
-  "work_ns": [196165800.0, 172519000.0, 175770700.0, 172945400.0, 166058000.0, 197370700.0, 170341700.0, 177716700.0, 176438900.0],
-  "total_ns": [218184200.0, 221833700.0, 215273200.0, 212234900.0, 213317800.0, 222902000.0, 221199100.0, 217706800.0, 216064900.0],
-  "outside_window_ns": [22018400.0, 49314700.0, 39502500.0, 39289500.0, 47259800.0, 25531300.0, 50857400.0, 39990100.0, 39626000.0],
+  "work_ns": [147014300.0, 140470800.0, 144744400.0, 149962300.0, 147555800.0, 142540000.0, 146667500.0, 142121700.0, 141599400.0],
+  "total_ns": [187227700.0, 189955900.0, 173982500.0, 185992700.0, 187624600.0, 189673200.0, 183818700.0, 188789900.0, 188637600.0],
+  "outside_window_ns": [40213400.0, 49485100.0, 29238100.0, 36030400.0, 40068800.0, 47133200.0, 37151200.0, 46668200.0, 47038200.0],
   "summary": {
-    "work_min": 166058000.0,
-    "work_p50": 175770700.0,
-    "work_p99": 197274308.0,
-    "work_iqr": 5197700.0
+    "work_min": 140470800.0,
+    "work_p50": 144744400.0,
+    "work_p99": 149769780.0,
+    "work_iqr": 4892600.0
   }
 }

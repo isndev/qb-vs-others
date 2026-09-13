@@ -22,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-07T02:24:29Z"
+    "utc": "2026-09-13T01:28:42Z"
   },
   "idiom": {
     "source": "the chameneos adapter + dev/so_5/disp/thread_pool/pub.hpp",
@@ -30,13 +30,13 @@
   },
   "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "SObjectizer 5.8 has no asynchronous request/reply with a continuation (request_value was removed in 5.6, so_5::extra::async_op is a separate library), so the deposit is two plain messages and the caller's continuation is hand-written state -- this cell measures the dispatch alone and pays no request frame, unlike qb::ask and CAF's request().then()", "the teller and the 1000 accounts are placed by the thread_pool; qb's cell pins the teller on core 0 and account a on core (1 + a) % cores -- see benchmarks/savina/bank-transaction.md"],
   "failures": [],
-  "work_ns": [30680900.0, 31662000.0, 31509800.0, 31182200.0, 31093500.0, 31598400.0, 31532800.0, 33200400.0, 31180300.0],
-  "total_ns": [41091300.0, 39307400.0, 37725800.0, 36877000.0, 42017400.0, 37513600.0, 45119500.0, 41905400.0, 40271400.0],
-  "outside_window_ns": [10410400.0, 7645400.0, 6216000.0, 5694800.0, 10923900.0, 5915200.0, 13586700.0, 8705000.0, 9091100.0],
+  "work_ns": [30382000.0, 30128200.0, 30412300.0, 31012900.0, 28839600.0, 28998500.0, 28686000.0, 28826100.0, 28911100.0],
+  "total_ns": [34319800.0, 34108600.0, 34559500.0, 34808300.0, 32906800.0, 32987100.0, 32510000.0, 32686200.0, 32677800.0],
+  "outside_window_ns": [3937800.0, 3980400.0, 4147200.0, 3795400.0, 4067200.0, 3988600.0, 3824000.0, 3860100.0, 3766700.0],
   "summary": {
-    "work_min": 30680900.0,
-    "work_p50": 31509800.0,
-    "work_p99": 33077328.0,
-    "work_iqr": 418100.0
+    "work_min": 28686000.0,
+    "work_p50": 28998500.0,
+    "work_p99": 30964852.0,
+    "work_iqr": 1542400.0
   }
 }

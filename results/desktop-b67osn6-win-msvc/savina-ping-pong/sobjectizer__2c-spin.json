@@ -22,7 +22,7 @@
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-09-04T16:15:43Z"
+    "utc": "2026-09-13T01:29:54Z"
   },
   "idiom": {
     "source": "SObjectizer 5.8.5.1 dev/sample/so_5/ping_pong{,_minimal}/main.cpp",
@@ -30,13 +30,13 @@
   },
   "caveats": ["cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating", "wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose"],
   "failures": [],
-  "work_ns": [843682200.0, 975593500.0, 1010553000.0, 932300000.0, 1068192500.0, 887574800.0, 840273000.0, 832761400.0, 922450400.0],
-  "total_ns": [844051900.0, 976026000.0, 1010971600.0, 934600500.0, 1068500900.0, 888000100.0, 840711000.0, 837808400.0, 922875300.0],
-  "outside_window_ns": [369700.0, 432500.0, 418600.0, 2300500.0, 308400.0, 425300.0, 438000.0, 5047000.0, 424900.0],
+  "work_ns": [871810500.0, 893790600.0, 808612800.0, 901486600.0, 846040600.0, 905222400.0, 873788200.0, 912134700.0, 904104200.0],
+  "total_ns": [872354200.0, 894591800.0, 809392200.0, 902031900.0, 846665000.0, 905900500.0, 874599100.0, 912758500.0, 904839500.0],
+  "outside_window_ns": [543700.0, 801200.0, 779400.0, 545300.0, 624400.0, 678100.0, 810900.0, 623800.0, 735300.0],
   "summary": {
-    "work_min": 832761400.0,
-    "work_p50": 922450400.0,
-    "work_p99": 1063581340.0,
-    "work_iqr": 131911300.0
+    "work_min": 808612800.0,
+    "work_p50": 893790600.0,
+    "work_p99": 911581716.0,
+    "work_iqr": 32293700.0
   }
 }

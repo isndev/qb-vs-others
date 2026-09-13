@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/thread-ring",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 11452496497421877006,
+  "expected_messages": 1000001,
+  "work_unit": "hop",
+  "work_units": 1000000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 100, "cores": 2, "hops": 1000000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-13T01:39:36Z"
+  },
+  "idiom": {
+    "source": "qb/src/qb/core/Actor.h forward() + the ping-pong adapter",
+    "note": "one Token event forward()ed around the ring in place; actor i on VirtualCore i % cores, so every hop crosses a core at cores=2"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "actor i lives on VirtualCore i % cores: with cores=2 EVERY hop is a cross-core hand-off. CAF and SObjectizer receive the same 2-thread budget but their schedulers decide where each hop runs, so the same cell measures qb's cross-core pipe against their intra-thread hand-off -- see benchmarks/savina/thread-ring.md"],
+  "failures": [],
+  "work_ns": [146711196.0, 152125829.0, 152814325.0, 143615899.0, 151048458.0, 153662742.0, 142905189.0, 138604003.0, 163758393.0],
+  "total_ns": [152115574.0, 157395168.0, 156689230.0, 150886923.0, 155400766.0, 158588383.0, 149219475.0, 143748476.0, 169187318.0],
+  "outside_window_ns": [5404378.0, 5269339.0, 3874905.0, 7271024.0, 4352308.0, 4925641.0, 6314286.0, 5144473.0, 5428925.0],
+  "summary": {
+    "work_min": 138604003.0,
+    "work_p50": 151048458.0,
+    "work_p99": 162950740.9,
+    "work_iqr": 9198426.0
+  }
+}

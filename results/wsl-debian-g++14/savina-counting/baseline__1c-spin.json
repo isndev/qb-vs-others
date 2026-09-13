@@ -8,8 +8,8 @@
   "expected_messages": 1000002,
   "work_unit": "message",
   "work_units": 1000000,
-  "repetitions": 5,
-  "warmup": 1,
+  "repetitions": 9,
+  "warmup": 2,
   "params": {"cores": 1, "messages": 1000000, "wait": 1},
   "pinned": true,
   "cpus": "0,2",
@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-04T15:50:21Z"
+    "utc": "2026-09-13T01:42:07Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. It has no supervision, no addressing, no dynamic actor lifetime, no mailbox fairness and no backpressure beyond a full ring. It bounds how much of each framework's cost is inherent to streaming a million messages through one queue", "cores=1 is one thread pushing into a 65536-slot ring and draining it inline whenever it is full -- the floor for single-threaded dispatch, still a real queue", "the threads are pinned one per CPU from the harness's set, exactly as every framework's workers are", "wait=1 busy-polls the rings; wait=0 parks the consumer on a condition variable and the producer notifies it after a push only while it announces itself asleep"],
   "failures": [],
-  "work_ns": [2804225.0, 2777386.0, 2784848.0, 2834818.0, 2769948.0],
-  "total_ns": [3179518.0, 2829038.0, 2834750.0, 2884245.0, 2819173.0],
-  "outside_window_ns": [375293.0, 51652.0, 49902.0, 49427.0, 49225.0],
+  "work_ns": [2830968.0, 2882973.0, 2768224.0, 2895244.0, 2827901.0, 2813959.0, 2781574.0, 2805458.0, 2780008.0],
+  "total_ns": [2881576.0, 2936718.0, 2819226.0, 2945480.0, 2879080.0, 2863976.0, 2831504.0, 2855555.0, 2829912.0],
+  "outside_window_ns": [50608.0, 53745.0, 51002.0, 50236.0, 51179.0, 50017.0, 49930.0, 50097.0, 49904.0],
   "summary": {
-    "work_min": 2769948.0,
-    "work_p50": 2784848.0,
-    "work_p99": 2833594.3,
-    "work_iqr": 26839.0
+    "work_min": 2768224.0,
+    "work_p50": 2813959.0,
+    "work_p99": 2894262.3,
+    "work_iqr": 49394.0
   }
 }
