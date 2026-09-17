@@ -96,8 +96,8 @@ runtime `type_index` lookup in the mbox's subscriber table (`so_5/impl/local_mbo
 **qb.** `co_await qb::ask(ctx, target, req, timeout)` (`core/patterns/request.h:100`) with
 `qb::answer` on the responder (`:194`), `qb::Request<Resp>` (`:71`) and `qb::deadline` (`:115`);
 `Actor::reply` (`core/Actor.h:1089`), `Actor::forward` (`:1112`). Beyond one ask: `ask_all` /
-`ask_any` (`core/patterns/scatter.h:59`, `:140`), `ask_retry` (`core/patterns/resilience.h:427`),
-`ask_stream` (`core/patterns/streaming.h:324`), request de-duplication (`core/patterns/idempotency.h:65`),
+`ask_any` (`core/patterns/scatter.h:59`, `:143`), `ask_retry` (`core/patterns/resilience.h:427`),
+`ask_stream` (`core/patterns/streaming.h:325`), request de-duplication (`core/patterns/idempotency.h:65`),
 circuit breaker / rate limiter / bulkhead (`core/patterns/resilience.h:120`, `:239`, `:331`),
 saga (`core/patterns/saga.h:44`). Every one of these needs the coroutine context.
 
