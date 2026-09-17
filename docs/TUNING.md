@@ -1604,6 +1604,59 @@ allocation (fib, both hosts), the ask frame and its second dispatch (bank, both 
 the MSVC codegen gap on the dispatch (every one-core cell, Windows only). None of the three
 is a regression, none is a loss to a competitor, and none belongs to the 3.2.0 train.
 
+### 13.6 The actor object's allocation (QB-212, point 1): the arena, measured
+
+The first of the three axes §13.5 left. On the branch `perf/actor-arena` (qb `385bdb37`; not
+merged when this was written) the actor object stops coming from the process heap: `qb::Actor`
+declares class-level `operator new` / `operator delete` over `qb::allocator::thread_arena`, a
+thread-private allocator of 16-byte size classes up to 1 KiB with LIFO reuse per class — the
+block a dying actor gives back is the one the next spawn takes, still in cache — bump-filled from
+a 64 KiB first chunk and then from the same 2 MB `slab_cache` slabs the pipes use, with
+constant-initialised thread-local state (no TLS init guard on the path, the QB-178 lesson) and a
+teardown at thread exit that returns the slabs only when nothing is live. An actor is created
+and destroyed on one thread by construction, so the arena has no lock, no atomic and no
+cross-thread free path; a type above 1 KiB or over-aligned falls through to the global
+allocator, and a class that declares its own operators keeps them. The measurement behind it is
+§11's: with the registries and the pipes silent, the actor object's own `malloc` / `free` was the
+last heap traffic of a `fib` lifetime, one `malloc` per actor, 27.8 % of the core on WSL2.
+
+Measured against `develop` `f2779605` in one quiet session per host, the control never rebuilt,
+candidate / control / candidate grids (8 shapes × 4 configs, 9 + 2) then 12 interleaved launches
+of 3 + 1 on the four fib cells (`results/<host>/qb-branch-perf-actor-arena/`):
+
+| fib cell | Windows/MSVC: `f2779605` → branch | WSL2 g++-14: `f2779605` → branch |
+|---|---:|---:|
+| 1c-spin (ns per actor lifetime) | **185.3 → 127.2 (−31 %)** | **129.2 → 99.1 (−23 %)** |
+| 1c-park | **189.5 → 128.0 (−32 %)** | **128.8 → 100.7 (−22 %)** |
+| 2c-spin | **117.2 → 85.3 (−27 %)** | **86.3 → 57.9 (−33 %)** |
+| 2c-park | **115.9 → 86.0 (−26 %)** | **89.2 → 58.3 (−35 %)** |
+
+Every fib distribution is separate; the 28 other cells of each grid sit inside ±5 % and change
+sign between the two candidate passes wherever they reach it, and the anchors' censuses overlap
+(bank-transaction 1c-spin 232.9 vs 233.9 and 145.6 vs 141.5, ping-pong 1c-spin 30.6 vs 29.3 and
+22.9 vs 23.0, counting 12.1 vs 10.4 and 7.6 vs 7.7). The one-core gain is larger on Windows
+because the pair it removes was dearer there (the Windows heap against glibc's fast path: 179
+against 124 ns of lifetime in §13.5); the two-core cells, where the lifetime is split across two
+heaps, gain the same third on both hosts. Against the raw-thread floor of §13.5 the fib ratio
+moves from 4.4× / 3.1× to 3.5× / 2.2× (WSL2 / Windows) at one core.
+
+The `dev/bench` gate of the same WSL2 session is worth its own paragraph, because it said FAIL
+and was wrong about the branch. Against the 2026-09-07 baseline: 107 metrics within threshold,
+24 beyond their improvement threshold (the train's work since the baseline), 5 regressed — all
+five on two binaries that construct no actor, and a control comparison built at `f2779605` in
+the same window still read the parser's fragmented case +5.8 %, a raw two-thread reference
+ping-pong +4.0 % and a coroutine channel +3.5 %, tight across three alternated passes. `cmp`
+then showed the parser and the channel binaries to be **identical bytes** between control and
+candidate: the same program, 5.8 % apart, because the two trees' executables have paths of
+different lengths and the executable path is part of the initial stack and environment layout
+every hot loop's alignment inherits (Mytkowicz et al., ASPLOS 2009). Copied into one directory
+under same-length names, pinned and alternated: parser 405.1 vs 404.9 ns, channel 55.67 vs
+55.74 µs, the reference ping-pong 200.9 vs 203.4 ms (+1.2 %, overlap over seven processes), the
+qb mono ping-pong 59.0 vs 56.7 ms (−4.0 %, separate). The lesson is the protocol's: two trees
+compared through `bench-run.sh` must run their binaries from one path, and a baseline older than
+the tree's last hot-path commit is a drift meter, not a control. The next two axes are
+unchanged: the ask frame and its second dispatch (bank), then the MSVC codegen gap.
+
 ## 14. The loop clock — what one line cost, and what an idle spin pass needs
 
 §13.3 named the per-pass cost of a core with ONE event in flight as the first residual and `perf`

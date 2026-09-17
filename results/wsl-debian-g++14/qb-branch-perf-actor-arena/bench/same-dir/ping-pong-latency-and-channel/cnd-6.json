@@ -1,0 +1,107 @@
+{
+  "context": {
+    "date": "2026-09-17T04:53:08+02:00",
+    "host_name": "DESKTOP-B67OSN6",
+    "executable": "/home/mbelhadi/prof/arena/same3/x-cnd",
+    "num_cpus": 24,
+    "mhz_per_cpu": 3187,
+    "cpu_scaling_enabled": false,
+    "aslr_enabled": false,
+    "caches": [
+      {
+        "type": "Data",
+        "level": 1,
+        "size": 49152,
+        "num_sharing": 2
+      },
+      {
+        "type": "Instruction",
+        "level": 1,
+        "size": 32768,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 2,
+        "size": 1310720,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 3,
+        "size": 31457280,
+        "num_sharing": 24
+      }
+    ],
+    "load_avg": [1.21289,1.09033,0.530273],
+    "library_version": "v1.9.5",
+    "library_build_type": "release",
+    "json_schema_version": 1
+  },
+  "benchmarks": [
+    {
+      "name": "BM_Channel_SendRecv/messages:2048/real_time_mean",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Channel_SendRecv/messages:2048/real_time",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "mean",
+      "aggregate_unit": "time",
+      "iterations": 5,
+      "real_time": 5.5635962942203626e+01,
+      "cpu_time": 5.5652815922854870e+01,
+      "time_unit": "us",
+      "items_per_second": 3.6811198850552224e+07
+    },
+    {
+      "name": "BM_Channel_SendRecv/messages:2048/real_time_median",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Channel_SendRecv/messages:2048/real_time",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "median",
+      "aggregate_unit": "time",
+      "iterations": 5,
+      "real_time": 5.5724241791434054e+01,
+      "cpu_time": 5.5738811204974397e+01,
+      "time_unit": "us",
+      "items_per_second": 3.6752406747234009e+07
+    },
+    {
+      "name": "BM_Channel_SendRecv/messages:2048/real_time_stddev",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Channel_SendRecv/messages:2048/real_time",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "stddev",
+      "aggregate_unit": "time",
+      "iterations": 5,
+      "real_time": 2.2353658019388917e-01,
+      "cpu_time": 2.2107193009195436e-01,
+      "time_unit": "us",
+      "items_per_second": 1.4815909102949942e+05
+    },
+    {
+      "name": "BM_Channel_SendRecv/messages:2048/real_time_cv",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Channel_SendRecv/messages:2048/real_time",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "cv",
+      "aggregate_unit": "percentage",
+      "iterations": 5,
+      "real_time": 4.0178432864747199e-03,
+      "cpu_time": 3.9723404184686915e-03,
+      "time_unit": "us",
+      "items_per_second": 4.0248374314295612e-03
+    }
+  ]
+}

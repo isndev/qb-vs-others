@@ -1,0 +1,111 @@
+{
+  "context": {
+    "date": "2026-09-17T04:48:11+02:00",
+    "host_name": "DESKTOP-B67OSN6",
+    "executable": "/home/mbelhadi/prof/arena/same/x-ctl",
+    "num_cpus": 24,
+    "mhz_per_cpu": 3187,
+    "cpu_scaling_enabled": false,
+    "aslr_enabled": false,
+    "caches": [
+      {
+        "type": "Data",
+        "level": 1,
+        "size": 49152,
+        "num_sharing": 2
+      },
+      {
+        "type": "Instruction",
+        "level": 1,
+        "size": 32768,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 2,
+        "size": 1310720,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 3,
+        "size": 31457280,
+        "num_sharing": 24
+      }
+    ],
+    "load_avg": [3.07031,0.654297,0.210449],
+    "library_version": "v1.9.5",
+    "library_build_type": "release",
+    "json_schema_version": 1
+  },
+  "benchmarks": [
+    {
+      "name": "BM_Http1Parse_Fragmented/corpus:0_mean",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Http1Parse_Fragmented/corpus:0",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "mean",
+      "aggregate_unit": "time",
+      "iterations": 5,
+      "real_time": 4.0845070052880629e+02,
+      "cpu_time": 3.9980590596890170e+02,
+      "time_unit": "ns",
+      "bytes_per_second": 1.1007216442699097e+08,
+      "items_per_second": 2.5016401006134311e+06
+    },
+    {
+      "name": "BM_Http1Parse_Fragmented/corpus:0_median",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Http1Parse_Fragmented/corpus:0",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "median",
+      "aggregate_unit": "time",
+      "iterations": 5,
+      "real_time": 4.0620176967974339e+02,
+      "cpu_time": 3.9782631299411361e+02,
+      "time_unit": "ns",
+      "bytes_per_second": 1.1060103005466871e+08,
+      "items_per_second": 2.5136597739697434e+06
+    },
+    {
+      "name": "BM_Http1Parse_Fragmented/corpus:0_stddev",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Http1Parse_Fragmented/corpus:0",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "stddev",
+      "aggregate_unit": "time",
+      "iterations": 5,
+      "real_time": 6.2799688820076121e+00,
+      "cpu_time": 5.8901959260896151e+00,
+      "time_unit": "ns",
+      "bytes_per_second": 1.5919490720214639e+06,
+      "items_per_second": 3.6180660727756498e+04
+    },
+    {
+      "name": "BM_Http1Parse_Fragmented/corpus:0_cv",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Http1Parse_Fragmented/corpus:0",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "cv",
+      "aggregate_unit": "percentage",
+      "iterations": 5,
+      "real_time": 1.5375096367510608e-02,
+      "cpu_time": 1.4732638608264520e-02,
+      "time_unit": "ns",
+      "bytes_per_second": 1.4462776127904500e-02,
+      "items_per_second": 1.4462776127902883e-02
+    }
+  ]
+}

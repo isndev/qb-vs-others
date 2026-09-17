@@ -1,0 +1,23 @@
+=== SYNC start 02:06:29
+  seg qb=385bdb37 root=c798a75f 0 dirty
+=== QB-STANDALONE release start 02:06:30
+  build rc=0 TUs=212 warnings=0 02:08:03
+  ctest rc=0 registered=202 executed=202 skipped=0 failed=0 02:08:26
+    148/202 Test #173: qb-core-test-system-actor-arena ..........................   Passed    0.02 sec
+    178/202 Test #202: qb-core-test-unit-thread-arena ...........................   Passed    0.00 sec
+=== QB-STANDALONE sanitize start 02:08:26
+  build rc=0 TUs=212 warnings=0 02:10:40
+  ctest rc=0 registered=202 executed=202 skipped=0 failed=0 02:11:01
+    176/202 Test #173: qb-core-test-system-actor-arena ..........................   Passed    0.36 sec
+    191/202 Test #202: qb-core-test-unit-thread-arena ...........................   Passed    0.02 sec
+=== QB-STANDALONE sanitize-thread start 02:11:01
+  build rc=0 TUs=212 warnings=0 02:12:37
+  ctest rc=0 registered=202 executed=202 skipped=0 failed=0 02:13:00
+    170/202 Test #173: qb-core-test-system-actor-arena ..........................   Passed    0.82 sec
+    191/202 Test #202: qb-core-test-unit-thread-arena ...........................   Passed    0.02 sec
+=== QB-STANDALONE coverage start 02:13:00
+  build rc=0 TUs=212 warnings=0 02:14:40
+  ctest rc=0 registered=202 executed=202 skipped=0 failed=0 02:15:02
+    178/202 Test #173: qb-core-test-system-actor-arena ..........................   Passed    0.65 sec
+    190/202 Test #202: qb-core-test-unit-thread-arena ...........................   Passed    0.01 sec
+WSL-ARENA-ALL-DONE 02:15:02

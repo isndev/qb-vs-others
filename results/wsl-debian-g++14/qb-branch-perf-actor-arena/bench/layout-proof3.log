@@ -1,0 +1,15 @@
+=== qb-core-bench-ping-pong-latency (bytes differ: links the changed qb-core)
+  BM_Reference_Multi_PingPong_Latency/real_time        ctl: median-of-7 200.92 ms  min 188.43 max 207.02  [196.5 200.9 191.0 188.4 201.9 200.9 207.0]
+  BM_Reference_Multi_PingPong_Latency/real_time        cnd: median-of-7 203.38 ms  min 200.37 max 211.87  [211.9 200.4 203.7 203.4 201.6 200.8 211.4]
+  -> cand vs ctl +1.2 % (OVERLAP)
+  BM_Multi_PingPong_Latency/real_time                  ctl: median-of-7 190.48 ms  min 184.92 max 192.09  [187.0 184.9 191.5 189.9 190.5 192.1 190.8]
+  BM_Multi_PingPong_Latency/real_time                  cnd: median-of-7 189.15 ms  min 184.63 max 191.91  [187.7 184.6 189.0 190.7 191.9 189.2 190.9]
+  -> cand vs ctl -0.7 % (OVERLAP)
+  BM_Mono_PingPong_Latency/real_time                   ctl: median-of-7 59.03 ms  min 58.66 max 59.42  [59.2 58.7 58.8 59.0 59.0 59.4 59.3]
+  BM_Mono_PingPong_Latency/real_time                   cnd: median-of-7 56.66 ms  min 56.58 max 56.95  [56.9 56.7 56.8 56.6 56.6 56.6 56.8]
+  -> cand vs ctl -4.0 % (separate)
+=== qb-io-bench-coroutine-pipeline (identical bytes)
+  BM_Channel_SendRecv/messages:2048/real_time          ctl: median-of-7 55.67 us  min 55.53 max 55.96  [55.6 55.5 55.6 55.8 55.8 55.7 56.0]
+  BM_Channel_SendRecv/messages:2048/real_time          cnd: median-of-7 55.74 us  min 55.57 max 56.12  [55.7 55.8 55.7 55.6 55.8 55.7 56.1]
+  -> cand vs ctl +0.1 % (OVERLAP)
+LAYOUT-PROOF3-DONE

@@ -1,0 +1,64 @@
+3 ctl passes, 3 cand passes; metric -> ctl median [passes] | cand median [passes] | cand vs ctl (positive = slower)
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::items_per_second
+      ctl 3.394e+06 [3.394e+06 3.395e+06 3.361e+06] | cand 3.402e+06 [3.442e+06 3.402e+06 3.379e+06] | -0.2 %
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::real_time
+      ctl 1.473e+07 [1.473e+07 1.473e+07 1.488e+07] | cand 1.47e+07 [1.453e+07 1.47e+07 1.48e+07] | -0.2 %
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::round_trips_per_s
+      ctl 3.394e+06 [3.394e+06 3.395e+06 3.361e+06] | cand 3.402e+06 [3.442e+06 3.402e+06 3.379e+06] | -0.2 %
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_SameCore/real_time::items_per_second
+      ctl 9.054e+06 [9.072e+06 9.008e+06 9.054e+06] | cand 9.131e+06 [9.071e+06 9.152e+06 9.131e+06] | -0.9 %
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_SameCore/real_time::real_time
+      ctl 5.522e+06 [5.511e+06 5.55e+06 5.522e+06] | cand 5.476e+06 [5.512e+06 5.463e+06 5.476e+06] | -0.8 %
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_SameCore/real_time::round_trips_per_s
+      ctl 9.054e+06 [9.072e+06 9.008e+06 9.054e+06] | cand 9.131e+06 [9.071e+06 9.152e+06 9.131e+06] | -0.9 %
+  qb-core-bench-ping-pong-latency::BM_Mono_PingPong_Latency/real_time::messages_per_s
+      ctl 3.386e+07 [3.388e+07 3.386e+07 3.023e+07] | cand 3.534e+07 [3.509e+07 3.534e+07 3.543e+07] | -4.3 % (faster)
+  qb-core-bench-ping-pong-latency::BM_Mono_PingPong_Latency/real_time::real_time
+      ctl 5.906e+07 [5.903e+07 5.906e+07 6.616e+07] | cand 5.66e+07 [5.7e+07 5.66e+07 5.644e+07] | -4.2 % (faster)
+  qb-core-bench-ping-pong-latency::BM_Mono_PingPong_Latency/real_time::round_trips_per_s
+      ctl 1.693e+07 [1.694e+07 1.693e+07 1.511e+07] | cand 1.767e+07 [1.754e+07 1.767e+07 1.772e+07] | -4.3 % (faster)
+  qb-core-bench-ping-pong-latency::BM_Multi_PingPong_Latency/real_time::messages_per_s
+      ctl 1.067e+07 [1.075e+07 1.065e+07 1.067e+07] | cand 1.054e+07 [1.054e+07 1.054e+07 1.055e+07] | +1.2 %
+  qb-core-bench-ping-pong-latency::BM_Multi_PingPong_Latency/real_time::real_time
+      ctl 1.874e+08 [1.86e+08 1.878e+08 1.874e+08] | cand 1.897e+08 [1.897e+08 1.897e+08 1.895e+08] | +1.2 %
+  qb-core-bench-ping-pong-latency::BM_Multi_PingPong_Latency/real_time::round_trips_per_s
+      ctl 5.336e+06 [5.376e+06 5.324e+06 5.336e+06] | cand 5.272e+06 [5.272e+06 5.271e+06 5.277e+06] | +1.2 %
+  qb-core-bench-ping-pong-latency::BM_Reference_Multi_PingPong_Latency/real_time::messages_per_s
+      ctl 1.03e+07 [1.043e+07 1.023e+07 1.03e+07] | cand 9.909e+06 [1.013e+07 9.909e+06 9.821e+06] | +3.8 % <-- SLOWER beyond 3 %
+  qb-core-bench-ping-pong-latency::BM_Reference_Multi_PingPong_Latency/real_time::real_time
+      ctl 1.941e+08 [1.917e+08 1.955e+08 1.941e+08] | cand 2.018e+08 [1.975e+08 2.018e+08 2.036e+08] | +4.0 % <-- SLOWER beyond 3 %
+  qb-core-bench-ping-pong-latency::BM_Reference_Multi_PingPong_Latency/real_time::round_trips_per_s
+      ctl 5.152e+06 [5.216e+06 5.114e+06 5.152e+06] | cand 4.954e+06 [5.063e+06 4.954e+06 4.911e+06] | +3.8 % <-- SLOWER beyond 3 %
+  qb-io-bench-coroutine-pipeline::BM_Channel_SendRecv/messages:2048/real_time::items_per_second
+      ctl 3.675e+07 [3.675e+07 3.676e+07 3.592e+07] | cand 3.551e+07 [3.647e+07 3.551e+07 3.547e+07] | +3.4 % <-- SLOWER beyond 3 %
+  qb-io-bench-coroutine-pipeline::BM_Channel_SendRecv/messages:2048/real_time::real_time
+      ctl 5.572e+04 [5.572e+04 5.571e+04 5.702e+04] | cand 5.767e+04 [5.615e+04 5.767e+04 5.774e+04] | +3.5 % <-- SLOWER beyond 3 %
+  qb-io-bench-coroutine-pipeline::BM_Channel_TrySendTryRecv/messages:8192::items_per_second
+      ctl 3.955e+08 [3.928e+08 3.965e+08 3.955e+08] | cand 3.964e+08 [3.964e+08 3.97e+08 3.963e+08] | -0.2 %
+  qb-io-bench-coroutine-pipeline::BM_Channel_TrySendTryRecv/messages:8192::real_time
+      ctl 2.071e+04 [2.086e+04 2.066e+04 2.071e+04] | cand 2.067e+04 [2.067e+04 2.063e+04 2.067e+04] | -0.2 %
+  qb-io-bench-coroutine-pipeline::BM_Stream_FilterMapReduce/items:4096/real_time::items_per_second
+      ctl 4.105e+07 [4.09e+07 4.12e+07 4.105e+07] | cand 4.104e+07 [4.104e+07 4.107e+07 4.064e+07] | +0.0 %
+  qb-io-bench-coroutine-pipeline::BM_Stream_FilterMapReduce/items:4096/real_time::real_time
+      ctl 9.979e+04 [1.001e+05 9.943e+04 9.979e+04] | cand 9.98e+04 [9.98e+04 9.972e+04 1.008e+05] | +0.0 %
+  qbm-http-bench-http1-parser::BM_Http1Parse_Fragmented/corpus:0::bytes_per_second
+      ctl 1.108e+08 [1.104e+08 1.108e+08 1.115e+08] | cand 1.046e+08 [1.046e+08 1.051e+08 1.044e+08] | +5.5 % <-- SLOWER beyond 3 %
+  qbm-http-bench-http1-parser::BM_Http1Parse_Fragmented/corpus:0::items_per_second
+      ctl 2.517e+06 [2.509e+06 2.517e+06 2.533e+06] | cand 2.378e+06 [2.378e+06 2.389e+06 2.373e+06] | +5.5 % <-- SLOWER beyond 3 %
+  qbm-http-bench-http1-parser::BM_Http1Parse_Fragmented/corpus:0::real_time
+      ctl 397.3 [398.6 397.3 394.8] | cand 420.5 [420.5 418.6 421.3] | +5.8 % <-- SLOWER beyond 3 %
+  qbm-http-bench-http1-parser::BM_Http1Parse_WholeBuffer/corpus:0::bytes_per_second
+      ctl 1.266e+08 [1.258e+08 1.266e+08 1.272e+08] | cand 1.242e+08 [1.243e+08 1.236e+08 1.242e+08] | +1.9 %
+  qbm-http-bench-http1-parser::BM_Http1Parse_WholeBuffer/corpus:0::items_per_second
+      ctl 2.877e+06 [2.86e+06 2.877e+06 2.89e+06] | cand 2.823e+06 [2.824e+06 2.81e+06 2.823e+06] | +1.9 %
+  qbm-http-bench-http1-parser::BM_Http1Parse_WholeBuffer/corpus:0::real_time
+      ctl 347.6 [349.6 347.6 346] | cand 354.3 [354.1 355.9 354.3] | +1.9 %
+SUMMARY: 8 metric(s) slower than the control beyond 3 % out of 27
+  qb-core-bench-ping-pong-latency::BM_Reference_Multi_PingPong_Latency/real_time::messages_per_s: +3.8 %
+  qb-core-bench-ping-pong-latency::BM_Reference_Multi_PingPong_Latency/real_time::real_time: +4.0 %
+  qb-core-bench-ping-pong-latency::BM_Reference_Multi_PingPong_Latency/real_time::round_trips_per_s: +3.8 %
+  qb-io-bench-coroutine-pipeline::BM_Channel_SendRecv/messages:2048/real_time::items_per_second: +3.4 %
+  qb-io-bench-coroutine-pipeline::BM_Channel_SendRecv/messages:2048/real_time::real_time: +3.5 %
+  qbm-http-bench-http1-parser::BM_Http1Parse_Fragmented/corpus:0::bytes_per_second: +5.5 %
+  qbm-http-bench-http1-parser::BM_Http1Parse_Fragmented/corpus:0::items_per_second: +5.5 %
+  qbm-http-bench-http1-parser::BM_Http1Parse_Fragmented/corpus:0::real_time: +5.8 %

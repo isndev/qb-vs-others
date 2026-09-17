@@ -1,0 +1,57 @@
+=== DEV/BENCH start 02:16:20 (root benchmarks preset, seg clone qb=385bdb37)
+  build rc=0 TUs=582 warnings=0 02:22:44
+  quiet 60 s
+  bench-run rc=0 02:35:03:   ok   qbm-pgsql-bench-codec-decode (15 measurements) bench-run.sh: wrote 3 run(s) x 23 binaries to /home/mbelhadi/prof/arena/bench-now 
+  bench-compare rc=1 02:35:03
+      136 gated metrics, 16 recorded-only
+    REGRESSIONS (5):
+    improvements beyond threshold (24):
+    compared 136 gated metrics: 107 within threshold, 5 regressed, 24 improved, 0 missing
+    VERDICT: FAIL
+=== AB start 02:35:03
+  control ~/qvo/linux fib mtime 2026-09-13T01:32:58
+  cand built TUs=15 warnings=0 flags=-O3 -DNDEBUG 02:35:20
+  quiet 60 s
+== leg cand pass1 -> grid-cand-385bdb37-pass1 02:36:20
+run.py: 32 cells, 0 not verified, 0 not applicable -> /mnt/d/repo/qb-dev/qb-vs-others/results/wsl-debian-g++14/qb-branch-perf-actor-arena/grid-cand-385bdb37-pass1
+== leg ctl -> grid-ctl-f2779605 02:36:30
+run.py: 32 cells, 0 not verified, 0 not applicable -> /mnt/d/repo/qb-dev/qb-vs-others/results/wsl-debian-g++14/qb-branch-perf-actor-arena/grid-ctl-f2779605
+== leg cand pass2 -> grid-cand-385bdb37-pass2 02:36:40
+run.py: 32 cells, 0 not verified, 0 not applicable -> /mnt/d/repo/qb-dev/qb-vs-others/results/wsl-debian-g++14/qb-branch-perf-actor-arena/grid-cand-385bdb37-pass2
+== census fib 1c-spin ctl/cand x12 02:36:50
+savina/fib: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, cpus 0,2
+    ctl          median-of-medians    129.2   min    125.7   max    134.5   n=12   [131 130 134 126 128 127 130 130 134 127 128 126]
+    cand         median-of-medians     99.1   min     96.3   max    100.2   n=12   [98 99 100 100 100 99 99 96 98 98 98 100]
+launch-census.py: 24 launches, 0 not verified -> /mnt/d/repo/qb-dev/qb-vs-others/results/wsl-debian-g++14/qb-branch-perf-actor-arena/census/fib-1c-spin
+== census fib 1c-park ctl/cand x12 02:36:51
+savina/fib: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, cpus 0,2
+    ctl          median-of-medians    128.8   min    126.1   max    131.4   n=12   [131 127 130 129 131 129 128 128 128 128 126 131]
+    cand         median-of-medians    100.7   min     98.0   max    101.9   n=12   [101 100 98 100 102 101 102 101 101 101 99 99]
+launch-census.py: 24 launches, 0 not verified -> /mnt/d/repo/qb-dev/qb-vs-others/results/wsl-debian-g++14/qb-branch-perf-actor-arena/census/fib-1c-park
+== census fib 2c-spin ctl/cand x12 02:36:52
+savina/fib: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, cpus 0,2
+    ctl          median-of-medians     86.3   min     84.3   max     88.6   n=12   [87 86 87 89 87 86 86 86 85 84 85 86]
+    cand         median-of-medians     57.9   min     55.7   max     62.9   n=12   [56 63 57 56 60 57 59 58 56 58 61 61]
+launch-census.py: 24 launches, 0 not verified -> /mnt/d/repo/qb-dev/qb-vs-others/results/wsl-debian-g++14/qb-branch-perf-actor-arena/census/fib-2c-spin
+== census fib 2c-park ctl/cand x12 02:36:53
+savina/fib: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, cpus 0,2
+    ctl          median-of-medians     89.2   min     85.1   max     95.7   n=12   [93 96 92 89 89 87 90 91 85 87 87 85]
+    cand         median-of-medians     58.3   min     56.0   max     61.9   n=12   [62 59 56 58 58 57 60 60 57 59 58 57]
+launch-census.py: 24 launches, 0 not verified -> /mnt/d/repo/qb-dev/qb-vs-others/results/wsl-debian-g++14/qb-branch-perf-actor-arena/census/fib-2c-park
+== census bank-transaction 1c-spin ctl/cand x8 02:36:54
+savina/bank-transaction: per-launch medians, ns per unit -- 8 launches interleaved, 3 rep + 1 warmup each, cpus 0,2
+    ctl          median-of-medians    145.6   min    140.7   max    151.7   n=8   [141 146 146 146 147 145 152 145]
+    cand         median-of-medians    141.5   min    137.7   max    145.2   n=8   [141 139 138 143 142 141 145 143]
+launch-census.py: 16 launches, 0 not verified -> /mnt/d/repo/qb-dev/qb-vs-others/results/wsl-debian-g++14/qb-branch-perf-actor-arena/census/bank-transaction-1c-spin
+== census ping-pong 1c-spin ctl/cand x8 02:36:54
+savina/ping-pong: per-launch medians, ns per unit -- 8 launches interleaved, 3 rep + 1 warmup each, cpus 0,2
+    ctl          median-of-medians     22.9   min     22.5   max     23.4   n=8   [23 23 23 23 22 23 23 23]
+    cand         median-of-medians     23.0   min     22.8   max     23.5   n=8   [23 23 23 23 23 23 23 23]
+launch-census.py: 16 launches, 0 not verified -> /mnt/d/repo/qb-dev/qb-vs-others/results/wsl-debian-g++14/qb-branch-perf-actor-arena/census/ping-pong-1c-spin
+== census counting 1c-spin ctl/cand x8 02:36:56
+savina/counting: per-launch medians, ns per unit -- 8 launches interleaved, 3 rep + 1 warmup each, cpus 0,2
+    ctl          median-of-medians      7.6   min      7.5   max      8.2   n=8   [8 8 7 8 7 8 8 8]
+    cand         median-of-medians      7.7   min      7.4   max      7.9   n=8   [8 7 8 8 8 7 8 7]
+launch-census.py: 16 launches, 0 not verified -> /mnt/d/repo/qb-dev/qb-vs-others/results/wsl-debian-g++14/qb-branch-perf-actor-arena/census/counting-1c-spin
+AB-ARENA-WSL-DONE 02:36:57
+WSL-ARENA-ALL-DONE 02:36:57

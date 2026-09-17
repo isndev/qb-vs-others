@@ -1,0 +1,4 @@
+qb-core-bench-ping-pong-latency PingPong_Latency
+qb-core-bench-ask-roundtrip (BM_Ask_RoundTrip_SameCore/real_time$|BM_Ask_RoundTrip_CrossCore/real_time$)
+qb-io-bench-coroutine-pipeline (BM_Channel_TrySendTryRecv/messages:8192$|BM_Channel_SendRecv/messages:2048/real_time$|BM_Stream_FilterMapReduce/items:4096/real_time$)
+qbm-http-bench-http1-parser (BM_Http1Parse_WholeBuffer/corpus:0$|BM_Http1Parse_Fragmented/corpus:0$)

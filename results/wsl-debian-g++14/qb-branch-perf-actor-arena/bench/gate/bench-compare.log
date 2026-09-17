@@ -1,0 +1,45 @@
+baseline: dev/bench/baseline/linux-wsl2-x86_64.json
+  host linux-wsl2-x86_64 (12th Gen Intel(R) Core(TM) i9-12900K), 15 runs, qb 1ec7e794
+  136 gated metrics, 16 recorded-only
+contender: /home/mbelhadi/prof/arena/bench-now (3 run(s))
+
+REGRESSIONS (5):
+  qbm-http-bench-http1-parser::BM_Http1Parse_Fragmented/corpus:0::real_time
+      baseline 397.32 -> 416.59   +4.8%  (threshold 3.0%)
+  qbm-http-bench-http1-parser::BM_Http1Parse_Fragmented/corpus:0::items_per_second
+      baseline 2.517M -> 2.401M   +4.6%  (threshold 3.0%)
+  qbm-http-bench-http1-parser::BM_Http1Parse_Fragmented/corpus:0::bytes_per_second
+      baseline 110.742M -> 105.625M   +4.6%  (threshold 3.0%)
+  qb-io-bench-coroutine-pipeline::BM_Stream_FilterMapReduce/items:4096/real_time::real_time
+      baseline 97.124k -> 100.224k   +3.2%  (threshold 3.0%)
+  qb-io-bench-coroutine-pipeline::BM_Stream_FilterMapReduce/items:4096/real_time::items_per_second
+      baseline 42.173M -> 40.868M   +3.1%  (threshold 3.0%)
+
+improvements beyond threshold (24):
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_SameCore/real_time::items_per_second  1.125M -> 9.071M  +706.3% faster
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_SameCore/real_time::round_trips_per_s  1.125M -> 9.071M  +706.3% faster
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::items_per_second  1.012M -> 3.384M  +234.5% faster
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::round_trips_per_s  1.012M -> 3.384M  +234.5% faster
+  qb-core-bench-pipeline-chain-latency::BM_Pipeline_Chain_Latency<LightEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time::source_events_per_s  2.308M -> 5.129M  +122.2% faster
+  qb-core-bench-pipeline-chain-latency::BM_Pipeline_Chain_Latency<LightEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time::deliveries_per_s  23.077M -> 51.286M  +122.2% faster
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_SameCore/real_time::real_time  44.448M -> 5.512M  +87.6% faster
+  qb-core-bench-ping-pong-latency::BM_Mono_PingPong_Latency/real_time::round_trips_per_s  9.942M -> 17.669M  +77.7% faster
+  qb-core-bench-ping-pong-latency::BM_Mono_PingPong_Latency/real_time::messages_per_s  19.884M -> 35.337M  +77.7% faster
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::real_time  49.419M -> 14.774M  +70.1% faster
+  qb-core-bench-pipeline-chain-latency::BM_Pipeline_Chain_Latency<LightEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time::real_time  65.001M -> 29.248M  +55.0% faster
+  ratio::samecore_hop_over_raw_spsc  0.5188 -> 0.2871  +44.7% faster
+  qb-core-bench-ping-pong-latency::BM_Mono_PingPong_Latency/real_time::real_time  100.582M -> 56.598M  +43.7% faster
+  qb-core-bench-ping-pong-latency::BM_Multi_PingPong_Latency/real_time::round_trips_per_s  4.086M -> 5.326M  +30.3% faster
+  qb-core-bench-ping-pong-latency::BM_Multi_PingPong_Latency/real_time::messages_per_s  8.172M -> 10.651M  +30.3% faster
+  qb-core-bench-ping-pong-throughput::BM_PINGPONG<TinyEvent>/NB_PING_ACTOR:64/NB_PING:32768/NB_CORE:8/iterations:10/real_time::round_trips_per_s  85.264M -> 109.365M  +28.3% faster
+  qb-core-bench-ping-pong-throughput::BM_PINGPONG<TinyEvent>/NB_PING_ACTOR:64/NB_PING:32768/NB_CORE:8/iterations:10/real_time::messages_per_s  170.531M -> 218.733M  +28.3% faster
+  qb-core-bench-ping-pong-throughput::BM_PINGPONG<TinyEvent>/NB_PING_ACTOR:64/NB_PING:32768/NB_CORE:8/iterations:10/real_time::bytes_per_second  10913.802M -> 13998.677M  +28.3% faster
+  qb-core-bench-ping-pong-throughput::BM_PINGPONG<TinyEvent>/NB_PING_ACTOR:64/NB_PING:32768/NB_CORE:8/iterations:10/real_time::items_per_second  85.264M -> 109.365M  +28.3% faster
+  qb-core-bench-ping-pong-latency::BM_Multi_PingPong_Latency/real_time::real_time  244.735M -> 187.774M  +23.3% faster
+  qb-core-bench-pipeline-chain-latency::BM_Pipeline_Chain_Latency<LightEvent>/NB_EVENTS:187500/NB_ACTORS:8/NB_CORE:8/real_time::deliveries_per_s  4.829M -> 5.922M  +22.6% faster
+  qb-core-bench-pipeline-chain-latency::BM_Pipeline_Chain_Latency<LightEvent>/NB_EVENTS:187500/NB_ACTORS:8/NB_CORE:8/real_time::source_events_per_s  603.581k -> 740.230k  +22.6% faster
+  qb-core-bench-ping-pong-throughput::BM_PINGPONG<TinyEvent>/NB_PING_ACTOR:64/NB_PING:32768/NB_CORE:8/iterations:10/real_time::real_time  24.596M -> 19.176M  +22.0% faster
+  qb-core-bench-pipeline-chain-latency::BM_Pipeline_Chain_Latency<LightEvent>/NB_EVENTS:187500/NB_ACTORS:8/NB_CORE:8/real_time::real_time  310.646M -> 253.300M  +18.5% faster
+
+compared 136 gated metrics: 107 within threshold, 5 regressed, 24 improved, 0 missing
+VERDICT: FAIL
