@@ -78,10 +78,10 @@ deregistration notificators (`so_5/coop.hpp:296`) are the death-watch. No restar
 **qb.** Registering an event whose `on(E&)` overload is missing is a compile error — the router
 calls `handler.on(event)` in a template (`system/event/router.h:84`, `:286`). But the handler
 *set* is not part of any type: `ActorId` is `{ServiceId, CoreId}` (`core/ActorId.h:384`),
-`Actor::push<E>(ActorId const&, ...)` (`core/Actor.h:885`) accepts any id for any `E`, and an
+`Actor::push<E>(ActorId const&, ...)` (`core/Actor.h:929`) accepts any id for any `E`, and an
 event the destination never registered falls into the router's `else` branch
 (`system/event/router.h:870`) and is **logged and dropped** (`core/VirtualCore.cpp:206`).
-`ActorHandle<T>` (`core/Actor.h:1858`) is a same-core reference, not an interface type.
+`ActorHandle<T>` (`core/Actor.h:1902`) is a same-core reference, not an interface type.
 
 **CAF.** `typed_actor<TraitOrSignature>` (`libcaf_core/caf/typed_actor.hpp:31`): the message
 interface is the actor's type, `mail()` to a typed handle is checked at compile time, and the
@@ -95,7 +95,7 @@ runtime `type_index` lookup in the mbox's subscriber table (`so_5/impl/local_mbo
 
 **qb.** `co_await qb::ask(ctx, target, req, timeout)` (`core/patterns/request.h:100`) with
 `qb::answer` on the responder (`:194`), `qb::Request<Resp>` (`:71`) and `qb::deadline` (`:115`);
-`Actor::reply` (`core/Actor.h:1045`), `Actor::forward` (`:1068`). Beyond one ask: `ask_all` /
+`Actor::reply` (`core/Actor.h:1089`), `Actor::forward` (`:1112`). Beyond one ask: `ask_all` /
 `ask_any` (`core/patterns/scatter.h:59`, `:140`), `ask_retry` (`core/patterns/resilience.h:427`),
 `ask_stream` (`core/patterns/streaming.h:324`), request de-duplication (`core/patterns/idempotency.h:65`),
 circuit breaker / rate limiter / bulkhead (`core/patterns/resilience.h:120`, `:239`, `:331`),
@@ -133,7 +133,7 @@ third-party packages.
 
 **qb.** One worker thread per `VirtualCore`; every actor is created on a core before `start()`
 (`core/Main.h:243`, `:679`) or on the calling core at runtime (`core/VirtualCore.h:1021`), and
-"an actor never migrates between cores" (`core/Actor.h:214`). `setAffinity` (`core/Main.h:271`),
+"an actor never migrates between cores" (`core/Actor.h:215`). `setAffinity` (`core/Main.h:271`),
 `setLatency` (`:286`) and `setIdleSpin` (`:303`) are the only knobs. No work stealing — the word
 does not occur in `core/`.
 
@@ -155,7 +155,7 @@ does not move between dispatchers; within a pool the thread is chosen per demand
 **qb.** `EventQOS0` (`core/Event.h:516`) marks an event droppable under cross-core backpressure
 (`core/Event.h:494`); `EventQOS1` and `EventQOS2` are both aliases of `Event` (`:499`, `:509`)
 — "there is no middle QoS level to select" (`:503`). No ordering by priority, no filters, no
-per-actor limits. `push` is ordered, `send` is documented unordered (`core/Actor.h:888`).
+per-actor limits. `push` is ordered, `send` is documented unordered (`core/Actor.h:932`).
 
 **CAF.** `message_priority::{high, normal}` (`libcaf_core/caf/message_priority.hpp:15`); a
 `mail(...).urgent()` (`libcaf_core/caf/async_mail.hpp:175`) is pushed to the front of the
@@ -173,7 +173,7 @@ limits `limit_then_drop` / `limit_then_abort` / `limit_then_redirect` / `limit_t
 `Timeout<Func>` (`:211`); `callback(f)` / `callback(f, duration)` (`:368`, `:374`);
 `co_await sleep(duration)` (`io/async/coroutine/utils.h:101`), a cancellable variant
 (`io/async/coroutine/cancellation.h:765`) and an actor-scoped `ctx.sleep` cancelled on kill
-(`core/Actor.h:1239`); periodic `interval(duration)` as an async stream
+(`core/Actor.h:1283`); periodic `interval(duration)` as an async stream
 (`io/async/coroutine/stream.h:833`).
 
 **CAF.** `mail(...).delay(d)` / `.schedule(tp)` (`libcaf_core/caf/async_mail.hpp:187`, `:181`),
@@ -195,9 +195,9 @@ detaching exit policies (`io/async/coroutine/scope.h:76`, `:617`–`:635`), `par
 `io/async/coroutine/stream.h:63`), and six sync primitives — `semaphore`, `async_mutex`,
 `async_rw_lock`, `barrier`, `async_event`, `async_latch` (`io/async/coroutine/sync.h:64`, `:437`,
 `:671`, `:960`, `:1098`, `:1275`) — plus `with_retry` (`io/async/coroutine/retry.h:219`). An actor's
-`onInit()` is itself a `task<bool>` (`core/Actor.h:175`) and the engine stashes events while it
+`onInit()` is itself a `task<bool>` (`core/Actor.h:176`) and the engine stashes events while it
 is suspended (`core/VirtualCore.cpp:488`). `Actor::spawn` binds a coroutine to the actor's
-cancellation scope (`core/Actor.h:1247`).
+cancellation scope (`core/Actor.h:1291`).
 
 **CAF.** None: no `co_await` anywhere under `libcaf_core/caf/`. The asynchronous vocabulary is
 callbacks, `caf::flow` observables (`libcaf_core/caf/flow/observable.hpp:189`) and
@@ -209,7 +209,7 @@ callbacks, `caf::flow` observables (`libcaf_core/caf/flow/observable.hpp:189`) a
 
 ## 9. Behaviour and state
 
-**qb.** Dispatch is by event type through `registerEvent<E>` (`core/Actor.h:779`); there is no
+**qb.** Dispatch is by event type through `registerEvent<E>` (`core/Actor.h:823`); there is no
 behaviour stack and no state machine. `qb::ICallback` gives a per-tick hook
 (`core/ICallback.h:146`). Patterns shipped beside the core, one header each under
 `core/patterns/`: `batcher`, `ping`/`require` discovery, `dedup_map`, `PubSub<Topic>`,
@@ -231,7 +231,7 @@ actors (`libcaf_core/caf/actor_registry.hpp:32`, `:77`). Groups were **removed i
 ## 10. Runtime creation
 
 **qb.** Before `start()`: `CoreInitializer::addActor` / `builder()` (`core/Main.h:243`, `:257`),
-`Main::addActor(CoreId, ...)` (`:725`). At runtime: `Actor::addRefActor<T>` (`core/Actor.h:1130`)
+`Main::addActor(CoreId, ...)` (`:725`). At runtime: `Actor::addRefActor<T>` (`core/Actor.h:1174`)
 creates on the **calling core only** — `VirtualCore::_handler` is the thread-local current core
 (`core/VirtualCore.h:1021`) — and `Main::core(id)` is setup-phase only (`core/Main.h:679`).
 Creating an actor on another core at runtime is done by messaging a factory actor already there;
@@ -311,7 +311,7 @@ where any of them would become a plan:
    (`system/event/router.h:870`).
 4. **No distribution** — no node id, no wire format, no reflection (`core/ActorId.h:401`).
 5. **No message priorities** — `EventQOS1 == EventQOS2 == Event` (`core/Event.h:499`–`509`).
-6. **No migration, no rebalancing** — actors are pinned for life (`core/Actor.h:214`); a hot
+6. **No migration, no rebalancing** — actors are pinned for life (`core/Actor.h:215`); a hot
    actor on a cold core stays there.
 7. **No cross-core dynamic spawn** (`core/VirtualCore.h:1021`, `core/Main.h:679`).
 8. **No configuration layer** in core.
