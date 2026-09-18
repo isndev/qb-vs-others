@@ -95,14 +95,19 @@ struct State {
 // The emplace `ask` (qb 3.2, request.h): `qb::ask<E>(ctx, target, timeout, args...)` builds the
 // event in the outgoing pipe slot. Detected rather than version-gated, like HasIdleSpin in
 // qb_support.h: the branch the qb at hand cannot compile is discarded, and each version runs
-// the ask its own request.h recommends.
+// the ask its own request.h recommends. Detected by CALLABILITY, not by the return type: since
+// QB-214 `qb::ask` returns a frame-free awaitable rather than a `task<E>`, and a concept keyed on
+// the exact type would silently send a newer qb down the by-value fallback -- then wrap it in the
+// task this function used to promise (measured: +17 % on this shape, for nothing).
 template <typename Ctx>
 concept HasEmplaceAsk = requires(const Ctx &ctx, qb::ActorId id, std::uint64_t v) {
-    { qb::ask<Deposit>(ctx, id, qb::duration::zero(), v, v) } -> std::same_as<qb::io::async::task<Deposit>>;
+    qb::ask<Deposit>(ctx, id, qb::duration::zero(), v, v);
 };
 
+// `auto`: the awaitable `qb::ask` returns on the qb at hand (a `task<E>` before QB-214, the
+// operation that lives in the awaiting frame since), awaited as-is by the coroutine below.
 template <typename Ctx>
-qb::io::async::task<Deposit> deposit(const Ctx &ctx, qb::ActorId dst, std::uint64_t amount, std::uint64_t txn) {
+auto deposit(const Ctx &ctx, qb::ActorId dst, std::uint64_t amount, std::uint64_t txn) {
     if constexpr (HasEmplaceAsk<Ctx>)
         return qb::ask<Deposit>(ctx, dst, qb::duration::zero(), amount, txn);
     else
