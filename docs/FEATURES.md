@@ -93,7 +93,7 @@ runtime `type_index` lookup in the mbox's subscriber table (`so_5/impl/local_mbo
 
 ## 3. Request / response
 
-**qb.** `co_await qb::ask(ctx, target, req, timeout)` (`core/patterns/request.h:100`) with
+**qb.** `co_await qb::ask(ctx, target, req, timeout)` (`core/patterns/request.h:270`) with
 `qb::answer` on the responder (`:194`), `qb::Request<Resp>` (`:71`) and `qb::deadline` (`:115`);
 `Actor::reply` (`core/Actor.h:1089`), `Actor::forward` (`:1112`). Beyond one ask: `ask_all` /
 `ask_any` (`core/patterns/scatter.h:59`, `:143`), `ask_retry` (`core/patterns/resilience.h:427`),
@@ -189,7 +189,7 @@ timer thread whose mechanism is chosen at environment creation — wheel, heap o
 **qb.** The asynchronous surface *is* C++20 coroutines: `task<T>` (`io/async/coroutine/task.h:435`),
 `shared_task` (`io/async/coroutine/shared_task.h:55`), `coroutine_scope` with joining / cancelling /
 detaching exit policies (`io/async/coroutine/scope.h:76`, `:617`–`:635`), `parallel` (`:689`),
-`when_all` / `when_any` / timeouts (`io/async/coroutine/combinators.h:76`, `:207`, `:689`),
+`when_all` / `when_any` / timeouts (`io/async/coroutine/combinators.h:99`, `:230`, `:712`),
 `channel<T>` and `select` (`io/async/coroutine/channel.h:125`, `:1267`), `generator` /
 `async_generator` / `async_stream` (`io/async/coroutine/generator.h:77`, `:289`;
 `io/async/coroutine/stream.h:63`), and six sync primitives — `semaphore`, `async_mutex`,
@@ -250,7 +250,7 @@ anywhere at any time; the dispatcher binds it.
 nlohmann (`json.h:47`), `qb::crypto` (`io/crypto.h:95`), `qb::compression` (`io/compression.h:45`);
 **no reflection** — events are relocated by byte copy into 64-byte buckets
 (`utility/prefix.h:138`), which is also why an event must use relocatable members such as
-`qb::string<N>` (`core/patterns/request.h:59`). Logging is nanolog through `QB_LOG_DEBUG` …
+`qb::string<N>` (`core/patterns/request.h:63`). Logging is nanolog through `QB_LOG_DEBUG` …
 `QB_LOG_CRIT` (`io.h:272`; `log::init` at `io.h:84`). No metrics.
 
 **CAF.** `actor_system_config` (`libcaf_core/caf/actor_system_config.hpp:28`) reads

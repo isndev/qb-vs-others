@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bank-transaction",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 12258739468647350033,
+  "expected_messages": 202000,
+  "work_unit": "transfer",
+  "work_units": 50000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"accounts": 1000, "cores": 2, "transactions": 50000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-18T02:35:21Z"
+  },
+  "idiom": {
+    "source": "qb/src/qb/core/patterns/request.h (qb::ask) + qb/tests/core/benchmark/messaging/ask-roundtrip.cpp",
+    "note": "deposit = co_await qb::ask() from a coroutine the source account spawns, one live frame per account at most, held transfers in a deque the frame drains; teller on VirtualCore 0, account a on core (1 + a) % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "qb::ask is a coroutine: each transfer that starts while the account is idle allocates a coroutine frame and registers a pending-ask slot on the core, and each reply is routed by correlation id and resumed through the scheduler -- that is the primitive under test, and it is the only shape in this suite where qb allocates per work unit", "placement is fixed before start: the teller on VirtualCore 0 and account a on core (1 + a) % cores, so with cores=2 about half the deposits and half the transfers and acknowledgements cross a core and nothing rebalances it -- the pools place freely"],
+  "failures": [],
+  "work_ns": [4013614.0, 3659386.0, 3630268.0, 3605419.0, 3798368.0, 3733717.0, 3456802.0, 3554186.0, 3619816.0],
+  "total_ns": [4772181.0, 4456109.0, 4393124.0, 4355896.0, 4548514.0, 4505019.0, 4188524.0, 4318926.0, 4434235.0],
+  "outside_window_ns": [758567.0, 796723.0, 762856.0, 750477.0, 750146.0, 771302.0, 731722.0, 764740.0, 814419.0],
+  "summary": {
+    "work_min": 3456802.0,
+    "work_p50": 3630268.0,
+    "work_p99": 3996394.3,
+    "work_iqr": 128298.0
+  }
+}

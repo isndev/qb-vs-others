@@ -1,0 +1,13 @@
+# qb-core-bench-ask-roundtrip: ctl (7296ac8d) / cand (91276be0) alternated x3, 5 repetitions, GB median real_time (ns), pinned 2,4 2026-09-18T02:37:22
+ctl-7296  pass1  BM_Ask_RoundTrip_SameCore/real_time           5.6 ms
+ctl-7296  pass1  BM_Ask_RoundTrip_CrossCore/real_time          14.7 ms
+cnd-9127  pass1  BM_Ask_RoundTrip_SameCore/real_time           5.1 ms
+cnd-9127  pass1  BM_Ask_RoundTrip_CrossCore/real_time          14.4 ms
+ctl-7296  pass2  BM_Ask_RoundTrip_SameCore/real_time           5.5 ms
+ctl-7296  pass2  BM_Ask_RoundTrip_CrossCore/real_time          14.5 ms
+cnd-9127  pass2  BM_Ask_RoundTrip_SameCore/real_time           5.1 ms
+cnd-9127  pass2  BM_Ask_RoundTrip_CrossCore/real_time          14.1 ms
+ctl-7296  pass3  BM_Ask_RoundTrip_SameCore/real_time           5.5 ms
+ctl-7296  pass3  BM_Ask_RoundTrip_CrossCore/real_time          14.5 ms
+cnd-9127  pass3  BM_Ask_RoundTrip_SameCore/real_time           5.1 ms
+cnd-9127  pass3  BM_Ask_RoundTrip_CrossCore/real_time          14.3 ms

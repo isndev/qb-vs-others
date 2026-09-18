@@ -2603,3 +2603,44 @@ value-initialising it would leave a ring's pages untouched until its producer wr
 (producer, consumer) pair, exactly the trade §9 refused for the segments because the faults landed
 inside a measured burst. It is a decision for the backpressure axis (QB-53), not a quick win: filed,
 with these figures, not done.
+
+### 13.7 The ask frame (QB-212, point 2 → QB-214): `qb::ask` as an awaitable in the caller's frame, measured
+
+Point 2 of QB-212 named "the ask frame" as where `bank-transaction` still lost. The registry rework measured
+nothing (2026-09-17, both hosts: bank censuses overlapping, the probe unchanged), which isolated the remaining cost
+of a `co_await qb::ask` to the `task<E>` coroutine wrapped around an awaiter that already did all the work: a pooled
+frame allocated and freed per ask, the initial suspend and the symmetric transfer into it, a `co_return` moving the
+64-byte reply into the promise's `variant`, the final suspend and the transfer back, a second move out of the
+`variant`. QB-214 (qb `91276be0` on `perf/ask-frameless`) makes `qb::ask` return the exchange itself as an
+awaitable — `ask_operation<E>` / `ask_emplace_operation<E, Args...>`, a prvalue built into the awaiting frame that
+engages the `ask_awaiter` in place at `await_suspend()`; lazy, cancel-aware, implicitly convertible to `task<E>`
+so every existing shape keeps compiling.
+
+Control `7296ac8d`, candidate `91276be0`, one quiet session per host, same-length executable paths, both sides on
+the harness's emplace idiom (see the harness note below); full tables in
+`results/<host>/qb-branch-perf-ask-frameless/README.md`:
+
+| instrument | WSL2 g++-14 | Windows MSVC 19.51 |
+|---|---:|---:|
+| probe `ask`, ns per round trip (median of 7, alternated) | 45.2 → 35.6 (−21 %) | 64.0 → 48.5 (−24 %) |
+| the ask mechanics above a bare push/reply | 21.5 → 12.4 ns (−43 %) | 32.8 → 16.1 ns (−51 %) |
+| `bank-transaction` 1c-spin (census ×12, ns/unit) | 136.2 → 97.2 (−29 %) | 228.8 → 161.4 (−30 %) |
+| `bank-transaction` 1c-park | 141.0 → 98.5 (−30 %) | 231.9 → 162.5 (−30 %) |
+| `bank-transaction` 2c-spin | 82.3 → 72.7 (−12 %) | 142.0 → 106.1 (−25 %) |
+| `bank-transaction` 2c-park | 83.5 → 73.2 (−12 %) | 142.7 → 108.8 (−24 %) |
+| `dev/bench` ask-roundtrip same-core / cross-core | 5.5 → 5.1 ms / 14.5 → 14.3 ms | — |
+| anchors (ping-pong, fib, counting 1c) and the bimodal cells re-censused | flat | flat |
+
+Every bank distribution is disjoint (control minimum above candidate maximum) on both hosts. The 2c cells gain
+less on WSL2 than on Windows because there the round trip is dominated by the cross-core hop, not by the ask's own
+mechanics; on Windows, where MSVC's coroutine code is the slower half, removing a frame and two transitions per ask
+is worth as much on two cores as on one.
+
+**The harness note — a trap worth its own paragraph.** The first pass measured the candidate +17 % on every
+bank-transaction config, distributions disjoint the wrong way. `frameworks/qb/savina/bank-transaction.cpp` detected
+the emplace-ask idiom with a concept keyed on the exact return type (`-> std::same_as<task<Deposit>>`); the
+candidate's `qb::ask` returns an operation, the concept went false, the code fell back silently to the by-value form
+and `deposit()` wrapped it in the `task<Deposit>` it promised: two 64-byte copies and a frame more than the control.
+The harness now detects by callability and returns what `qb::ask` returns (`85e4277a`); the ask-free anchors were
+flat in both passes, which is what pointed at the harness rather than at the framework. A version-detection concept
+must never constrain on the exact type an API returns.
