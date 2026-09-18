@@ -2644,3 +2644,52 @@ and `deposit()` wrapped it in the `task<Deposit>` it promised: two 64-byte copie
 The harness now detects by callability and returns what `qb::ask` returns (`85e4277a`); the ask-free anchors were
 flat in both passes, which is what pointed at the harness rather than at the framework. A version-detection concept
 must never constrain on the exact type an API returns.
+
+### 13.8 The deque tax (QB-215): `qb::growable_ring` under the coroutine layer, measured
+
+The ask-cost probe's `stream` mode was the tell: 69 ns per chunk on Windows against 31 for a bare push, while WSL2
+sat at 24 vs 24 — a factor of two on one platform over identical code is a data structure, not codegen. MSVC's STL
+packs `sizeof(T) <= 1 ? 16 : <= 2 ? 8 : <= 4 ? 4 : <= 8 ? 2 : 1` elements per deque block (`<deque>`,
+`_Deque_val::_Block_size`): one 64-byte event per block, two coroutine handles per block, a heap allocation and a
+free per chunk or per park; libstdc++ packs 512 bytes per block. qb's own benchmarks confirmed it: the sync
+primitives with 64–512 parked waiters and the channel's try-send / try-recv ran 1.3–2× behind g++ where the
+deque-free cells sat at the ordinary MSVC ratio. QB-215 (qb `6632987e` on `perf/stream-ring`) replaces every
+`std::deque` of the coroutine layer with `qb::growable_ring<T>` (`qb/src/qb/system/container/growable_ring.h`): a
+power-of-two ring over storage aligned for `T`, doubled when full with the elements moved, one allocation per
+doubling and none per element, pointer cursors, deque-shaped names — `ask_stream`'s chunk buffer, `channel<T>`'s
+value buffer and its three waiter lists, the waiter lists of `semaphore`, `async_mutex`, `async_rw_lock` and
+`async_event` (`barrier` and `async_latch` already kept a `std::vector`).
+
+Control `6712ef30`, candidate `6632987e`, one quiet session per host, same-length executable paths; full tables in
+`results/<host>/qb-branch-perf-stream-ring/README.md`:
+
+| instrument | WSL2 g++-14 | Windows MSVC 19.51 |
+|---|---:|---:|
+| probe `stream`, ns per chunk (median of 7, alternated) | 24.67 → 24.65 (−0.1 %) | 72.25 → 36.26 (−49.8 %) |
+| probe `push` / `ask` (no ring on the path) | −1.5 % / −0.2 % | +1.7 % / +2.4 % (placement; the harness censuses below are flat) |
+| `BM_Sync_AsyncMutex` coros 8 / 64 / 512 | +0.5 / +2.8 / +0.8 % | −17.1 / −24.6 / −22.9 % |
+| `BM_Sync_RwLock_Write` coros 8 / 64 / 512 | +1.2 / +3.2 / +2.0 % | −16.3 / −22.1 / −21.5 % |
+| `BM_Sync_Semaphore_Contended` coros 8 / 64 / 512 | −1.2 / −1.4 / −0.4 % | −2.2 / −0.1 / +1.7 % |
+| `BM_Sync_Latch` arrivers 8 / 64 / 512 (a `std::vector`, untouched) | +3.1 / +2.6 / +1.0 % | +1.3 % at 512 |
+| `BM_Channel_TrySendTryRecv` messages 64 / 1024 / 8192 | −4.6 / −27.1 / −30.3 % | −24.7 / −24.9 / −16.0 % |
+| `BM_Channel_SendRecv` messages 64 / 512 / 2048 | +0.5 / −1.5 / −1.3 % | −30.1 / −9.6 / −5.6 % |
+| `bank-transaction` 1c-spin / 2c-spin (census ×12, the ask path) | — | +0.4 % / −1.6 %, overlapping |
+| ping-pong 1c-spin / fib 1c-spin (census ×8) | — | −1.0 % / −1.4 % |
+
+Three things the table says. On Linux the sync primitives sit inside the ±3 % band the untouched latch cell draws
+on the same binary — a ring and a 512-byte-block deque cost the same per park, as they should — while the channel's
+try-send / try-recv loop gains −27 / −30 % past 64 messages, where libstdc++'s deque starts walking its block map
+on every push and pop (a two-level indirection) and the ring keeps bumping a pointer. On Windows the mutex and the
+rw-lock gain a fifth to a quarter from 8 parked coroutines up and the channel at every size; the semaphore, whose
+list held the same 8-byte element as the mutex's, is flat on both hosts — an observation this run does not explain
+and the text does not guess at. And the cells that use no ring drift: `BM_Generator_MapFilter` +5 to +8 % on
+Windows (flat on Linux), `BM_Stream_MapCollect` +5 to +7 % on Linux (−0.4 to −4.4 % on Windows), each systematic
+across its three passes, each on code the diff never touched and whose twin cell on the same machinery sits flat —
+the placement of a rebuilt binary, recorded as such in both READMEs rather than netted out.
+
+**The lesson that cost a pass.** The first shared ring addressed its slots by index (`_buf[(_head + i) & _mask]`):
+identical on Windows, +21 to +33 % on `BM_Channel_TrySendTryRecv` under g++ — five member loads and a mask per push
+against a deque's two-pointer cursor. Replacing a container that a libstdc++ deque already served well has to match
+the deque's instruction budget, not merely its allocation count: the pointer-cursor ring (`_head`, `_tail`, `_end`;
+a construct, one compare, one increment) is what both hosts were then measured with. A candidate is measured on the
+platform where it is NOT expected to win before it is believed on the one where it is.
