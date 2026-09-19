@@ -71,8 +71,11 @@ option(QVO_NATIVE_ARCH "Build with -march=native (NOT used for published results
 # Where the frameworks come from
 # -------------------------------------------------------------------------------------------
 
+# qb is read from a source tree you name. The default is the sibling checkout this repository has
+# inside its development superproject; a standalone clone passes -DQVO_QB_DIR=/path/to/qb, and a
+# missing tree is a configure ERROR (cmake/qvoFrameworks.cmake), not a silent skip of the subject.
 set(QVO_QB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../qb" CACHE PATH
-    "Path to the qb source tree (default: the sibling submodule in qb-dev)")
+    "Path to the qb source tree (the sibling checkout by default; set it in a standalone clone)")
 
 option(QVO_WITH_QB          "Build the qb adapter"           ON)
 option(QVO_WITH_CAF         "Build the CAF adapter"          ON)

@@ -41,7 +41,14 @@ endfunction()
 
 macro(_qvo_declare_qb)
     if(NOT EXISTS "${QVO_QB_DIR}/CMakeLists.txt")
-        _qvo_skip(qb "QVO_QB_DIR=${QVO_QB_DIR} has no CMakeLists.txt")
+        # The subject of the benchmark is not something to skip quietly: a clone outside the
+        # qb-dev superproject has no sibling qb/, and a configure that then built everything but
+        # qb and reported success measured nothing it was asked to. Say what is missing and stop;
+        # -DQVO_WITH_QB=OFF is the explicit way to build only the other adapters.
+        message(FATAL_ERROR
+            "[qvo] QVO_QB_DIR=${QVO_QB_DIR} has no CMakeLists.txt. Point it at a qb source tree "
+            "(git clone https://github.com/isndev/qb.git, then -DQVO_QB_DIR=/path/to/qb), or pass "
+            "-DQVO_WITH_QB=OFF to build the other adapters only.")
     else()
         # A benchmark of the actor engine needs neither TLS, nor compression, nor qb's own tests.
         # Turning them off removes dependencies the other frameworks do not have, which keeps the

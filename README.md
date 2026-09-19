@@ -486,6 +486,17 @@ The candidate on the arm64 Linux guest (`results/utm-debian13-arm64-g++14/qb-bra
 
 ## Running it
 
+```sh
+# Linux / macOS
+git clone https://github.com/isndev/qb-vs-others.git && cd qb-vs-others
+git clone --depth 1 https://github.com/isndev/qb.git ../qb        # or any qb source tree: -DQVO_QB_DIR
+cmake -S . -B build/final -G Ninja -DCMAKE_BUILD_TYPE=Release -DQVO_QB_DIR=../qb \
+      -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake   # CAF and SObjectizer are fetched at configure time
+cmake --build build/final
+python3 tools/run.py --build build/final --out results/<host-id> --repetitions 9 --cpus 0,2
+python3 tools/report.py --results results/<host-id> > REPORT.md
+```
+
 ```powershell
 # Windows / MSVC
 . tools/msvc-env.ps1
