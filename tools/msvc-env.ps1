@@ -1,6 +1,6 @@
 # Imports the newest MSVC toolchain into the current PowerShell session.
 #
-# Uses vswhere rather than whatever `cl` happens to be on PATH -- the same rule qb-dev's own
+# Uses vswhere rather than whatever `cl` happens to be on PATH -- the same rule qb's development tree's own
 # verify-windows.ps1 states: a benchmark that cannot name its compiler is not reproducible, and a
 # stray cl.exe from an older toolset is exactly how that happens silently.
 #

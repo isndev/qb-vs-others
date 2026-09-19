@@ -8,9 +8,9 @@
 #  2. Every framework's ref is PINNED and recorded. `QVO_<FW>_VERSION` ends up verbatim in every
 #     result file, so a table can never be compared against a version it was not measured on.
 #
-# The refs below are the same ones vcpkg's ports resolve at qb-dev's own pinned vcpkg baseline
-# (a900048467…). That is deliberate: it means the versions compared here are the versions a user
-# following qb-dev's dependency pinning would actually get.
+# The refs below are the same ones vcpkg's ports resolve at the pinned vcpkg baseline of qb's
+# development tree (a900048467…). That is deliberate: it means the versions compared here are the
+# versions a user following qb's dependency pinning would actually get.
 #
 
 include(FetchContent)
@@ -141,7 +141,7 @@ macro(_qvo_declare_seastar)
     else()
         find_package(Seastar QUIET)
         if(NOT Seastar_FOUND)
-            _qvo_skip(seastar "find_package(Seastar) failed; see docs/SEASTAR.md")
+            _qvo_skip(seastar "find_package(Seastar) failed; Seastar is not measured yet (docs/ROADMAP.md)")
         else()
             set(QVO_SEASTAR_VERSION "${Seastar_VERSION}" CACHE INTERNAL "" FORCE)
             _qvo_enable(seastar)

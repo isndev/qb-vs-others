@@ -69,7 +69,7 @@ gap is inherent to *being a framework at all*.
 | Held equal | How |
 |---|---|
 | Compiler & flags | One toolchain per host, one optimization level, recorded in every result file |
-| Dependency provenance | vcpkg manifest pinned to `builtin-baseline a900048467…` — the same baseline qb-dev itself pins |
+| Dependency provenance | vcpkg manifest pinned to `builtin-baseline a900048467…` — the same baseline qb's development tree pins |
 | Allocator | System allocator for all targets. A framework bundling its own is flagged in the result file, never silently allowed |
 | CPU set | Identical affinity mask, applied by the harness before the framework starts |
 | Warmup, timing, repetition | Shared harness code, framework-agnostic, one implementation |

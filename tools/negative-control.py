@@ -5,7 +5,7 @@ FAIRNESS.md section 0 says a framework that drops one message in ten million pro
 all. That is a claim about code, and until something has been watched being rejected it is only a
 claim. This is the battery that makes it a measurement.
 
-Every control prints one of three verdicts, the same vocabulary qb-dev's own guard batteries use:
+Every control prints one of three verdicts, the same vocabulary the guard batteries of qb's development tree use:
 
     CAUGHT     a planted defect was rejected -- the guard did its job
     CONFIRMED  a shape that must NOT be reported was accepted -- no false positive

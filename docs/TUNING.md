@@ -12,6 +12,46 @@ Measured on: i9-12900K, Windows 11, MSVC 19.51.36256, `/O2 /Ob2 /DNDEBUG`, pinne
 trip, median. §9 is the exception: it is the four benchmarks added on 2026-09-04, on both
 platforms, and says so.
 
+`QB-nnn` is an id in the maintainers' tracker, which is private; wherever one is cited, the
+finding it names is stated beside it. Sections cite a few tools of qb's development tree
+(`isndev/qb-dev`, also private) as the record of what was run — the results those runs produced
+are all in this repository.
+
+---
+
+## Contents
+
+- [1. CAF work-stealing: the profile that made CAF 2× slower](#1-caf-work-stealing-the-profile-that-made-caf-2-slower)
+- [2. qb park interval — the same treatment, applied to the author's own framework](#2-qb-park-interval--the-same-treatment-applied-to-the-authors-own-framework)
+- [3. Worker placement — a handicap this repository inflicted on qb](#3-worker-placement--a-handicap-this-repository-inflicted-on-qb)
+- [4. Open tuning questions — stated because they are unresolved, not because they are unimportant](#4-open-tuning-questions--stated-because-they-are-unresolved-not-because-they-are-unimportant)
+- [How to re-run a sweep](#how-to-re-run-a-sweep)
+- [5. qb's parked mode — the root cause, found by instrumenting qb rather than the benchmark](#5-qbs-parked-mode--the-root-cause-found-by-instrumenting-qb-rather-than-the-benchmark)
+- [6. The Linux axis — what WSL2 can and cannot measure](#6-the-linux-axis--what-wsl2-can-and-cannot-measure)
+- [7. The qb performance audit this benchmark triggered](#7-the-qb-performance-audit-this-benchmark-triggered)
+- [8. What crossing a core and sleeping actually costs — the `caf-detached` row and qb's idle floor](#8-what-crossing-a-core-and-sleeping-actually-costs--the-caf-detached-row-and-qbs-idle-floor)
+- [9. What four more shapes said about qb — counting, thread-ring, fork-join, big](#9-what-four-more-shapes-said-about-qb--counting-thread-ring-fork-join-big)
+- [10. Axis N — a parked core that owns sockets, and what it took to wake it](#10-axis-n--a-parked-core-that-owns-sockets-and-what-it-took-to-wake-it)
+- [11. What two shapes that CREATE actors said — fib and chameneos](#11-what-two-shapes-that-create-actors-said--fib-and-chameneos)
+- [12. What the first shape that WAITS said — bank-transaction](#12-what-the-first-shape-that-waits-said--bank-transaction)
+- [13. The 3.2.0 candidate grid — eight shapes, two hosts, one session each](#13-the-320-candidate-grid--eight-shapes-two-hosts-one-session-each)
+  - [13.1 What the two hosts agree on](#131-what-the-two-hosts-agree-on)
+  - [13.2 What the two hosts disagree on](#132-what-the-two-hosts-disagree-on)
+  - [13.3 What the grid leaves, and where the next axis is](#133-what-the-grid-leaves-and-where-the-next-axis-is)
+  - [13.4 The final candidate — the same grid at `77b358d8` (2026-09-09), and what the second half bought](#134-the-final-candidate--the-same-grid-at-77b358d8-2026-09-09-and-what-the-second-half-bought)
+  - [13.5 The whole field re-measured with the release candidate (2026-09-13), and where qb still loses](#135-the-whole-field-re-measured-with-the-release-candidate-2026-09-13-and-where-qb-still-loses)
+  - [13.6 The actor object's allocation (QB-212, point 1): the arena, measured](#136-the-actor-objects-allocation-qb-212-point-1-the-arena-measured)
+  - [13.7 The ask frame (QB-212, point 2 → QB-214): `qb::ask` as an awaitable in the caller's frame, measured](#137-the-ask-frame-qb-212-point-2--qb-214-qbask-as-an-awaitable-in-the-callers-frame-measured)
+  - [13.8 The deque tax (QB-215): `qb::growable_ring` under the coroutine layer, measured](#138-the-deque-tax-qb-215-qbgrowable_ring-under-the-coroutine-layer-measured)
+  - [13.9 The final candidate on the two arm64 hosts (2026-09-19) — macOS and a Linux guest, and the two cells the arena costs](#139-the-final-candidate-on-the-two-arm64-hosts-2026-09-19--macos-and-a-linux-guest-and-the-two-cells-the-arena-costs)
+- [14. The loop clock — what one line cost, and what an idle spin pass needs](#14-the-loop-clock--what-one-line-cost-and-what-an-idle-spin-pass-needs)
+- [15. The pass itself — what a core pays per pass and per event, and the probe that separates them](#15-the-pass-itself--what-a-core-pays-per-pass-and-per-event-and-the-probe-that-separates-them)
+- [16. The ring's other line — a producer that re-reads what it publishes, and what a cross-core hop is made of](#16-the-rings-other-line--a-producer-that-re-reads-what-it-publishes-and-what-a-cross-core-hop-is-made-of)
+- [17. The request/reply machinery, and the loop under a timer](#17-the-requestreply-machinery-and-the-loop-under-a-timer)
+- [18. The dispatch under a population: the actor's line, and what the core already hides](#18-the-dispatch-under-a-population-the-actors-line-and-what-the-core-already-hides)
+- [19. The park's wait, and how fine it is — QB-196](#19-the-parks-wait-and-how-fine-it-is--qb-196)
+- [20. The footprint — what N cores hold, and when they hold it (QB-63)](#20-the-footprint--what-n-cores-hold-and-when-they-hold-it-qb-63)
+
 ---
 
 ## 1. CAF work-stealing: the profile that made CAF 2× slower
@@ -701,7 +741,7 @@ fell. Over four grid passes the branch's ping-pong 2c-spin medians were 274–31
 `230c5035`'s 258–263, the ring's 141–173 against 134–152, and a difference that survives four
 passes is not dismissed by calling it noise. The **launch census** is the instrument for that —
 the same binaries, the same arguments, launched standalone N times interleaved, 3 + 1 repetitions
-each (`census-win-*/` under the scratch results, not kept as documents): ping-pong 2c-spin
+each (`census-win-*/`, a scratch directory of that session, not committed here): ping-pong 2c-spin
 **250.2 → 250.0** ns (10 launches), 251.7 → 239.6 (12), 2c-park 251.1 → 256.4 and 252.0 → 260.8,
 then 262.3 → 259.7 over 16; thread-ring 2c-spin 130.3 → 124.7 and 126.6 → 124.6, 2c-park
 137.7 → 134.0 and 138.1 → 129.8; and the one-core ping-pong cells, which are the sensitive
@@ -766,7 +806,7 @@ Suites before any of these numbers were quoted: WSL2 g++ 14.2 release 534 TUs, 0
 whose libnghttp3 1.8.0 turns HTTP/3 off, pre-existing and not this branch). Windows/MSVC 19.51,
 `verify-windows.ps1`: release, debug, relwithdebinfo and dev-cxx23 each 553 TUs, 0 warnings,
 370/370 executed, 0 skipped; feature-gates 324 registered / 311 executed / 13 skipped (the
-structural pgsql self-skips); the package installed and consumed; `dev/agent/verify.sh` ALL GREEN
+structural pgsql self-skips); the package installed and consumed; the development tree's `verify.sh` ALL GREEN
 on both hosts' tree (175 docs, 4615 content digests, 0 non-conformant of 443 formatted files).
 `dev/bench` (macOS arm64 baseline) ran on 2026-09-05 — §9.13 below.
 
@@ -775,7 +815,7 @@ on both hosts' tree (175 docs, 4615 content digests, 0 non-conformant of 443 for
 `results/macbook-m4pro-macos-clang21/`, 2026-09-05, one quiet session: Apple M4 Pro (10 P + 4 E
 cores, 48 GB), macOS 26.6, AppleClang 21.0.0, `-O3 -DNDEBUG`, 7 repetitions + 2 warmup, the
 field at 18:59–19:07 UTC and the candidate's grids, sweep and censuses at 19:06–19:21 UTC, with
-the other agents on the machine paused first. Its README carries the residual load (a VM, two
+everything else on the machine paused first. Its README carries the residual load (a VM, two
 idle dev servers, macOS's storage scan after 20 GB of build output). Three things distinguish this
 host from the other two, and each shaped the protocol:
 
@@ -888,7 +928,7 @@ candidate's own grid spin beats park in every cell (ping-pong 152.7 vs 209.6, th
 vs 93.2, counting 7.3 vs 7.9).
 
 **qb's own gate, `dev/bench`** (superproject `benchmarks` preset, `bench-run.sh --runs 3`,
-`bench-compare.py --baseline dev/bench/baseline/macos-arm64.json`): **VERDICT PASS** — 51 gated
+`bench-compare.py` against qb's own macOS arm64 regression baseline, in the development tree): **VERDICT PASS** — 51 gated
 metrics, 46 within threshold, 0 regressed, 5 improved, 0 missing. The five are one benchmark, the
 only engine-path metric that gates: ping-pong throughput, 64 pairs on one core, **82.0 → 159.7 M
 messages/s (+94.9 %)**. Of the 69 recorded-only metrics the engine ones all moved the right way:
@@ -1065,8 +1105,8 @@ sees `Main::stop()`) and `core-park-wake` (a readable socket ends a loop park, a
 ends both a loop park and a cv park, each in far less than `latency`, with the process's CPU time
 proving the core was parked rather than polling). The TSan run is the one that found the
 release/acquire pair above; it is clean with it. The Windows/MSVC pass is
-`dev/agent/verify-windows.ps1` over the five presets at their recorded floors, and the macOS
-pass is the same agent protocol as QB-44's — both are recorded in the Huly issue (QB-42) as they
+the development tree's Windows gate (`verify-windows.ps1`) over the five presets at their recorded floors, and the macOS
+pass is the same protocol as the macOS validation's (QB-44) — both are recorded in the tracker (QB-42) as they
 land, not here in advance.
 
 **What axis N does not change, stated so nobody reads it as more than it is.** A qb core with no
@@ -1659,6 +1699,187 @@ compared through `bench-run.sh` must run their binaries from one path, and a bas
 the tree's last hot-path commit is a drift meter, not a control. The next two axes are
 unchanged: the ask frame and its second dispatch (bank), then the MSVC codegen gap.
 
+### 13.7 The ask frame (QB-212, point 2 → QB-214): `qb::ask` as an awaitable in the caller's frame, measured
+
+Point 2 of QB-212 named "the ask frame" as where `bank-transaction` still lost. The registry rework measured
+nothing (2026-09-17, both hosts: bank censuses overlapping, the probe unchanged), which isolated the remaining cost
+of a `co_await qb::ask` to the `task<E>` coroutine wrapped around an awaiter that already did all the work: a pooled
+frame allocated and freed per ask, the initial suspend and the symmetric transfer into it, a `co_return` moving the
+64-byte reply into the promise's `variant`, the final suspend and the transfer back, a second move out of the
+`variant`. QB-214 (qb `91276be0` on `perf/ask-frameless`) makes `qb::ask` return the exchange itself as an
+awaitable — `ask_operation<E>` / `ask_emplace_operation<E, Args...>`, a prvalue built into the awaiting frame that
+engages the `ask_awaiter` in place at `await_suspend()`; lazy, cancel-aware, implicitly convertible to `task<E>`
+so every existing shape keeps compiling.
+
+Control `7296ac8d`, candidate `91276be0`, one quiet session per host, same-length executable paths, both sides on
+the harness's emplace idiom (see the harness note below); full tables in
+`results/<host>/qb-branch-perf-ask-frameless/README.md`:
+
+| instrument | WSL2 g++-14 | Windows MSVC 19.51 |
+|---|---:|---:|
+| probe `ask`, ns per round trip (median of 7, alternated) | 45.2 → 35.6 (−21 %) | 64.0 → 48.5 (−24 %) |
+| the ask mechanics above a bare push/reply | 21.5 → 12.4 ns (−43 %) | 32.8 → 16.1 ns (−51 %) |
+| `bank-transaction` 1c-spin (census ×12, ns/unit) | 136.2 → 97.2 (−29 %) | 228.8 → 161.4 (−30 %) |
+| `bank-transaction` 1c-park | 141.0 → 98.5 (−30 %) | 231.9 → 162.5 (−30 %) |
+| `bank-transaction` 2c-spin | 82.3 → 72.7 (−12 %) | 142.0 → 106.1 (−25 %) |
+| `bank-transaction` 2c-park | 83.5 → 73.2 (−12 %) | 142.7 → 108.8 (−24 %) |
+| `dev/bench` ask-roundtrip same-core / cross-core | 5.5 → 5.1 ms / 14.5 → 14.3 ms | — |
+| anchors (ping-pong, fib, counting 1c) and the bimodal cells re-censused | flat | flat |
+
+Every bank distribution is disjoint (control minimum above candidate maximum) on both hosts. The 2c cells gain
+less on WSL2 than on Windows because there the round trip is dominated by the cross-core hop, not by the ask's own
+mechanics; on Windows, where MSVC's coroutine code is the slower half, removing a frame and two transitions per ask
+is worth as much on two cores as on one.
+
+**The harness note — a trap worth its own paragraph.** The first pass measured the candidate +17 % on every
+bank-transaction config, distributions disjoint the wrong way. `frameworks/qb/savina/bank-transaction.cpp` detected
+the emplace-ask idiom with a concept keyed on the exact return type (`-> std::same_as<task<Deposit>>`); the
+candidate's `qb::ask` returns an operation, the concept went false, the code fell back silently to the by-value form
+and `deposit()` wrapped it in the `task<Deposit>` it promised: two 64-byte copies and a frame more than the control.
+The harness now detects by callability and returns what `qb::ask` returns (`85e4277a`); the ask-free anchors were
+flat in both passes, which is what pointed at the harness rather than at the framework. A version-detection concept
+must never constrain on the exact type an API returns.
+
+### 13.8 The deque tax (QB-215): `qb::growable_ring` under the coroutine layer, measured
+
+The ask-cost probe's `stream` mode was the tell: 69 ns per chunk on Windows against 31 for a bare push, while WSL2
+sat at 24 vs 24 — a factor of two on one platform over identical code is a data structure, not codegen. MSVC's STL
+packs `sizeof(T) <= 1 ? 16 : <= 2 ? 8 : <= 4 ? 4 : <= 8 ? 2 : 1` elements per deque block (`<deque>`,
+`_Deque_val::_Block_size`): one 64-byte event per block, two coroutine handles per block, a heap allocation and a
+free per chunk or per park; libstdc++ packs 512 bytes per block. qb's own benchmarks confirmed it: the sync
+primitives with 64–512 parked waiters and the channel's try-send / try-recv ran 1.3–2× behind g++ where the
+deque-free cells sat at the ordinary MSVC ratio. QB-215 (qb `6632987e` on `perf/stream-ring`) replaces every
+`std::deque` of the coroutine layer with `qb::growable_ring<T>` (`qb/src/qb/system/container/growable_ring.h`): a
+power-of-two ring over storage aligned for `T`, doubled when full with the elements moved, one allocation per
+doubling and none per element, pointer cursors, deque-shaped names — `ask_stream`'s chunk buffer, `channel<T>`'s
+value buffer and its three waiter lists, the waiter lists of `semaphore`, `async_mutex`, `async_rw_lock` and
+`async_event` (`barrier` and `async_latch` already kept a `std::vector`).
+
+Control `6712ef30`, candidate `6632987e`, one quiet session per host, same-length executable paths; full tables in
+`results/<host>/qb-branch-perf-stream-ring/README.md`:
+
+| instrument | WSL2 g++-14 | Windows MSVC 19.51 |
+|---|---:|---:|
+| probe `stream`, ns per chunk (median of 7, alternated) | 24.67 → 24.65 (−0.1 %) | 72.25 → 36.26 (−49.8 %) |
+| probe `push` / `ask` (no ring on the path) | −1.5 % / −0.2 % | +1.7 % / +2.4 % (placement; the harness censuses below are flat) |
+| `BM_Sync_AsyncMutex` coros 8 / 64 / 512 | +0.5 / +2.8 / +0.8 % | −17.1 / −24.6 / −22.9 % |
+| `BM_Sync_RwLock_Write` coros 8 / 64 / 512 | +1.2 / +3.2 / +2.0 % | −16.3 / −22.1 / −21.5 % |
+| `BM_Sync_Semaphore_Contended` coros 8 / 64 / 512 | −1.2 / −1.4 / −0.4 % | −2.2 / −0.1 / +1.7 % |
+| `BM_Sync_Latch` arrivers 8 / 64 / 512 (a `std::vector`, untouched) | +3.1 / +2.6 / +1.0 % | +1.3 % at 512 |
+| `BM_Channel_TrySendTryRecv` messages 64 / 1024 / 8192 | −4.6 / −27.1 / −30.3 % | −24.7 / −24.9 / −16.0 % |
+| `BM_Channel_SendRecv` messages 64 / 512 / 2048 | +0.5 / −1.5 / −1.3 % | −30.1 / −9.6 / −5.6 % |
+| `bank-transaction` 1c-spin / 2c-spin (census ×12, the ask path) | — | +0.4 % / −1.6 %, overlapping |
+| ping-pong 1c-spin / fib 1c-spin (census ×8) | — | −1.0 % / −1.4 % |
+
+Three things the table says. On Linux the sync primitives sit inside the ±3 % band the untouched latch cell draws
+on the same binary — a ring and a 512-byte-block deque cost the same per park, as they should — while the channel's
+try-send / try-recv loop gains −27 / −30 % past 64 messages, where libstdc++'s deque starts walking its block map
+on every push and pop (a two-level indirection) and the ring keeps bumping a pointer. On Windows the mutex and the
+rw-lock gain a fifth to a quarter from 8 parked coroutines up and the channel at every size; the semaphore, whose
+list held the same 8-byte element as the mutex's, is flat on both hosts — an observation this run does not explain
+and the text does not guess at. And the cells that use no ring drift: `BM_Generator_MapFilter` +5 to +8 % on
+Windows (flat on Linux), `BM_Stream_MapCollect` +5 to +7 % on Linux (−0.4 to −4.4 % on Windows), each systematic
+across its three passes, each on code the diff never touched and whose twin cell on the same machinery sits flat —
+the placement of a rebuilt binary, recorded as such in both READMEs rather than netted out.
+
+**The lesson that cost a pass.** The first shared ring addressed its slots by index (`_buf[(_head + i) & _mask]`):
+identical on Windows, +21 to +33 % on `BM_Channel_TrySendTryRecv` under g++ — five member loads and a mask per push
+against a deque's two-pointer cursor. Replacing a container that a libstdc++ deque already served well has to match
+the deque's instruction budget, not merely its allocation count: the pointer-cursor ring (`_head`, `_tail`, `_end`;
+a construct, one compare, one increment) is what both hosts were then measured with. A candidate is measured on the
+platform where it is NOT expected to win before it is believed on the one where it is.
+
+### 13.9 The final candidate on the two arm64 hosts (2026-09-19) — macOS and a Linux guest, and the two cells the arena costs
+
+§13.6 – §13.8 measured the four changes that landed after the release candidate of §13.5 — the actor
+arena (QB-212), `pin_frame_copy` (QB-213), the frame-free `qb::ask` (QB-214), `qb::growable_ring`
+(QB-215) — on the two x86-64 hosts that are one machine. On 2026-09-19 the candidate that carries all
+four, qb `develop` **`174e515a`**, was measured on the two hosts that were not there: the macOS
+M4 Pro (`results/macbook-m4pro-macos-clang21/`, AppleClang 21, unpinned) and, an hour later, a
+native-arm64 Linux guest on the same machine (`results/utm-debian13-arm64-g++14/`, UTM / QEMU,
+Debian 13, g++ 14.2, vCPUs 2 and 4). Same protocol on both, §13.5's with one leg more: (A) the
+candidate, `--only qb`, 9 + 2; (B) shipped 3.1.0; (B′) **`f2779605`**, the control for the four
+changes; (A2) the candidate again; (C) every framework, 132 cells, a fresh manifest; (D) the field
+census (ping-pong and thread-ring, two cores, qb / CAF / floor, 12 interleaved launches of 3 + 1) and
+a second census of candidate / `f2779605` / shipped on the two-core cells of ALL eight shapes — on
+an unpinned host, and on a guest whose vCPUs float, a two-core grid cell is one launch. 132 / 132
+cells verified on each host (2 declared `n/a`), 0 unverified launch in 2 × 696. The whole tree had
+passed its macOS validation immediately before (Huly QB-44).
+
+**Against 3.1.0, in the same session, no cell is slower on either host**: geometric mean of
+candidate / shipped 0.24 (macOS) and 0.23 (the guest); the guest's two park cells that cross a core
+per message read 29.56 µs → 0.17 µs and 14.81 µs → 0.08 µs — the WSL2 result (§13.5) on another
+hypervisor and another architecture, because the guest's floor is a hypervisor's too
+(`baseline__2c-park` 20.8 µs a round trip; macOS's condition variable reads 4.42). **Against the
+field qb is the fastest framework in all 64 cells**; qb / best rival is 0.105 (macOS) and 0.139 (the
+guest) in geometric mean, the narrowest cell on both is ping-pong 2c-spin (0.54 and 0.57, against
+CAF), and qb is below the raw-thread floor in 14 and 15 of the 16 two-core cells — the exceptions
+are fib (47 / 44 against 32 / 30 on macOS, 50 against 32 on the guest).
+
+**The field census** (median of the twelve launch medians, [min … max], ns per unit):
+
+| cell | qb | CAF | floor |
+|---|---|---|---|
+| ping-pong 2c-spin, macOS | **196.4** [181.2 … 213.2] | 386.6 [382.4 … 391.3] | 237.7 [210.3 … 250.2] |
+| ping-pong 2c-park, macOS | **203.9** [177.8 … 219.0] | 388.0 [376.9 … 398.9] | — |
+| thread-ring 2c-spin, macOS | **91.6** [79.7 … 96.7] | 191.9 [184.6 … 199.9] | 120.0 [99.1 … 140.0] |
+| thread-ring 2c-park, macOS | **88.7** [78.0 … 99.7] | 189.9 [185.7 … 198.5] | — |
+| ping-pong 2c-spin, arm64 guest | **172.0** [161.7 … 180.5] | 297.4 [291.0 … 307.7] | 207.1 [183.9 … 224.3] |
+| ping-pong 2c-park, arm64 guest | **178.7** [161.1 … 189.6] | 297.3 [293.1 … 302.7] | — |
+| thread-ring 2c-spin, arm64 guest | **83.4** [71.5 … 95.0] | 143.7 [141.1 … 148.7] | 113.5 [94.0 … 130.2] |
+| thread-ring 2c-park, arm64 guest | **83.1** [77.5 … 87.3] | 144.5 [142.1 … 147.2] | — |
+
+Under the floor on all four spin cells, where the two x86-64 hosts read "on it or under it".
+
+**The four late changes, against `f2779605`, carry over to arm64 with their signs and their sizes.**
+fib at one core 90.7 → 69.9 (−23 %) on macOS and 89.0 → 80.9 at the guest's census (−9 %), at two
+cores by census 60.3 → 46.7 (−22 %) and 62.5 → 50.0 (−20 %): the arena removes a `malloc` / `free`
+pair per actor on a platform whose allocator is fast and whose thread-local access is a call.
+bank-transaction at one core 100.6 → 82.0 (−18 %) and 94.3 → 78.6 (−17 %), at two 76.2 → 65.1 and
+73.0 → 63.9; the ask-cost probe reads **ask 46.08 → 37.44 ns (−18.8 %) on macOS and 51.69 → 37.49
+(−27.5 %) on the guest**, push level on both. Every other two-core cell is level on macOS, and every
+other cell but one on the guest.
+
+**What the arena costs, found here because these two hosts were not there when it was measured.**
+Two cells, both small, both attributed by a census over builds along `f2779605..174e515a` and over
+two scratch variants of the arena commit `a134ccd6` — `global-new`, which keeps the commit whole
+and routes `qb::Actor`'s four class-level operators to the global allocator, and `granule64`, which
+starts every actor on its own cache line:
+
+| cell (12 launches of 5 + 1; chameneos 24 of 3 + 1) | `f2779605` | `a134ccd6` (arena) | `global-new` | `granule64` | `174e515a` |
+|---|---|---|---|---|---|
+| thread-ring 1c-spin, macOS | 17.2 [16.8 … 17.5] | **18.4** [18.1 … 18.7] | 17.2 [16.6 … 17.2] | 18.4 [18.0 … 18.7] | 18.3 [18.0 … 18.7] |
+| fib 1c-spin, macOS | 84.8 [82.9 … 100.3] | **70.1** [69.0 … 72.9] | 86.0 [82.4 … 91.2] | 70.6 [69.3 … 73.8] | — |
+| thread-ring 1c-spin, arm64 guest | 24.8 [21.0 … 25.0] | 24.1 [23.9 … 25.4] | 24.8 [24.6 … 25.0] | — | 24.1 [24.0 … 26.0] |
+| chameneos 2c-park, arm64 guest, launches ≥ 58 ns of 24 | 1 | **12** | 6 | — | 9 |
+| chameneos 2c-spin, arm64 guest, launches ≥ 58 ns of 24 | 6 | **9** | 4 | — | 7 |
+
+- **thread-ring at one core on macOS, +1.2 ns a hop (+7 %)**: the step is at the arena commit, nothing
+  after it moves the cell, ping-pong and big (the two other static shapes) are flat over the same
+  five builds, and `global-new` takes it away — so it is where the hundred actor objects LIVE, not
+  the code around them, and `granule64` says it is not their alignment. What is left is the
+  neighbourhood: under the system allocator an actor object sits beside what its constructor
+  allocates, in the arena it sits in a chunk of its own, and a ring that visits a different actor
+  every 18 ns pays for the second stream. The guest, on glibc, does not show it (24.8 → 24.1).
+- **chameneos at two cores on the guest: the same fast mode (43 – 45 ns a meeting), a slow mode
+  visited more often** and deeper (to ~100 ns against 66) with the arena; medians overlap. macOS
+  does not show it (41.8 against 40.8 by census), nor did the two pinned hosts (§13.6). Attributed,
+  not explained: the guest has no `perf`.
+
+Neither is a regression against anything shipped — the two cells are 18.6 against 3.1.0's 42.2, and
+45.7 – 66.9 against 81.7 – 84.0 — and the arena's gain is a quarter of an actor's lifetime on four
+hosts; both are recorded with their instrument under each host's
+`qb-branch-develop/bisect-f2779605-174e515a/`, and the design question they share (the actor's
+satellites in the arena too) is Huly's. **And one the ring costs**: on libc++ the stream chunk reads
+19.87 → 21.16 ns (+6.5 %; the five-build probe puts the step at `174e515a`) — libc++'s deque packs
+4096 bytes a block and never paid the tax §13.8 removed on MSVC; on the guest's libstdc++ it is
+level (19.82 → 19.79). §13.8's last sentence, applied to a third standard library.
+
+**The parked timer, the one kqueue question QB-196 left**: `qvoprobe-parked-timer-wake 1000 100
+2000` — a 100 µs timer on a core parked at `setLatency(1 ms)` — reads lateness p50 **16.8 µs** (p99
+22.7, max 35.5) on kqueue, which takes a `timespec`, and **55.4 µs** (p99 67.5) on the guest's
+`epoll_pwait2`, the thread's 50 µs timer slack plus the wake: §19.4's figure on another kernel.
+
 ## 14. The loop clock — what one line cost, and what an idle spin pass needs
 
 §13.3 named the per-pass cost of a core with ONE event in flight as the first residual and `perf`
@@ -2053,7 +2274,7 @@ at all — the programme that follows.
 
 qev is on the path of every core that owns a timer or a socket, and on none of the Savina
 cells, which is why its cost went unmeasured for the whole 3.2 audit until 17.2.
-`dev/plans/roadmaps/QEV_PERFORMANCE_ROADMAP.md` (Huly QB-186) is the audit — the three entry
+the qev performance roadmap of the development tree (QB-186) is the audit — the three entry
 points, twelve findings ranked by measured cost — and the plan: the non-blocking pass at its
 floor (no handshake, one clock read, the evpipe not counted as a pollable fd — it is, after the
 first park, and it re-enables the poll for the life of the loop; QB-188, target ≤ 25 ns per
@@ -2605,184 +2826,3 @@ value-initialising it would leave a ring's pages untouched until its producer wr
 (producer, consumer) pair, exactly the trade §9 refused for the segments because the faults landed
 inside a measured burst. It is a decision for the backpressure axis (QB-53), not a quick win: filed,
 with these figures, not done.
-
-### 13.7 The ask frame (QB-212, point 2 → QB-214): `qb::ask` as an awaitable in the caller's frame, measured
-
-Point 2 of QB-212 named "the ask frame" as where `bank-transaction` still lost. The registry rework measured
-nothing (2026-09-17, both hosts: bank censuses overlapping, the probe unchanged), which isolated the remaining cost
-of a `co_await qb::ask` to the `task<E>` coroutine wrapped around an awaiter that already did all the work: a pooled
-frame allocated and freed per ask, the initial suspend and the symmetric transfer into it, a `co_return` moving the
-64-byte reply into the promise's `variant`, the final suspend and the transfer back, a second move out of the
-`variant`. QB-214 (qb `91276be0` on `perf/ask-frameless`) makes `qb::ask` return the exchange itself as an
-awaitable — `ask_operation<E>` / `ask_emplace_operation<E, Args...>`, a prvalue built into the awaiting frame that
-engages the `ask_awaiter` in place at `await_suspend()`; lazy, cancel-aware, implicitly convertible to `task<E>`
-so every existing shape keeps compiling.
-
-Control `7296ac8d`, candidate `91276be0`, one quiet session per host, same-length executable paths, both sides on
-the harness's emplace idiom (see the harness note below); full tables in
-`results/<host>/qb-branch-perf-ask-frameless/README.md`:
-
-| instrument | WSL2 g++-14 | Windows MSVC 19.51 |
-|---|---:|---:|
-| probe `ask`, ns per round trip (median of 7, alternated) | 45.2 → 35.6 (−21 %) | 64.0 → 48.5 (−24 %) |
-| the ask mechanics above a bare push/reply | 21.5 → 12.4 ns (−43 %) | 32.8 → 16.1 ns (−51 %) |
-| `bank-transaction` 1c-spin (census ×12, ns/unit) | 136.2 → 97.2 (−29 %) | 228.8 → 161.4 (−30 %) |
-| `bank-transaction` 1c-park | 141.0 → 98.5 (−30 %) | 231.9 → 162.5 (−30 %) |
-| `bank-transaction` 2c-spin | 82.3 → 72.7 (−12 %) | 142.0 → 106.1 (−25 %) |
-| `bank-transaction` 2c-park | 83.5 → 73.2 (−12 %) | 142.7 → 108.8 (−24 %) |
-| `dev/bench` ask-roundtrip same-core / cross-core | 5.5 → 5.1 ms / 14.5 → 14.3 ms | — |
-| anchors (ping-pong, fib, counting 1c) and the bimodal cells re-censused | flat | flat |
-
-Every bank distribution is disjoint (control minimum above candidate maximum) on both hosts. The 2c cells gain
-less on WSL2 than on Windows because there the round trip is dominated by the cross-core hop, not by the ask's own
-mechanics; on Windows, where MSVC's coroutine code is the slower half, removing a frame and two transitions per ask
-is worth as much on two cores as on one.
-
-**The harness note — a trap worth its own paragraph.** The first pass measured the candidate +17 % on every
-bank-transaction config, distributions disjoint the wrong way. `frameworks/qb/savina/bank-transaction.cpp` detected
-the emplace-ask idiom with a concept keyed on the exact return type (`-> std::same_as<task<Deposit>>`); the
-candidate's `qb::ask` returns an operation, the concept went false, the code fell back silently to the by-value form
-and `deposit()` wrapped it in the `task<Deposit>` it promised: two 64-byte copies and a frame more than the control.
-The harness now detects by callability and returns what `qb::ask` returns (`85e4277a`); the ask-free anchors were
-flat in both passes, which is what pointed at the harness rather than at the framework. A version-detection concept
-must never constrain on the exact type an API returns.
-
-### 13.8 The deque tax (QB-215): `qb::growable_ring` under the coroutine layer, measured
-
-The ask-cost probe's `stream` mode was the tell: 69 ns per chunk on Windows against 31 for a bare push, while WSL2
-sat at 24 vs 24 — a factor of two on one platform over identical code is a data structure, not codegen. MSVC's STL
-packs `sizeof(T) <= 1 ? 16 : <= 2 ? 8 : <= 4 ? 4 : <= 8 ? 2 : 1` elements per deque block (`<deque>`,
-`_Deque_val::_Block_size`): one 64-byte event per block, two coroutine handles per block, a heap allocation and a
-free per chunk or per park; libstdc++ packs 512 bytes per block. qb's own benchmarks confirmed it: the sync
-primitives with 64–512 parked waiters and the channel's try-send / try-recv ran 1.3–2× behind g++ where the
-deque-free cells sat at the ordinary MSVC ratio. QB-215 (qb `6632987e` on `perf/stream-ring`) replaces every
-`std::deque` of the coroutine layer with `qb::growable_ring<T>` (`qb/src/qb/system/container/growable_ring.h`): a
-power-of-two ring over storage aligned for `T`, doubled when full with the elements moved, one allocation per
-doubling and none per element, pointer cursors, deque-shaped names — `ask_stream`'s chunk buffer, `channel<T>`'s
-value buffer and its three waiter lists, the waiter lists of `semaphore`, `async_mutex`, `async_rw_lock` and
-`async_event` (`barrier` and `async_latch` already kept a `std::vector`).
-
-Control `6712ef30`, candidate `6632987e`, one quiet session per host, same-length executable paths; full tables in
-`results/<host>/qb-branch-perf-stream-ring/README.md`:
-
-| instrument | WSL2 g++-14 | Windows MSVC 19.51 |
-|---|---:|---:|
-| probe `stream`, ns per chunk (median of 7, alternated) | 24.67 → 24.65 (−0.1 %) | 72.25 → 36.26 (−49.8 %) |
-| probe `push` / `ask` (no ring on the path) | −1.5 % / −0.2 % | +1.7 % / +2.4 % (placement; the harness censuses below are flat) |
-| `BM_Sync_AsyncMutex` coros 8 / 64 / 512 | +0.5 / +2.8 / +0.8 % | −17.1 / −24.6 / −22.9 % |
-| `BM_Sync_RwLock_Write` coros 8 / 64 / 512 | +1.2 / +3.2 / +2.0 % | −16.3 / −22.1 / −21.5 % |
-| `BM_Sync_Semaphore_Contended` coros 8 / 64 / 512 | −1.2 / −1.4 / −0.4 % | −2.2 / −0.1 / +1.7 % |
-| `BM_Sync_Latch` arrivers 8 / 64 / 512 (a `std::vector`, untouched) | +3.1 / +2.6 / +1.0 % | +1.3 % at 512 |
-| `BM_Channel_TrySendTryRecv` messages 64 / 1024 / 8192 | −4.6 / −27.1 / −30.3 % | −24.7 / −24.9 / −16.0 % |
-| `BM_Channel_SendRecv` messages 64 / 512 / 2048 | +0.5 / −1.5 / −1.3 % | −30.1 / −9.6 / −5.6 % |
-| `bank-transaction` 1c-spin / 2c-spin (census ×12, the ask path) | — | +0.4 % / −1.6 %, overlapping |
-| ping-pong 1c-spin / fib 1c-spin (census ×8) | — | −1.0 % / −1.4 % |
-
-Three things the table says. On Linux the sync primitives sit inside the ±3 % band the untouched latch cell draws
-on the same binary — a ring and a 512-byte-block deque cost the same per park, as they should — while the channel's
-try-send / try-recv loop gains −27 / −30 % past 64 messages, where libstdc++'s deque starts walking its block map
-on every push and pop (a two-level indirection) and the ring keeps bumping a pointer. On Windows the mutex and the
-rw-lock gain a fifth to a quarter from 8 parked coroutines up and the channel at every size; the semaphore, whose
-list held the same 8-byte element as the mutex's, is flat on both hosts — an observation this run does not explain
-and the text does not guess at. And the cells that use no ring drift: `BM_Generator_MapFilter` +5 to +8 % on
-Windows (flat on Linux), `BM_Stream_MapCollect` +5 to +7 % on Linux (−0.4 to −4.4 % on Windows), each systematic
-across its three passes, each on code the diff never touched and whose twin cell on the same machinery sits flat —
-the placement of a rebuilt binary, recorded as such in both READMEs rather than netted out.
-
-**The lesson that cost a pass.** The first shared ring addressed its slots by index (`_buf[(_head + i) & _mask]`):
-identical on Windows, +21 to +33 % on `BM_Channel_TrySendTryRecv` under g++ — five member loads and a mask per push
-against a deque's two-pointer cursor. Replacing a container that a libstdc++ deque already served well has to match
-the deque's instruction budget, not merely its allocation count: the pointer-cursor ring (`_head`, `_tail`, `_end`;
-a construct, one compare, one increment) is what both hosts were then measured with. A candidate is measured on the
-platform where it is NOT expected to win before it is believed on the one where it is.
-
-### 13.9 The final candidate on the two arm64 hosts (2026-09-19) — macOS and a Linux guest, and the two cells the arena costs
-
-§13.6 – §13.8 measured the four changes that landed after the release candidate of §13.5 — the actor
-arena (QB-212), `pin_frame_copy` (QB-213), the frame-free `qb::ask` (QB-214), `qb::growable_ring`
-(QB-215) — on the two x86-64 hosts that are one machine. On 2026-09-19 the candidate that carries all
-four, qb `develop` **`174e515a`**, was measured on the two hosts that were not there: the macOS
-M4 Pro (`results/macbook-m4pro-macos-clang21/`, AppleClang 21, unpinned) and, an hour later, a
-native-arm64 Linux guest on the same machine (`results/utm-debian13-arm64-g++14/`, UTM / QEMU,
-Debian 13, g++ 14.2, vCPUs 2 and 4). Same protocol on both, §13.5's with one leg more: (A) the
-candidate, `--only qb`, 9 + 2; (B) shipped 3.1.0; (B′) **`f2779605`**, the control for the four
-changes; (A2) the candidate again; (C) every framework, 132 cells, a fresh manifest; (D) the field
-census (ping-pong and thread-ring, two cores, qb / CAF / floor, 12 interleaved launches of 3 + 1) and
-a second census of candidate / `f2779605` / shipped on the two-core cells of ALL eight shapes — on
-an unpinned host, and on a guest whose vCPUs float, a two-core grid cell is one launch. 132 / 132
-cells verified on each host (2 declared `n/a`), 0 unverified launch in 2 × 696. The whole tree had
-passed its macOS validation immediately before (Huly QB-44).
-
-**Against 3.1.0, in the same session, no cell is slower on either host**: geometric mean of
-candidate / shipped 0.24 (macOS) and 0.23 (the guest); the guest's two park cells that cross a core
-per message read 29.56 µs → 0.17 µs and 14.81 µs → 0.08 µs — the WSL2 result (§13.5) on another
-hypervisor and another architecture, because the guest's floor is a hypervisor's too
-(`baseline__2c-park` 20.8 µs a round trip; macOS's condition variable reads 4.42). **Against the
-field qb is the fastest framework in all 64 cells**; qb / best rival is 0.105 (macOS) and 0.139 (the
-guest) in geometric mean, the narrowest cell on both is ping-pong 2c-spin (0.54 and 0.57, against
-CAF), and qb is below the raw-thread floor in 14 and 15 of the 16 two-core cells — the exceptions
-are fib (47 / 44 against 32 / 30 on macOS, 50 against 32 on the guest).
-
-**The field census** (median of the twelve launch medians, [min … max], ns per unit):
-
-| cell | qb | CAF | floor |
-|---|---|---|---|
-| ping-pong 2c-spin, macOS | **196.4** [181.2 … 213.2] | 386.6 [382.4 … 391.3] | 237.7 [210.3 … 250.2] |
-| ping-pong 2c-park, macOS | **203.9** [177.8 … 219.0] | 388.0 [376.9 … 398.9] | — |
-| thread-ring 2c-spin, macOS | **91.6** [79.7 … 96.7] | 191.9 [184.6 … 199.9] | 120.0 [99.1 … 140.0] |
-| thread-ring 2c-park, macOS | **88.7** [78.0 … 99.7] | 189.9 [185.7 … 198.5] | — |
-| ping-pong 2c-spin, arm64 guest | **172.0** [161.7 … 180.5] | 297.4 [291.0 … 307.7] | 207.1 [183.9 … 224.3] |
-| ping-pong 2c-park, arm64 guest | **178.7** [161.1 … 189.6] | 297.3 [293.1 … 302.7] | — |
-| thread-ring 2c-spin, arm64 guest | **83.4** [71.5 … 95.0] | 143.7 [141.1 … 148.7] | 113.5 [94.0 … 130.2] |
-| thread-ring 2c-park, arm64 guest | **83.1** [77.5 … 87.3] | 144.5 [142.1 … 147.2] | — |
-
-Under the floor on all four spin cells, where the two x86-64 hosts read "on it or under it".
-
-**The four late changes, against `f2779605`, carry over to arm64 with their signs and their sizes.**
-fib at one core 90.7 → 69.9 (−23 %) on macOS and 89.0 → 80.9 at the guest's census (−9 %), at two
-cores by census 60.3 → 46.7 (−22 %) and 62.5 → 50.0 (−20 %): the arena removes a `malloc` / `free`
-pair per actor on a platform whose allocator is fast and whose thread-local access is a call.
-bank-transaction at one core 100.6 → 82.0 (−18 %) and 94.3 → 78.6 (−17 %), at two 76.2 → 65.1 and
-73.0 → 63.9; the ask-cost probe reads **ask 46.08 → 37.44 ns (−18.8 %) on macOS and 51.69 → 37.49
-(−27.5 %) on the guest**, push level on both. Every other two-core cell is level on macOS, and every
-other cell but one on the guest.
-
-**What the arena costs, found here because these two hosts were not there when it was measured.**
-Two cells, both small, both attributed by a census over builds along `f2779605..174e515a` and over
-two scratch variants of the arena commit `a134ccd6` — `global-new`, which keeps the commit whole
-and routes `qb::Actor`'s four class-level operators to the global allocator, and `granule64`, which
-starts every actor on its own cache line:
-
-| cell (12 launches of 5 + 1; chameneos 24 of 3 + 1) | `f2779605` | `a134ccd6` (arena) | `global-new` | `granule64` | `174e515a` |
-|---|---|---|---|---|---|
-| thread-ring 1c-spin, macOS | 17.2 [16.8 … 17.5] | **18.4** [18.1 … 18.7] | 17.2 [16.6 … 17.2] | 18.4 [18.0 … 18.7] | 18.3 [18.0 … 18.7] |
-| fib 1c-spin, macOS | 84.8 [82.9 … 100.3] | **70.1** [69.0 … 72.9] | 86.0 [82.4 … 91.2] | 70.6 [69.3 … 73.8] | — |
-| thread-ring 1c-spin, arm64 guest | 24.8 [21.0 … 25.0] | 24.1 [23.9 … 25.4] | 24.8 [24.6 … 25.0] | — | 24.1 [24.0 … 26.0] |
-| chameneos 2c-park, arm64 guest, launches ≥ 58 ns of 24 | 1 | **12** | 6 | — | 9 |
-| chameneos 2c-spin, arm64 guest, launches ≥ 58 ns of 24 | 6 | **9** | 4 | — | 7 |
-
-- **thread-ring at one core on macOS, +1.2 ns a hop (+7 %)**: the step is at the arena commit, nothing
-  after it moves the cell, ping-pong and big (the two other static shapes) are flat over the same
-  five builds, and `global-new` takes it away — so it is where the hundred actor objects LIVE, not
-  the code around them, and `granule64` says it is not their alignment. What is left is the
-  neighbourhood: under the system allocator an actor object sits beside what its constructor
-  allocates, in the arena it sits in a chunk of its own, and a ring that visits a different actor
-  every 18 ns pays for the second stream. The guest, on glibc, does not show it (24.8 → 24.1).
-- **chameneos at two cores on the guest: the same fast mode (43 – 45 ns a meeting), a slow mode
-  visited more often** and deeper (to ~100 ns against 66) with the arena; medians overlap. macOS
-  does not show it (41.8 against 40.8 by census), nor did the two pinned hosts (§13.6). Attributed,
-  not explained: the guest has no `perf`.
-
-Neither is a regression against anything shipped — the two cells are 18.6 against 3.1.0's 42.2, and
-45.7 – 66.9 against 81.7 – 84.0 — and the arena's gain is a quarter of an actor's lifetime on four
-hosts; both are recorded with their instrument under each host's
-`qb-branch-develop/bisect-f2779605-174e515a/`, and the design question they share (the actor's
-satellites in the arena too) is Huly's. **And one the ring costs**: on libc++ the stream chunk reads
-19.87 → 21.16 ns (+6.5 %; the five-build probe puts the step at `174e515a`) — libc++'s deque packs
-4096 bytes a block and never paid the tax §13.8 removed on MSVC; on the guest's libstdc++ it is
-level (19.82 → 19.79). §13.8's last sentence, applied to a third standard library.
-
-**The parked timer, the one kqueue question QB-196 left**: `qvoprobe-parked-timer-wake 1000 100
-2000` — a 100 µs timer on a core parked at `setLatency(1 ms)` — reads lateness p50 **16.8 µs** (p99
-22.7, max 35.5) on kqueue, which takes a `timespec`, and **55.4 µs** (p99 67.5) on the guest's
-`epoll_pwait2`, the thread's 50 µs timer slack plus the wake: §19.4's figure on another kernel.

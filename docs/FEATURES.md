@@ -5,7 +5,7 @@ picture, and qb does not lead it everywhere: what each framework **has**, read f
 at the pinned version, with the file and line where the claim can be checked. Nothing here was
 measured; every row is a fact about an API, not about speed.
 
-**What was read.** qb **3.1.0** (`qb/src/`, the submodule of this superproject), CAF **1.1.0**
+**What was read.** qb **3.1.0** (the `qb/src/` of the tree `QVO_QB_DIR` names), CAF **1.1.0**
 and SObjectizer **5.8.5.1** — the trees `tools/run.py` builds against, which CMake fetches
 under `build/<preset>/_deps/caf-src/` and `build/<preset>/_deps/sobjectizer-src/`. Citations
 are `path:line` relative to `qb/src/qb/` for qb, to the CAF checkout for CAF, and to `dev/` of the

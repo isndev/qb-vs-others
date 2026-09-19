@@ -6,7 +6,7 @@ ambition has already misled the reader.
 ## Done
 
 - The harness: verified checksums, verified CPU pinning, distribution reporting, JSON results.
-- Build discipline: all frameworks from source, one flag set, pinned refs matching qb-dev's own
+- Build discipline: all frameworks from source, one flag set, pinned refs matching the qb development tree's own
   vcpkg baseline.
 - Worker placement through each framework's own public API.
 - **Five Savina benchmarks** — `savina/ping-pong`, `counting`, `thread-ring`, `fork-join`,
@@ -97,7 +97,7 @@ is left of the pipeline is the train itself.
 4. **Merge as 3.2.0, in lockstep** — qb + qbm-\* + qb-examples on one train, qev **5.1.0** with
    it (axis E needs `ev_active_count()`, which lives in the 22 shared files the identity guard
    checks). **The merge to `develop` is done** (2026-09-06, the citation sweep in the same
-   commits as the pointer bumps); the train (Huly QB-45, `dev/agent/release-gate.sh`) is not,
+   commits as the pointer bumps); the train (QB-45, `release-gate.sh` in the development tree) is not,
    and the 3.2.0 grid above is the figure it ships with.
 5. **The residuals of §13.3, on `develop` before the train** — residual 1 (the per-pass cost of a
    core with one event in flight) took its first cut on 2026-09-07: `perf/loop-clock-on-demand`
@@ -122,7 +122,7 @@ is left of the pipeline is the train itself.
    g++, 82 → 72 on MSVC, bank 2c −9 %. And §17.2 is where the audit turned to **qev**: a timed
    ask cost 798 / 1108 ns because libev read its clocks through the raw syscall and polled the
    backend over a loop with no fd — 172 / 124 after the two fixes (QB-187), and a programme of
-   its own for the rest (`dev/plans/roadmaps/QEV_PERFORMANCE_ROADMAP.md`, QB-186: the pass at
+   its own for the rest (the qev performance roadmap of the development tree, QB-186: the pass at
    its floor, request timeouts without a libev timer, the embedder's clock, the io pass with
    io_uring, the wake). Phase 1 landed (§17.4, QB-188): the pass 51 → 22 ns on g++, the timed
    ask 174 → 115 — and it found that Windows had been judging every libev timer on the 15.6 ms
@@ -206,7 +206,7 @@ trip and 13.01 µs per ring hop there). Two things remain:
 The closest architectural peer to qb — shard-per-core, message passing, no shared mutable state —
 and therefore the most informative comparison available. Not done: Linux-only, and its build
 dependencies (DPDK-adjacent, hwloc, fmt, c-ares, protobuf) need packages this host cannot install
-without the user's password. Needs `docs/SEASTAR.md` and a provisioning step before it can be a
+without the user's password. Needs a `docs/SEASTAR.md` (not written yet) and a provisioning step before it can be a
 framework here rather than a wish.
 
 ### Cross-language reference points
@@ -229,6 +229,6 @@ the JDK unpacks from a zip, and Erlang is the awkward one.
 - **The qb-side findings in `docs/TUNING.md` §9 are not tied to a qb commit.** A finding that
   names `VirtualCore.cpp:199` is true of qb 3.1.0 and of the branch at `32b28130`, and already
   false of the branch at `230c5035` (axis M moved `__flush_all__`; §9 says so in prose, which
-  is all it can do); nothing here re-checks the citation when either moves. qb-dev's `llm-guard.py` does exactly that for its own
+  is all it can do); nothing here re-checks the citation when either moves. the qb development tree's `llm-guard.py` does exactly that for its own
   docs and does not read this repository.
 - **A footprint probe.** See "Actor creation cost and memory footprint".
