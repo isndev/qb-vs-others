@@ -1,42 +1,40 @@
 # macbook-m4pro-macos-clang21
 
-Apple M4 Pro (10 performance + 4 efficiency cores, 48 GB), macOS 26.6 (25G72), AppleClang 21.0.0
-(Xcode 26), `-O3 -DNDEBUG`, **7 repetitions + 2 warmup**, every one of the **84 cells** across the
-five `savina-*/` directories measured in one quiet session on 2026-09-05 (18:59–19:07 UTC), the
-candidate qb branch's grids, burst sweep and launch censuses following at 19:06–19:21 UTC in the
-same session. Nothing else of ours ran meanwhile: the other agents on this machine were paused
-first, and the residual load is recorded below. `run.json` carries `merged_partial_runs: 1`
-because the field was assembled from two builds of the same tree (see the second paragraph).
-**`savina-fib/` and `savina-chameneos/` are not measured on this host yet** (they were written on
-2026-09-06, after this session): `tools/check-roster.py --results results/macbook-m4pro-macos-clang21`
-reports the 32 missing cells by name until the next macOS session fills them, and the shipped
-3.1.0 fib cell there will carry the logging cost the two pinned hosts' READMEs describe.
+Apple M4 Pro (10 performance + 4 efficiency cores, 48 GB, High Power mode, on AC), macOS 26.6.2
+(25G83), AppleClang 21.0.0 (clang-2100.1.1.101), `-O3 -DNDEBUG`, **9 repetitions + 2 warmup**,
+every one of the **132 cells** across the eight `savina-*/` directories measured in one quiet
+session on **2026-09-19, 12:17:56–12:25:21 UTC** — 130 verified + 2 declared `n/a`
+(`caf-detached` has no spin mode), one build, one manifest (`run.json` carries no
+`merged_partial_runs`). **qb in `savina-*/` is the 3.2.0 candidate, `develop` `174e515a`** — as on
+the two pinned hosts since 2026-09-13, where the column is `f2779605` — built with CAF 1.1.0,
+SObjectizer 5.8.5.1 and the raw-thread floor under `build/macos-candidate`; shipped v3.1.0
+(`830ea244`) was measured minutes earlier in the same session and lives in
+`qb-branch-develop/grid-shipped-3.1.0-20260919/`. `tools/check-roster.py --results
+results/macbook-m4pro-macos-clang21` is clean: the 48 cells of fib, chameneos and bank-transaction
+this host had never measured are here. The session's protocol, its controls, its censuses and what
+it found are in **`qb-branch-develop/README.md`**; the field of 2026-09-05 (five shapes, 7 + 2,
+shipped 3.1.0 as the qb column) is in git history, and what that session taught stays below.
 
 **This host is UNPINNED, and every document says so.** macOS has no CPU affinity API a program
 can read back — `qb::CPU::ThreadPinningSupported()` is false, and the harness refuses `--cpus` on
 a platform where a pin could report success and do nothing (FAIRNESS.md 1.4). Every cell was run
 with `--no-pin`; every result document carries `pinned:false`, and qb's own caveat line ("THIS
 PLATFORM HAS NO REAL THREAD PINNING") is in each of its documents. What that costs, measured: the
-two-core cells of ping-pong, thread-ring and big are bimodal within a launch on this host (the
-scheduler decides which core pair and when), so **no two-core figure below is quoted from the
-grid alone** — the launch census (`launch-census*/`) is the instrument for those cells, exactly as
-on Windows (§9.11). One-core cells are steady (min–max spread 1–4 %).
-
-qb in `savina-*/` is the **shipped v3.1.0** (`830ea244`), built under `build/macos-shipped` with
-`QVO_WITH_CAF=OFF QVO_WITH_SOBJECTIZER=OFF`; CAF 1.1.0, SObjectizer 5.8.5.1 and the floor come from
-`build/macos-candidate` — they do not depend on qb, and the two builds share the compiler and the
-flag set. Both were merged into this directory by `run.py --only`, which refuses to merge unless
-host, platform, CPU set, repetitions and warmup agree.
+two-core cells are bimodal by launch on this host (the scheduler decides which core pair and
+when), so **no two-core figure is quoted from the grid alone** — the launch censuses under
+`qb-branch-develop/` are the instrument for those cells, exactly as on Windows (§9.11). One-core
+cells are steady (min–max spread 1–4 %).
 
 `REPORT.md` beside this file is `tools/report.py`'s render of this directory and
-`tools/check-report.py` fails if it drifts. `docs/TUNING.md` §9.13 is the reading guide for
-everything under `qb-branch-perf-event-pipe-segmented/`.
+`tools/check-report.py` fails if it drifts. `docs/TUNING.md` §13.9 is the reading guide for the
+2026-09-19 session, §9.13 for everything under `qb-branch-perf-event-pipe-segmented/`.
 
 | directory | what it is |
 |---|---|
-| `savina-ping-pong/` | **20 cells** — 18 verified + 2 declared `n/a` (`caf-detached` has no spin mode). |
-| `savina-counting/`, `savina-thread-ring/`, `savina-fork-join/`, `savina-big/` | **16 cells** each, all verified; `caf-detached` declares itself omitted from these four. |
-| `qb-branch-perf-event-pipe-segmented/grid-final/` | **the candidate**: qb at `perf/event-pipe-segmented` `279e6cd4` through the same adapters, all five benchmarks, 7 + 2, 19:06 UTC. |
+| `savina-ping-pong/` | **20 cells** — 18 verified + 2 declared `n/a` (`caf-detached` has no spin mode); 2026-09-19, qb = the candidate `174e515a`. |
+| `savina-counting/`, `savina-thread-ring/`, `savina-fork-join/`, `savina-big/`, `savina-fib/`, `savina-chameneos/`, `savina-bank-transaction/` | **16 cells** each, all verified, same session; `caf-detached` declares itself omitted from these seven. |
+| `qb-branch-develop/` | **the 3.2.0 candidate on this host** (2026-09-19): `grid-174e515a/` and its second pass, `grid-shipped-3.1.0-20260919/` and `grid-f2779605-20260919/` (the two controls), `census-174e515a-field/` and `census-174e515a-vs-controls/` (the two-core cells, 12 interleaved launches), `bisect-f2779605-174e515a/` (the two one-core cells that moved the other way, attributed). Its README carries the tables. |
+| `qb-branch-perf-event-pipe-segmented/grid-final/` | **the candidate of 2026-09-05**: qb at `perf/event-pipe-segmented` `279e6cd4` through the same adapters, all five benchmarks, 7 + 2, 19:06 UTC. |
 | `qb-branch-perf-event-pipe-segmented/grid-230c5035/` | the previous candidate (`perf/core-hot-path` `230c5035`, before the segmented pipe), same protocol, 19:07 UTC — the control for what the two `event-pipe-segmented` commits change. |
 | `qb-branch-perf-event-pipe-segmented/grid-shipped-3.1.0/` | shipped v3.1.0 through the same protocol, 19:07–19:08 UTC — the control for the whole branch. |
 | `qb-branch-perf-event-pipe-segmented/burst-sweep/` | `savina/counting`, one core, spin, the burst swept 2 k → 4 M messages for the candidate, `230c5035` and 3.1.0 **interleaved per burst** (`tools/burst-sweep.py`), 7 + 2, with the process's page reclaims from `/usr/bin/time -l` beside each document (`*.faults.txt`); CAF, SObjectizer and the floor at 30 k and 1 M. The §9.11 instrument on its third host. |
@@ -45,7 +43,7 @@ everything under `qb-branch-perf-event-pipe-segmented/`.
 | `qb-branch-perf-event-pipe-segmented/axis-k/round{1,2,3}-{with,without}/` | the axis-K A/B on arm64 — qb at `6a0897c0` (`Mailbox::notify()` fences in spin mode too, a `dmb ish` here) against its parent `61b0b4cf`, ping-pong and thread-ring, 2c-spin and 2c-park, three interleaved rounds of 7 + 2. |
 | `qb-branch-perf-event-pipe-segmented/axis-k/launch-census/` | the same A/B as a 12-launch census — the figure to quote. |
 
-**What the session said, in one paragraph each** (all in §9.13 with the tables):
+**What the 2026-09-05 session said, in one paragraph each** (all in §9.13 with the tables; its field tables are in git history, its branch directories are still here):
 
 - **Same-core dispatch**: candidate ping-pong 1c-spin **49.7 ns** against `230c5035` 53.8 and
   3.1.0 84.9 (−7.6 % / −41 %); counting 6.6 / 8.3 / 11.6; fork-join 6.2 / 8.6 / 12.9; thread-ring
@@ -73,7 +71,7 @@ everything under `qb-branch-perf-event-pipe-segmented/`.
   move of the session and the reason the `2c-park` column of `savina-*/` must be read with the
   README's caveat.
 
-**Residual load during the session**, since it is part of the measurement: a `Virtualization.framework`
+**Residual load during the 2026-09-05 session**, since it is part of the measurement: a `Virtualization.framework`
 VM (~33 % of one core, constant), two `pnpm dev` / `tsx watch` dev servers (idle), and macOS's
 `StorageManagement` service scanning after 20 GB of fresh build output (60–110 % of a core,
 decaying). 1-minute load average 4.5–5.9 at the start of the bench phase on 14 logical cores. The

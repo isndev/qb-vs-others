@@ -8,7 +8,7 @@
   "expected_messages": 1000001,
   "work_unit": "hop",
   "work_units": 1000000,
-  "repetitions": 7,
+  "repetitions": 9,
   "warmup": 2,
   "params": {"actors": 100, "cores": 2, "hops": 1000000, "wait": 1},
   "pinned": false,
@@ -22,21 +22,21 @@
     "compiler_version": "21.0.0.21000101",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-05T19:06:15Z"
+    "utc": "2026-09-19T12:23:04Z"
   },
   "idiom": {
     "source": "qb/src/qb/core/Actor.h forward() + the ping-pong adapter",
     "note": "one Token event forward()ed around the ring in place; actor i on VirtualCore i % cores, so every hop crosses a core at cores=2"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "actor i lives on VirtualCore i % cores: with cores=2 EVERY hop is a cross-core hand-off. CAF and SObjectizer receive the same 2-thread budget but their schedulers decide where each hop runs, so the same cell measures qb's cross-core pipe against their intra-thread hand-off -- see benchmarks/savina/thread-ring.md"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "actor i lives on VirtualCore i % cores: with cores=2 EVERY hop is a cross-core hand-off. CAF and SObjectizer receive the same 2-thread budget but their schedulers decide where each hop runs, so the same cell measures qb's cross-core pipe against their intra-thread hand-off -- see benchmarks/savina/thread-ring.md"],
   "failures": [],
-  "work_ns": [117399666.0, 117125167.0, 125758375.0, 118579459.0, 158705666.0, 144462083.0, 149054292.0],
-  "total_ns": [117747708.0, 117470959.0, 126119875.0, 118936125.0, 159056584.0, 144948500.0, 149445250.0],
-  "outside_window_ns": [348042.0, 345792.0, 361500.0, 356666.0, 350918.0, 486417.0, 390958.0],
+  "work_ns": [91167583.0, 109190584.0, 88846625.0, 93245500.0, 88456792.0, 75299708.0, 97114875.0, 88273709.0, 80114375.0],
+  "total_ns": [91583792.0, 109622250.0, 89267958.0, 93669667.0, 88864541.0, 75736375.0, 97536250.0, 88689458.0, 80528208.0],
+  "outside_window_ns": [416209.0, 431666.0, 421333.0, 424167.0, 407749.0, 436667.0, 421375.0, 415749.0, 413833.0],
   "summary": {
-    "work_min": 117125167.0,
-    "work_p50": 125758375.0,
-    "work_p99": 158126583.6,
-    "work_iqr": 28768625.0
+    "work_min": 75299708.0,
+    "work_p50": 88846625.0,
+    "work_p99": 108224527.3,
+    "work_iqr": 4971791.0
   }
 }

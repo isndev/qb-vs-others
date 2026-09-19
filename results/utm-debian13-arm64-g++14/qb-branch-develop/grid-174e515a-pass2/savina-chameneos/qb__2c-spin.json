@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/chameneos",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 70030166765474950,
+  "expected_messages": 800400,
+  "work_unit": "meeting",
+  "work_units": 200000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"chameneos": 100, "cores": 2, "meetings": 200000, "wait": 1},
+  "pinned": true,
+  "cpus": "2,4",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "trixie",
+    "os": "linux",
+    "logical_cpus": 10,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T13:30:20Z"
+  },
+  "idiom": {
+    "source": "the big adapter (reply() recycling, getSource()) + qb/llm/qb.llm.md",
+    "note": "one Meet event per request, mutated into the announcement or the exit and reply()ed; the waiting creature gets a fresh push<>; mall alone on VirtualCore 0, creatures on the others"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "placement is fixed before start: the mall alone on VirtualCore 0 and the creatures on the remaining cores (all on core 0 when cores=1), so with cores=2 the mall's mailbox is one cross-core pipe written by 100 actors on the far side and nothing balances it -- the pools place the mall and the creatures wherever stealing puts them"],
+  "failures": [],
+  "work_ns": [9374127.0, 8449290.0, 8437706.0, 10793718.0, 10656342.0, 8777458.0, 8772208.0, 11022344.0, 12171807.0],
+  "total_ns": [9819046.0, 8846250.0, 8853958.0, 11189969.0, 11034094.0, 9175584.0, 9138626.0, 11417220.0, 12583809.0],
+  "outside_window_ns": [444919.0, 396960.0, 416252.0, 396251.0, 377752.0, 398126.0, 366418.0, 394876.0, 412002.0],
+  "summary": {
+    "work_min": 8437706.0,
+    "work_p50": 9374127.0,
+    "work_p99": 12079850.0,
+    "work_iqr": 2021510.0
+  }
+}

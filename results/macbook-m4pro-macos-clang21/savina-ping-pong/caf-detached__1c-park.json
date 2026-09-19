@@ -8,7 +8,7 @@
   "expected_messages": 2000000,
   "work_unit": "round trip",
   "work_units": 1000000,
-  "repetitions": 7,
+  "repetitions": 9,
   "warmup": 2,
   "params": {"cores": 1, "messages": 1000000, "wait": 0},
   "pinned": false,
@@ -22,7 +22,7 @@
     "compiler_version": "21.0.0.21000101",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-05T19:02:31Z"
+    "utc": "2026-09-19T12:21:41Z"
   },
   "idiom": {
     "source": "CAF 1.1.0 examples/hello_world.cpp + examples/message_passing/dancing_kirby.cpp + caf/stateful_actor.hpp",
@@ -30,13 +30,13 @@
   },
   "caveats": ["every actor is spawned caf::detached: one OS thread per actor, pinned one per CPU from the harness's set through caf::thread_hook (thread_owner::pool), parked on a condition variable between messages. This is CAF's own placement primitive and the only way to make its ping-pong cross a core: in the work-stealing pool the receiver runs on the sender's worker (worker::delay prepends to the sender's queue), so the plain caf row never pays a cross-core hop. Read the two rows together", "a detached actor has no spin profile, so this variant reports wait=1 as not applicable rather than measuring a pool configuration under a detached label", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship"],
   "failures": [],
-  "work_ns": [6163124834.0, 6173406792.0, 6154322875.0, 6115864375.0, 6147009125.0, 6168559375.0, 6145186083.0],
-  "total_ns": [6163367125.0, 6173645667.0, 6154565000.0, 6116070125.0, 6147217583.0, 6168750333.0, 6145397958.0],
-  "outside_window_ns": [242291.0, 238875.0, 242125.0, 205750.0, 208458.0, 190958.0, 211875.0],
+  "work_ns": [6303680834.0, 6230361958.0, 6356976750.0, 6301543791.0, 6326761375.0, 6340711500.0, 6331224459.0, 6289861708.0, 6348949708.0],
+  "total_ns": [6303894542.0, 6230573084.0, 6357186333.0, 6301767459.0, 6326964291.0, 6340885125.0, 6331426541.0, 6290093667.0, 6349146125.0],
+  "outside_window_ns": [213708.0, 211126.0, 209583.0, 223668.0, 202916.0, 173625.0, 202082.0, 231959.0, 196417.0],
   "summary": {
-    "work_min": 6115864375.0,
-    "work_p50": 6154322875.0,
-    "work_p99": 6173115947.0,
-    "work_iqr": 19744500.5
+    "work_min": 6230361958.0,
+    "work_p50": 6326761375.0,
+    "work_p99": 6356334586.6,
+    "work_iqr": 39167709.0
   }
 }

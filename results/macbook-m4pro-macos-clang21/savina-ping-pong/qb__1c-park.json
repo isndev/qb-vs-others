@@ -8,7 +8,7 @@
   "expected_messages": 2000000,
   "work_unit": "round trip",
   "work_units": 1000000,
-  "repetitions": 7,
+  "repetitions": 9,
   "warmup": 2,
   "params": {"cores": 1, "messages": 1000000, "wait": 0},
   "pinned": false,
@@ -22,21 +22,21 @@
     "compiler_version": "21.0.0.21000101",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-05T19:06:14Z"
+    "utc": "2026-09-19T12:23:03Z"
   },
   "idiom": {
     "source": "qb/tests/core/benchmark/messaging/ping-pong-latency.cpp",
     "note": "send<> hot path, require<>() bootstrap, busy-spin cores -- qb's own benchmark idiom"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host"],
   "failures": [],
-  "work_ns": [84267166.0, 84509500.0, 84236375.0, 84131083.0, 84256583.0, 84132375.0, 84477250.0],
-  "total_ns": [84438958.0, 84703917.0, 84422375.0, 84322959.0, 84471625.0, 84379834.0, 84694750.0],
-  "outside_window_ns": [171792.0, 194417.0, 186000.0, 191876.0, 215042.0, 247459.0, 217500.0],
+  "work_ns": [24368625.0, 25184209.0, 25226375.0, 25302250.0, 24803208.0, 25245541.0, 25003792.0, 25205917.0, 26577000.0],
+  "total_ns": [24749917.0, 25581167.0, 25629875.0, 25681000.0, 25172459.0, 25628000.0, 25379292.0, 25582459.0, 26978583.0],
+  "outside_window_ns": [381292.0, 396958.0, 403500.0, 378750.0, 369251.0, 382459.0, 375500.0, 376542.0, 401583.0],
   "summary": {
-    "work_min": 84131083.0,
-    "work_p50": 84256583.0,
-    "work_p99": 84507565.0,
-    "work_iqr": 187833.0
+    "work_min": 24368625.0,
+    "work_p50": 25205917.0,
+    "work_p99": 26475020.0,
+    "work_iqr": 241749.0
   }
 }

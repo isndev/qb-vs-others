@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/big",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 17612934045731492923,
+  "expected_messages": 4800240,
+  "work_unit": "round trip",
+  "work_units": 2400000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 120, "cores": 1, "pings": 20000, "wait": 0},
+  "pinned": true,
+  "cpus": "2,4",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "trixie",
+    "os": "linux",
+    "logical_cpus": 10,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T13:30:32Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; actor a is owned by thread a % cores; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are slots of a vector and there is no per-actor mailbox: a worker's inbound ring is shared by every actor it owns, so the 120-producer mailbox contention the frameworks pay for is engineered out here by static placement", "actor a lives on thread a % cores, so with cores=2 roughly half the pings and half the pongs cross a core", "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 120 actors in flight is rare"],
+  "failures": [],
+  "work_ns": [16984455.0, 15786658.0, 15964659.0, 15982700.0, 15912366.0, 15973825.0, 15934617.0, 15973117.0, 15920701.0],
+  "total_ns": [17008872.0, 15814075.0, 15995450.0, 16001992.0, 15936492.0, 15994367.0, 15952033.0, 15993950.0, 15938742.0],
+  "outside_window_ns": [24417.0, 27417.0, 30791.0, 19292.0, 24126.0, 20542.0, 17416.0, 20833.0, 18041.0],
+  "summary": {
+    "work_min": 15786658.0,
+    "work_p50": 15964659.0,
+    "work_p99": 16904314.6,
+    "work_iqr": 53124.0
+  }
+}

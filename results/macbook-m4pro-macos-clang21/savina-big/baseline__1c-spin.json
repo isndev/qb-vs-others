@@ -8,7 +8,7 @@
   "expected_messages": 4800240,
   "work_unit": "round trip",
   "work_units": 2400000,
-  "repetitions": 7,
+  "repetitions": 9,
   "warmup": 2,
   "params": {"actors": 120, "cores": 1, "pings": 20000, "wait": 1},
   "pinned": false,
@@ -22,7 +22,7 @@
     "compiler_version": "21.0.0.21000101",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-05T18:59:31Z"
+    "utc": "2026-09-19T12:17:59Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Actors are slots of a vector and there is no per-actor mailbox: a worker's inbound ring is shared by every actor it owns, so the 120-producer mailbox contention the frameworks pay for is engineered out here by static placement", "actor a lives on thread a % cores, so with cores=2 roughly half the pings and half the pongs cross a core", "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 120 actors in flight is rare"],
   "failures": [],
-  "work_ns": [12996500.0, 12950500.0, 12849084.0, 12699666.0, 12698125.0, 12749291.0, 12815125.0],
-  "total_ns": [13006500.0, 12959958.0, 12858167.0, 12709375.0, 12707833.0, 12758917.0, 12824542.0],
-  "outside_window_ns": [10000.0, 9458.0, 9083.0, 9709.0, 9708.0, 9626.0, 9417.0],
+  "work_ns": [13064125.0, 12835583.0, 12955667.0, 13137292.0, 13046000.0, 13085791.0, 12929125.0, 12974333.0, 12676292.0],
+  "total_ns": [13155791.0, 12854500.0, 12967292.0, 13148167.0, 13063958.0, 13096292.0, 12940250.0, 12985458.0, 12688042.0],
+  "outside_window_ns": [91666.0, 18917.0, 11625.0, 10875.0, 17958.0, 10501.0, 11125.0, 11125.0, 11750.0],
   "summary": {
-    "work_min": 12698125.0,
-    "work_p50": 12815125.0,
-    "work_p99": 12993740.0,
-    "work_iqr": 175313.5
+    "work_min": 12676292.0,
+    "work_p50": 12974333.0,
+    "work_p99": 13133171.9,
+    "work_iqr": 135000.0
   }
 }

@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/fork-join",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 16648013738289302308,
+  "expected_messages": 600060,
+  "work_unit": "message",
+  "work_units": 600000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 60, "cores": 2, "messages": 10000, "wait": 1, "work": 0},
+  "pinned": true,
+  "cpus": "2,4",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "trixie",
+    "os": "linux",
+    "logical_cpus": 10,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T13:41:35Z"
+  },
+  "idiom": {
+    "source": "the ping-pong + counting adapters + dev/so_5/disp/thread_pool/pub.hpp",
+    "note": "agents on their DIRECT mboxes, one msg_job per job, thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the sixty workers are placed by the thread_pool: a free work thread takes the next agent with pending demands, the balancing qb's static placement does not do -- see benchmarks/savina/fork-join.md"],
+  "failures": [],
+  "work_ns": [147895937.0, 164918316.0, 176763295.0, 177965342.0, 210031592.0, 200200500.0, 227155307.0, 202139177.0, 225070130.0],
+  "total_ns": [148176521.0, 165239360.0, 177083005.0, 178273219.0, 210385428.0, 200530001.0, 227494850.0, 202471970.0, 225410589.0],
+  "outside_window_ns": [280584.0, 321044.0, 319710.0, 307877.0, 353836.0, 329501.0, 339543.0, 332793.0, 340459.0],
+  "summary": {
+    "work_min": 147895937.0,
+    "work_p50": 200200500.0,
+    "work_p99": 226988492.8,
+    "work_iqr": 33268297.0
+  }
+}

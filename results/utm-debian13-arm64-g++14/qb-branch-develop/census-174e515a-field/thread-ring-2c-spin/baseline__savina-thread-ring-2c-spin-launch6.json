@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/thread-ring",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 11452496497421877006,
+  "expected_messages": 1000001,
+  "work_unit": "hop",
+  "work_units": 1000000,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"actors": 100, "cores": 2, "hops": 1000000, "wait": 1},
+  "pinned": true,
+  "cpus": "2,4",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "trixie",
+    "os": "linux",
+    "logical_cpus": 10,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T13:47:02Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; actor i is owned by worker i % cores; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a hop is one ring push and one ring pop, and there is no scheduler: the floor for a hand-off, not for finding the next actor", "actor i lives on worker i % cores, so with cores=2 every hop crosses a core -- the same placement qb gets, and the worst case for a shard-per-core design", "cores=1 is one thread pushing the token into its own ring and popping it back -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with one token and two workers means one park and one wake per hop"],
+  "failures": [],
+  "work_ns": [106220099.0, 115156921.0, 122306487.0],
+  "total_ns": [107447536.0, 116413567.0, 123515922.0],
+  "outside_window_ns": [1227437.0, 1256646.0, 1209435.0],
+  "summary": {
+    "work_min": 106220099.0,
+    "work_p50": 115156921.0,
+    "work_p99": 122163495.7,
+    "work_iqr": 8043194.0
+  }
+}

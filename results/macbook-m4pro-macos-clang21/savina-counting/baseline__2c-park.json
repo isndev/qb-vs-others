@@ -8,7 +8,7 @@
   "expected_messages": 1000002,
   "work_unit": "message",
   "work_units": 1000000,
-  "repetitions": 7,
+  "repetitions": 9,
   "warmup": 2,
   "params": {"cores": 2, "messages": 1000000, "wait": 0},
   "pinned": false,
@@ -22,7 +22,7 @@
     "compiler_version": "21.0.0.21000101",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-05T18:59:32Z"
+    "utc": "2026-09-19T12:18:01Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. It has no supervision, no addressing, no dynamic actor lifetime, no mailbox fairness and no backpressure beyond a full ring. It bounds how much of each framework's cost is inherent to streaming a million messages through one queue", "cores=1 is one thread pushing into a 65536-slot ring and draining it inline whenever it is full -- the floor for single-threaded dispatch, still a real queue", "the threads are pinned one per CPU from the harness's set, exactly as every framework's workers are", "wait=1 busy-polls the rings; wait=0 parks the consumer on a condition variable and the producer notifies it after a push only while it announces itself asleep"],
   "failures": [],
-  "work_ns": [41785750.0, 49264875.0, 38725458.0, 34858167.0, 35594125.0, 36840166.0, 38744958.0],
-  "total_ns": [41854875.0, 49332792.0, 38792333.0, 34928500.0, 35659750.0, 36909625.0, 38813333.0],
-  "outside_window_ns": [69125.0, 67917.0, 66875.0, 70333.0, 65625.0, 69459.0, 68375.0],
+  "work_ns": [24764167.0, 28446709.0, 34183292.0, 25562750.0, 24110041.0, 29711083.0, 27320250.0, 24332209.0, 28162084.0],
+  "total_ns": [24818625.0, 28511166.0, 34249083.0, 25627916.0, 24175542.0, 29766083.0, 27376166.0, 24386542.0, 28228333.0],
+  "outside_window_ns": [54458.0, 64457.0, 65791.0, 65166.0, 65501.0, 55000.0, 55916.0, 54333.0, 66249.0],
   "summary": {
-    "work_min": 34858167.0,
-    "work_p50": 38725458.0,
-    "work_p99": 48816127.5,
-    "work_iqr": 4048208.5
+    "work_min": 24110041.0,
+    "work_p50": 27320250.0,
+    "work_p99": 33825515.3,
+    "work_iqr": 3682542.0
   }
 }

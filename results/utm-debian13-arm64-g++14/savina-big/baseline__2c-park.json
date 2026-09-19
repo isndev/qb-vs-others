@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/big",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 17612934045731492923,
+  "expected_messages": 4800240,
+  "work_unit": "round trip",
+  "work_units": 2400000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 120, "cores": 2, "pings": 20000, "wait": 0},
+  "pinned": true,
+  "cpus": "2,4",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "trixie",
+    "os": "linux",
+    "logical_cpus": 10,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T13:30:32Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; actor a is owned by thread a % cores; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are slots of a vector and there is no per-actor mailbox: a worker's inbound ring is shared by every actor it owns, so the 120-producer mailbox contention the frameworks pay for is engineered out here by static placement", "actor a lives on thread a % cores, so with cores=2 roughly half the pings and half the pongs cross a core", "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 120 actors in flight is rare"],
+  "failures": [],
+  "work_ns": [209321820.0, 216364520.0, 207187351.0, 214049093.0, 213412007.0, 210657284.0, 207087226.0, 210563201.0, 209947032.0],
+  "total_ns": [210489743.0, 217488067.0, 208346857.0, 215159389.0, 214588928.0, 211900207.0, 208276774.0, 211915124.0, 211029578.0],
+  "outside_window_ns": [1167923.0, 1123547.0, 1159506.0, 1110296.0, 1176921.0, 1242923.0, 1189548.0, 1351923.0, 1082546.0],
+  "summary": {
+    "work_min": 207087226.0,
+    "work_p50": 210563201.0,
+    "work_p99": 216179285.8,
+    "work_iqr": 4090187.0
+  }
+}

@@ -8,7 +8,7 @@
   "expected_messages": 4800240,
   "work_unit": "round trip",
   "work_units": 2400000,
-  "repetitions": 7,
+  "repetitions": 9,
   "warmup": 2,
   "params": {"actors": 120, "cores": 2, "pings": 20000, "wait": 1},
   "pinned": false,
@@ -22,21 +22,21 @@
     "compiler_version": "21.0.0.21000101",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-05T19:05:06Z"
+    "utc": "2026-09-19T12:22:56Z"
   },
   "idiom": {
     "source": "the ping-pong adapter (reply() recycling) + qb/llm/qb.llm.md",
     "note": "one Ping event per round trip, answered in place with reply(); actor a on VirtualCore a % cores"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "actor a lives on VirtualCore a % cores, fixed before start: no load balancing, and with cores=2 each core's inbound queue is written by the ~60 actors of the other core"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "actor a lives on VirtualCore a % cores, fixed before start: no load balancing, and with cores=2 each core's inbound queue is written by the ~60 actors of the other core"],
   "failures": [],
-  "work_ns": [54144042.0, 56652583.0, 59865666.0, 73574709.0, 61778250.0, 66560458.0, 57938667.0],
-  "total_ns": [54527375.0, 57143792.0, 60345500.0, 73976542.0, 62184209.0, 66955750.0, 58409250.0],
-  "outside_window_ns": [383333.0, 491209.0, 479834.0, 401833.0, 405959.0, 395292.0, 470583.0],
+  "work_ns": [37831750.0, 38998666.0, 36771500.0, 32766167.0, 37389792.0, 44071500.0, 41338083.0, 40323084.0, 41638167.0],
+  "total_ns": [38257625.0, 39421792.0, 37187625.0, 33185375.0, 37787917.0, 44476541.0, 41741125.0, 40719750.0, 42044583.0],
+  "outside_window_ns": [425875.0, 423126.0, 416125.0, 419208.0, 398125.0, 405041.0, 403042.0, 396666.0, 406416.0],
   "summary": {
-    "work_min": 54144042.0,
-    "work_p50": 59865666.0,
-    "work_p99": 73153853.9,
-    "work_iqr": 6873729.0
+    "work_min": 32766167.0,
+    "work_p50": 38998666.0,
+    "work_p99": 43876833.4,
+    "work_iqr": 3948291.0
   }
 }

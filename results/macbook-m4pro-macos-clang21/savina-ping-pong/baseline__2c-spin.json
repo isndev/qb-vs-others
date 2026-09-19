@@ -8,7 +8,7 @@
   "expected_messages": 2000000,
   "work_unit": "round trip",
   "work_units": 1000000,
-  "repetitions": 7,
+  "repetitions": 9,
   "warmup": 2,
   "params": {"cores": 2, "messages": 1000000, "wait": 1},
   "pinned": false,
@@ -22,7 +22,7 @@
     "compiler_version": "21.0.0.21000101",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-05T18:59:35Z"
+    "utc": "2026-09-19T12:18:04Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. It has no supervision, no addressing, no dynamic actor lifetime, no mailbox fairness and no backpressure. It exists to bound how much of each framework's cost is inherent to the workload rather than to the framework", "cores=1 is one thread passing each message through a real queue in both directions -- the floor for single-threaded dispatch, not a bare assignment", "the two threads are pinned one per CPU from the harness's set, exactly as every framework's workers are -- a floating floor would move every ratio computed against it", "wait=1 is two threads busy-spinning on SPSC rings; wait=0 is two threads parked on condition variables. Both floors exist so that neither column of the spin/park axis is published without one"],
   "failures": [],
-  "work_ns": [220579500.0, 210049666.0, 164160542.0, 162001292.0, 164576750.0, 180776417.0, 199408917.0],
-  "total_ns": [220619833.0, 210084917.0, 164191166.0, 162033625.0, 164619375.0, 180809417.0, 199456417.0],
-  "outside_window_ns": [40333.0, 35251.0, 30624.0, 32333.0, 42625.0, 33000.0, 47500.0],
+  "work_ns": [200958875.0, 228851292.0, 232235458.0, 228292166.0, 197678875.0, 188505792.0, 246296709.0, 234563541.0, 240563750.0],
+  "total_ns": [200986958.0, 228879041.0, 232265209.0, 228327792.0, 197709625.0, 188533584.0, 246327875.0, 234602041.0, 240605917.0],
+  "outside_window_ns": [28083.0, 27749.0, 29751.0, 35626.0, 30750.0, 27792.0, 31166.0, 38500.0, 42167.0],
   "summary": {
-    "work_min": 162001292.0,
-    "work_p50": 180776417.0,
-    "work_p99": 219947710.0,
-    "work_iqr": 40360645.5
+    "work_min": 188505792.0,
+    "work_p50": 228851292.0,
+    "work_p99": 245838072.3,
+    "work_iqr": 33604666.0
   }
 }

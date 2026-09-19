@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bank-transaction",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 12258739468647350033,
+  "expected_messages": 202000,
+  "work_unit": "transfer",
+  "work_units": 50000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"accounts": 1000, "cores": 1, "transactions": 50000, "wait": 0},
+  "pinned": true,
+  "cpus": "2,4",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "trixie",
+    "os": "linux",
+    "logical_cpus": 10,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T13:30:28Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the teller is owned by thread 0 and account a by thread (1 + a) % cores; a deposit is a push and its reply a push back, the continuation a busy flag and a deque per slot; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Accounts are slots of a vector with no mailbox, and a transfer has no request frame: the continuation is a flag and a deque the handler reads, so the per-transfer allocation qb::ask and CAF's request().then() pay is engineered out", "the teller lives on thread 0 and account a on thread (1 + a) % cores -- the same placement qb's cell fixes -- so with cores=2 about half the deposits and half the transfers and acknowledgements cross a core", "the 50 000 transfers are pushed into the rings BEFORE worker 0 runs, from the caller's thread, so the teller's burst is the ring capacity the spec keeps N under, not a mailbox that grows", "cores=1 is one thread with the teller and the accounts in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with a thousand accounts in flight is rare"],
+  "failures": [],
+  "work_ns": [1862801.0, 1806217.0, 1811467.0, 1806341.0, 1794217.0, 1851467.0, 1812634.0, 1824467.0, 1784592.0],
+  "total_ns": [1923759.0, 1878384.0, 1871259.0, 1865342.0, 1853384.0, 1917300.0, 1881259.0, 1884092.0, 1842801.0],
+  "outside_window_ns": [60958.0, 72167.0, 59792.0, 59001.0, 59167.0, 65833.0, 68625.0, 59625.0, 58209.0],
+  "summary": {
+    "work_min": 1784592.0,
+    "work_p50": 1811467.0,
+    "work_p99": 1861894.3,
+    "work_iqr": 18250.0
+  }
+}

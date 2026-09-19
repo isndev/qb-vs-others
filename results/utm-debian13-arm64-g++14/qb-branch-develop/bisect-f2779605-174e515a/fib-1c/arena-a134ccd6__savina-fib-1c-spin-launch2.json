@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/fib",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 18138759588748310478,
+  "expected_messages": 114624,
+  "work_unit": "actor",
+  "work_units": 57312,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"cores": 1, "n": 23, "wait": 1},
+  "pinned": true,
+  "cpus": "2,4",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "trixie",
+    "os": "linux",
+    "logical_cpus": 10,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T14:52:00Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md: addRefActor<T>() (same-core child, onInit run synchronously) + kill()",
+    "note": "every node is a FibActor created by its parent with addRefActor, answered with one push<Response>, and killed right after; seed s on VirtualCore s % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "qb has no cross-core spawn: a child is created on its parent's VirtualCore, so with cores=2 the tree is two independent sub-trees (fib(n-1) on core 0, fib(n-2) on core 1) that never balance -- core 0 does ~62% of the work and the window closes when it does", "qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors); the tree is expanded breadth-first by the FIFO mailbox, so n=23 keeps 57 313 alive on one core at the cores=1 peak and n=24 (92 735) would not fit -- the reason the parameter deviates from Savina's 25"],
+  "failures": [],
+  "work_ns": [4565893.0, 4648895.0, 4882231.0, 4911773.0, 4579269.0],
+  "total_ns": [5090817.0, 5170568.0, 5596366.0, 5430489.0, 5112901.0],
+  "outside_window_ns": [524924.0, 521673.0, 714135.0, 518716.0, 533632.0],
+  "summary": {
+    "work_min": 4565893.0,
+    "work_p50": 4648895.0,
+    "work_p99": 4910591.3,
+    "work_iqr": 302962.0
+  }
+}

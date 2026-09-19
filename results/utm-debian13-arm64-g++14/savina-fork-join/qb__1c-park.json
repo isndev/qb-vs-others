@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/fork-join",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 16648013738289302308,
+  "expected_messages": 600060,
+  "work_unit": "message",
+  "work_units": 600000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 60, "cores": 1, "messages": 10000, "wait": 0, "work": 0},
+  "pinned": true,
+  "cpus": "2,4",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "trixie",
+    "os": "linux",
+    "logical_cpus": 10,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T13:40:47Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md (push = ordered) + the counting adapter",
+    "note": "push<> job stream into per-core pipes; master on VirtualCore 0, worker w on core w % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "worker w lives on VirtualCore w % cores, fixed before start: qb does not balance load, so with cores=2 the master's own core runs half the workers AND the master's dispatch loop while the other core runs the other half -- see benchmarks/savina/fork-join.md"],
+  "failures": [],
+  "work_ns": [4674190.0, 4832900.0, 4732025.0, 4706524.0, 4696108.0, 4689858.0, 4350065.0, 4566815.0, 4660066.0],
+  "total_ns": [5109235.0, 5275986.0, 5195110.0, 5160277.0, 5142402.0, 5129569.0, 4821567.0, 5005192.0, 5083859.0],
+  "outside_window_ns": [435045.0, 443086.0, 463085.0, 453753.0, 446294.0, 439711.0, 471502.0, 438377.0, 423793.0],
+  "summary": {
+    "work_min": 4350065.0,
+    "work_p50": 4689858.0,
+    "work_p99": 4824830.0,
+    "work_iqr": 46458.0
+  }
+}

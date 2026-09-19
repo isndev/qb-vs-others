@@ -8,7 +8,7 @@
   "expected_messages": 2000000,
   "work_unit": "round trip",
   "work_units": 1000000,
-  "repetitions": 7,
+  "repetitions": 9,
   "warmup": 2,
   "params": {"cores": 1, "messages": 1000000, "wait": 1},
   "pinned": false,
@@ -22,7 +22,7 @@
     "compiler_version": "21.0.0.21000101",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-05T19:03:15Z"
+    "utc": "2026-09-19T12:22:45Z"
   },
   "idiom": {
     "source": "CAF 1.1.0 examples/hello_world.cpp + examples/message_passing/dancing_kirby.cpp + caf/stateful_actor.hpp",
@@ -30,13 +30,13 @@
   },
   "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them, which qb's actors cannot do. That is an architectural difference, and it cuts both ways: stealing costs on a two-actor ping-pong and pays on an unbalanced fan-out", "wait=1 and wait=0 are the SAME configuration for CAF on this benchmark -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10). The sweep in docs/TUNING.md section 1 found every more aggressive profile SLOWER, because on a ping-pong the receiver runs on the sender's worker and polling harder only makes the idle worker steal it; CAF's fastest ping-pong is the one where nothing ever crosses a core. The cross-core figure is the caf-detached row", "in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on one thread and never pays a cross-core hand-off; read this row as CAF's best-case locality, and caf-detached as its cross-core cost", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship"],
   "failures": [],
-  "work_ns": [256170333.0, 263933542.0, 262076833.0, 260669042.0, 263291750.0, 264042166.0, 265157125.0],
-  "total_ns": [256412208.0, 264121958.0, 262251292.0, 260835959.0, 263471166.0, 264265291.0, 265347583.0],
-  "outside_window_ns": [241875.0, 188416.0, 174459.0, 166917.0, 179416.0, 223125.0, 190458.0],
+  "work_ns": [264847875.0, 263889459.0, 266431667.0, 261415750.0, 264429541.0, 265734834.0, 264371792.0, 261809375.0, 262116500.0],
+  "total_ns": [265039042.0, 264053875.0, 266596917.0, 261569375.0, 264661416.0, 265901833.0, 264533750.0, 261979291.0, 262273084.0],
+  "outside_window_ns": [191167.0, 164416.0, 165250.0, 153625.0, 231875.0, 166999.0, 161958.0, 169916.0, 156584.0],
   "summary": {
-    "work_min": 256170333.0,
-    "work_p50": 263291750.0,
-    "work_p99": 265090227.5,
-    "work_iqr": 2614916.5
+    "work_min": 261415750.0,
+    "work_p50": 264371792.0,
+    "work_p99": 266375920.4,
+    "work_iqr": 2731375.0
   }
 }

@@ -8,7 +8,7 @@
   "expected_messages": 600060,
   "work_unit": "message",
   "work_units": 600000,
-  "repetitions": 7,
+  "repetitions": 9,
   "warmup": 2,
   "params": {"actors": 60, "cores": 2, "messages": 10000, "wait": 1, "work": 0},
   "pinned": false,
@@ -22,7 +22,7 @@
     "compiler_version": "21.0.0.21000101",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-05T18:59:33Z"
+    "utc": "2026-09-19T12:18:01Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Workers are slots of a vector, a job is one ring push and one ring pop, and nothing balances load: the floor for a fire-and-forget dispatch, not for scheduling 60 runnable actors on 2 threads", "worker w lives on thread w % cores, so with cores=2 half the jobs stay on the master's own thread (drained inline when its ring fills) and half cross a core", "cores=1 is one thread pushing every job into its own 65536-slot ring and draining it inline whenever it is full -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
   "failures": [],
-  "work_ns": [14897875.0, 14300208.0, 16024875.0, 22475667.0, 13824166.0, 18070791.0, 17833542.0],
-  "total_ns": [14976375.0, 14371458.0, 16088667.0, 22839417.0, 13893208.0, 18134292.0, 17906125.0],
-  "outside_window_ns": [78500.0, 71250.0, 63792.0, 363750.0, 69042.0, 63501.0, 72583.0],
+  "work_ns": [16989083.0, 23392792.0, 22851292.0, 18834708.0, 21683625.0, 18098334.0, 16082167.0, 17239125.0, 17767708.0],
+  "total_ns": [17044750.0, 23445375.0, 22904292.0, 18889250.0, 21743667.0, 18170458.0, 16154000.0, 17330916.0, 17845541.0],
+  "outside_window_ns": [55667.0, 52583.0, 53000.0, 54542.0, 60042.0, 72124.0, 71833.0, 91791.0, 77833.0],
   "summary": {
-    "work_min": 13824166.0,
-    "work_p50": 16024875.0,
-    "work_p99": 22211374.4,
-    "work_iqr": 3353125.0
+    "work_min": 16082167.0,
+    "work_p50": 18098334.0,
+    "work_p99": 23349472.0,
+    "work_iqr": 4444500.0
   }
 }

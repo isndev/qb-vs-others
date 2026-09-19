@@ -8,7 +8,7 @@
   "expected_messages": 2000000,
   "work_unit": "round trip",
   "work_units": 1000000,
-  "repetitions": 7,
+  "repetitions": 9,
   "warmup": 2,
   "params": {"cores": 1, "messages": 1000000, "wait": 1},
   "pinned": false,
@@ -22,7 +22,7 @@
     "compiler_version": "21.0.0.21000101",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-05T19:04:53Z"
+    "utc": "2026-09-19T12:25:11Z"
   },
   "idiom": {
     "source": "SObjectizer 5.8.5.1 dev/sample/so_5/ping_pong{,_minimal}/main.cpp",
@@ -30,13 +30,13 @@
   },
   "caveats": ["cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating", "wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose"],
   "failures": [],
-  "work_ns": [136886208.0, 135013583.0, 132988750.0, 134374917.0, 133372500.0, 135162834.0, 135385583.0],
-  "total_ns": [137039875.0, 135165625.0, 133161959.0, 134538333.0, 133536750.0, 135314166.0, 135549666.0],
-  "outside_window_ns": [153667.0, 152042.0, 173209.0, 163416.0, 164250.0, 151332.0, 164083.0],
+  "work_ns": [137412041.0, 137665416.0, 138057458.0, 138051042.0, 137893292.0, 138119625.0, 137735584.0, 145102042.0, 152102375.0],
+  "total_ns": [137588000.0, 137826500.0, 138232375.0, 138324042.0, 138054208.0, 138266792.0, 137880666.0, 145245791.0, 152244125.0],
+  "outside_window_ns": [175959.0, 161084.0, 174917.0, 273000.0, 160916.0, 147167.0, 145082.0, 143749.0, 141750.0],
   "summary": {
-    "work_min": 132988750.0,
-    "work_p50": 135013583.0,
-    "work_p99": 136796170.5,
-    "work_iqr": 1400500.0
+    "work_min": 137412041.0,
+    "work_p50": 138051042.0,
+    "work_p99": 151542348.4,
+    "work_iqr": 384041.0
   }
 }

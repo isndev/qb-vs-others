@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/big",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 17612934045731492923,
+  "expected_messages": 4800240,
+  "work_unit": "round trip",
+  "work_units": 2400000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 120, "cores": 2, "pings": 20000, "wait": 1},
+  "pinned": true,
+  "cpus": "2,4",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "trixie",
+    "os": "linux",
+    "logical_cpus": 10,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T13:41:02Z"
+  },
+  "idiom": {
+    "source": "the ping-pong adapter + dev/so_5/disp/thread_pool/pub.hpp",
+    "note": "agents on their DIRECT mboxes, msg_ping / msg_pong, the field's mboxes shared before start, thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the 120 agents are placed by the thread_pool, so how many pings cross a core is the dispatcher's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/big.md"],
+  "failures": [],
+  "work_ns": [663949195.0, 643528590.0, 591218902.0, 646058644.0, 785778953.0, 626077416.0, 604591847.0, 706433292.0, 688389823.0],
+  "total_ns": [664361531.0, 643965925.0, 591649154.0, 646504397.0, 786189831.0, 626529501.0, 605076307.0, 706920587.0, 688863826.0],
+  "outside_window_ns": [412336.0, 437335.0, 430252.0, 445753.0, 410878.0, 452085.0, 484460.0, 487295.0, 474003.0],
+  "summary": {
+    "work_min": 591218902.0,
+    "work_p50": 646058644.0,
+    "work_p99": 779431300.1,
+    "work_iqr": 62312407.0
+  }
+}

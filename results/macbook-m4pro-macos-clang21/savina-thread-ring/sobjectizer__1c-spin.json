@@ -8,7 +8,7 @@
   "expected_messages": 1000001,
   "work_unit": "hop",
   "work_units": 1000000,
-  "repetitions": 7,
+  "repetitions": 9,
   "warmup": 2,
   "params": {"actors": 100, "cores": 1, "hops": 1000000, "wait": 1},
   "pinned": false,
@@ -22,7 +22,7 @@
     "compiler_version": "21.0.0.21000101",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-05T19:05:00Z"
+    "utc": "2026-09-19T12:25:20Z"
   },
   "idiom": {
     "source": "the ping-pong adapter + dev/so_5/disp/thread_pool/pub.hpp",
@@ -30,13 +30,13 @@
   },
   "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the ring's agents are placed by the thread_pool: whichever pinned work thread is free takes the next demand, so with cores=2 a hop crosses a core only when the pool decides so, where qb's cell crosses on EVERY hop -- see benchmarks/savina/thread-ring.md"],
   "failures": [],
-  "work_ns": [56906916.0, 56488166.0, 56696417.0, 56634500.0, 57272459.0, 57198459.0, 56802458.0],
-  "total_ns": [57129292.0, 56853584.0, 56885959.0, 56817584.0, 57461166.0, 57409458.0, 57007750.0],
-  "outside_window_ns": [222376.0, 365418.0, 189542.0, 183084.0, 188707.0, 210999.0, 205292.0],
+  "work_ns": [60481333.0, 59721209.0, 60694458.0, 59933500.0, 59650750.0, 60152375.0, 60127542.0, 60383125.0, 59415667.0],
+  "total_ns": [60658500.0, 59899667.0, 60875417.0, 60184083.0, 59919500.0, 60425209.0, 60386125.0, 60591417.0, 59622250.0],
+  "outside_window_ns": [177167.0, 178458.0, 180959.0, 250583.0, 268750.0, 272834.0, 258583.0, 208292.0, 206583.0],
   "summary": {
-    "work_min": 56488166.0,
-    "work_p50": 56802458.0,
-    "work_p99": 57268019.0,
-    "work_iqr": 387229.0
+    "work_min": 59415667.0,
+    "work_p50": 60127542.0,
+    "work_p99": 60677408.0,
+    "work_iqr": 661916.0
   }
 }

@@ -8,7 +8,7 @@
   "expected_messages": 4800240,
   "work_unit": "round trip",
   "work_units": 2400000,
-  "repetitions": 7,
+  "repetitions": 9,
   "warmup": 2,
   "params": {"actors": 120, "cores": 2, "pings": 20000, "wait": 1},
   "pinned": false,
@@ -22,7 +22,7 @@
     "compiler_version": "21.0.0.21000101",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-05T18:59:30Z"
+    "utc": "2026-09-19T12:17:58Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Actors are slots of a vector and there is no per-actor mailbox: a worker's inbound ring is shared by every actor it owns, so the 120-producer mailbox contention the frameworks pay for is engineered out here by static placement", "actor a lives on thread a % cores, so with cores=2 roughly half the pings and half the pongs cross a core", "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 120 actors in flight is rare"],
   "failures": [],
-  "work_ns": [86676875.0, 88555709.0, 123432208.0, 102497042.0, 85662208.0, 84898875.0, 85002875.0],
-  "total_ns": [86754333.0, 88621167.0, 123512917.0, 102563542.0, 85723459.0, 84962542.0, 85068667.0],
-  "outside_window_ns": [77458.0, 65458.0, 80709.0, 66500.0, 61251.0, 63667.0, 65792.0],
+  "work_ns": [116025625.0, 132867042.0, 119260750.0, 92892500.0, 123268750.0, 92801583.0, 100492875.0, 125187166.0, 107234708.0],
+  "total_ns": [116096500.0, 132928792.0, 119322416.0, 92955375.0, 123339084.0, 92870166.0, 100562083.0, 125258167.0, 107325375.0],
+  "outside_window_ns": [70875.0, 61750.0, 61666.0, 62875.0, 70334.0, 68583.0, 69208.0, 71001.0, 90667.0],
   "summary": {
-    "work_min": 84898875.0,
-    "work_p50": 86676875.0,
-    "work_p99": 122176098.0,
-    "work_iqr": 10193834.0
+    "work_min": 92801583.0,
+    "work_p50": 116025625.0,
+    "work_p99": 132252651.9,
+    "work_iqr": 22775875.0
   }
 }

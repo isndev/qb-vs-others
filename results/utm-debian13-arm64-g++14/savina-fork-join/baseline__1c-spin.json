@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/fork-join",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 16648013738289302308,
+  "expected_messages": 600060,
+  "work_unit": "message",
+  "work_units": 600000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 60, "cores": 1, "messages": 10000, "wait": 1, "work": 0},
+  "pinned": true,
+  "cpus": "2,4",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "trixie",
+    "os": "linux",
+    "logical_cpus": 10,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T13:30:36Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; worker w is owned by thread w % cores, the master is the calling thread; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Workers are slots of a vector, a job is one ring push and one ring pop, and nothing balances load: the floor for a fire-and-forget dispatch, not for scheduling 60 runnable actors on 2 threads", "worker w lives on thread w % cores, so with cores=2 half the jobs stay on the master's own thread (drained inline when its ring fills) and half cross a core", "cores=1 is one thread pushing every job into its own 65536-slot ring and draining it inline whenever it is full -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [2466970.0, 2484929.0, 2407469.0, 2464970.0, 2475179.0, 2437803.0, 2487637.0, 2425803.0, 2433845.0],
+  "total_ns": [2483303.0, 2501346.0, 2423637.0, 2480970.0, 2491178.0, 2453678.0, 2504429.0, 2443678.0, 2449720.0],
+  "outside_window_ns": [16333.0, 16417.0, 16168.0, 16000.0, 15999.0, 15875.0, 16792.0, 17875.0, 15875.0],
+  "summary": {
+    "work_min": 2407469.0,
+    "work_p50": 2464970.0,
+    "work_p99": 2487420.4,
+    "work_iqr": 41334.0
+  }
+}

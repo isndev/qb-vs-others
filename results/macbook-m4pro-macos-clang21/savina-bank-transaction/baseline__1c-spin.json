@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bank-transaction",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 12258739468647350033,
+  "expected_messages": 202000,
+  "work_unit": "transfer",
+  "work_units": 50000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"accounts": 1000, "cores": 1, "transactions": 50000, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "MacBook-Pro-de-Mohamed.local",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000101",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T12:17:57Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the teller is owned by thread 0 and account a by thread (1 + a) % cores; a deposit is a push and its reply a push back, the continuation a busy flag and a deque per slot; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Accounts are slots of a vector with no mailbox, and a transfer has no request frame: the continuation is a flag and a deque the handler reads, so the per-transfer allocation qb::ask and CAF's request().then() pay is engineered out", "the teller lives on thread 0 and account a on thread (1 + a) % cores -- the same placement qb's cell fixes -- so with cores=2 about half the deposits and half the transfers and acknowledgements cross a core", "the 50 000 transfers are pushed into the rings BEFORE worker 0 runs, from the caller's thread, so the teller's burst is the ring capacity the spec keeps N under, not a mailbox that grows", "cores=1 is one thread with the teller and the accounts in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with a thousand accounts in flight is rare"],
+  "failures": [],
+  "work_ns": [3190917.0, 2193583.0, 1926333.0, 2212958.0, 1761916.0, 1818916.0, 3272708.0, 2610125.0, 1750166.0],
+  "total_ns": [3329333.0, 2222042.0, 1972834.0, 2242583.0, 1792958.0, 1895750.0, 3303375.0, 2640000.0, 1780750.0],
+  "outside_window_ns": [138416.0, 28459.0, 46501.0, 29625.0, 31042.0, 76834.0, 30667.0, 29875.0, 30584.0],
+  "summary": {
+    "work_min": 1750166.0,
+    "work_p50": 2193583.0,
+    "work_p99": 3266164.7,
+    "work_iqr": 791209.0
+  }
+}

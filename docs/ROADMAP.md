@@ -90,7 +90,10 @@ is left of the pipeline is the train itself.
    TUNING §9.13): every superproject preset at its floor, `dev/bench` PASS with the one gated
    engine metric +94.9 %, the grids and censuses in the candidate's favour, one residual
    (ping-pong 2c-park, +12 % across three instruments, distributions overlapping), the axis-K fence
-   without measurable effect on `dmb ish`. Native Linux is the run that does not exist yet.
+   without measurable effect on `dmb ish`. **Both arm64 hosts ran the final candidate on 2026-09-19**
+   (`174e515a`, all eight shapes, the whole field and two censuses per host, TUNING §13.9): macOS
+   again, and the `qb-vm-linux-arm64` machine — which is a native-arm64 Linux, and a GUEST: its park
+   floor (20.8 µs) is its hypervisor's. Bare-metal Linux is the run that does not exist yet.
 4. **Merge as 3.2.0, in lockstep** — qb + qbm-\* + qb-examples on one train, qev **5.1.0** with
    it (axis E needs `ev_active_count()`, which lives in the 22 shared files the identity guard
    checks). **The merge to `develop` is done** (2026-09-06, the citation sweep in the same

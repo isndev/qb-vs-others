@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/big",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 17612934045731492923,
+  "expected_messages": 4800240,
+  "work_unit": "round trip",
+  "work_units": 2400000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 120, "cores": 2, "pings": 20000, "wait": 0},
+  "pinned": true,
+  "cpus": "2,4",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "trixie",
+    "os": "linux",
+    "logical_cpus": 10,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T13:21:15Z"
+  },
+  "idiom": {
+    "source": "the ping-pong adapter (reply() recycling) + qb/llm/qb.llm.md",
+    "note": "one Ping event per round trip, answered in place with reply(); actor a on VirtualCore a % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "actor a lives on VirtualCore a % cores, fixed before start: no load balancing, and with cores=2 each core's inbound queue is written by the ~60 actors of the other core"],
+  "failures": [],
+  "work_ns": [43162230.0, 37417752.0, 38068588.0, 38178255.0, 42729978.0, 34664326.0, 36024039.0, 38398381.0, 43253855.0],
+  "total_ns": [43649065.0, 37855879.0, 38480547.0, 38623965.0, 43193355.0, 35112203.0, 36472499.0, 38786632.0, 43692856.0],
+  "outside_window_ns": [486835.0, 438127.0, 411959.0, 445710.0, 463377.0, 447877.0, 448460.0, 388251.0, 439001.0],
+  "summary": {
+    "work_min": 34664326.0,
+    "work_p50": 38178255.0,
+    "work_p99": 43246525.0,
+    "work_iqr": 5312226.0
+  }
+}

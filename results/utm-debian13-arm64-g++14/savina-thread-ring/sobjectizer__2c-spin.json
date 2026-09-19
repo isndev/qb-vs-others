@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/thread-ring",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 11452496497421877006,
+  "expected_messages": 1000001,
+  "work_unit": "hop",
+  "work_units": 1000000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 100, "cores": 2, "hops": 1000000, "wait": 1},
+  "pinned": true,
+  "cpus": "2,4",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "trixie",
+    "os": "linux",
+    "logical_cpus": 10,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T13:45:55Z"
+  },
+  "idiom": {
+    "source": "the ping-pong adapter + dev/so_5/disp/thread_pool/pub.hpp",
+    "note": "agents on their DIRECT mboxes, one msg_token re-sent per hop, thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the ring's agents are placed by the thread_pool: whichever pinned work thread is free takes the next demand, so with cores=2 a hop crosses a core only when the pool decides so, where qb's cell crosses on EVERY hop -- see benchmarks/savina/thread-ring.md"],
+  "failures": [],
+  "work_ns": [410587666.0, 342876892.0, 351242270.0, 308246293.0, 332615922.0, 310398846.0, 343942898.0, 296553273.0, 284363542.0],
+  "total_ns": [410955418.0, 343231227.0, 351660522.0, 308675087.0, 333091507.0, 310802765.0, 344327066.0, 297040109.0, 284716503.0],
+  "outside_window_ns": [367752.0, 354335.0, 418252.0, 428794.0, 475585.0, 403919.0, 384168.0, 486836.0, 352961.0],
+  "summary": {
+    "work_min": 284363542.0,
+    "work_p50": 332615922.0,
+    "work_p99": 405840034.3,
+    "work_iqr": 35696605.0
+  }
+}

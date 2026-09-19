@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/chameneos",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 70030166765474950,
+  "expected_messages": 800400,
+  "work_unit": "meeting",
+  "work_units": 200000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"chameneos": 100, "cores": 2, "meetings": 200000, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "MacBook-Pro-de-Mohamed.local",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000101",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T12:18:00Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the mall is owned by thread 0 and every creature by thread 1 % cores; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Creatures are slots of a vector and the mall has no mailbox: the 100 creatures share one SPSC ring into worker 0, so the 100-producer fan-in the frameworks pay for is engineered out here by placement", "the mall lives on thread 0 and every creature on thread 1 % cores, so with cores=2 every request and every announcement crosses a core -- the same placement qb's cell fixes", "cores=1 is one thread with the mall and the creatures in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 100 creatures in flight is rare"],
+  "failures": [],
+  "work_ns": [45485417.0, 37927625.0, 40655083.0, 45449417.0, 46385209.0, 35394000.0, 31698792.0, 35369917.0, 49242167.0],
+  "total_ns": [45548083.0, 37993541.0, 40716000.0, 45509958.0, 46445125.0, 35458208.0, 31759042.0, 35434583.0, 49597958.0],
+  "outside_window_ns": [62666.0, 65916.0, 60917.0, 60541.0, 59916.0, 64208.0, 60250.0, 64666.0, 355791.0],
+  "summary": {
+    "work_min": 31698792.0,
+    "work_p50": 40655083.0,
+    "work_p99": 49013610.4,
+    "work_iqr": 10091417.0
+  }
+}

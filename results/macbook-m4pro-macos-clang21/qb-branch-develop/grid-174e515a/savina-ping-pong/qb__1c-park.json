@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/ping-pong",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 6535945399557740267,
+  "expected_messages": 2000000,
+  "work_unit": "round trip",
+  "work_units": 1000000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "messages": 1000000, "wait": 0},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "MacBook-Pro-de-Mohamed.local",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000101",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-09-19T12:14:14Z"
+  },
+  "idiom": {
+    "source": "qb/tests/core/benchmark/messaging/ping-pong-latency.cpp",
+    "note": "send<> hot path, require<>() bootstrap, busy-spin cores -- qb's own benchmark idiom"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host"],
+  "failures": [],
+  "work_ns": [24584083.0, 25156375.0, 25181500.0, 25103584.0, 24893292.0, 25503208.0, 25625334.0, 24925250.0, 25565583.0],
+  "total_ns": [24971042.0, 25538833.0, 25586500.0, 25483708.0, 25326834.0, 25893000.0, 26020000.0, 25310792.0, 25952250.0],
+  "outside_window_ns": [386959.0, 382458.0, 405000.0, 380124.0, 433542.0, 389792.0, 394666.0, 385542.0, 386667.0],
+  "summary": {
+    "work_min": 24584083.0,
+    "work_p50": 25156375.0,
+    "work_p99": 25620553.9,
+    "work_iqr": 577958.0
+  }
+}

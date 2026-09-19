@@ -1,0 +1,202 @@
+{
+  "schema": "qvo/run/1",
+  "host": "trixie",
+  "platform": "Linux-6.12.107+deb13-arm64-aarch64-with-glibc2.41",
+  "cpus": "2,4",
+  "repetitions": 9,
+  "warmup": 2,
+  "cells": [
+    {
+      "benchmark": "savina/bank-transaction",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bank-transaction",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bank-transaction",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bank-transaction",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/big",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/big",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/big",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/big",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/chameneos",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/counting",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/counting",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/counting",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/counting",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fib",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/ping-pong",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/thread-ring",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/thread-ring",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/thread-ring",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/thread-ring",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    }
+  ]
+}
