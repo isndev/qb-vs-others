@@ -1,4 +1,0 @@
-== run 1/1 ==
-  ok   qb-core-bench-ask-roundtrip (10 measurements)
-  ok   qb-core-bench-ping-pong-latency (5 measurements)
-bench-run.sh: wrote 1 run(s) x 2 binaries to D:\repo\qb-dev\qb-vs-others\results\desktop-b67osn6-win-msvc\qb-branch-perf-ask-inline-resume\bench\ctl-1

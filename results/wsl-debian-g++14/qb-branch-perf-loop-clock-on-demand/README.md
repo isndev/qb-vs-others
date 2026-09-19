@@ -158,4 +158,4 @@ by design at that width — the recorded gate wants all 136; the full set is the
 
 Suites at the head, standalone `cmake -S qb`, 0 warnings: WSL2 g++-14 Release / ASan+UBSan / TSan
 **192/192/0** each, before and after the idle-clock half. The Windows A/B is in
-`../../desktop-b67osn6-win-msvc/qb-branch-perf-loop-clock-on-demand/`.
+`../../desktop-win11-msvc19/qb-branch-perf-loop-clock-on-demand/`.

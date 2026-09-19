@@ -6,7 +6,7 @@ Read [FAIRNESS.md](FAIRNESS.md) before reading any table below. In particular: t
 
 ## Run
 
-- host: `DESKTOP-B67OSN6`
+- host: `desktop-x86`
 - platform: `Windows-11-10.0.26100-SP0`
 - pinned CPUs: `0,2`
 - repetitions: 9 (+2 warmup), one process per cell

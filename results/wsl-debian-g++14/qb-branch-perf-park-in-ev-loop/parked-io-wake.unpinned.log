@@ -1,5 +1,5 @@
 # host: Linux 6.6.87.2-microsoft-standard-WSL2 x86_64 2026-09-06T02:19:43Z  cpus 0,2  rounds 2000
-# control: develop d1897d3c (/home/mbelhadi/qvo/ctl-f0da/bin/qvoprobe-parked-io-wake)  candidate: perf/park-in-ev-loop (/home/mbelhadi/qvo/linux/bin/qvoprobe-parked-io-wake)
+# control: develop d1897d3c (/home/qvo/qvo/ctl-f0da/bin/qvoprobe-parked-io-wake)  candidate: perf/park-in-ev-loop (/home/qvo/qvo/linux/bin/qvoprobe-parked-io-wake)
 ctl  pass1 latency=0us gap=10us idle_spin=default rounds=2000  min=6.6 p50=18.1 mean=69.8 p90=23.5 p99=2320.7 max=5675.9 (us)
 cand pass1 latency=0us gap=10us idle_spin=default rounds=2000  min=7.3 p50=18.1 mean=48.4 p90=21.2 p99=1170.9 max=3941.6 (us)
 ctl  pass2 latency=0us gap=10us idle_spin=default rounds=2000  min=6.9 p50=18.4 mean=61.1 p90=22.6 p99=2513.2 max=5105.2 (us)

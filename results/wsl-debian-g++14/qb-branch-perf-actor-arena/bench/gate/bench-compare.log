@@ -1,7 +1,7 @@
 baseline: dev/bench/baseline/linux-wsl2-x86_64.json
   host linux-wsl2-x86_64 (12th Gen Intel(R) Core(TM) i9-12900K), 15 runs, qb 1ec7e794
   136 gated metrics, 16 recorded-only
-contender: /home/mbelhadi/prof/arena/bench-now (3 run(s))
+contender: /home/qvo/prof/arena/bench-now (3 run(s))
 
 REGRESSIONS (5):
   qbm-http-bench-http1-parser::BM_Http1Parse_Fragmented/corpus:0::real_time

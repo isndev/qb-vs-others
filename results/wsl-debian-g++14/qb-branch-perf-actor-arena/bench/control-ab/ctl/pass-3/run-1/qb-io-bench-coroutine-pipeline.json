@@ -1,8 +1,8 @@
 {
   "context": {
     "date": "2026-09-17T04:44:24+02:00",
-    "host_name": "DESKTOP-B67OSN6",
-    "executable": "/home/mbelhadi/prof/arena/ctl-bench/bin/benchmarks/qb-io-bench-coroutine-pipeline",
+    "host_name": "desktop-x86",
+    "executable": "/home/qvo/prof/arena/ctl-bench/bin/benchmarks/qb-io-bench-coroutine-pipeline",
     "num_cpus": 24,
     "mhz_per_cpu": 3187,
     "cpu_scaling_enabled": false,

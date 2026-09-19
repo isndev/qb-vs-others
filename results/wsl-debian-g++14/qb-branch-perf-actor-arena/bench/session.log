@@ -1,7 +1,7 @@
 === DEV/BENCH start 02:16:20 (root benchmarks preset, seg clone qb=385bdb37)
   build rc=0 TUs=582 warnings=0 02:22:44
   quiet 60 s
-  bench-run rc=0 02:35:03:   ok   qbm-pgsql-bench-codec-decode (15 measurements) bench-run.sh: wrote 3 run(s) x 23 binaries to /home/mbelhadi/prof/arena/bench-now 
+  bench-run rc=0 02:35:03:   ok   qbm-pgsql-bench-codec-decode (15 measurements) bench-run.sh: wrote 3 run(s) x 23 binaries to /home/qvo/prof/arena/bench-now 
   bench-compare rc=1 02:35:03
       136 gated metrics, 16 recorded-only
     REGRESSIONS (5):

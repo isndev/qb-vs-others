@@ -1,8 +1,8 @@
 {
   "context": {
     "date": "2026-09-07T12:07:01+02:00",
-    "host_name": "DESKTOP-B67OSN6",
-    "executable": "/home/mbelhadi/qbb/ctl-f8eba11d/bin/benchmarks/qb-core-bench-ping-pong-throughput",
+    "host_name": "desktop-x86",
+    "executable": "/home/qvo/qbb/ctl-f8eba11d/bin/benchmarks/qb-core-bench-ping-pong-throughput",
     "num_cpus": 24,
     "mhz_per_cpu": 3187,
     "cpu_scaling_enabled": false,

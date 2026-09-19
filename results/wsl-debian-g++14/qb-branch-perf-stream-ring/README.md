@@ -5,7 +5,7 @@ coroutine layer (the stream's chunk buffer, the channel's value buffer and its t
 of `semaphore`, `async_mutex`, `async_rw_lock` and `async_event`). Both trees exported by `git archive` into
 same-length paths (`~/qb-ctl-6712`, `~/qb-cnd-6632`), the harness built without native arch, qb's own benchmarks
 with it; one quiet session (Windows side idle, Docker Desktop stopped), the benchmarks pinned to CPU 2.
-The Windows half of the same change is `results/desktop-b67osn6-win-msvc/qb-branch-perf-stream-ring/README.md`.
+The Windows half of the same change is `results/desktop-win11-msvc19/qb-branch-perf-stream-ring/README.md`.
 
 **Why Linux is the control of the control.** libstdc++ packs 512 bytes per deque block, so the deque was already
 amortised here: the probe's `stream` mode sat at 24 vs 24 before the change (Windows: 69 vs 31). This host answers

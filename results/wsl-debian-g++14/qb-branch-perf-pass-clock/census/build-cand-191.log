@@ -1,8 +1,8 @@
 [0/2] Re-checking globbed directories...
 [1/2] Re-running CMake...
 -- [qb] Searching for required dependencies...
--- [qb] Using bundled UUID from: /home/mbelhadi/qb-191/src/qb/vendor/uuid
--- [qb] Using bundled libev from: /home/mbelhadi/qb-191/src/qb/ev
+-- [qb] Using bundled UUID from: /home/qvo/qb-191/src/qb/vendor/uuid
+-- [qb] Using bundled libev from: /home/qvo/qb-191/src/qb/ev
 -- [qb] Searching for optional dependencies...
 -- [qb] SSL/TLS support disabled
 -- [qb] Compression support disabled
@@ -15,7 +15,7 @@
 -- [qb] Platform: Linux (x64)
 -- [qb] Build Type: Release
 -- [qb] Compiler: GNU 14.2.0
--- [qb] Root Directory: /home/mbelhadi/qb-191
+-- [qb] Root Directory: /home/qvo/qb-191
 -- [qb] Features:
 -- [qb]   - Tests: OFF
 -- [qb]   - Examples: OFF (not built by qb itself - this repository ships no examples/ tree; the switch is read by the qb-dev superproject's examples/ submodule)
@@ -55,21 +55,21 @@
 -- 
 -- Configuring done (0.1s)
 -- Generating done (0.0s)
--- Build files have been written to: /home/mbelhadi/qvo/cand-191
+-- Build files have been written to: /home/qvo/qvo/cand-191
 [0/4] Re-checking globbed directories...
 [1/15] Building C object _deps/qb-build/src/qb/ev/CMakeFiles/qev.dir/ev.c.o
 [2/15] Linking C static library lib/libqb-ev.a
 [3/15] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-ping-pong.dir/savina/ping-pong.cpp.o
 [4/15] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-thread-ring.dir/savina/thread-ring.cpp.o
 [5/15] Building CXX object frameworks/qb/CMakeFiles/qvo-qb-savina-bank-transaction.dir/savina/bank-transaction.cpp.o
-In file included from /home/mbelhadi/qb-191/src/qb/io/async/coroutine/scheduler.h:64,
-                 from /home/mbelhadi/qb-191/src/qb/io/async/listener.h:43,
-                 from /home/mbelhadi/qb-191/src/qb/core/Main.h:41,
-                 from /home/mbelhadi/qb-191/src/qb/main.h:13,
+In file included from /home/qvo/qb-191/src/qb/io/async/coroutine/scheduler.h:64,
+                 from /home/qvo/qb-191/src/qb/io/async/listener.h:43,
+                 from /home/qvo/qb-191/src/qb/core/Main.h:41,
+                 from /home/qvo/qb-191/src/qb/main.h:13,
                  from /mnt/d/repo/qb-dev/qb-vs-others/frameworks/qb/savina/../qb_support.h:17,
                  from /mnt/d/repo/qb-dev/qb-vs-others/frameworks/qb/savina/bank-transaction.cpp:25:
-/home/mbelhadi/qb-191/src/qb/io/async/coroutine/task.h: In member function ‘void qb::io::async::task<T>::promise_type::return_value(T) [with T = savina_bank_transaction_qb::Deposit]’:
-/home/mbelhadi/qb-191/src/qb/io/async/coroutine/task.h:563:9: note: the ABI for passing parameters with 64-byte alignment has changed in GCC 4.6
+/home/qvo/qb-191/src/qb/io/async/coroutine/task.h: In member function ‘void qb::io::async::task<T>::promise_type::return_value(T) [with T = savina_bank_transaction_qb::Deposit]’:
+/home/qvo/qb-191/src/qb/io/async/coroutine/task.h:563:9: note: the ABI for passing parameters with 64-byte alignment has changed in GCC 4.6
   563 |         return_value(T value) noexcept(std::is_nothrow_move_constructible_v<T>) {
       |         ^~~~~~~~~~~~
 [6/15] Building CXX object _deps/qb-build/src/qb/core/CMakeFiles/qb-core.dir/core.cpp.o

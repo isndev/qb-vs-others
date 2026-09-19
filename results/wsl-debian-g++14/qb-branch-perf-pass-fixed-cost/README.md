@@ -137,4 +137,4 @@ question; the ring is now its most sensitive instrument.
 
 Suites at the head, standalone `cmake -S qb`, 0 warnings: WSL2 g++-14 Release / ASan+UBSan /
 TSan **192/192/0** each, run twice (before and after the last two steps). The Windows A/B is in
-`../../desktop-b67osn6-win-msvc/qb-branch-perf-pass-fixed-cost/`.
+`../../desktop-win11-msvc19/qb-branch-perf-pass-fixed-cost/`.

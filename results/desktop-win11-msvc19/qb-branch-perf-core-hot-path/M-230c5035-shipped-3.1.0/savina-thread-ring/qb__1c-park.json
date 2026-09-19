@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/thread-ring",
+  "framework": "qb",
+  "framework_version": "3.1.0",
+  "verified": true,
+  "expected_checksum": 11452496497421877006,
+  "expected_messages": 1000001,
+  "work_unit": "hop",
+  "work_units": 1000000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 100, "cores": 1, "hops": 1000000, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-09-04T18:07:28Z"
+  },
+  "idiom": {
+    "source": "qb/src/qb/core/Actor.h forward() + the ping-pong adapter",
+    "note": "one Token event forward()ed around the ring in place; actor i on VirtualCore i % cores, so every hop crosses a core at cores=2"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON). Its logger writes at startup, outside the measured window, but its thread shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "actor i lives on VirtualCore i % cores: with cores=2 EVERY hop is a cross-core hand-off. CAF and SObjectizer receive the same 2-thread budget but their schedulers decide where each hop runs, so the same cell measures qb's cross-core pipe against their intra-thread hand-off -- see benchmarks/savina/thread-ring.md"],
+  "failures": [],
+  "work_ns": [63829500.0, 65667300.0, 61332900.0, 62876800.0, 61584000.0, 64527000.0, 64341900.0, 61611000.0, 63249800.0],
+  "total_ns": [93432300.0, 67401800.0, 94461600.0, 64354600.0, 71503500.0, 68329300.0, 97867500.0, 95252500.0, 64917700.0],
+  "outside_window_ns": [29602800.0, 1734500.0, 33128700.0, 1477800.0, 9919500.0, 3802300.0, 33525600.0, 33641500.0, 1667900.0],
+  "summary": {
+    "work_min": 61332900.0,
+    "work_p50": 63249800.0,
+    "work_p99": 65576076.0,
+    "work_iqr": 2730900.0
+  }
+}

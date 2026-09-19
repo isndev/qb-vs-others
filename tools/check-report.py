@@ -52,7 +52,7 @@ import report  # noqa: E402  (tools/report.py -- the renderer itself, so the two
 
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS = ROOT / "results"
-PRIMARY = "desktop-b67osn6-win-msvc"  # the host whose report is the root REPORT.md
+PRIMARY = "desktop-win11-msvc19"  # the host whose report is the root REPORT.md
 
 FLOOR_TABLES = 2
 FLOOR_FIGURES = 16

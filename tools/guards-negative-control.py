@@ -509,7 +509,7 @@ def report_controls(base: Path, results: str) -> None:
 
     with Sandbox(base) as s:
         # The primary host's results gone: the root REPORT.md has nothing to be rendered from.
-        shutil.rmtree(s / "results" / "desktop-b67osn6-win-msvc", ignore_errors=True)
+        shutil.rmtree(s / "results" / "desktop-win11-msvc19", ignore_errors=True)
         rc, out = run_guard(s, P)
         expect("CAUGHT", rc, out, "the primary host's results directory absent", 1,
                "does not exist")

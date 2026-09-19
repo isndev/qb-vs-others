@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/fork-join",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 16648013738289302308,
+  "expected_messages": 600060,
+  "work_unit": "message",
+  "work_units": 600000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 60, "cores": 1, "messages": 10000, "wait": 0, "work": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-09-13T01:23:12Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; worker w is owned by thread w % cores, the master is the calling thread; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Workers are slots of a vector, a job is one ring push and one ring pop, and nothing balances load: the floor for a fire-and-forget dispatch, not for scheduling 60 runnable actors on 2 threads", "worker w lives on thread w % cores, so with cores=2 half the jobs stay on the master's own thread (drained inline when its ring fills) and half cross a core", "cores=1 is one thread pushing every job into its own 65536-slot ring and draining it inline whenever it is full -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [5234000.0, 5310600.0, 5277700.0, 5224800.0, 5283800.0, 5222300.0, 5352000.0, 5379000.0, 5242600.0],
+  "total_ns": [5563600.0, 5615200.0, 5599100.0, 5616600.0, 5618900.0, 5568900.0, 5693300.0, 5708800.0, 5551700.0],
+  "outside_window_ns": [329600.0, 304600.0, 321400.0, 391800.0, 335100.0, 346600.0, 341300.0, 329800.0, 309100.0],
+  "summary": {
+    "work_min": 5222300.0,
+    "work_p50": 5277700.0,
+    "work_p99": 5376840.0,
+    "work_iqr": 76600.0
+  }
+}

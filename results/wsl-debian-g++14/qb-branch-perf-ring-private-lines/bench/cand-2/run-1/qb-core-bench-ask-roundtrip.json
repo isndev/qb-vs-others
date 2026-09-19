@@ -1,8 +1,8 @@
 {
   "context": {
     "date": "2026-09-07T20:44:29+02:00",
-    "host_name": "DESKTOP-B67OSN6",
-    "executable": "/home/mbelhadi/qbb/cand-pass/bin/benchmarks/qb-core-bench-ask-roundtrip",
+    "host_name": "desktop-x86",
+    "executable": "/home/qvo/qbb/cand-pass/bin/benchmarks/qb-core-bench-ask-roundtrip",
     "num_cpus": 24,
     "mhz_per_cpu": 3187,
     "cpu_scaling_enabled": false,

@@ -1,7 +1,7 @@
 # qb `develop` `174e515a` — the 3.2.0 candidate on macOS / Apple M4 Pro / AppleClang 21
 
 The macOS third of the **3.2.0 candidate grid** (the two others are
-`../../desktop-b67osn6-win-msvc/qb-branch-develop/` and `../../wsl-debian-g++14/qb-branch-develop/`),
+`../../desktop-win11-msvc19/qb-branch-develop/` and `../../wsl-debian-g++14/qb-branch-develop/`),
 and the first time this host measures all **eight** Savina shapes: qb `develop` at **`174e515a`** —
 the release candidate of 2026-09-13 (`f2779605`) plus the four changes that landed after it, the
 actor arena (QB-212), `pin_frame_copy` (QB-213), the frame-free `qb::ask` (QB-214) and

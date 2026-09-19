@@ -6,7 +6,7 @@ Read [FAIRNESS.md](../../FAIRNESS.md) before reading any table below. In particu
 
 ## Run
 
-- host: `DESKTOP-B67OSN6`
+- host: `desktop-x86`
 - platform: `Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.41`
 - pinned CPUs: `0,2`
 - repetitions: 9 (+2 warmup), one process per cell

@@ -1,7 +1,7 @@
 # qb branch `perf/actor-arena` — WSL2 Debian 13 / g++ 14.2
 
 The WSL2 half of the A/B for Huly **QB-212, point 1** (the Windows half is
-`../../desktop-b67osn6-win-msvc/qb-branch-perf-actor-arena/`): the qb branch on which the actor
+`../../desktop-win11-msvc19/qb-branch-perf-actor-arena/`): the qb branch on which the actor
 object comes from a per-thread size-class arena (`qb::Actor::operator new` / `operator delete`
 over `qb::allocator::thread_arena`: 16-byte classes up to 1 KiB, LIFO reuse per class, chunks
 from `slab_cache`, no lock and no TLS init guard on the path) instead of `malloc`. The

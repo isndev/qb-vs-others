@@ -80,4 +80,4 @@ deleted — and the 1c gain arrives.
 
 Suites at the head, standalone `cmake -S qb`, 0 warnings: WSL2 g++-14 Release / ASan+UBSan / TSan
 192/192/0 each; Windows/MSVC 19.51 Release 188/188/0. The Windows A/B is in
-`../../desktop-b67osn6-win-msvc/qb-branch-perf-ask-slot-table/`.
+`../../desktop-win11-msvc19/qb-branch-perf-ask-slot-table/`.

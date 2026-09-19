@@ -70,4 +70,4 @@
   ok   qbm-http-bench-uri-parse (10 measurements)
   ok   qbm-redis-bench-resp-parse (15 measurements)
   ok   qbm-pgsql-bench-codec-decode (15 measurements)
-bench-run.sh: wrote 3 run(s) x 23 binaries to /home/mbelhadi/prof/arena/bench-now
+bench-run.sh: wrote 3 run(s) x 23 binaries to /home/qvo/prof/arena/bench-now

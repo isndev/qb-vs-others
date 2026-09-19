@@ -1,7 +1,7 @@
 # qb `develop` `43f62afe` — the 3.2.0 candidate grid, WSL2 / Debian 13 / g++ 14.2
 
 The WSL2 half of the **3.2.0 candidate grid** (the Windows half is
-`../../desktop-b67osn6-win-msvc/qb-branch-develop/`): qb `develop` at **`43f62afe`** — 29
+`../../desktop-win11-msvc19/qb-branch-develop/`): qb `develop` at **`43f62afe`** — 29
 commits over the shipped v3.1.0 (`830ea244`), every perf branch of `docs/TUNING.md` §7–§12
 merged (axes A–N, QB-43 the segmented pipe, axis I the dense router, QB-174 the default-event
 registry, the dense-table-growth chain fib produced, the five ask-path fixes bank-transaction

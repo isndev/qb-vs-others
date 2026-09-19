@@ -7,7 +7,7 @@
   "not_applicable": "caf::detached actors park on a condition variable between messages (caf/detail/private_thread.cpp); CAF has no spin mode for a private thread, so wait=1 has no honest counterpart here -- read the caf row for CAF's spin profile and this row for its cross-core park cost",
   "params": {"cores": 2, "messages": 1000000, "wait": 1},
   "env": {
-    "host": "MacBook-Pro-de-Mohamed.local",
+    "host": "macbook-m4pro",
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",

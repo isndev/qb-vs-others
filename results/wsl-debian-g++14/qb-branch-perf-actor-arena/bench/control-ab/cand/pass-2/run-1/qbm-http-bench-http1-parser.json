@@ -1,7 +1,7 @@
 {
   "context": {
     "date": "2026-09-17T04:43:54+02:00",
-    "host_name": "DESKTOP-B67OSN6",
+    "host_name": "desktop-x86",
     "executable": "build/presets/benchmarks/bin/benchmarks/qbm-http-bench-http1-parser",
     "num_cpus": 24,
     "mhz_per_cpu": 3187,

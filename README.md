@@ -66,7 +66,7 @@ it is not doing what the floor does (there, crossing a core on every message).
 
 `savina/ping-pong` — 1 000 000 round trips, two actors; per round trip:
 
-<!-- check-report: results/desktop-b67osn6-win-msvc benchmark=savina/ping-pong -->
+<!-- check-report: results/desktop-win11-msvc19 benchmark=savina/ping-pong -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
 | 1 core, spin | **qb 30 ns** | SObjectizer 182 ns | 2 ns | CAF 477 ns · qb 6.02× |
@@ -76,7 +76,7 @@ it is not doing what the floor does (there, crossing a core on every message).
 
 `savina/counting` — 1 000 000 messages from a producer into one counter, then one retrieve; per message:
 
-<!-- check-report: results/desktop-b67osn6-win-msvc benchmark=savina/counting -->
+<!-- check-report: results/desktop-win11-msvc19 benchmark=savina/counting -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
 | 1 core, spin | **qb 10 ns** | SObjectizer 139 ns | 3 ns | CAF 180 ns · qb 14.26× |
@@ -86,7 +86,7 @@ it is not doing what the floor does (there, crossing a core on every message).
 
 `savina/thread-ring` — 100 actors in a ring, a token making 1 000 000 hops; per hop:
 
-<!-- check-report: results/desktop-b67osn6-win-msvc benchmark=savina/thread-ring -->
+<!-- check-report: results/desktop-win11-msvc19 benchmark=savina/thread-ring -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
 | 1 core, spin | **qb 18 ns** | SObjectizer 91 ns | 9 ns | CAF 232 ns · qb 5.01× |
@@ -96,7 +96,7 @@ it is not doing what the floor does (there, crossing a core on every message).
 
 `savina/fork-join` — 10 000 messages fanned out to each of 60 workers, 600 000 in all, each worker acknowledged once at the end; per message:
 
-<!-- check-report: results/desktop-b67osn6-win-msvc benchmark=savina/fork-join -->
+<!-- check-report: results/desktop-win11-msvc19 benchmark=savina/fork-join -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
 | 1 core, spin | **qb 11 ns** | SObjectizer 139 ns | 5 ns | CAF 309 ns · qb 12.12× |
@@ -106,7 +106,7 @@ it is not doing what the floor does (there, crossing a core on every message).
 
 `savina/big` — 120 actors each sending 20 000 pings to random peers, every ping answered; per round trip (2 400 000 of them):
 
-<!-- check-report: results/desktop-b67osn6-win-msvc benchmark=savina/big -->
+<!-- check-report: results/desktop-win11-msvc19 benchmark=savina/big -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
 | 1 core, spin | **qb 17 ns** | SObjectizer 183 ns | 11 ns | CAF 479 ns · qb 10.68× |
@@ -282,9 +282,9 @@ Seven things in those tables are worth more than the ranking:
    ping-pong, +44 % on fib, +60 % on bank ([docs/TUNING.md §13.5](docs/TUNING.md)).
 
 <!-- the two grids below are the 3.2.0 candidate at its FINAL commit; check-report verifies them against their own directory -->
-The candidate on Windows (`results/desktop-b67osn6-win-msvc/qb-branch-develop/grid-f2779605/`; per unit — round trip, message, hop, message, round trip, actor, meeting, transfer):
+The candidate on Windows (`results/desktop-win11-msvc19/qb-branch-develop/grid-f2779605/`; per unit — round trip, message, hop, message, round trip, actor, meeting, transfer):
 
-<!-- check-report: results/desktop-b67osn6-win-msvc/qb-branch-develop/grid-f2779605 framework=qb -->
+<!-- check-report: results/desktop-win11-msvc19/qb-branch-develop/grid-f2779605 framework=qb -->
 | benchmark | 1 core, spin | 1 core, park | 2 cores, spin | 2 cores, park |
 |---|---|---|---|---|
 | ping-pong | 31 ns | 31 ns | 186 ns | 200 ns |
@@ -541,10 +541,16 @@ REPORT.md              generated; every figure comes from results/
 harness/               the only timing, verification and reporting code
 benchmarks/specs/      framework-free expected values, included by every implementation
 frameworks/<fw>/       one adapter per framework + its shared setup header
-results/<host-id>/     one JSON per (framework x benchmark x configuration)
+results/<host-id>/     one JSON per (framework x benchmark x configuration); each host's README.md describes the machine
 docs/TUNING.md         the configuration sweeps, including the one that embarrassed the author, and every qb-side finding
 docs/FEATURES.md       what each framework offers, cited to its source
 docs/ROADMAP.md        what is not done yet
 tools/                 run.py, report.py, check-report.py, check-roster.py, the negative-control batteries
 tools/probes/          qb-only instruments (`qvoprobe-*`): undiscoverable by run.py, never a table cell; docs/TUNING.md sections 10, 15–19
 ```
+
+The `host` field of every result document and the machine names in the reports are pseudonyms
+(`desktop-x86` is the i9-12900K that hosts both the Windows and the WSL2 rows, `macbook-m4pro` the
+Apple M4 Pro, `trixie` the arm64 Debian guest); the captured build logs read `/home/qvo/`. The
+machines themselves are described, with their firmware, OS and compiler versions, at the top of
+each `results/<host-id>/README.md` — a pseudonym hides a hostname, never a fact a reader needs.

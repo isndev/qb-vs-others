@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/counting",
+  "framework": "caf",
+  "framework_version": "1.1.0",
+  "verified": true,
+  "expected_checksum": 6535945399557740267,
+  "expected_messages": 1000002,
+  "work_unit": "message",
+  "work_units": 1000000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "messages": 1000000, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-09-13T01:27:42Z"
+  },
+  "idiom": {
+    "source": "the ping-pong adapter + caf/type_id.hpp built-in atoms as in examples/message_passing/calculator.cpp",
+    "note": "(add_atom, uint64) increments, (get_atom) retrieve, (ok_atom, acc, count) answer; one handshake outside the window"
+  },
+  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship"],
+  "failures": [],
+  "work_ns": [175500500.0, 174206800.0, 115170700.0, 174802600.0, 125987900.0, 173064100.0, 121159600.0, 172878100.0, 175452700.0],
+  "total_ns": [176086000.0, 174741500.0, 115493700.0, 175520100.0, 126515600.0, 173943900.0, 121608700.0, 173437600.0, 176154100.0],
+  "outside_window_ns": [585500.0, 534700.0, 323000.0, 717500.0, 527700.0, 879800.0, 449100.0, 559500.0, 701400.0],
+  "summary": {
+    "work_min": 115170700.0,
+    "work_p50": 173064100.0,
+    "work_p99": 175496676.0,
+    "work_iqr": 48814700.0
+  }
+}

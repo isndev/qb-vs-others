@@ -27,7 +27,7 @@ foreach ($t in @('cl', 'cmake', 'ninja')) {
     }
 }
 
-if (-not $env:VCPKG_ROOT -and (Test-Path 'D:\repo\vcpkg')) { $env:VCPKG_ROOT = 'D:\repo\vcpkg' }
+if (-not $env:VCPKG_ROOT -and (Test-Path 'D:\vcpkg')) { $env:VCPKG_ROOT = 'D:\vcpkg' }
 
 Write-Host ("qvo: MSVC {0}, cmake {1}" -f `
     ((& cl 2>&1 | Select-String 'Version (\S+)').Matches[0].Groups[1].Value), `

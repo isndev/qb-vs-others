@@ -22,7 +22,7 @@ ambition has already misled the reader.
   into a per-event publish regime — is 9.10, fixed on the same branch.
 - **The two CAF coherence defects, closed** (`docs/TUNING.md` §1.1 and §8). The spin-knob sweep
   was run on both axes — poll budget 100 → 10⁶ at fixed steal interval, steal interval 1 → 10⁶ at
-  fixed budget; ten documents in `results/desktop-b67osn6-win-msvc/caf-spin-sweep/` — and no
+  fixed budget; ten documents in `results/desktop-win11-msvc19/caf-spin-sweep/` — and no
   profile beat CAF's shipped defaults, so the adapter now declares `wait=1` ≡ `wait=0` in its
   caveats instead of pretending a second column. The cross-core question is answered by
   `frameworks/caf-detached/` through `caf::detached`, CAF's own placement primitive, with its

@@ -53,7 +53,7 @@ configuration, and the 584.1-vs-531.0 gap in the table above is run-to-run sprea
 
 The open item was "raise `aggressive-poll-attempts` well above 100 without the steal-interval
 collapse of the first guess". Done, on the two knobs independently. Documents and the script are
-in `results/desktop-b67osn6-win-msvc/caf-spin-sweep/`; ns per round trip, p50 [min, max]:
+in `results/desktop-win11-msvc19/caf-spin-sweep/`; ns per round trip, p50 [min, max]:
 
 | `aggressive-poll-attempts` | `aggressive-steal-interval` | ns/round trip |
 |---:|---:|---:|
@@ -739,7 +739,7 @@ grid-order 76.3 → 77.7) where g++ gains 3 % — inside each instrument's sprea
 explained, and the one open item this branch leaves on the same-core path.
 
 **And the A/B was run anyway, on 2026-09-08, against the 3.2.0 tree — the answer is "both,
-in halves"** (`results/desktop-b67osn6-win-msvc/qb-46-clang-cl/`, Huly QB-46). qb `381e4995` built
+in halves"** (`results/desktop-win11-msvc19/qb-46-clang-cl/`, Huly QB-46). qb `381e4995` built
 twice from the same directory by `cl` 19.51 and by `clang-cl` 22.1.7 — LLVM's Clang behind MSVC's
 command line, ABI, CRT and STL — and measured in one quiet session: on every dispatch-bound shape
 the clang-cl binary is **10–18 % faster** (ping-pong 1c 31.6 → 27.4 ns, big 17.1 → 14.8, fib
@@ -1498,7 +1498,7 @@ within a launch (counting 2c's nine repetitions sort 10.6, 10.8, 12.3, 13.3 … 
 mode at 10.6 and an upper at 13.4, and the median lands wherever the majority fell). So the
 final build was censused against the midpoint build in ONE session — ten alternated launches of
 3 + 1 on CPUs 0 and 2, `build/final` (`77b358d8`) against `build/ab180-ctl` (`43f62afe`, the same
-adapters), `results/desktop-b67osn6-win-msvc/qb-branch-develop/census-77b358d8-vs-43f62afe/`
+adapters), `results/desktop-win11-msvc19/qb-branch-develop/census-77b358d8-vs-43f62afe/`
 — median of the ten launch medians, [min … max]: counting 2c **13.6** [10.0 … 13.9] against
 **13.5** [10.9 … 14.0]; chameneos 2c **66.9** [46.8 … 74.7] against **67.8** [55.2 … 81.0]; ping-pong
 2c **189.3** [187.0 … 192.5] against **242.7** [215.9 … 249.7]; thread-ring 2c **107.2** [91.2 … 114.7]

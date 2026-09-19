@@ -1,3 +1,0 @@
-ctl   n=12 median= 22.63  +0.0%  quartiles 22.45-22.76  min 22.22
-b62   n=12 median= 22.66  +0.1%  quartiles 22.55-22.89  min 22.45
-cand  n=12 median= 22.66  +0.1%  quartiles 22.31-22.79  min 22.23

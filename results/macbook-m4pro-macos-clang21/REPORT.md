@@ -6,7 +6,7 @@ Read [FAIRNESS.md](../../FAIRNESS.md) before reading any table below. In particu
 
 ## Run
 
-- host: `MacBook-Pro-de-Mohamed.local`
+- host: `macbook-m4pro`
 - platform: `macOS-26.6.2-arm64-arm-64bit-Mach-O`
 - pinned CPUs: `unpinned`
 - repetitions: 9 (+2 warmup), one process per cell

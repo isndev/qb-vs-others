@@ -1,8 +1,8 @@
 {
   "context": {
     "date": "2026-09-18T11:49:39+02:00",
-    "host_name": "DESKTOP-B67OSN6",
-    "executable": "/home/mbelhadi/qb-cnd-6632/bench/bin/benchmarks/qb-io-bench-sync-primitives",
+    "host_name": "desktop-x86",
+    "executable": "/home/qvo/qb-cnd-6632/bench/bin/benchmarks/qb-io-bench-sync-primitives",
     "num_cpus": 24,
     "mhz_per_cpu": 3187,
     "cpu_scaling_enabled": false,

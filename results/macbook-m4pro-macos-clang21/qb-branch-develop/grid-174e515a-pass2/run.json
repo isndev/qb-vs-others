@@ -1,6 +1,6 @@
 {
   "schema": "qvo/run/1",
-  "host": "MacBook-Pro-de-Mohamed.local",
+  "host": "macbook-m4pro",
   "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "cpus": "unpinned",
   "repetitions": 9,

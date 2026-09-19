@@ -4,7 +4,7 @@
   cnd: median-of-5-processes 404.9 ns  [405.7 404.8 404.4 406.7 404.9]
 === qb-core-bench-ping-pong-latency  [BM_Reference_Multi_PingPong_Latency]
   whole file: differ in 619270 bytes of 804416
-cmp: EOF on /home/mbelhadi/prof/arena/same/ctl.text after byte 638680
+cmp: EOF on /home/qvo/prof/arena/same/ctl.text after byte 638680
   .text section: differ in 550394 bytes of 638680
   .rodata: differ in 277 bytes
 Traceback (most recent call last):

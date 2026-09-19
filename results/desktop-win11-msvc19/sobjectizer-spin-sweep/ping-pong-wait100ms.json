@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/ping-pong",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 6535945399557740267,
+  "expected_messages": 2000000,
+  "work_unit": "round trip",
+  "work_units": 1000000,
+  "repetitions": 7,
+  "warmup": 2,
+  "params": {"cores": 2, "messages": 1000000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36252.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-09-09T13:15:11Z"
+  },
+  "idiom": {
+    "source": "SObjectizer 5.8.5.1 dev/sample/so_5/ping_pong{,_minimal}/main.cpp",
+    "note": "agent_t subclasses on their DIRECT mboxes (faster than the samples' shared mbox), messages derived from so_5::message_t, active_obj dispatcher for cores>=2 and one_thread below it"
+  },
+  "caveats": ["SWEEP DOCUMENT, NOT A TABLE CELL: the combined_lock waiting time under wait=1 was overridden through QVO_SO_SPIN_WAIT_US=100000 microseconds (docs/TUNING.md section 1.2); the adapter's profile is 10 s, SObjectizer's own default 1 ms", "cores>=2 uses the active_obj dispatcher (one work thread per agent); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t, so SObjectizer gets the same placement qb and CAF get rather than being the one framework left floating", "wait=1 maps to combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox. Both of SObjectizer's shipped ping-pong samples use a shared mbox instead, which is simpler and slower; the faster idiom is used here on purpose"],
+  "failures": [],
+  "work_ns": [845973900.0, 908813500.0, 863905600.0, 808307500.0, 889841700.0, 853630300.0, 780186800.0],
+  "total_ns": [846398400.0, 909248700.0, 870162800.0, 808801200.0, 890257600.0, 854027200.0, 780725000.0],
+  "outside_window_ns": [424500.0, 435200.0, 6257200.0, 493700.0, 415900.0, 396900.0, 538200.0],
+  "summary": {
+    "work_min": 780186800.0,
+    "work_p50": 853630300.0,
+    "work_p99": 907675192.0,
+    "work_iqr": 49732950.0
+  }
+}

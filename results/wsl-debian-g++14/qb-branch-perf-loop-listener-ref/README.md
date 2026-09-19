@@ -43,4 +43,4 @@ eight rounds, and inside `A4`) with the same reading.
 One cell moves and it is the one the profile named: a ping-pong at one core is two passes per round
 trip and nothing else, so the three wrapper calls a pass were 2.2 % of it and the reference takes
 them out — 0.3 ns a round trip, quartiles separated at twelve rounds. Every other cell is level, on
-both hosts (the Windows half: `../../desktop-b67osn6-win-msvc/qb-branch-perf-loop-listener-ref/`).
+both hosts (the Windows half: `../../desktop-win11-msvc19/qb-branch-perf-loop-listener-ref/`).
