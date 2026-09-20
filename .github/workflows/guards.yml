@@ -1,0 +1,28 @@
+# The two document guards and their negative controls, on every push and pull request: every
+# figure in README.md and REPORT.md must equal the JSON it summarises (tools/check-report.py),
+# every roster cell must hold a result document or be declared omitted with a reason
+# (tools/check-roster.py), and the battery over both must still catch the defects they exist for
+# (tools/guards-negative-control.py). Pure Python over the committed documents; no framework is
+# built here -- the harness battery, tools/negative-control.py, needs a build and a measuring host.
+name: guards
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  documents:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: every transcribed figure equals its JSON, every REPORT.md is its render
+        run: python3 tools/check-report.py
+      - name: every roster cell exists or is declared omitted
+        run: python3 tools/check-roster.py
+      - name: the two guards still reject the defects they exist for
+        run: python3 tools/guards-negative-control.py
