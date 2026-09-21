@@ -154,7 +154,7 @@ the all-to-all, since 2026-09-06 the two that the first five could not show: `sa
 `savina/bank-transaction`, the first that WAITS for a reply (one `qb::ask` per transfer, 50 000
 of them, `benchmarks/savina/bank-transaction.md`). All three are published on Windows and WSL2
 with shipped 3.1.0 like the five before them (`results/<host>/savina-fib/`,
-`savina-chameneos/`, `savina-bank-transaction/`; macOS not yet), and were written against the
+`savina-chameneos/`, `savina-bank-transaction/`; macOS since 2026-09-19), and were written against the
 qb work they produced (`results/<host>/qb-branch-perf-dense-table-growth/`,
 `qb-branch-perf-coro-scope-local-refcount/`; `docs/TUNING.md` §11 and §12), and joined the
 tables with the 3.2.0 grid on 2026-09-07 (`qb-branch-develop/`, §13). fib alone found a 43 s defect in unreleased `develop` on its first

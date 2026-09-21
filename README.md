@@ -16,7 +16,7 @@ The short version of it:
 
 | | |
 |---|---|
-| **Frameworks** | [qb](https://github.com/isndev/qb) 3.1.0 · [CAF](https://github.com/actor-framework/actor-framework) 1.1.0 · [SObjectizer](https://github.com/stiffstream/sobjectizer) 5.8.5.1 |
+| **Frameworks** | [qb](https://github.com/isndev/qb) 3.2.0, measured at its release candidate (`f2779605`, then `174e515a`; a candidate build reports the last tag's number, so the documents' `framework_version` reads 3.1.0) · [CAF](https://github.com/actor-framework/actor-framework) 1.1.0 · [SObjectizer](https://github.com/stiffstream/sobjectizer) 5.8.5.1 |
 | **Floor** | raw `std::thread` + a hand-written SPSC ring — *not* a framework, and never ranked as one |
 | **Problems** | the [Savina](https://github.com/shamsimam/savina) suite (Imam & Sarkar, AGERE 2014) — chosen by neither side, and predating qb |
 | **Build** | every framework compiled **from source, in one project, under one `CMAKE_CXX_FLAGS_RELEASE`** |

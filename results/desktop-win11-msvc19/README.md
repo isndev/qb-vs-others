@@ -19,6 +19,13 @@ eight directories** — and the **96 qb cells** of `qb-branch-develop/` (2026-09
 because the session was driven as `--only <framework>` runs that `tools/run.py` merged; it
 refuses a merge whose host, CPU set or repetition count differs.
 
+The sessions above are the ones that built the field; the documents README.md and REPORT.md render now came
+later, under `qb-branch-develop/`: the whole field re-measured with the final 3.2.0 candidate `f2779605` on
+2026-09-13, one quiet session (`census-f2779605-field/`, `grid-f2779605/`, with `grid-shipped-3.1.0-20260913/`
+as the same-session control; `docs/TUNING.md` §13.5). The candidate's documents carry `framework_version`
+3.1.0: a candidate build reports the last tag's number until the train bumps it, and the tree they measured
+is what became 3.2.0.
+
 `REPORT.md` beside this file is `tools/report.py`'s render of this directory and
 `tools/check-report.py` fails if it drifts from the JSON. `docs/TUNING.md` is the reading guide:
 §1.1 for CAF's two columns, §5/§7 for qb's park cell, §8 for `caf-detached` and the idle-floor
