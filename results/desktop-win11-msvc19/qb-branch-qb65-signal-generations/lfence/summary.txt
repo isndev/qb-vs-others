@@ -1,0 +1,27 @@
+ping-pong-cores=1-wait=1
+  ctl    copies    29.4    29.3    29.3   median-of-copies    29.3   copy spread 29.3..29.4 (0.3 %)   pooled    29.3
+  cand   copies    29.2    29.2    29.2   median-of-copies    29.2   copy spread 29.2..29.2 (0.1 %)   pooled    29.2
+  candlf copies    29.3    29.2    29.2   median-of-copies    29.2   copy spread 29.2..29.3 (0.4 %)   pooled    29.2
+  ctllf  copies    29.4    29.2    29.4   median-of-copies    29.4   copy spread 29.2..29.4 (0.5 %)   pooled    29.3
+  cand vs ctl: -0.3 % (median of copy medians)
+  candlf vs ctl: -0.4 % (median of copy medians)
+  ctllf vs ctl: +0.2 % (median of copy medians)
+
+ping-pong-cores=2-wait=1
+  ctl    copies   193.4   196.9   195.1   median-of-copies   195.1   copy spread 193.4..196.9 (1.8 %)   pooled   194.7
+  cand   copies   196.0   201.8   200.0   median-of-copies   200.0   copy spread 196.0..201.8 (2.9 %)   pooled   201.0
+  candlf copies   200.8   200.8   200.8   median-of-copies   200.8   copy spread 200.8..200.8 (0.0 %)   pooled   200.8
+  ctllf  copies   199.0   199.8   200.2   median-of-copies   199.8   copy spread 199.0..200.2 (0.6 %)   pooled   199.8
+  cand vs ctl: +2.5 % (median of copy medians)
+  candlf vs ctl: +2.9 % (median of copy medians)
+  ctllf vs ctl: +2.4 % (median of copy medians)
+
+thread-ring-cores=2-wait=1
+  ctl    copies   108.9   108.1   105.8   median-of-copies   108.1   copy spread 105.8..108.9 (2.9 %)   pooled   108.3
+  cand   copies   108.7   107.8   111.3   median-of-copies   108.7   copy spread 107.8..111.3 (3.2 %)   pooled   109.2
+  candlf copies   105.3   105.3   105.9   median-of-copies   105.3   copy spread 105.3..105.9 (0.6 %)   pooled   105.4
+  ctllf  copies   107.9   108.2   108.2   median-of-copies   108.2   copy spread 107.9..108.2 (0.3 %)   pooled   108.1
+  cand vs ctl: +0.5 % (median of copy medians)
+  candlf vs ctl: -2.6 % (median of copy medians)
+  ctllf vs ctl: +0.0 % (median of copy medians)
+

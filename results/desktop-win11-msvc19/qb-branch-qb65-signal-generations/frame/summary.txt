@@ -1,0 +1,15 @@
+ping-pong-cores=1-wait=1     ctl        29.3          [28.7..30.2]
+ping-pong-cores=1-wait=1     cand       29.2   -0.4%  [28.6..29.8]  slower than ctl in 20/60 rounds
+ping-pong-cores=1-wait=1     cand-fa     31.4   +7.2%  [30.8..33.4]  slower than ctl in 60/60 rounds
+ping-pong-cores=1-wait=1     ctlcopy     29.3   +0.0%  [28.8..31.1]  slower than ctl in 30/60 rounds
+
+ping-pong-cores=2-wait=1     ctl       194.3          [175.1..219.4]
+ping-pong-cores=2-wait=1     cand      203.1   +4.5%  [181.5..236.4]  slower than ctl in 50/60 rounds
+ping-pong-cores=2-wait=1     cand-fa    202.6   +4.3%  [182.1..223.9]  slower than ctl in 45/60 rounds
+ping-pong-cores=2-wait=1     ctlcopy    192.2   -1.1%  [176.2..207.4]  slower than ctl in 24/60 rounds
+
+thread-ring-cores=2-wait=1   ctl       108.6          [86.7..119.1]
+thread-ring-cores=2-wait=1   cand      108.8   +0.2%  [97.7..124.1]  slower than ctl in 32/60 rounds
+thread-ring-cores=2-wait=1   cand-fa    113.6   +4.6%  [87.5..125.0]  slower than ctl in 36/60 rounds
+thread-ring-cores=2-wait=1   ctlcopy    105.8   -2.6%  [86.4..118.4]  slower than ctl in 27/60 rounds
+

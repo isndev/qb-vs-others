@@ -1,0 +1,25 @@
+
+ctl pass-cost k=1 chains=1 passes=131399680 elapsed_ns=2000326700 ns_per_pass=15.22 events=131399680
+cand pass-cost k=1 chains=1 passes=134676480 elapsed_ns=2000770100 ns_per_pass=14.86 events=134676480
+cand-s2 pass-cost k=1 chains=1 passes=131530752 elapsed_ns=2000104300 ns_per_pass=15.21 events=131530752
+ctl pass-cost k=1 chains=1 passes=131006464 elapsed_ns=2000473200 ns_per_pass=15.27 events=131006464
+cand pass-cost k=1 chains=1 passes=133627904 elapsed_ns=2000815700 ns_per_pass=14.97 events=133627904
+cand-s2 pass-cost k=1 chains=1 passes=130809856 elapsed_ns=2000735200 ns_per_pass=15.29 events=130809856
+ctl pass-cost k=1 chains=1 passes=131203072 elapsed_ns=2000121900 ns_per_pass=15.24 events=131203072
+cand pass-cost k=1 chains=1 passes=133365760 elapsed_ns=2000781500 ns_per_pass=15.00 events=133365760
+cand-s2 pass-cost k=1 chains=1 passes=130285568 elapsed_ns=2000176300 ns_per_pass=15.35 events=130285568
+ctl pass-cost k=1 chains=1 passes=129171456 elapsed_ns=2000539100 ns_per_pass=15.49 events=129171456
+cand pass-cost k=1 chains=1 passes=133627904 elapsed_ns=2000742300 ns_per_pass=14.97 events=133627904
+cand-s2 pass-cost k=1 chains=1 passes=128909312 elapsed_ns=2000294200 ns_per_pass=15.52 events=128909312
+ctl pass-cost k=1 chains=1 passes=128581632 elapsed_ns=2000868000 ns_per_pass=15.56 events=128581632
+cand pass-cost k=1 chains=1 passes=131792896 elapsed_ns=2000866000 ns_per_pass=15.18 events=131792896
+cand-s2 pass-cost k=1 chains=1 passes=128909312 elapsed_ns=2000140100 ns_per_pass=15.52 events=128909312
+ctl pass-cost k=1 chains=1 passes=128712704 elapsed_ns=2000388100 ns_per_pass=15.54 events=128712704
+cand pass-cost k=1 chains=1 passes=132251648 elapsed_ns=2000988600 ns_per_pass=15.13 events=132251648
+cand-s2 pass-cost k=1 chains=1 passes=129040384 elapsed_ns=2000313400 ns_per_pass=15.50 events=129040384
+ctl pass-cost k=1 chains=1 passes=128188416 elapsed_ns=2000393900 ns_per_pass=15.61 events=128188416
+cand pass-cost k=1 chains=1 passes=131727360 elapsed_ns=2000079400 ns_per_pass=15.18 events=131727360
+cand-s2 pass-cost k=1 chains=1 passes=128122880 elapsed_ns=2000978900 ns_per_pass=15.62 events=128122880
+ctl pass-cost k=1 chains=1 passes=128843776 elapsed_ns=2000753600 ns_per_pass=15.53 events=128843776
+cand pass-cost k=1 chains=1 passes=131792896 elapsed_ns=2000633700 ns_per_pass=15.18 events=131792896
+cand-s2 pass-cost k=1 chains=1 passes=128647168 elapsed_ns=2000021800 ns_per_pass=15.55 events=128647168

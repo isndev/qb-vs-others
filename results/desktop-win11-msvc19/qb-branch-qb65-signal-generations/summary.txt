@@ -1,0 +1,7 @@
+cell                                ctl     cand   delta   ctl [min..max] / cand [min..max]  (ns per unit, median of rounds)
+
+probe                 ctl     cand   delta   ctl [min..max] / cand [min..max]
+ask-cost ask        51.12    47.66   -6.8%   [50.11..51.72] / [46.81..47.80]
+pass-cost k=1       15.39    15.04   -2.3%   [15.26..15.51] / [14.89..15.25]
+pass-cost k=2       22.41    22.25   -0.7%   [22.06..22.58] / [22.06..22.40]
+pass-cost k=4       36.58    36.26   -0.9%   [35.93..37.17] / [35.76..36.43]

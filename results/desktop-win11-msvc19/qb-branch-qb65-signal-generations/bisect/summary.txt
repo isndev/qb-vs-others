@@ -1,0 +1,12 @@
+ping-pong-cores=2-wait=1     ctl       185.1          [175.4..198.4]
+ping-pong-cores=2-wait=1     cand      194.8   +5.2%  [176.3..205.2]  slower than ctl in 8/10 rounds
+ping-pong-cores=2-wait=1     lay       190.8   +3.1%  [184.1..195.9]  slower than ctl in 7/10 rounds
+
+thread-ring-cores=1-wait=1   ctl        18.3          [18.1..20.2]
+thread-ring-cores=1-wait=1   cand       18.1   -1.5%  [17.6..19.6]  slower than ctl in 4/10 rounds
+thread-ring-cores=1-wait=1   lay        18.5   +0.7%  [18.3..18.9]  slower than ctl in 6/10 rounds
+
+thread-ring-cores=2-wait=1   ctl        99.2          [87.8..105.5]
+thread-ring-cores=2-wait=1   cand      101.7   +2.6%  [93.0..107.2]  slower than ctl in 7/10 rounds
+thread-ring-cores=2-wait=1   lay        90.8   -8.5%  [88.4..100.9]  slower than ctl in 5/10 rounds
+

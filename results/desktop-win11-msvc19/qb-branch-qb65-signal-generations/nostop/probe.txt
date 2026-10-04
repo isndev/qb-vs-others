@@ -1,0 +1,25 @@
+
+ctl pass-cost k=1 chains=1 passes=129302528 elapsed_ns=2000796100 ns_per_pass=15.47 events=129302528
+cand pass-cost k=1 chains=1 passes=132907008 elapsed_ns=2000186600 ns_per_pass=15.05 events=132907008
+ctl-nostop pass-cost k=1 chains=1 passes=132841472 elapsed_ns=2000788400 ns_per_pass=15.06 events=132841472
+ctl pass-cost k=1 chains=1 passes=129761280 elapsed_ns=2000782700 ns_per_pass=15.42 events=129761280
+cand pass-cost k=1 chains=1 passes=133038080 elapsed_ns=2000960700 ns_per_pass=15.04 events=133038080
+ctl-nostop pass-cost k=1 chains=1 passes=133955584 elapsed_ns=2000643900 ns_per_pass=14.94 events=133955584
+ctl pass-cost k=1 chains=1 passes=124780544 elapsed_ns=2001033300 ns_per_pass=16.04 events=124780544
+cand pass-cost k=1 chains=1 passes=133955584 elapsed_ns=2000504900 ns_per_pass=14.93 events=133955584
+ctl-nostop pass-cost k=1 chains=1 passes=135725056 elapsed_ns=2000123800 ns_per_pass=14.74 events=135725056
+ctl pass-cost k=1 chains=1 passes=131072000 elapsed_ns=2000324500 ns_per_pass=15.26 events=131072000
+cand pass-cost k=1 chains=1 passes=134414336 elapsed_ns=2000072000 ns_per_pass=14.88 events=134414336
+ctl-nostop pass-cost k=1 chains=1 passes=134938624 elapsed_ns=2000761500 ns_per_pass=14.83 events=134938624
+ctl pass-cost k=1 chains=1 passes=130678784 elapsed_ns=2000872600 ns_per_pass=15.31 events=130678784
+cand pass-cost k=1 chains=1 passes=134610944 elapsed_ns=2000379000 ns_per_pass=14.86 events=134610944
+ctl-nostop pass-cost k=1 chains=1 passes=135004160 elapsed_ns=2000758400 ns_per_pass=14.82 events=135004160
+ctl pass-cost k=1 chains=1 passes=131923968 elapsed_ns=2000713100 ns_per_pass=15.17 events=131923968
+cand pass-cost k=1 chains=1 passes=134086656 elapsed_ns=2000664800 ns_per_pass=14.92 events=134086656
+ctl-nostop pass-cost k=1 chains=1 passes=135331840 elapsed_ns=2000456000 ns_per_pass=14.78 events=135331840
+ctl pass-cost k=1 chains=1 passes=130285568 elapsed_ns=2000598000 ns_per_pass=15.36 events=130285568
+cand pass-cost k=1 chains=1 passes=133955584 elapsed_ns=2000617500 ns_per_pass=14.93 events=133955584
+ctl-nostop pass-cost k=1 chains=1 passes=135200768 elapsed_ns=2000266400 ns_per_pass=14.79 events=135200768
+ctl pass-cost k=1 chains=1 passes=130285568 elapsed_ns=2000516200 ns_per_pass=15.35 events=130285568
+cand pass-cost k=1 chains=1 passes=131530752 elapsed_ns=2000472500 ns_per_pass=15.21 events=131530752
+ctl-nostop pass-cost k=1 chains=1 passes=132841472 elapsed_ns=2000077700 ns_per_pass=15.06 events=132841472

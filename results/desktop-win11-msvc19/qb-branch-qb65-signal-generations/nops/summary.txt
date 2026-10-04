@@ -1,0 +1,24 @@
+ping-pong-cores=1-wait=1     ctl        29.8          [28.9..33.6]
+ping-pong-cores=1-wait=1     cand       29.5   -0.8%  [28.6..33.1]  slower than ctl in 20/60 rounds
+ping-pong-cores=1-wait=1     cand-n16     30.5   +2.5%  [29.8..34.0]  slower than ctl in 48/60 rounds
+ping-pong-cores=1-wait=1     cand-n24     30.2   +1.3%  [29.5..33.2]  slower than ctl in 46/60 rounds
+ping-pong-cores=1-wait=1     cand-n8     30.7   +3.1%  [29.7..35.6]  slower than ctl in 50/60 rounds
+ping-pong-cores=1-wait=1     ctl-n8     30.0   +0.6%  [29.2..55.7]  slower than ctl in 35/60 rounds
+ping-pong-cores=1-wait=1     ctlcopy     29.8   -0.0%  [29.1..33.8]  slower than ctl in 25/60 rounds
+
+ping-pong-cores=2-wait=1     ctl       189.8          [171.8..221.6]
+ping-pong-cores=2-wait=1     cand      196.9   +3.7%  [176.3..214.9]  slower than ctl in 45/60 rounds
+ping-pong-cores=2-wait=1     cand-n16    199.8   +5.3%  [178.9..219.9]  slower than ctl in 51/60 rounds
+ping-pong-cores=2-wait=1     cand-n24    193.0   +1.7%  [181.2..217.0]  slower than ctl in 41/60 rounds
+ping-pong-cores=2-wait=1     cand-n8    192.3   +1.3%  [177.9..210.8]  slower than ctl in 37/60 rounds
+ping-pong-cores=2-wait=1     ctl-n8    187.8   -1.1%  [170.6..217.4]  slower than ctl in 30/60 rounds
+ping-pong-cores=2-wait=1     ctlcopy    187.5   -1.3%  [173.2..218.0]  slower than ctl in 27/60 rounds
+
+thread-ring-cores=2-wait=1   ctl       102.4          [86.5..114.5]
+thread-ring-cores=2-wait=1   cand      105.4   +2.9%  [90.2..117.8]  slower than ctl in 36/60 rounds
+thread-ring-cores=2-wait=1   cand-n16    107.5   +5.0%  [88.1..124.4]  slower than ctl in 45/60 rounds
+thread-ring-cores=2-wait=1   cand-n24    101.5   -0.8%  [87.5..158.6]  slower than ctl in 28/60 rounds
+thread-ring-cores=2-wait=1   cand-n8    105.9   +3.4%  [89.8..123.7]  slower than ctl in 37/60 rounds
+thread-ring-cores=2-wait=1   ctl-n8    101.5   -0.8%  [85.6..190.4]  slower than ctl in 25/60 rounds
+thread-ring-cores=2-wait=1   ctlcopy    102.1   -0.3%  [86.0..116.1]  slower than ctl in 29/60 rounds
+

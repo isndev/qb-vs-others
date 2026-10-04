@@ -1,0 +1,21 @@
+ping-pong-cores=1-wait=1     ctl        30.2          [29.0..36.1]
+ping-pong-cores=1-wait=1     cand       29.7   -1.7%  [29.1..32.4]  slower than ctl in 8/40 rounds
+ping-pong-cores=1-wait=1     lay        30.7   +1.5%  [29.7..34.3]  slower than ctl in 28/40 rounds
+ping-pong-cores=1-wait=1     lay256     30.2   +0.1%  [29.4..32.2]  slower than ctl in 22/40 rounds
+ping-pong-cores=1-wait=1     lay64      30.0   -0.8%  [28.8..34.4]  slower than ctl in 13/40 rounds
+ping-pong-cores=1-wait=1     lay8       30.0   -0.6%  [29.2..33.2]  slower than ctl in 13/40 rounds
+
+ping-pong-cores=2-wait=1     ctl       184.6          [169.0..203.9]
+ping-pong-cores=2-wait=1     cand      192.2   +4.1%  [179.8..224.1]  slower than ctl in 32/40 rounds
+ping-pong-cores=2-wait=1     lay       188.7   +2.2%  [178.3..211.8]  slower than ctl in 26/40 rounds
+ping-pong-cores=2-wait=1     lay256    185.3   +0.4%  [175.7..198.1]  slower than ctl in 22/40 rounds
+ping-pong-cores=2-wait=1     lay64     186.1   +0.8%  [178.2..208.8]  slower than ctl in 24/40 rounds
+ping-pong-cores=2-wait=1     lay8      183.8   -0.4%  [175.8..210.2]  slower than ctl in 23/40 rounds
+
+thread-ring-cores=2-wait=1   ctl        91.2          [87.0..128.1]
+thread-ring-cores=2-wait=1   cand       96.8   +6.1%  [88.8..115.5]  slower than ctl in 30/40 rounds
+thread-ring-cores=2-wait=1   lay        94.2   +3.2%  [86.1..108.8]  slower than ctl in 27/40 rounds
+thread-ring-cores=2-wait=1   lay256     91.7   +0.5%  [84.5..106.9]  slower than ctl in 19/40 rounds
+thread-ring-cores=2-wait=1   lay64      95.0   +4.2%  [85.5..113.1]  slower than ctl in 29/40 rounds
+thread-ring-cores=2-wait=1   lay8       92.1   +1.0%  [83.6..112.6]  slower than ctl in 23/40 rounds
+
