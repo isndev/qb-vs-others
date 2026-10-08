@@ -1,0 +1,299 @@
+// @benchmark     savina/barber
+// @framework     baseline  (NOT an actor framework -- the floor)
+// @idiom-source  none. The workload on the many-actor floor of ../baseline_support.h: the room,
+//                the barber and the factory are fixed ids, and a customer is a heap node in the
+//                factory's worker's slot table, allocated inside the window and freed after it
+//                has reported.
+// @idiom-note    The floor does what the semantics require and nothing else: a customer is one
+//                `new`, one slot and one `delete`, the room is a ring of customer ids, and every
+//                message is one ring push. The factory paces itself with one Start per customer,
+//                like qb's. Measured against a factory that loops over every customer in one
+//                handler, the two are level here; the loop is not used because a worker in it
+//                drains none of its inbound rings, and with enough customers the two workers
+//                would each spin on the other's full ring -- a floor must not have a size at which
+//                it hangs. With cores=2 the factory and the customers are on worker 0 and the
+//                room and the barber on worker 1, the placement qb's cell has.
+
+#include <qvospec/savina/barber.h>
+
+#include "../baseline_support.h"
+
+#include <cstdio>
+#include <vector>
+
+namespace savina_barber_baseline {
+
+using namespace qvospec::savina::barber;
+
+// kEnter: a = customer. kReturned: a = customer. kDone: a = value, b = messages (the barber's Done
+// carries the haircut in a). kExit: a = partial checksum, b = messages.
+enum Tag : std::uint32_t { kStart = 1, kEnter, kFull, kWait, kNext, kReturned, kDone, kExit };
+
+struct Customer {
+    std::uint64_t number{0};
+    std::uint64_t starts{0};
+    std::uint64_t waits{0};
+    std::uint64_t fulls{0};
+    std::uint64_t received{0};
+};
+
+// One worker's actors: the fixed ones hold a null slot, a customer its node. Touched only by the
+// thread owning the worker (and by the main thread before start).
+struct Table {
+    std::vector<Customer *>    slots;
+    std::vector<std::uint32_t> free_slots;
+
+    std::uint32_t alloc(unsigned w, unsigned W, Customer *node) {
+        std::uint32_t slot;
+        if (!free_slots.empty()) {
+            slot = free_slots.back();
+            free_slots.pop_back();
+        } else {
+            slot = static_cast<std::uint32_t>(slots.size());
+            slots.push_back(nullptr);
+        }
+        slots[slot] = node;
+        return slot * W + w;
+    }
+
+    void release(std::uint32_t slot) {
+        delete slots[slot];
+        slots[slot] = nullptr;
+        free_slots.push_back(slot);
+    }
+};
+
+struct FactoryState {
+    std::uint64_t produced{0};
+    std::uint64_t served{0};
+    std::uint64_t returned{0};
+    std::uint64_t received{0};
+    std::uint64_t messages{0};  // reported by the customers
+    std::uint64_t sum{0};
+};
+
+struct RoomState {
+    std::vector<std::uint32_t> seats;
+    std::size_t                head{0};
+    std::size_t                waiting{0};
+    bool                       asleep{true};
+    std::uint64_t              entered{0};
+    std::uint64_t              rejected{0};
+    std::uint64_t              wakeups{0};
+    std::uint64_t              nexts{0};
+    std::uint64_t              naps{0};
+    std::uint64_t              received{0};
+    bool                       exit{false};
+    std::uint64_t              exit_partial{0};
+    std::uint64_t              exit_messages{0};
+};
+
+struct BarberState {
+    std::uint64_t haircuts{0};
+    std::uint64_t naps{0};
+    std::uint64_t received{0};
+};
+
+qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
+    const auto     haircuts = static_cast<std::uint64_t>(p.get("haircuts"));
+    const auto     seats    = static_cast<std::size_t>(p.get("room"));
+    const auto     apr      = static_cast<std::uint64_t>(p.get("apr"));
+    const auto     ahr      = static_cast<std::uint64_t>(p.get("ahr"));
+    const auto     cores    = static_cast<unsigned>(p.get("cores"));
+    const bool     spin     = p.get("wait") != 0;
+    const unsigned W        = cores < 1 ? 1u : cores;
+    const unsigned shop     = 1 % W;
+
+    std::vector<Table>  tables(W);
+    const std::uint32_t factory = tables[0].alloc(0, W, nullptr);
+    const std::uint32_t room    = tables[shop].alloc(shop, W, nullptr);
+    const std::uint32_t barber  = tables[shop].alloc(shop, W, nullptr);
+
+    FactoryState f;
+    RoomState    r;
+    BarberState  b;
+    r.seats.resize(seats);
+
+    std::uint64_t checksum = 0;
+    std::uint64_t messages = 0;
+
+    qvobase::Mesh mesh(W, spin, [&](auto &m, unsigned worker, const qvobase::Msg &msg) {
+        auto node = [&](std::uint32_t id) -> Customer & { return *tables[worker].slots[id / W]; };
+
+        // The room's Exit leaves only once the barber's n-th Next is in: the factory's Exit and
+        // the barber's last Next come from two senders, and nothing orders them.
+        auto room_exit = [&] {
+            if (!r.exit || r.nexts - r.wakeups != haircuts) return;
+            r.exit             = false;
+            const auto partial = r.exit_partial + weight(kTagEnter) * (r.entered - r.rejected) -
+                                 (weight(kTagFull) + weight(kTagReturned)) * r.rejected +
+                                 weight(kTagWait) * r.wakeups +
+                                 weight(kTagNext) * (r.nexts - r.wakeups) -
+                                 weight(kTagNap) * r.naps;
+            m.send(worker, qvobase::Msg{barber, kExit, partial, r.exit_messages + r.received});
+        };
+
+        switch (msg.tag) {
+        case kStart: {
+            if (msg.dst == factory) {
+                ++f.received;
+                const std::uint64_t i  = f.produced++;
+                auto               *c  = new Customer{i + 1, 0, 0, 0, 0};
+                const std::uint32_t id = tables[worker].alloc(worker, W, c);
+                m.send(worker, qvobase::Msg{room, kEnter, id, 0});
+                f.sum += production_work(i, apr);
+                if (f.produced < haircuts) m.send(worker, qvobase::Msg{factory, kStart, 0, 0});
+            } else {
+                Customer &c = node(msg.dst);
+                ++c.received;
+                ++c.starts;
+            }
+            break;
+        }
+        case kEnter: {
+            const auto customer = static_cast<std::uint32_t>(msg.a);
+            if (msg.dst == room) {
+                ++r.received;
+                ++r.entered;
+                if (r.waiting == r.seats.size()) {
+                    ++r.rejected;
+                    m.send(worker, qvobase::Msg{customer, kFull, 0, 0});
+                    break;
+                }
+                r.seats[(r.head + r.waiting++) % r.seats.size()] = customer;
+                if (r.asleep) {
+                    r.asleep = false;
+                    ++r.wakeups;
+                    m.send(worker, qvobase::Msg{room, kNext, 0, 0});
+                } else {
+                    m.send(worker, qvobase::Msg{customer, kWait, 0, 0});
+                }
+            } else {  // the barber
+                ++b.received;
+                const std::uint64_t k = b.haircuts++;
+                m.send(worker, qvobase::Msg{customer, kStart, 0, 0});
+                const std::uint64_t h = haircut_work(k, ahr);
+                m.send(worker, qvobase::Msg{customer, kDone, h, 0});
+                m.send(worker, qvobase::Msg{room, kNext, 0, 0});
+            }
+            break;
+        }
+        case kFull: {
+            Customer &c = node(msg.dst);
+            ++c.received;
+            ++c.fulls;
+            m.send(worker, qvobase::Msg{factory, kReturned, msg.dst, 0});
+            break;
+        }
+        case kWait: {
+            if (msg.dst == barber) {
+                ++b.received;
+                ++b.naps;
+            } else {
+                Customer &c = node(msg.dst);
+                ++c.received;
+                ++c.waits;
+            }
+            break;
+        }
+        case kNext: {
+            ++r.received;
+            ++r.nexts;
+            if (r.waiting != 0) {
+                const std::uint32_t customer = r.seats[r.head];
+                r.head                       = (r.head + 1) % r.seats.size();
+                --r.waiting;
+                m.send(worker, qvobase::Msg{barber, kEnter, customer, 0});
+            } else {
+                ++r.naps;
+                r.asleep = true;
+                m.send(worker, qvobase::Msg{barber, kWait, 0, 0});
+            }
+            room_exit();
+            break;
+        }
+        case kReturned: {
+            ++f.received;
+            ++f.returned;
+            m.send(worker, qvobase::Msg{room, kEnter, msg.a, 0});
+            break;
+        }
+        case kDone: {
+            if (msg.dst == factory) {
+                ++f.received;
+                f.sum += msg.a;
+                f.messages += msg.b;
+                if (++f.served == haircuts)
+                    m.send(worker, qvobase::Msg{room, kExit,
+                                                f.sum + weight(kTagReturned) * f.returned,
+                                                f.messages + f.received});
+            } else {
+                Customer           &c     = node(msg.dst);
+                const std::uint64_t value = qvo::mix(c.number) + msg.a +
+                                            weight(kTagStart) * c.starts +
+                                            weight(kTagWait) * c.waits + weight(kTagFull) * c.fulls;
+                const std::uint64_t received = c.received + 1;
+                tables[worker].release(msg.dst / W);
+                m.send(worker, qvobase::Msg{factory, kDone, value, received});
+            }
+            break;
+        }
+        case kExit: {
+            if (msg.dst == room) {
+                ++r.received;
+                r.exit          = true;
+                r.exit_partial  = msg.a;
+                r.exit_messages = msg.b;
+                room_exit();
+            } else {  // the barber: the end of the chain
+                ++b.received;
+                checksum = msg.a + weight(kTagCut) * b.haircuts + weight(kTagNap) * b.naps;
+                messages = msg.b + b.received;
+                watch.stop();
+                m.stop();
+            }
+            break;
+        }
+        }
+    });
+    mesh.start();
+
+    watch.start();
+    mesh.send(0, qvobase::Msg{factory, kStart, 0, 0});
+    mesh.run();
+
+    std::fprintf(stderr, "savina/barber baseline: rejections=%llu wakeups=%llu\n",
+                 static_cast<unsigned long long>(r.rejected),
+                 static_cast<unsigned long long>(r.wakeups));
+    return qvo::Answer{checksum, messages};
+}
+
+}  // namespace savina_barber_baseline
+
+int main(int argc, char **argv) {
+    qvo::Spec spec;
+    spec.benchmark         = QVO_BENCHMARK_ID;
+    spec.framework         = QVO_FRAMEWORK_ID;
+    spec.framework_version = QVO_FRAMEWORK_VERSION;
+    spec.params            = qvospec::savina::barber::params();
+    spec.expected          = qvospec::savina::barber::expected;
+    spec.work_unit         = qvospec::savina::barber::kWorkUnit;
+    spec.work_units        = qvospec::savina::barber::work_units;
+    spec.idiom_source      = "none -- hand-written floor";
+    spec.idiom_note        = "raw pinned threads + one bounded SPSC ring per (worker, worker) "
+                             "pair; a customer is a heap node in the factory's worker's slot table, "
+                             "created inside the window and freed after reporting; the factory "
+                             "paces itself with one Start per customer; not an actor framework";
+    spec.caveats           = {
+        "THIS IS NOT A FRAMEWORK. A customer is one `new`, one slot and one `delete`, the waiting "
+        "room a ring of ids, a message one ring push: the floor for what this coordination costs",
+        "the factory and every customer are on worker 0, the room and the barber on worker "
+        "1 % cores -- the static placement qb's cell has, so this floor bounds the placing "
+        "frameworks and NOT the pools",
+        "the factory paces itself with one Start per customer (n-1 messages the reference's "
+        "looping factory does not send, in the reported count): measured level with the loop, "
+        "and unlike the loop it never stops draining its worker's inbound rings",
+        "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"};
+
+    return qvo::run(argc, argv, std::move(spec), savina_barber_baseline::body);
+}
