@@ -33,7 +33,7 @@ argument it exists to win:
 
 | | state |
 |---|---|
-| Harness, verification, pinning, reporting | **done**, and negative-controlled: 7 CAUGHT / 4 CONFIRMED / **0 MISSED** |
+| Harness, verification, pinning, reporting | **done**, and negative-controlled: 9 CAUGHT / 5 CONFIRMED / **0 MISSED** |
 | `savina/ping-pong`, `counting`, `thread-ring`, `fork-join`, `big` × qb, CAF, SObjectizer, floor (+ CAF-detached on ping-pong) | **done**, 84 cells per host: 82 verified + 2 declared `n/a` (a `caf::detached` actor has no spin mode) — first with shipped 3.1.0 (2026-09-04), **re-measured whole on 2026-09-13 with the 3.2.0 candidate `f2779605` in the candidate's own session** (every framework, 9 + 2, both hosts), which is what the tables below show |
 | The document guards (`tools/check-roster.py`, `tools/check-report.py`) | **done**, and negative-controlled: 33 CAUGHT / 3 CONFIRMED / **0 MISSED** (`tools/guards-negative-control.py`) |
 | Feature comparison, cited to the three sources | [docs/FEATURES.md](docs/FEATURES.md) |

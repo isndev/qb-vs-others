@@ -429,8 +429,19 @@ int run(int argc, char **argv, Spec spec, Body body) {
     const std::uint64_t want          = spec.expected(params);
     const std::uint64_t want_messages = spec.expected_messages ? spec.expected_messages(params) : 0;
 
+    // Lower bounds on observations, computed once like the expected values above.
+    std::map<std::string, std::uint64_t> at_least;
+    for (const auto &kv : spec.observed_at_least) {
+        if (!kv.second)
+            fatal("benchmark " + spec.benchmark + " declares a lower bound for observation '" + kv.first
+                  + "' with no function");
+        at_least[kv.first] = kv.second(params);
+    }
+
     std::vector<double>        work_ns, total_ns, setup_ns, teardown_ns;
     std::vector<std::string>   failures;
+    // Every measured repetition's observations, by name, in repetition order.
+    std::map<std::string, std::vector<std::uint64_t>> observed;
 
     const int all_reps = warmup + repetitions;
     for (int rep = 0; rep < all_reps; ++rep) {
@@ -494,6 +505,26 @@ int run(int argc, char **argv, Spec spec, Body body) {
                                + std::to_string(want_messages));
             continue;
         }
+        // A declared lower bound is asserted like the checksum: a missing or short observation is
+        // a defect (the adapter skipped work the semantics requires), never a timing.
+        std::string short_of;
+        for (const auto &kv : at_least) {
+            const auto it = got.observed.find(kv.first);
+            if (it == got.observed.end()) {
+                short_of = "observation '" + kv.first + "' is missing -- the spec asserts it is at least "
+                           + std::to_string(kv.second);
+                break;
+            }
+            if (it->second < kv.second) {
+                short_of = "observed " + kv.first + "=" + std::to_string(it->second)
+                           + ", below its asserted lower bound " + std::to_string(kv.second);
+                break;
+            }
+        }
+        if (!short_of.empty()) {
+            failures.push_back("repetition " + std::to_string(rep) + ": " + short_of);
+            continue;
+        }
         if (!w.started() || !w.stopped()) {
             failures.push_back("repetition " + std::to_string(rep)
                                + ": the body never marked its workload window (Watch::start/stop)");
@@ -501,6 +532,8 @@ int run(int argc, char **argv, Spec spec, Body body) {
         }
 
         if (rep < warmup) continue;
+
+        for (const auto &kv : got.observed) observed[kv.first].push_back(kv.second);
 
         const double total = std::chrono::duration<double, std::nano>(t_end - t_begin).count();
         const double work  = w.work_ns();
@@ -572,6 +605,36 @@ int run(int argc, char **argv, Spec spec, Body body) {
     array("work_ns", work_ns, false);
     array("total_ns", total_ns, false);
     array("outside_window_ns", setup_ns, false);
+
+    // Written only when there is something to write, so the document of a benchmark that observes
+    // nothing is byte-for-byte the shape it always had.
+    if (!observed.empty()) {
+        j << "  \"observed\": {";
+        bool first = true;
+        for (const auto &kv : observed) {
+            const auto &s = kv.second;
+            j << (first ? "\n" : ",\n") << "    " << quoted(kv.first) << ": {\"samples\": [";
+            for (std::size_t i = 0; i < s.size(); ++i) j << (i ? ", " : "") << s[i];
+            std::vector<double> d;
+            d.reserve(s.size());
+            for (const std::uint64_t v : s) d.push_back(static_cast<double>(v));
+            char p50[64];
+            std::snprintf(p50, sizeof p50, "%.1f", percentile(d, 0.50));
+            j << "], \"min\": " << *std::min_element(s.begin(), s.end()) << ", \"p50\": " << p50
+              << ", \"max\": " << *std::max_element(s.begin(), s.end()) << "}";
+            first = false;
+        }
+        j << "\n  },\n";
+    }
+    if (!at_least.empty()) {
+        j << "  \"observed_at_least\": {";
+        bool first = true;
+        for (const auto &kv : at_least) {
+            j << (first ? "" : ", ") << quoted(kv.first) << ": " << kv.second;
+            first = false;
+        }
+        j << "},\n";
+    }
 
     auto stat = [&](const char *name, double v, bool last) {
         char buf[64];

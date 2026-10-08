@@ -29,8 +29,8 @@ from pathlib import Path
 
 # Floors. Raise them in the same commit that adds a control; a count that goes DOWN is a control
 # that stopped firing, which is indistinguishable from a guard that stopped guarding.
-FLOOR_CAUGHT = 7
-FLOOR_CONFIRMED = 4
+FLOOR_CAUGHT = 9
+FLOOR_CONFIRMED = 5
 
 caught = confirmed = missed = 0
 
@@ -129,6 +129,15 @@ def main() -> int:
     print("\n== E. an unmeasured window ==")
     expect_rejected(exe, "no-window", "the body never marked its workload window", messages=1000000)
 
+    print("\n== E2. an asserted lower bound on an observation ==")
+    # The work a checksum cannot see: an adapter that skips a minimum the semantics requires (a
+    # search that never hands its frontier back) reaches the right answer anyway. The spec's
+    # Spec::observed_at_least makes that minimum an assertion; these two plants must be rejected.
+    expect_rejected(exe, "observe-below", "an observation one below its asserted lower bound",
+                    messages=1000000)
+    expect_rejected(exe, "observe-missing", "an observation the spec bounds was never reported",
+                    messages=1000000)
+
     print("\n== F. pinning -- a refused pin must abort, never report ==")
     rc, doc, err = run_subject(exe, "none", extra=["--cpus", "4095"], messages=1000)
     if rc == 0:
@@ -151,6 +160,19 @@ def main() -> int:
         verdict("CONFIRMED", "a tiny run (1000 messages) still verifies")
     else:
         verdict("MISSED", "a small message count was rejected")
+
+    # Observations are REPORTED, not asserted: a value above its bound and a name with no bound
+    # must verify, and both must reach the document the report renders beside the cell.
+    rc, doc, _ = run_subject(exe, "observe-extra", messages=1000)
+    obs = (doc or {}).get("observed", {})
+    if (rc == 0 and doc and doc.get("verified") and obs.get("extra", {}).get("samples") == [42]
+            and obs.get("rounds", {}).get("samples") == [1005]
+            and doc.get("observed_at_least") == {"rounds": 1000}):
+        verdict("CONFIRMED", "an observation above its bound and an unbounded one verify, and "
+                             "both are written beside the cell")
+    else:
+        verdict("MISSED", "an observation above its bound, or an unbounded one, was rejected or "
+                          "not recorded", f"rc={rc}, observed={obs}")
 
     # An undeclared parameter must be refused rather than silently defaulted to zero -- a
     # benchmark quietly running with messages=0 would 'verify' against an expected value of 0.

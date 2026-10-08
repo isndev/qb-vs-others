@@ -27,6 +27,15 @@ This is `qvo::Spec::expected` in `harness/include/qvo/harness.h`, and it is not 
 refuses to start a benchmark that declares no `expected()`, and a body that never marks its
 measurement window is reported `unverified` and excluded from every table.
 
+Some shapes do an amount of work that depends on the interleaving — a philosopher's refused
+requests, a barber's turned-away customers, how often a search hands its frontier back — and no
+framework-free value can assert it. Such work is **reported beside the cell, never silently
+compared**: the body returns it in `qvo::Answer::observed`, every measured repetition's value is
+written into the result document, and the report prints it next to the row it belongs to. Where
+the semantics requires a minimum of that work, the spec declares it in
+`qvo::Spec::observed_at_least` and it is asserted like the checksum: a missing or short
+observation fails the run, with no timing.
+
 ## 1. The seven mechanisms
 
 ### 1.1 Idiomatic implementation, sourced from the framework's own documentation
@@ -168,14 +177,15 @@ The harness has its own negative control, and it has been run:
 
 ```
 python3 tools/negative-control.py --build build/final
-    CAUGHT=7 CONFIRMED=4 MISSED=0
+    CAUGHT=9 CONFIRMED=5 MISSED=0
 ```
 
 It plants one defect at a time — a message lost 1 time in 10⁷, a single lost message, a duplicate
 delivery, a wrong checksum, a right checksum reached by the wrong amount of work, a body that
-never marked its measurement window, a CPU pin that cannot be applied — and asserts each is
-**rejected**, with no timing emitted. It also asserts four legitimate shapes are **not** rejected,
-because a battery that fails everything is not a working battery.
+never marked its measurement window, an observation below its asserted lower bound, a bounded
+observation never reported, a CPU pin that cannot be applied — and asserts each is **rejected**,
+with no timing emitted. It also asserts five legitimate shapes are **not** rejected, because a
+battery that fails everything is not a working battery.
 
 The two document guards have theirs, and it plants in a sandbox copy while hashing the real
 checkout before and after:

@@ -142,6 +142,37 @@ def modes(d: dict) -> tuple | None:
     return ((len(lo), med(lo)), (len(hi), med(hi)))
 
 
+def fmt_count(v: float) -> str:
+    return f"{int(v):,}" if float(v).is_integer() else f"{v:,.1f}"
+
+
+def observed_note(d: dict) -> str | None:
+    """The sub-row that puts a cell's OBSERVATIONS beside its number, or None when it has none.
+
+    An observation is work the run did that its spec cannot assert because it depends on the
+    interleaving (FAIRNESS.md section 0): two cells of one table may have done different amounts
+    of it, so the amount is printed next to each, never left for the reader to assume equal. A
+    name the spec bounds from below says so; the bound itself was asserted by the harness.
+    """
+    obs = d.get("observed") or {}
+    if not obs:
+        return None
+    bounds = d.get("observed_at_least") or {}
+    parts = []
+    for name in sorted(obs):
+        o = obs[name]
+        n = len(o.get("samples", []))
+        part = (f"`{name}` median {fmt_count(o.get('p50', 0))} "
+                f"[{fmt_count(o.get('min', 0))}–{fmt_count(o.get('max', 0))}] over {n} "
+                f"repetition{'s' if n != 1 else ''}")
+        if name in bounds:
+            part += f" (asserted ≥ {fmt_count(bounds[name])})"
+        parts.append(part)
+    return ("| | <sub>**observed, not asserted**: " + "; ".join(parts)
+            + " — work that depends on the interleaving; read it before comparing this row "
+              "with another</sub> | | | | |")
+
+
 def overlapping(a: dict, b: dict) -> bool:
     """True when the two samples' [min, p99] ranges overlap.
 
@@ -274,6 +305,9 @@ def render(results: Path, out_path: Path | None = None) -> str:
                                f"~{fmt_ns(vlo)} per {unit}, {nhi} at ~{fmt_ns(vhi)}. The "
                                "median above is whichever mode won this run; quote both, never "
                                "the median</sub> | | | | |")
+                note = observed_note(d)
+                if note:
+                    out.append(note)
             out.append("")
 
             verified = [f for f in ranked if fws[f].get("verified")]

@@ -20,6 +20,15 @@
 //                 answer by doing a different amount of work.
 //   no-window     never marks the measured window, so a timing would be meaningless.
 //
+// The subject also reports the rounds it actually played as an OBSERVATION and declares the
+// parameter as its asserted lower bound (Answer::observed, Spec::observed_at_least) -- the shape a
+// benchmark uses for a minimum amount of work its checksum alone cannot prove:
+//
+//   observe-below    reports one round fewer than the bound: must be REJECTED.
+//   observe-missing  reports no observation at all: must be REJECTED.
+//   observe-extra    reports above the bound plus an unbounded observation: must be ACCEPTED,
+//                    with both written into the result document.
+//
 // It is deliberately NOT built by qvo_add_benchmark and its name does not start with "qvo-", so
 // tools/run.py cannot discover it and no planted result can ever reach a published table.
 
@@ -42,10 +51,12 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
 
     std::uint64_t acc       = 0;
     std::uint64_t delivered = 0;
+    std::uint64_t played    = 0;
 
     if (mode != "no-window") watch.start();
 
     for (std::uint64_t seq = rounds; seq-- > 0;) {
+        ++played;
         // A dropped message is one whose contribution never reaches the accumulator. Modelled
         // exactly that way rather than by fiddling the total, so the control exercises the same
         // arithmetic a real loss would.
@@ -66,7 +77,14 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     if (mode == "wrong-answer") acc += 1;
     if (mode == "short-count") delivered -= 2;
 
-    return qvo::Answer{acc, delivered};
+    qvo::Answer answer{acc, delivered};
+    if (mode == "observe-below") answer.observed["rounds"] = played - 1;
+    else if (mode == "observe-extra") {
+        answer.observed["rounds"] = played + 5;
+        answer.observed["extra"]  = 42;
+    } else if (mode != "observe-missing")
+        answer.observed["rounds"] = played;
+    return answer;
 }
 
 }  // namespace
@@ -79,6 +97,9 @@ int main(int argc, char **argv) {
     spec.params            = qvospec::savina::ping_pong::params();
     spec.expected          = qvospec::savina::ping_pong::expected;
     spec.expected_messages = qvospec::savina::ping_pong::expected_messages;
+    spec.observed_at_least["rounds"] = [](const qvo::Params &p) {
+        return static_cast<std::uint64_t>(p.get("messages"));
+    };
     spec.idiom_source      = "none -- this is a negative-control subject, not a framework";
     spec.idiom_note        = "plants a defect selected by QVO_CONTROL_PLANT";
     spec.caveats           = {"NOT A FRAMEWORK AND NOT A RESULT. Exists only so the verifier can "

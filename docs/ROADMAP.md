@@ -39,10 +39,11 @@ ambition has already misled the reader.
   actually block, and the measurement of what it then pays.
 - `tools/run.py`, `tools/report.py`. Every published figure is regenerated.
 - The tuning sweeps, including the one that had CAF handicapped.
-- `tools/negative-control.py` — **7 CAUGHT / 4 CONFIRMED / 0 MISSED**. The verifier has been
+- `tools/negative-control.py` — **9 CAUGHT / 5 CONFIRMED / 0 MISSED**. The verifier has been
   watched rejecting a 1-in-10^7 message loss, a single lost message, a duplicate, a wrong
-  checksum, a right checksum reached by the wrong amount of work, an unmarked measurement window
-  and a refused CPU pin — and watched NOT rejecting the four shapes that are legitimate.
+  checksum, a right checksum reached by the wrong amount of work, an unmarked measurement window,
+  an observation below its asserted lower bound, a bounded observation never reported and a
+  refused CPU pin — and watched NOT rejecting the five shapes that are legitimate.
 - **The document guards**, and their battery. `tools/check-roster.py`: every spec has an adapter
   in every framework or a declared omission with a reason, every adapter binds to exactly its
   spec, every spec has its page, and — given a results directory — every roster cell has a

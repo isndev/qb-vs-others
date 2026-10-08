@@ -18,7 +18,9 @@
 //
 // The body MUST return an Answer. The harness compares its checksum against the spec's expected
 // value, which is computed WITHOUT any framework. A body that returns the wrong checksum produces
-// no timing at all -- see FAIRNESS.md section 0.
+// no timing at all -- see FAIRNESS.md section 0. What a run did that no spec can assert (an
+// amount of work that depends on the interleaving) goes in Answer::observed and is reported beside
+// the cell; a minimum the semantics requires is asserted through Spec::observed_at_least.
 
 #ifndef QVO_HARNESS_H
 #define QVO_HARNESS_H
@@ -96,6 +98,14 @@ struct Answer {
     // cross-checked against Spec::expected_messages when that is non-zero. This catches the case
     // where a framework reaches the right checksum by a different amount of work.
     std::uint64_t messages{0};
+
+    // Optional: named counts the run OBSERVED but the spec cannot assert, because they depend on
+    // the interleaving -- a philosopher's refused requests, a barber's turned-away customers, how
+    // often a search handed its frontier back. Every measured repetition's values are written
+    // into the result document and rendered beside the cell (FAIRNESS.md section 0), so two
+    // cells that did different amounts of work are never compared silently. Reported, not
+    // asserted -- unless the spec declares a lower bound for the name (Spec::observed_at_least).
+    std::map<std::string, std::uint64_t> observed{};
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -116,6 +126,13 @@ struct Spec {
 
     // Optional: framework-free expected message count. 0 means "not asserted".
     std::function<std::uint64_t(const Params &)> expected_messages;
+
+    // Optional: a framework-free LOWER BOUND per observation name (Answer::observed). A repetition
+    // whose Answer carries no observation of that name, or one below the bound, FAILS
+    // verification exactly like a wrong checksum: no timing, exit 1. For a semantics that requires
+    // a minimum amount of some work an adapter could otherwise skip while still reaching the right
+    // checksum -- a search that must hand work back at least ceil(nodes / threshold) times.
+    std::map<std::string, std::function<std::uint64_t(const Params &)>> observed_at_least;
 
     // The unit the report divides a repetition's wall time by, so a figure stays comparable
     // across parameter values and across benchmarks: "round trip" for a ping-pong, "hop" for a
