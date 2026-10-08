@@ -375,6 +375,15 @@ int main(int argc, char **argv) {
     spec.caveats.emplace_back(
         "the run's `pace` is in its params: 0 is the reference's factory, every customer from one "
         "handler; 1 adds n-1 self-sent Starts to the reported count (benchmarks/savina/barber.md)");
+    spec.caveats.emplace_back(
+        "SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop "
+        "(unbinding the agent from the dispatcher, releasing the coop and its agent) on a "
+        "dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/"
+        "mt_env_infrastructure.cpp), handed each finished coop by the work threads under a shared "
+        "mutex: 5 000 customer coops per repetition here. That thread is OUTSIDE the `cores` "
+        "work-thread budget, runs inside the pinned CPU set competing with the work threads, and "
+        "the coops still in its chain when the window closes are released after it -- see "
+        "benchmarks/savina/barber.md, \"The measured window\"");
 
     return qvo::run(argc, argv, std::move(spec), savina_barber_sobjectizer::body);
 }

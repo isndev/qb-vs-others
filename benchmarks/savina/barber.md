@@ -150,6 +150,19 @@ chain factory → room → barber. The room forwards `Exit` only once it has rec
 orders them. Every customer's creation, every production delay, every haircut and every customer's
 end is inside the window. The floor's second thread is created just before it.
 
+How much of a customer's END lands inside the window differs by framework, and one framework does
+part of it outside its worker budget. In qb, CAF and the floor a customer is reclaimed on the thread
+that ran it, inside the budget, and only the last few customers to report can finish being
+reclaimed after the window closes — below resolution against 5 000 customers. SObjectizer's
+multi-threaded environment runs the **final deregistration** of every coop — unbinding its agent
+from the dispatcher, releasing the coop and with it the agent, the repository's counters under its
+lock — on a dedicated thread the environment starts for itself (`coop_repo_t::start()`,
+`dev/so_5/impl/mt_env_infrastructure.cpp`), with the work threads handing each finished coop over
+under a mutex they share with it. That thread is not one of the `cores` work threads: it runs
+inside the process's pinned CPU set, competing with them, and the coops still in its chain when
+the barber receives `Exit` are released after the window closes. Here that is 5 000 coops per
+repetition, one per customer. The cell's caveats say so.
+
 ## What the shape found in qb
 
 The first version of this page said qb had no primitive to publish a cross-core event from inside
