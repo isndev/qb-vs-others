@@ -2,8 +2,9 @@
 
 Savina benchmark 6 of the "micro" group (Imam & Sarkar, *Savina — An Actor Benchmark Suite*,
 AGERE 2014) — the recursive Fibonacci tree, where **every node of the recursion is an actor that
-is created, asked once, answers once and dies**. It is the actor-creation benchmark of the suite,
-the one `fork-join.md` names as not implemented before this page existed.
+is created, asked once, answers once and dies**. It is one of the suite's two actor-creation
+benchmarks: fib creates its actors from a recursion, a tree one node at a time;
+[`fork-join-create.md`](fork-join-create.md) creates them from a flat loop, a burst at once.
 
 ## What it measures, and what it does not
 
@@ -68,6 +69,17 @@ received the second response. Every spawn, every `onInit` / `so_define_agent` / 
 construction and every termination of the 57 312 nodes is inside the window: that is the point.
 The floor's two seeds are allocated before the window, once, which is below resolution against
 57 310 nodes allocated inside it.
+
+One framework does part of an actor's end OUTSIDE its worker budget. SObjectizer's multi-threaded
+environment runs the **final deregistration** of every coop — unbinding its agents from the
+dispatcher, releasing the coop and with it the agents, the repository's counters under its lock —
+on a dedicated thread the environment starts for itself (`coop_repo_t::start()`,
+`dev/so_5/impl/mt_env_infrastructure.cpp`), with the work threads handing each finished coop over
+under a mutex they share with it. That thread is not one of the `cores` work threads; it runs
+inside the process's pinned CPU set, competing with them, and the coops still in its chain when
+the root receives the second response are released after the window closes. Here that is 57 312
+coops per repetition. The cell's caveats say so; how much of SObjectizer's figure it accounts for
+is not measured.
 
 ## What the shipped qb cell measures, and why it is a logging figure
 

@@ -2,8 +2,8 @@
 
 Savina benchmark 5 of the "micro" group (Imam & Sarkar, *Savina — An Actor Benchmark Suite*,
 AGERE 2014) — the *throughput* fork-join, where a master streams jobs at a fixed set of workers.
-Not benchmark 4, the actor-creation fork-join, which spawns a worker per job and is not
-implemented here (ROADMAP.md, "actor creation cost").
+Not benchmark 4, the actor-creation fork-join, which spawns a fresh actor per job: that one is
+[`fork-join-create.md`](fork-join-create.md).
 
 ## What it measures, and what it does not
 

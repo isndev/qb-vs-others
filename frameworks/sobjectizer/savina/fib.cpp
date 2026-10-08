@@ -182,6 +182,15 @@ int main(int argc, char **argv) {
         "children bind to the same thread_pool as their parent and the pool places them, so with "
         "cores=2 the tree is balanced by the dispatcher; qb's cell keeps each sub-tree on its "
         "seed's core because qb has no cross-core spawn -- see benchmarks/savina/fib.md");
+    spec.caveats.emplace_back(
+        "SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop "
+        "(unbinding the agent from the dispatcher, releasing the coop and its agent) on a "
+        "dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/"
+        "mt_env_infrastructure.cpp), handed each finished coop by the work threads under a shared "
+        "mutex: one coop per node here. That thread is OUTSIDE the `cores` work-thread budget, "
+        "runs inside the pinned CPU set competing with the work threads, and the coops still in "
+        "its chain when the window closes are released after it -- see benchmarks/savina/fib.md, "
+        "\"The measured window\"");
 
     return qvo::run(argc, argv, std::move(spec), savina_fib_sobjectizer::body);
 }

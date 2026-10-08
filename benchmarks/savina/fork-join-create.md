@@ -3,8 +3,10 @@
 Savina benchmark 4 of the "micro" group (Imam & Sarkar, *Savina — An Actor Benchmark Suite*,
 AGERE 2014) — `fjcreate` in the suite's sources, the **actor-creation** fork-join: a creator
 forks a burst of actors in one loop, **every one of which is created, sent one message, does one
-job and terminates**. It is the twin `fork-join.md` names as not implemented: benchmark 5 streams
-jobs at sixty workers that live for the whole run, this one creates a fresh actor per job.
+job and terminates**. It is the twin of benchmark 5 ([`fork-join.md`](fork-join.md)), which
+streams jobs at sixty workers that live for the whole run, where this one creates a fresh actor
+per job; [`fib.md`](fib.md) is the suite's other creation benchmark, from a recursion rather than
+a loop.
 
 ## What it measures, and what it does not
 
@@ -87,15 +89,39 @@ repeated, a skipped computation, or a summary lost or repeated all change the to
 and one summary per creator — is asserted alongside: every answer carries the job it answers, and
 every summary the count of its share.
 
+What the checksum does **not** prove is that an actor was created: a creator that computed
+`job_value(i, i, work)` itself and sent the answers to itself would fold the same total. That each
+forked actor is a real actor of its framework — created by that framework's creation primitive,
+sent its job through that framework's messaging and ended by that framework's termination — is
+established by reading the four adapters (their header blocks name the primitive and the idiom
+source), not by the checksum. The same is true of every benchmark here that creates actors.
+
 ## The measured window
 
 Opens when the driver sends the fork orders into an already-running system — every creator has
 reported ready, so every thread is up and every creator is scheduled — and closes when the driver
 has received the last creator's summary. Every spawn, every `onInit` / `so_define_agent` /
-behavior construction and every one of the 40 000 terminations is requested inside the window;
-the reclamation of the last few actors to answer may complete just after it closes, which is below
-resolution against 40 000 actor lives. The creators and the driver are created before the window,
-once.
+behavior construction and every one of the 40 000 terminations is requested inside the window.
+The creators and the driver are created before the window, once.
+
+How much of an actor's END lands inside the window differs by framework, and one framework does
+part of it outside its worker budget. In qb, CAF and the floor, the reclamation of an actor runs
+on the thread that ran it, inside the budget, and only the last few actors to answer can finish
+being reclaimed after the window closes — below resolution against 40 000 actor lives.
+SObjectizer's multi-threaded environment runs the **final deregistration** of every coop —
+unbinding its agent from the dispatcher, releasing the coop and with it the agent, the
+repository's counters under its lock — on a dedicated thread the environment starts for itself
+(`coop_repo_t::start()`, `dev/so_5/impl/mt_env_infrastructure.cpp`), with the work threads handing
+each finished coop over under a mutex they share with it. That thread is not one of the `cores`
+work threads: it runs inside the process's pinned CPU set, competing with them, and the coops
+still in its chain when the driver receives the last summary are released after the window
+closes. Here that is 40 000 coops per repetition, one per forked actor. It is a plausible
+contributor to SObjectizer's `cores=2` cell coming out slower than its `cores=1` one on the
+unpinned, unmeasured correctness runs: at `cores=2` two work threads, not one, contend with that
+thread on the hand-over mutex and on the repository's lock, which every registration (on a work
+thread) and every final deregistration (on that thread) takes, and in a pinned run the three
+threads share the set's two CPUs. That is a
+hypothesis for the quiet host, not a measured attribution. The cell's caveats say so.
 
 For qb, a creator's whole share is alive at once — its actors run only once the forking loop has
 returned — so 40 000 live actors sit on one core at `cores=1`. qb's actor id is a 16-bit slot per
