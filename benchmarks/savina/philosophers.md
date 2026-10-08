@@ -52,7 +52,12 @@ verification. No message, no branch on the request path and no answer is added.
 | qb | the arbitrator and all 20 philosophers on VirtualCore 0; ONE `Request` event per philosopher carries the conversation, mutated Hungry → Eat/Denied at the arbitrator and Denied → Hungry / Eat → Done at the philosopher, each time `reply()`ed — Start (to itself) and Exit are `push<>` | arbitrator alone on VirtualCore 0, every philosopher on core 1: **every request and every answer crosses a core**, and the arbitrator's mailbox is one cross-core pipe with 20 writers on the far side |
 | CAF | `max-threads=1` | `=2`, both pinned; the work-stealing pool places the arbitrator and the philosophers — whether the arbitrator's mailbox is written cross-core is the scheduler's decision, and it can change from run to run |
 | SObjectizer | `one_thread` dispatcher | `thread_pool` with 2 pinned work threads and `fifo_t::individual`; same remark — the pool decides which thread runs the arbitrator |
-| floor | one thread with the arbitrator and the philosophers in its own ring | two pinned threads; the arbitrator is thread 0 and every philosopher thread 1 — the same placement qb gets, but the 20 philosophers share ONE SPSC ring into the arbitrator, so the 20-writer fan-in is engineered out and the floor is what remains when it is |
+| floor | one thread with the arbitrator and the philosophers in its own ring | two pinned threads; the arbitrator is thread 0 and every philosopher thread 1 — the same placement qb gets (with more cores, philosopher i on thread `1 + i % (cores-1)`, as qb), but the 20 philosophers share ONE SPSC ring into the arbitrator, so the 20-writer fan-in is engineered out |
+
+**The floor bounds the one-core cell only.** At `cores=2` it hands every message to the other
+thread with one ring push of its own, while qb publishes a pass's events to the peer core in one
+batched flush: qb's two-core cell runs UNDER this floor, and the floor there is a reference for the
+per-message cost of a hand-off, not a bound on what a framework can do.
 
 ## The verified answer
 
@@ -74,10 +79,14 @@ Exits — is counted at the receivers and asserted alongside. The refused pairs 
 and its Denied, or a Denied and the retry it triggers) are counted by nobody: their number is the
 scheduler's.
 
-Every message here is a token — each philosopher holds exactly one message of its cycle at any
-time — so a message lost in the middle of a run does not produce a wrong answer: it stops that
-philosopher, and with it the run, which then emits no timing (`tools/run.py`'s timeout). Only a
-loss at the very end, which stops nobody, can complete, and the checksum rejects it.
+Every message here is needed by a later step — a philosopher has one message of its cycle in
+flight, or two right after a meal (its Done to the arbitrator and its Start to itself) — so a
+message lost in the middle of a run does not produce a wrong answer, it stalls the run: a lost
+Hungry, Denied, Eat or Start stops its philosopher; a lost Done leaves two forks taken for good,
+so that philosopher and both neighbours are refused from then on; a lost Exit leaves the
+arbitrator one short. A stalled run emits no timing (`tools/run.py`'s timeout). Only a loss that
+stops nobody — a philosopher's last Done once its neighbours have finished — can complete, and
+the checksum rejects it.
 
 Termination does not depend on luck: a fork is taken only by a granted philosopher whose Done is
 on its way, so whenever no Done is pending every fork is free and the next request is granted;
@@ -88,6 +97,13 @@ is granted at the latest once they have finished.
 
 Opens when the arbitrator, having seen all `N` philosophers report ready, sends the `N` first
 Starts — every thread is running and every philosopher has been scheduled once — and closes when
-the arbitrator has received the `N`-th Exit, which each philosopher sends after the Done of its
-last meal on the same channel, so every Done is in by then. The floor's second thread is created
-just before the window; its start-up, once, is below resolution at 800 020 messages.
+the arbitrator has received the `N`-th Exit, and every Done is in by then: each philosopher sends
+its Exit after the Done of its last meal, and the Exit cannot overtake it. In CAF, SObjectizer and
+the floor both are messages from the same sender to the same mailbox, delivered in sending order.
+In qb they take two transports — the Done is the Eat `reply()`ed, the Exit a `push<>` — and the
+order holds on both: `reply()` either publishes the Done into the arbitrator's ring at once,
+ahead of anything the Exit's later flush appends there, or, when that ring is full or the
+arbitrator shares the core, appends it to the same outbound pipe the Exit is appended to after
+it. An Exit that did overtake would be folded with one Done too few and fail verification. The
+floor's second thread is created just before the window; its start-up, once, is below resolution
+at 800 020 messages.
