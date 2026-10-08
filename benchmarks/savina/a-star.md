@@ -93,7 +93,7 @@ compare-and-swap is a locked instruction regardless.
 
 | framework | `cores=1` | `cores=2` |
 |---|---|---|
-| qb | the master and the 20 workers on VirtualCore 0 | actor a on VirtualCore a % 2: the master and the odd-numbered workers on core 0, the even-numbered on core 1, so the master's round-robin alternates cores and every other relayed node crosses one. The master relays with `forward()`: the event a worker pushed is the one the next worker receives |
+| qb | the master and the 20 workers on VirtualCore 0 | actor a on VirtualCore a % 2, the master being actor 0 and search worker w (w = 0 … 19) actor w + 1: the master and workers 1, 3, …, 19 on core 0, workers 0, 2, …, 18 on core 1, so the master's round-robin alternates cores and every other relayed node crosses one. The master relays with `forward()`: the event a worker pushed is the one the next worker receives |
 | CAF | `max-threads=1` | `=2`, both pinned; the master spawns its workers with `self->spawn` and the work-stealing pool places them. A relay is a fresh mail: CAF has no forward of the current message outside the request/response path (`delegate` is deprecated in 1.1) |
 | SObjectizer | `one_thread` dispatcher | `thread_pool` with 2 pinned work threads and `fifo_t::individual`; the master redirects the `msg_work` instance it received with `so_5::send(mbox, mhood)`, SObjectizer's own zero-copy relay |
 | floor | one thread, one ring per (worker, worker) pair | two pinned threads; actor a owned by thread a % 2, the placement qb has |
@@ -103,6 +103,15 @@ one handler, and each delivers one sender's messages to one receiver in order �
 per-sender ordering, SObjectizer's per-agent demand queue, the floor's per-pair ring — so the
 frontier always lands before the acknowledgement that counts it, and the master never sees its
 count of acknowledgements reach its count of work messages while a node is still in flight.
+
+The static placement has a price the pools do not pay. With `cores=2`, qb and the floor put the
+master on core 0 with 10 of the 20 workers, and a core runs one handler at a time: while one of
+those workers searches a chunk (up to 1 024 nodes of busy work), every node handed back to the
+master waits in core 0's queue, and so does every worker on core 1 that is waiting for one. CAF's
+and SObjectizer's pools have no such constraint — the master is just another runnable actor that
+either thread may pick up next — so on this shape the placing rows pay for the master's placement
+and the pool rows do not. The cell records that asymmetry; it is the same one `big.md` names from
+the other side, where static placement is what pays.
 
 ## The verified answer
 
@@ -124,6 +133,16 @@ two: measured, 1 790 work messages on every repetition at `cores=1` for both qb 
 (`big.md` says the same of a ponger's pings). What is fixed is the WORK, every reachable node
 searched exactly once, and the checksum asserts it node by node. The report's unit is therefore
 the node — `work_units` is the reachable count, 20 515 — not the message.
+
+What the checksum does **not** prove is that the work was redistributed: an adapter whose workers
+ignored `threshold` would search the whole graph from the first work message and still verify.
+The spec derives the floor that closes it, with no framework: one work message searches at most
+`threshold` nodes and every reachable node is searched once, so a run sends at least
+`min_work_messages = ceil(reachable / threshold)` work messages, 21 at the defaults. The harness
+cannot assert a lower bound yet — `Answer::messages` is compared for equality with
+`expected_messages`, and only when that is declared — so the bound is derived but **not yet
+asserted**; until it is, the threshold is held by the adapters calling the spec's `search()` with
+the parameter, which is a reading of the source, not a check.
 
 ## The measured window
 

@@ -262,6 +262,25 @@ inline std::uint64_t work_units(const qvo::Params &p) {
 // early by another is searched in place. It is fixed on one thread and varies from run to run on
 // two (a-star.md gives the measured spread). What is fixed is the WORK -- every reachable node
 // searched exactly once -- and the checksum asserts that, node by node.
+//
+// What the checksum does NOT prove is that the work was REDISTRIBUTED: an adapter whose workers
+// ignored `threshold` would search the whole graph from the first work message and still verify.
+// The bound below is the framework-free half of closing that: one work message searches at most
+// `threshold` nodes and every reachable node is searched exactly once, so a run sends at least
+// ceil(reachable / threshold) work messages -- 21 at the defaults (20 515 / 1 024 = 20.03). Every
+// work message is acknowledged, so the master's count of work messages sent is the count to hold
+// against it. The harness has no lower-bound assertion yet (Answer::messages is compared for
+// EQUALITY with expected_messages, and only when that is declared), so no adapter reports the
+// count against it today. Measured runs send far more (a-star.md): the bound is a floor on the
+// shape, not an estimate of the traffic.
+inline std::uint64_t min_work_messages(const qvo::Params &p) {
+    const auto threshold = static_cast<std::uint64_t>(p.get("threshold"));
+    if (threshold == 0) {
+        std::fprintf(stderr, "savina/a-star: threshold=0 searches nothing\n");
+        std::abort();
+    }
+    return (work_units(p) + threshold - 1) / threshold;
+}
 
 }  // namespace qvospec::savina::a_star
 
