@@ -9,13 +9,15 @@ wherever the majority fell. Comparing two such medians compares two coin flips.
 docs/TUNING.md 9.11 is where this was learned. The census is the answer: launch the same
 binaries, the same arguments, N times INTERLEAVED (A, B, A, B, ...), few repetitions per launch,
 and read the DISTRIBUTION of per-launch medians -- median-of-medians, min, max -- instead of one
-number. Interleaving is what makes host drift land on both sides.
+number. Interleaving is what makes host drift land on both sides. For a two-binary A/B,
+--alternate-order balances the first launch position within each configuration (AB, BA,
+AB, BA, ...) rather than confounding order with the first or second half of a session.
 
 Usage
 -----
     python3 tools/launch-census.py --out results/<host>/x/launch-census --no-pin \\
         --bin cand=build/a/bin/qvo-qb-savina-ping-pong --bin ctrl=build/b/bin/qvo-qb-savina-ping-pong \\
-        --config 2c-spin,2c-park --launches 12 --repetitions 3 --warmup 1
+        --config 2c-spin,2c-park --launches 12 --repetitions 3 --warmup 1 --alternate-order
 """
 
 from __future__ import annotations
@@ -42,6 +44,10 @@ def describe(exe: Path) -> dict:
     return json.loads(out.stdout)
 
 
+def launch_order(bins: list[tuple], launch: int, alternate_order: bool) -> list[tuple]:
+    return list(reversed(bins)) if alternate_order and launch % 2 == 0 else bins
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True, type=Path)
@@ -50,6 +56,8 @@ def main() -> int:
     ap.add_argument("--launches", type=int, default=10)
     ap.add_argument("--repetitions", type=int, default=3)
     ap.add_argument("--warmup", type=int, default=1)
+    ap.add_argument("--alternate-order", action="store_true",
+                    help="for two binaries and an even launch count, alternate AB/BA within each configuration")
     ap.add_argument("--cpus", default=None)
     ap.add_argument("--no-pin", action="store_true")
     ap.add_argument("--timeout", type=int, default=600)
@@ -64,6 +72,8 @@ def main() -> int:
         if not p.is_file():
             sys.exit(f"launch-census.py: {p} is not a file")
         bins.append((label, p, describe(p)))
+    if args.alternate_order and (len(bins) != 2 or args.launches < 2 or args.launches % 2):
+        sys.exit("launch-census.py: --alternate-order needs exactly two binaries and an even launch count >= 2")
     bench = {d["benchmark"] for _, _, d in bins}
     if len(bench) != 1:
         sys.exit(f"launch-census.py: the binaries are not the same benchmark: {bench}")
@@ -71,6 +81,11 @@ def main() -> int:
     slug = bench.replace("/", "-")
     args.out.mkdir(parents=True, exist_ok=True)
     cfgs = [c for c in args.config.split(",") if c]
+    planned = [
+        {"config": cfg, "launch": i, "order": [label for label, _, _ in launch_order(bins, i, args.alternate_order)]}
+        for cfg in cfgs for i in range(1, args.launches + 1)
+    ]
+    (args.out / "launch-order.jsonl").write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in planned), encoding="utf-8")
 
     # label -> cfg -> [per-launch median ns/unit]
     med: dict[str, dict[str, list[float]]] = {l: {c: [] for c in cfgs} for l, _, _ in bins}
@@ -78,7 +93,7 @@ def main() -> int:
     for cfg in cfgs:
         params = CONFIGS[cfg]
         for i in range(1, args.launches + 1):
-            for label, exe, _ in bins:
+            for label, exe, _ in launch_order(bins, i, args.alternate_order):
                 dest = args.out / f"{label}__{slug}-{cfg}-launch{i}.json"
                 cmd = [str(exe), "--repetitions", str(args.repetitions), "--warmup", str(args.warmup),
                        "--out", str(dest), "--param", f"cores={params['cores']}",
@@ -98,6 +113,7 @@ def main() -> int:
 
     print(f"\n{bench}: per-launch medians, ns per unit -- {args.launches} launches interleaved, "
           f"{args.repetitions} rep + {args.warmup} warmup each"
+          + (", AB/BA order balanced" if args.alternate_order else ", fixed launch order")
           + (", unpinned" if args.no_pin else f", cpus {args.cpus}"))
     for cfg in cfgs:
         print(f"\n  {cfg}")

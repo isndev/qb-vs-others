@@ -107,6 +107,11 @@ smaller than the overlap of two distributions is rendered as *"no measurable dif
 than as a percentage. Percentages computed from two means with no spread are how most framework
 comparisons are made to say whatever their author wanted.
 
+For a small control/candidate delta, `tools/launch-census.py --alternate-order` runs the two
+verified binaries in AB/BA order on alternating launches within each configuration. Use an
+even launch count and read `launch-order.jsonl` beside the raw JSON; two sequential blocks
+with opposite orders confound order with host drift and are not an equivalent control.
+
 ### 1.6 Externally-chosen problems
 
 The benchmark set is the **Savina suite** (Imam & Sarkar, AGERE 2014) — the standard academic
