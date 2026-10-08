@@ -38,13 +38,20 @@ using namespace qvospec::savina::barber;
 struct Ready : qb::Event {};  // handshake, outside the window
 struct Start : qb::Event {};
 struct Enter : qb::Event {
-    qb::ActorId customer;
-    explicit Enter(qb::ActorId c) noexcept : customer(c) {}
+    qb::ActorId   customer;
+    std::uint64_t number{0};
+    Enter(qb::ActorId c, std::uint64_t n) noexcept : customer(c), number(n) {}
 };
 struct Full : qb::Event {};
 struct Wait : qb::Event {};
-struct Next : qb::Event {};
-struct Returned : qb::Event {};  // the customer is the event's source
+struct Next : qb::Event {
+    std::uint64_t number{0};  // the customer just served; 0 = the room waking the barber
+    explicit Next(std::uint64_t n) noexcept : number(n) {}
+};
+struct Returned : qb::Event {  // the customer is the event's source
+    std::uint64_t number{0};
+    explicit Returned(std::uint64_t n) noexcept : number(n) {}
+};
 struct Done : qb::Event {
     std::uint64_t value{0};
     std::uint64_t messages{0};
@@ -94,7 +101,7 @@ public:
     void on(Full const &) {
         ++_received;
         ++_fulls;
-        push<Returned>(_factory);
+        push<Returned>(_factory, _number);
     }
     void on(Wait const &) {
         ++_received;
@@ -107,8 +114,9 @@ public:
     void on(Done const &event) {
         ++_received;
         push<Done>(_factory,
-                   qvo::mix(_number) + event.value + weight(kTagStart) * _starts +
-                       weight(kTagWait) * _waits + weight(kTagFull) * _fulls,
+                   qvo::mix(_number) + event.value +
+                       identity(_number) * (weight(kTagStart) * _starts +
+                                            weight(kTagWait) * _waits + weight(kTagFull) * _fulls),
                    _received);
         kill();
     }
@@ -122,7 +130,6 @@ class Factory final : public qb::Actor {
     std::uint64_t       _ready{0};
     std::uint64_t       _produced{0};
     std::uint64_t       _served{0};
-    std::uint64_t       _returned{0};
     std::uint64_t       _received{0};
     std::uint64_t       _messages{0};  // reported by the customers
     std::uint64_t       _sum{0};
@@ -155,15 +162,15 @@ public:
                                  "VirtualCore's actor id pool is exhausted\n");
             std::abort();
         }
-        push<Enter>(_field.room, customer.id());
+        push<Enter>(_field.room, customer.id(), _produced + 1);
         _sum += production_work(_produced, _apr);
         if (++_produced < _haircuts) push<Start>(id());
     }
 
     void on(Returned const &event) {
         ++_received;
-        ++_returned;
-        push<Enter>(_field.room, event.getSource());
+        _sum += weight(kTagReturned) * identity(event.number);
+        push<Enter>(_field.room, event.getSource(), event.number);
     }
 
     void on(Done const &event) {
@@ -171,40 +178,42 @@ public:
         _sum += event.value;
         _messages += event.messages;
         if (++_served == _haircuts)
-            push<Exit>(_field.room, _sum + weight(kTagReturned) * _returned,
-                       _messages + _received);
+            push<Exit>(_field.room, _sum, _messages + _received);
     }
 };
 
 class Room final : public qb::Actor {
-    const Field             &_field;
-    const std::uint64_t      _haircuts;
-    Sink                    &_sink;
-    std::vector<qb::ActorId> _seats;  // a ring of `room` seats
-    std::size_t              _head{0};
-    std::size_t              _waiting{0};
-    bool                     _asleep{true};
-    std::uint64_t            _entered{0};
-    std::uint64_t            _rejected{0};
-    std::uint64_t            _wakeups{0};
-    std::uint64_t            _nexts{0};
-    std::uint64_t            _naps{0};
-    std::uint64_t            _received{0};
-    bool                     _exit{false};
-    std::uint64_t            _exit_partial{0};
-    std::uint64_t            _exit_messages{0};
+    struct Seat {
+        qb::ActorId   customer;
+        std::uint64_t number{0};
+    };
+
+    const Field        &_field;
+    const std::uint64_t _haircuts;
+    Sink               &_sink;
+    std::vector<Seat>   _seats;  // a ring of `room` seats
+    std::size_t         _head{0};
+    std::size_t         _waiting{0};
+    bool                _asleep{true};
+    std::uint64_t       _acc{0};  // the room's terms of the checksum (barber.h)
+    std::uint64_t       _rejected{0};
+    std::uint64_t       _wakeups{0};
+    std::uint64_t       _wake_nexts{0};
+    std::uint64_t       _barber_nexts{0};
+    std::uint64_t       _received{0};
+    bool                _exit{false};
+    std::uint64_t       _exit_partial{0};
+    std::uint64_t       _exit_messages{0};
 
     // Exit leaves only once the barber's n-th Next is in: the factory's Exit and the barber's
-    // last Next come from two senders, and nothing orders them.
+    // last Next come from two senders, and nothing orders them (an (n+1)-th fail()s in on(Next)).
     void maybe_exit() {
-        if (!_exit || _nexts - _wakeups != _haircuts) return;
+        if (!_exit || _barber_nexts < _haircuts) return;
         _exit            = false;
         _sink.rejections = _rejected;
         _sink.wakeups    = _wakeups;
         const auto partial =
-            _exit_partial + weight(kTagEnter) * (_entered - _rejected) -
-            (weight(kTagFull) + weight(kTagReturned)) * _rejected + weight(kTagWait) * _wakeups +
-            weight(kTagNext) * (_nexts - _wakeups) - weight(kTagNap) * _naps;
+            _exit_partial + _acc + weight(kTagWake) * _wake_nexts - weight(kTagWake) * _wakeups;
         push<Exit>(_field.barber, partial, _exit_messages + _received);
     }
 
@@ -222,32 +231,40 @@ public:
 
     void on(Enter const &event) {
         ++_received;
-        ++_entered;
+        const std::uint64_t id_i = identity(event.number);
         if (_waiting == _seats.size()) {
             ++_rejected;
+            _acc -= (weight(kTagFull) + weight(kTagReturned)) * id_i;
             push<Full>(event.customer);
             return;
         }
-        _seats[(_head + _waiting++) % _seats.size()] = event.customer;
+        _acc += weight(kTagEnter) * id_i;
+        _seats[(_head + _waiting++) % _seats.size()] = Seat{event.customer, event.number};
         if (_asleep) {
             _asleep = false;
             ++_wakeups;
-            push<Next>(id());
+            _acc += weight(kTagWait) * id_i;
+            push<Next>(id(), std::uint64_t{0});
         } else {
             push<Wait>(event.customer);
         }
     }
 
-    void on(Next const &) {
+    void on(Next const &event) {
         ++_received;
-        ++_nexts;
-        if (_waiting != 0) {
-            const qb::ActorId customer = _seats[_head];
-            _head                      = (_head + 1) % _seats.size();
-            --_waiting;
-            push<Enter>(_field.barber, customer);
+        if (event.number == 0) {
+            ++_wake_nexts;
         } else {
-            ++_naps;
+            if (++_barber_nexts > _haircuts) fail("the room received more Nexts than haircuts");
+            _acc += weight(kTagNext) * identity(event.number);
+        }
+        if (_waiting != 0) {
+            const Seat seat = _seats[_head];
+            _head           = (_head + 1) % _seats.size();
+            --_waiting;
+            push<Enter>(_field.barber, seat.customer, seat.number);
+        } else {
+            _acc -= weight(kTagNap);
             push<Wait>(_field.barber);
             _asleep = true;
         }
@@ -269,7 +286,7 @@ class Barber final : public qb::Actor {
     qvo::Watch         &_watch;
     Sink               &_sink;
     std::uint64_t       _haircuts{0};
-    std::uint64_t       _naps{0};
+    std::uint64_t       _acc{0};  // the barber's terms of the checksum (barber.h)
     std::uint64_t       _received{0};
 
 public:
@@ -286,21 +303,21 @@ public:
 
     void on(Enter const &event) {
         ++_received;
+        _acc += weight(kTagCut) * identity(event.number);
         push<Start>(event.customer);
         const std::uint64_t h = haircut_work(_haircuts++, _ahr);
         push<Done>(event.customer, h, std::uint64_t{0});
-        push<Next>(_field.room);
+        push<Next>(_field.room, event.number);
     }
 
     void on(Wait const &) {
         ++_received;
-        ++_naps;
+        _acc += weight(kTagNap);
     }
 
     void on(Exit const &event) {
         ++_received;
-        _sink.checksum =
-            event.partial + weight(kTagCut) * _haircuts + weight(kTagNap) * _naps;
+        _sink.checksum = event.partial + _acc;
         _sink.messages = event.messages + _received;
         _watch.stop();
         broadcast<qb::KillEvent>();

@@ -84,16 +84,30 @@ counts.
 
 Which customers find the barber asleep — and, with a small room, which are turned away and how
 often — depends on the interleaving, so the checksum is built from what every interleaving must
-deliver. Customer `i` (numbered in production order) reports `mix(i) + h` plus a weighted count of
-everything it was told (`Start`, `Wait`, `Full`), where `h` is the haircut it received; the
-barber's `k`-th haircut is `haircut_work(k)` whoever gets it. The factory adds every report and its
-own production work, the room adds its counts at `Exit`, the barber his. Each count is paired with
-the count of the matching send — the customers' Waits plus the room's wake-ups are `haircuts`,
-every rejection is one `Full` at a customer and one `Returned` at the factory, the room receives
-one `Next` per haircut plus one per wake-up, every `Wait` the room sends the barber is a nap he
-counts — so the total is the same for every interleaving and a dropped or duplicated delivery of
-any kind moves it, the no-op `Wait` included. Both are asserted to fail: a room that skips its
-100th Wait, and a barber that tells his 100th customer Start twice, fail every qb and floor cell.
+deliver, and every term that concerns a customer is weighted by that customer's identity
+(`identity(i)`, a mix of its number; the number travels in every message that names a customer).
+Customer `i` (numbered in production order) reports `mix(i) + h` plus `identity(i)` times a
+weighted count of everything it was told (`Start`, `Wait`, `Full`), where `h` is the haircut it
+received; the barber's `k`-th haircut is `haircut_work(k)` whoever gets it. The factory adds every
+report, its own production work and, per `Returned` of customer `i`, a `Returned` weight times
+`identity(i)`; the room adds, customer by customer, an `Enter` weight for each one it lets in, a
+`Wait` weight for each one whose arrival wakes the barber, a `Next` weight for each one the
+barber's `Next` names, and subtracts the `Full` and `Returned` weights for each one it turns away;
+the barber adds a `Cut` weight for each one he serves. Each term is paired with its counterpart
+FOR THE SAME CUSTOMER — every customer let in is either told `Wait` or wakes the barber, every
+rejection of `i` is one `Full` at `i` and one `Returned` of `i`, the barber serves every customer
+once and names it in the `Next` that follows; the naps and the room's own wake-up `Next`s cancel
+by count — so the total is the same for every interleaving, and a delivery dropped, duplicated
+**or delivered to the wrong customer** moves it, the no-op `Wait` included. All three are asserted
+to fail on every qb and floor cell: a room that skips its 100th `Wait`, a barber that tells his
+100th customer `Start` twice, and a room whose 100th `Wait` sent while two or more customers wait
+goes to the oldest of them instead — the last one passed the checksum of the first version of this
+benchmark, which counted what each customer was told without saying which customer.
+
+The room leaves for `Exit` only once the barber's `n`-th `Next` is in, and a run in which it
+receives an `(n+1)`-th stops with an explicit protocol failure rather than a number: a duplicated
+`Next` could otherwise let `Exit` leave one haircut early. Asserted too: a barber that sends the
+`Next` after his 100th haircut twice fails every qb and floor cell that way.
 
 No message count is asserted, because it is not determined: it is `7n + 3r + a + 3` for `n`
 haircuts, `r` rejections and `a` wake-ups of the barber (`n − 1` more for the paced factories), and

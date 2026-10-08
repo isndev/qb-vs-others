@@ -25,8 +25,9 @@ namespace savina_barber_baseline {
 
 using namespace qvospec::savina::barber;
 
-// kEnter: a = customer. kReturned: a = customer. kDone: a = value, b = messages (the barber's Done
-// carries the haircut in a). kExit: a = partial checksum, b = messages.
+// kEnter: a = customer, b = its number. kReturned: a = customer, b = its number. kNext: a = the
+// number of the customer just served, 0 for the room's own wake-up. kDone: a = value, b = messages
+// (the barber's Done carries the haircut in a). kExit: a = partial checksum, b = messages.
 enum Tag : std::uint32_t { kStart = 1, kEnter, kFull, kWait, kNext, kReturned, kDone, kExit };
 
 struct Customer {
@@ -66,23 +67,27 @@ struct Table {
 struct FactoryState {
     std::uint64_t produced{0};
     std::uint64_t served{0};
-    std::uint64_t returned{0};
     std::uint64_t received{0};
     std::uint64_t messages{0};  // reported by the customers
     std::uint64_t sum{0};
 };
 
+struct Seat {
+    std::uint32_t customer{0};
+    std::uint64_t number{0};
+};
+
 struct RoomState {
-    std::vector<std::uint32_t> seats;
-    std::size_t                head{0};
-    std::size_t                waiting{0};
-    bool                       asleep{true};
-    std::uint64_t              entered{0};
-    std::uint64_t              rejected{0};
-    std::uint64_t              wakeups{0};
-    std::uint64_t              nexts{0};
-    std::uint64_t              naps{0};
-    std::uint64_t              received{0};
+    std::vector<Seat> seats;
+    std::size_t       head{0};
+    std::size_t       waiting{0};
+    bool              asleep{true};
+    std::uint64_t     acc{0};  // the room's terms of the checksum (barber.h)
+    std::uint64_t     rejected{0};
+    std::uint64_t     wakeups{0};
+    std::uint64_t     wake_nexts{0};
+    std::uint64_t     barber_nexts{0};
+    std::uint64_t     received{0};
     bool                       exit{false};
     std::uint64_t              exit_partial{0};
     std::uint64_t              exit_messages{0};
@@ -90,7 +95,7 @@ struct RoomState {
 
 struct BarberState {
     std::uint64_t haircuts{0};
-    std::uint64_t naps{0};
+    std::uint64_t acc{0};  // the barber's terms of the checksum (barber.h)
     std::uint64_t received{0};
 };
 
@@ -121,15 +126,13 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         auto node = [&](std::uint32_t id) -> Customer & { return *tables[worker].slots[id / W]; };
 
         // The room's Exit leaves only once the barber's n-th Next is in: the factory's Exit and
-        // the barber's last Next come from two senders, and nothing orders them.
+        // the barber's last Next come from two senders, and nothing orders them (an (n+1)-th
+        // fail()s in kNext).
         auto room_exit = [&] {
-            if (!r.exit || r.nexts - r.wakeups != haircuts) return;
+            if (!r.exit || r.barber_nexts < haircuts) return;
             r.exit             = false;
-            const auto partial = r.exit_partial + weight(kTagEnter) * (r.entered - r.rejected) -
-                                 (weight(kTagFull) + weight(kTagReturned)) * r.rejected +
-                                 weight(kTagWait) * r.wakeups +
-                                 weight(kTagNext) * (r.nexts - r.wakeups) -
-                                 weight(kTagNap) * r.naps;
+            const auto partial = r.exit_partial + r.acc + weight(kTagWake) * r.wake_nexts -
+                                 weight(kTagWake) * r.wakeups;
             m.send(worker, qvobase::Msg{barber, kExit, partial, r.exit_messages + r.received});
         };
 
@@ -140,7 +143,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
                 const std::uint64_t i  = f.produced++;
                 auto               *c  = new Customer{i + 1, 0, 0, 0, 0};
                 const std::uint32_t id = tables[worker].alloc(worker, W, c);
-                m.send(worker, qvobase::Msg{room, kEnter, id, 0});
+                m.send(worker, qvobase::Msg{room, kEnter, id, i + 1});
                 f.sum += production_work(i, apr);
                 if (f.produced < haircuts) m.send(worker, qvobase::Msg{factory, kStart, 0, 0});
             } else {
@@ -151,30 +154,34 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
             break;
         }
         case kEnter: {
-            const auto customer = static_cast<std::uint32_t>(msg.a);
+            const auto          customer = static_cast<std::uint32_t>(msg.a);
+            const std::uint64_t id_i     = identity(msg.b);
             if (msg.dst == room) {
                 ++r.received;
-                ++r.entered;
                 if (r.waiting == r.seats.size()) {
                     ++r.rejected;
+                    r.acc -= (weight(kTagFull) + weight(kTagReturned)) * id_i;
                     m.send(worker, qvobase::Msg{customer, kFull, 0, 0});
                     break;
                 }
-                r.seats[(r.head + r.waiting++) % r.seats.size()] = customer;
+                r.acc += weight(kTagEnter) * id_i;
+                r.seats[(r.head + r.waiting++) % r.seats.size()] = Seat{customer, msg.b};
                 if (r.asleep) {
                     r.asleep = false;
                     ++r.wakeups;
+                    r.acc += weight(kTagWait) * id_i;
                     m.send(worker, qvobase::Msg{room, kNext, 0, 0});
                 } else {
                     m.send(worker, qvobase::Msg{customer, kWait, 0, 0});
                 }
             } else {  // the barber
                 ++b.received;
+                b.acc += weight(kTagCut) * id_i;
                 const std::uint64_t k = b.haircuts++;
                 m.send(worker, qvobase::Msg{customer, kStart, 0, 0});
                 const std::uint64_t h = haircut_work(k, ahr);
                 m.send(worker, qvobase::Msg{customer, kDone, h, 0});
-                m.send(worker, qvobase::Msg{room, kNext, 0, 0});
+                m.send(worker, qvobase::Msg{room, kNext, msg.b, 0});
             }
             break;
         }
@@ -182,13 +189,13 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
             Customer &c = node(msg.dst);
             ++c.received;
             ++c.fulls;
-            m.send(worker, qvobase::Msg{factory, kReturned, msg.dst, 0});
+            m.send(worker, qvobase::Msg{factory, kReturned, msg.dst, c.number});
             break;
         }
         case kWait: {
             if (msg.dst == barber) {
                 ++b.received;
-                ++b.naps;
+                b.acc += weight(kTagNap);
             } else {
                 Customer &c = node(msg.dst);
                 ++c.received;
@@ -198,14 +205,19 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         }
         case kNext: {
             ++r.received;
-            ++r.nexts;
-            if (r.waiting != 0) {
-                const std::uint32_t customer = r.seats[r.head];
-                r.head                       = (r.head + 1) % r.seats.size();
-                --r.waiting;
-                m.send(worker, qvobase::Msg{barber, kEnter, customer, 0});
+            if (msg.a == 0) {
+                ++r.wake_nexts;
             } else {
-                ++r.naps;
+                if (++r.barber_nexts > haircuts) fail("the room received more Nexts than haircuts");
+                r.acc += weight(kTagNext) * identity(msg.a);
+            }
+            if (r.waiting != 0) {
+                const Seat seat = r.seats[r.head];
+                r.head          = (r.head + 1) % r.seats.size();
+                --r.waiting;
+                m.send(worker, qvobase::Msg{barber, kEnter, seat.customer, seat.number});
+            } else {
+                r.acc -= weight(kTagNap);
                 r.asleep = true;
                 m.send(worker, qvobase::Msg{barber, kWait, 0, 0});
             }
@@ -214,8 +226,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         }
         case kReturned: {
             ++f.received;
-            ++f.returned;
-            m.send(worker, qvobase::Msg{room, kEnter, msg.a, 0});
+            f.sum += weight(kTagReturned) * identity(msg.b);
+            m.send(worker, qvobase::Msg{room, kEnter, msg.a, msg.b});
             break;
         }
         case kDone: {
@@ -224,14 +236,13 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
                 f.sum += msg.a;
                 f.messages += msg.b;
                 if (++f.served == haircuts)
-                    m.send(worker, qvobase::Msg{room, kExit,
-                                                f.sum + weight(kTagReturned) * f.returned,
-                                                f.messages + f.received});
+                    m.send(worker, qvobase::Msg{room, kExit, f.sum, f.messages + f.received});
             } else {
                 Customer           &c     = node(msg.dst);
-                const std::uint64_t value = qvo::mix(c.number) + msg.a +
-                                            weight(kTagStart) * c.starts +
-                                            weight(kTagWait) * c.waits + weight(kTagFull) * c.fulls;
+                const std::uint64_t value =
+                    qvo::mix(c.number) + msg.a +
+                    identity(c.number) * (weight(kTagStart) * c.starts +
+                                          weight(kTagWait) * c.waits + weight(kTagFull) * c.fulls);
                 const std::uint64_t received = c.received + 1;
                 tables[worker].release(msg.dst / W);
                 m.send(worker, qvobase::Msg{factory, kDone, value, received});
@@ -247,7 +258,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
                 room_exit();
             } else {  // the barber: the end of the chain
                 ++b.received;
-                checksum = msg.a + weight(kTagCut) * b.haircuts + weight(kTagNap) * b.naps;
+                checksum = msg.a + b.acc;
                 messages = msg.b + b.received;
                 watch.stop();
                 m.stop();

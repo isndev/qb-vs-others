@@ -39,14 +39,19 @@ struct msg_ready final : public so_5::signal_t {};  // handshake, outside the wi
 struct msg_start final : public so_5::signal_t {};
 struct msg_full final : public so_5::signal_t {};
 struct msg_wait final : public so_5::signal_t {};
-struct msg_next final : public so_5::signal_t {};
+struct msg_next final : public so_5::message_t {
+    std::uint64_t number;  // the customer just served; 0 = the room waking the barber
+    explicit msg_next(std::uint64_t n) noexcept : number(n) {}
+};
 struct msg_enter final : public so_5::message_t {
-    so_5::mbox_t customer;
-    explicit msg_enter(so_5::mbox_t c) noexcept : customer(std::move(c)) {}
+    so_5::mbox_t  customer;
+    std::uint64_t number;
+    msg_enter(so_5::mbox_t c, std::uint64_t n) noexcept : customer(std::move(c)), number(n) {}
 };
 struct msg_returned final : public so_5::message_t {
-    so_5::mbox_t customer;
-    explicit msg_returned(so_5::mbox_t c) noexcept : customer(std::move(c)) {}
+    so_5::mbox_t  customer;
+    std::uint64_t number;
+    msg_returned(so_5::mbox_t c, std::uint64_t n) noexcept : customer(std::move(c)), number(n) {}
 };
 struct msg_done final : public so_5::message_t {
     std::uint64_t value;
@@ -76,7 +81,7 @@ public:
             .event([this](so_5::mhood_t<msg_full>) {
                 ++m_received;
                 ++m_fulls;
-                so_5::send<msg_returned>(m_factory, so_direct_mbox());
+                so_5::send<msg_returned>(m_factory, so_direct_mbox(), m_number);
             })
             .event([this](so_5::mhood_t<msg_wait>) {
                 ++m_received;
@@ -88,10 +93,13 @@ public:
             })
             .event([this](so_5::mhood_t<msg_done> m) {
                 ++m_received;
-                so_5::send<msg_done>(m_factory,
-                                     qvo::mix(m_number) + m->value + weight(kTagStart) * m_starts +
-                                         weight(kTagWait) * m_waits + weight(kTagFull) * m_fulls,
-                                     m_received);
+                so_5::send<msg_done>(
+                    m_factory,
+                    qvo::mix(m_number) + m->value +
+                        identity(m_number) * (weight(kTagStart) * m_starts +
+                                              weight(kTagWait) * m_waits +
+                                              weight(kTagFull) * m_fulls),
+                    m_received);
                 so_deregister_agent_coop_normally();
             });
     }
@@ -105,7 +113,6 @@ class factory_t final : public so_5::agent_t {
     so_5::mbox_t                    m_room;
     std::uint64_t                   m_ready{0};
     std::uint64_t                   m_served{0};
-    std::uint64_t                   m_returned{0};
     std::uint64_t                   m_received{0};
     std::uint64_t                   m_messages{0};  // reported by the customers
     std::uint64_t                   m_sum{0};
@@ -138,56 +145,58 @@ public:
                         customer = coop.make_agent<customer_t>(so_direct_mbox(), i + 1)
                                        ->so_direct_mbox();
                     });
-                    so_5::send<msg_enter>(m_room, std::move(customer));
+                    so_5::send<msg_enter>(m_room, std::move(customer), i + 1);
                     m_sum += production_work(i, m_apr);
                 }
             })
             .event([this](so_5::mhood_t<msg_returned> m) {
                 ++m_received;
-                ++m_returned;
-                so_5::send<msg_enter>(m_room, m->customer);
+                m_sum += weight(kTagReturned) * identity(m->number);
+                so_5::send<msg_enter>(m_room, m->customer, m->number);
             })
             .event([this](so_5::mhood_t<msg_done> m) {
                 ++m_received;
                 m_sum += m->value;
                 m_messages += m->messages;
                 if (++m_served == m_haircuts)
-                    so_5::send<msg_exit>(m_room, m_sum + weight(kTagReturned) * m_returned,
-                                         m_messages + m_received);
+                    so_5::send<msg_exit>(m_room, m_sum, m_messages + m_received);
             });
     }
 };
 
 class room_t final : public so_5::agent_t {
-    const std::uint64_t       m_haircuts;
-    Sink                     &m_sink;
-    so_5::mbox_t              m_factory;
-    so_5::mbox_t              m_barber;
-    std::vector<so_5::mbox_t> m_seats;  // a ring of `room` seats
-    std::size_t               m_head{0};
-    std::size_t               m_waiting{0};
-    bool                      m_asleep{true};
-    std::uint64_t             m_entered{0};
-    std::uint64_t             m_rejected{0};
-    std::uint64_t             m_wakeups{0};
-    std::uint64_t             m_nexts{0};
-    std::uint64_t             m_naps{0};
-    std::uint64_t             m_received{0};
-    bool                      m_exit{false};
-    std::uint64_t             m_exit_partial{0};
-    std::uint64_t             m_exit_messages{0};
+    struct seat_t {
+        so_5::mbox_t  customer;
+        std::uint64_t number{0};
+    };
+
+    const std::uint64_t m_haircuts;
+    Sink               &m_sink;
+    so_5::mbox_t        m_factory;
+    so_5::mbox_t        m_barber;
+    std::vector<seat_t> m_seats;  // a ring of `room` seats
+    std::size_t         m_head{0};
+    std::size_t         m_waiting{0};
+    bool                m_asleep{true};
+    std::uint64_t       m_acc{0};  // the room's terms of the checksum (barber.h)
+    std::uint64_t       m_rejected{0};
+    std::uint64_t       m_wakeups{0};
+    std::uint64_t       m_wake_nexts{0};
+    std::uint64_t       m_barber_nexts{0};
+    std::uint64_t       m_received{0};
+    bool                m_exit{false};
+    std::uint64_t       m_exit_partial{0};
+    std::uint64_t       m_exit_messages{0};
 
     // Exit leaves only once the barber's n-th Next is in: the factory's Exit and the barber's
-    // last Next come from two senders, and nothing orders them.
+    // last Next come from two senders, and nothing orders them (an (n+1)-th fail()s on Next).
     void maybe_exit() {
-        if (!m_exit || m_nexts - m_wakeups != m_haircuts) return;
+        if (!m_exit || m_barber_nexts < m_haircuts) return;
         m_exit            = false;
         m_sink.rejections = m_rejected;
         m_sink.wakeups    = m_wakeups;
-        const auto partial =
-            m_exit_partial + weight(kTagEnter) * (m_entered - m_rejected) -
-            (weight(kTagFull) + weight(kTagReturned)) * m_rejected + weight(kTagWait) * m_wakeups +
-            weight(kTagNext) * (m_nexts - m_wakeups) - weight(kTagNap) * m_naps;
+        const auto partial = m_exit_partial + m_acc + weight(kTagWake) * m_wake_nexts -
+                             weight(kTagWake) * m_wakeups;
         so_5::send<msg_exit>(m_barber, partial, m_exit_messages + m_received);
     }
 
@@ -207,31 +216,40 @@ public:
         so_subscribe_self()
             .event([this](so_5::mhood_t<msg_enter> m) {
                 ++m_received;
-                ++m_entered;
+                const std::uint64_t id_i = identity(m->number);
                 if (m_waiting == m_seats.size()) {
                     ++m_rejected;
+                    m_acc -= (weight(kTagFull) + weight(kTagReturned)) * id_i;
                     so_5::send<msg_full>(m->customer);
                     return;
                 }
-                m_seats[(m_head + m_waiting++) % m_seats.size()] = m->customer;
+                m_acc += weight(kTagEnter) * id_i;
+                m_seats[(m_head + m_waiting++) % m_seats.size()] = seat_t{m->customer, m->number};
                 if (m_asleep) {
                     m_asleep = false;
                     ++m_wakeups;
-                    so_5::send<msg_next>(so_direct_mbox());
+                    m_acc += weight(kTagWait) * id_i;
+                    so_5::send<msg_next>(so_direct_mbox(), std::uint64_t{0});
                 } else {
                     so_5::send<msg_wait>(m->customer);
                 }
             })
-            .event([this](so_5::mhood_t<msg_next>) {
+            .event([this](so_5::mhood_t<msg_next> m) {
                 ++m_received;
-                ++m_nexts;
-                if (m_waiting != 0) {
-                    so_5::mbox_t customer = std::move(m_seats[m_head]);
-                    m_head                = (m_head + 1) % m_seats.size();
-                    --m_waiting;
-                    so_5::send<msg_enter>(m_barber, std::move(customer));
+                if (m->number == 0) {
+                    ++m_wake_nexts;
                 } else {
-                    ++m_naps;
+                    if (++m_barber_nexts > m_haircuts)
+                        fail("the room received more Nexts than haircuts");
+                    m_acc += weight(kTagNext) * identity(m->number);
+                }
+                if (m_waiting != 0) {
+                    seat_t next = std::move(m_seats[m_head]);
+                    m_head      = (m_head + 1) % m_seats.size();
+                    --m_waiting;
+                    so_5::send<msg_enter>(m_barber, std::move(next.customer), next.number);
+                } else {
+                    m_acc -= weight(kTagNap);
                     m_asleep = true;
                     so_5::send<msg_wait>(m_barber);
                 }
@@ -256,7 +274,7 @@ class barber_t final : public so_5::agent_t {
     so_5::mbox_t        m_factory;
     so_5::mbox_t        m_room;
     std::uint64_t       m_haircuts{0};
-    std::uint64_t       m_naps{0};
+    std::uint64_t       m_acc{0};  // the barber's terms of the checksum (barber.h)
     std::uint64_t       m_received{0};
 
 public:
@@ -272,19 +290,19 @@ public:
         so_subscribe_self()
             .event([this](so_5::mhood_t<msg_enter> m) {
                 ++m_received;
+                m_acc += weight(kTagCut) * identity(m->number);
                 so_5::send<msg_start>(m->customer);
                 const std::uint64_t h = haircut_work(m_haircuts++, m_ahr);
                 so_5::send<msg_done>(m->customer, h, std::uint64_t{0});
-                so_5::send<msg_next>(m_room);
+                so_5::send<msg_next>(m_room, m->number);
             })
             .event([this](so_5::mhood_t<msg_wait>) {
                 ++m_received;
-                ++m_naps;
+                m_acc += weight(kTagNap);
             })
             .event([this](so_5::mhood_t<msg_exit> m) {
                 ++m_received;
-                m_sink.checksum =
-                    m->partial + weight(kTagCut) * m_haircuts + weight(kTagNap) * m_naps;
+                m_sink.checksum = m->partial + m_acc;
                 m_sink.messages = m->messages + m_received;
                 m_watch.stop();
                 so_environment().stop();

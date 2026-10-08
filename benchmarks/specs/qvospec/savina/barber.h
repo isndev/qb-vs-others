@@ -94,56 +94,78 @@ inline std::uint64_t haircut_work(std::uint64_t k, std::uint64_t ahr) noexcept {
     return qvo::spin_work(qvo::mix(kHaircutSeed + k), iterations);
 }
 
+// A customer's IDENTITY in the checksum: every count a customer or the room keeps about a customer
+// is weighted by it, so a message delivered to the WRONG customer moves the sum as surely as a
+// message lost or doubled. Customers are numbered from 1 in production order, and the number
+// travels with the customer in every message that names one (Enter, Returned, the barber's Next).
+inline std::uint64_t identity(std::uint64_t number) noexcept {
+    return qvo::mix(0x5ba4be4f1d000000ULL + number);
+}
+
 // The per-message weights of the checksum, one per kind of delivery. Each is the mix of a tag, so
 // a single delivery missing or doubled moves the sum by a weight, never by zero.
 enum Tag : std::uint64_t {
     kTagStart = 1,  // a customer told Start
-    kTagWait,       // a customer told Wait, or a wake-up of the barber
+    kTagWait,       // a customer told Wait, or the room waking the barber for that customer
     kTagEnter,      // a customer let into the room
-    kTagNext,       // a Next from the barber
+    kTagNext,       // a Next from the barber, naming the customer just served
     kTagCut,        // an Enter at the barber
-    kTagFull,       // a customer told Full (cancelled by the room's count of rejections)
-    kTagReturned,   // a Returned at the factory (cancelled by the same count)
+    kTagFull,       // a customer told Full (cancelled by the room's rejection of that customer)
+    kTagReturned,   // a Returned at the factory (cancelled by the same rejection)
     kTagNap,        // a Wait at the barber (cancelled by the room's count of them)
+    kTagWake,       // the room's own Next that wakes the barber (cancelled by its count of them)
 };
 inline std::uint64_t weight(Tag t) noexcept { return qvo::mix(0xba4be4000000ULL + t); }
 
-// The checksum. Customer i (from 1, in production order) reports to the factory
+// A run that breaks the protocol in a way the checksum cannot see in time -- the room receiving
+// more Nexts from the barber than there are haircuts, which could let its Exit leave on a matching
+// sum before the last real Next -- stops here, loudly, instead of reporting a number.
+[[noreturn]] inline void fail(const char *what) {
+    std::fprintf(stderr, "savina/barber: protocol violated -- %s\n", what);
+    std::abort();
+}
+
+// The checksum. With id(i) = identity(i), customer i reports to the factory
 //
-//     mix(i) + h + w(Start)*starts + w(Wait)*waits + w(Full)*fulls
+//     mix(i) + h + id(i) * (w(Start)*starts + w(Wait)*waits + w(Full)*fulls)
 //
 // where h is the value of the haircut it received in Done and starts/waits/fulls count what it was
-// told. The factory adds every report, its own production work and w(Returned)*returned; the room
-// adds, at Exit,
+// told. The factory adds every report, its own production work and w(Returned)*id(i) for every
+// Returned of customer i. The room adds, customer by customer as it handles them,
 //
-//     w(Enter)*(entered - rejected) - (w(Full) + w(Returned))*rejected
-//       + w(Wait)*wakeups + w(Next)*(nexts - wakeups) - w(Nap)*naps_sent
+//     + w(Enter)*id(i)                 for every customer i it lets in,
+//     - (w(Full) + w(Returned))*id(i)  for every customer i it turns away,
+//     + w(Wait)*id(i)                  for every customer i whose arrival wakes the barber,
+//     + w(Next)*id(i)                  for every Next of the barber naming customer i,
+//     - w(Nap)                         for every Wait it sends the barber,
 //
-// and the barber adds w(Cut)*haircuts + w(Nap)*naps. Every interleaving then gives the same sum,
-// because each count it depends on is paired with the count of the matching send:
+// and at Exit w(Wake) * (its own Nexts received - its wake-ups sent). The barber adds
+// w(Cut)*id(i) for every customer i he serves and w(Nap) for every nap. Every interleaving then
+// gives the same sum, because each term is paired with its counterpart FOR THE SAME CUSTOMER:
 //
-//   * every customer is let in exactly once and is then EITHER told Wait OR wakes the barber:
-//     the sum of the customers' waits plus the room's wake-ups is `haircuts`;
-//   * every rejection is one Full at a customer and one Returned at the factory: both cancel the
-//     room's count of rejections;
-//   * the room receives one Next per haircut plus one per wake-up;
-//   * every Wait the room sends the barber is one nap he counts;
+//   * every customer is let in exactly once and is then EITHER told Wait OR wakes the barber;
+//   * every rejection of customer i is one Full at i and one Returned of i at the factory;
+//   * the barber serves every customer exactly once and names it in the Next that follows;
+//   * every Wait the room sends the barber is one nap he counts, every wake-up one own Next;
 //   * the barber's k-th haircut is haircut_work(k) whoever gets it, and it reaches the factory
 //     through that customer's report.
 //
-// So a dropped or duplicated delivery of ANY kind -- including the Waits, which change nothing
-// else -- moves the sum, and a framework that skips a haircut or a production misses its work.
+// So a dropped, duplicated OR MISROUTED delivery of any kind -- including the Waits, which change
+// nothing else -- moves the sum, and a framework that skips a haircut or a production misses its
+// work. The room leaves for Exit only once the barber's n-th Next is in, and fail()s on an
+// (n+1)-th: the factory's Exit and the barber's last Next come from two senders, and nothing
+// orders them.
 inline std::uint64_t expected(const qvo::Params &p) {
     const auto n   = at_least_one(p.get("haircuts"), "haircuts");
     const auto apr = at_least_one(p.get("apr"), "apr");
     const auto ahr = at_least_one(p.get("ahr"), "ahr");
     (void)at_least_one(p.get("room"), "room");
+    const std::uint64_t per_customer = weight(kTagStart) + weight(kTagWait) + weight(kTagEnter) +
+                                       weight(kTagNext) + weight(kTagCut);
     std::uint64_t acc = 0;
-    for (std::uint64_t i = 1; i <= n; ++i) acc += qvo::mix(i);
+    for (std::uint64_t i = 1; i <= n; ++i) acc += qvo::mix(i) + identity(i) * per_customer;
     for (std::uint64_t k = 0; k < n; ++k) acc += haircut_work(k, ahr);
     for (std::uint64_t i = 0; i < n; ++i) acc += production_work(i, apr);
-    acc += n * (weight(kTagStart) + weight(kTagWait) + weight(kTagEnter) + weight(kTagNext) +
-                weight(kTagCut));
     return acc;
 }
 

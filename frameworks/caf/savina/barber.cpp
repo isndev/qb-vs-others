@@ -9,8 +9,9 @@
 //                the room, busy-work -- because a CAF mail is enqueued at the receiver at once, so
 //                the room starts while the factory is still producing. Messages are built-in atoms
 //                plus arguments, typed per receiver: Start `(tick_atom)`, Enter `(join_atom,
-//                actor)`, Full `(leave_atom)`, Wait `(idle_atom)`, Next `(get_atom)`, Returned
-//                `(redirect_atom, actor)`, Done `(ok_atom, uint64 value, uint64 messages)`, Exit
+//                actor, uint64 number)`, Full `(leave_atom)`, Wait `(idle_atom)`, Next `(get_atom,
+//                uint64 number)`, Returned `(redirect_atom, actor, uint64 number)`, Done
+//                `(ok_atom, uint64 value, uint64 messages)`, Exit
 //                `(close_atom, uint64 partial, uint64 messages)`. Every customer is spawned by the
 //                factory and quits after reporting; the work-stealing pool places everything.
 
@@ -57,27 +58,31 @@ struct factory_state {
     std::uint64_t apr{0};
     std::uint64_t ready{0};
     std::uint64_t served{0};
-    std::uint64_t returned{0};
     std::uint64_t received{0};
     std::uint64_t messages{0};  // reported by the customers
     std::uint64_t sum{0};
     qvo::Watch   *watch{nullptr};
 };
 
+struct seat {
+    caf::actor    customer;
+    std::uint64_t number{0};
+};
+
 struct room_state {
-    caf::actor              factory;
-    caf::actor              barber;
-    std::vector<caf::actor> seats;  // a ring of `room` seats
-    std::size_t             head{0};
-    std::size_t             waiting{0};
-    bool                    asleep{true};
-    std::uint64_t           haircuts{0};
-    std::uint64_t           entered{0};
-    std::uint64_t           rejected{0};
-    std::uint64_t           wakeups{0};
-    std::uint64_t           nexts{0};
-    std::uint64_t           naps{0};
-    std::uint64_t           received{0};
+    caf::actor        factory;
+    caf::actor        barber;
+    std::vector<seat> seats;  // a ring of `room` seats
+    std::size_t       head{0};
+    std::size_t       waiting{0};
+    bool              asleep{true};
+    std::uint64_t     haircuts{0};
+    std::uint64_t     acc{0};  // the room's terms of the checksum (barber.h)
+    std::uint64_t     rejected{0};
+    std::uint64_t     wakeups{0};
+    std::uint64_t     wake_nexts{0};
+    std::uint64_t     barber_nexts{0};
+    std::uint64_t     received{0};
     bool                    exit{false};
     std::uint64_t           exit_partial{0};
     std::uint64_t           exit_messages{0};
@@ -89,7 +94,7 @@ struct barber_state {
     caf::actor    room;
     std::uint64_t ahr{0};
     std::uint64_t haircuts{0};
-    std::uint64_t naps{0};
+    std::uint64_t acc{0};  // the barber's terms of the checksum (barber.h)
     std::uint64_t received{0};
     qvo::Watch   *watch{nullptr};
     Sink         *sink{nullptr};
@@ -104,7 +109,8 @@ caf::behavior customer_fun(caf::stateful_actor<customer_state> *self, caf::actor
             auto &s = self->state();
             ++s.received;
             ++s.fulls;
-            self->mail(caf::redirect_atom_v, caf::actor_cast<caf::actor>(self)).send(s.factory);
+            self->mail(caf::redirect_atom_v, caf::actor_cast<caf::actor>(self), s.number)
+                .send(s.factory);
         },
         [self](caf::idle_atom) {  // Wait
             auto &s = self->state();
@@ -120,8 +126,10 @@ caf::behavior customer_fun(caf::stateful_actor<customer_state> *self, caf::actor
             auto &s = self->state();
             ++s.received;
             self->mail(caf::ok_atom_v,
-                       qvo::mix(s.number) + haircut + weight(kTagStart) * s.starts +
-                           weight(kTagWait) * s.waits + weight(kTagFull) * s.fulls,
+                       qvo::mix(s.number) + haircut +
+                           identity(s.number) * (weight(kTagStart) * s.starts +
+                                                 weight(kTagWait) * s.waits +
+                                                 weight(kTagFull) * s.fulls),
                        s.received)
                 .send(s.factory);
             self->quit();
@@ -143,23 +151,24 @@ caf::behavior barber_fun(caf::stateful_actor<barber_state> *self, caf::actor fac
             s.room  = std::move(room);
             self->mail(caf::ok_atom_v).send(s.factory);
         },
-        [self](caf::join_atom, caf::actor customer) {  // Enter: a customer to serve
+        [self](caf::join_atom, caf::actor customer, std::uint64_t number) {  // Enter: serve one
             auto &s = self->state();
             ++s.received;
+            s.acc += weight(kTagCut) * identity(number);
             self->mail(caf::tick_atom_v).send(customer);
             const std::uint64_t h = haircut_work(s.haircuts++, s.ahr);
             self->mail(caf::ok_atom_v, h, std::uint64_t{0}).send(customer);
-            self->mail(caf::get_atom_v).send(s.room);
+            self->mail(caf::get_atom_v, number).send(s.room);
         },
         [self](caf::idle_atom) {  // Wait: nobody in the room
             auto &s = self->state();
             ++s.received;
-            ++s.naps;
+            s.acc += weight(kTagNap);
         },
         [self](caf::close_atom, std::uint64_t partial, std::uint64_t messages) {  // Exit
             auto &s = self->state();
             ++s.received;
-            s.sink->checksum = partial + weight(kTagCut) * s.haircuts + weight(kTagNap) * s.naps;
+            s.sink->checksum = partial + s.acc;
             s.sink->messages = messages + s.received;
             s.watch->stop();
             self->quit();
@@ -178,17 +187,15 @@ caf::behavior room_fun(caf::stateful_actor<room_state> *self, caf::actor factory
     st.seats.resize(static_cast<std::size_t>(seats));
 
     // Exit leaves only once the barber's n-th Next is in: the factory's Exit and the barber's last
-    // Next come from two senders, and nothing orders them.
+    // Next come from two senders, and nothing orders them (an (n+1)-th fail()s on Next).
     auto maybe_exit = [self] {
         auto &s = self->state();
-        if (!s.exit || s.nexts - s.wakeups != s.haircuts) return;
+        if (!s.exit || s.barber_nexts < s.haircuts) return;
         s.exit             = false;
         s.sink->rejections = s.rejected;
         s.sink->wakeups    = s.wakeups;
-        const auto partial = s.exit_partial + weight(kTagEnter) * (s.entered - s.rejected) -
-                             (weight(kTagFull) + weight(kTagReturned)) * s.rejected +
-                             weight(kTagWait) * s.wakeups + weight(kTagNext) * (s.nexts - s.wakeups) -
-                             weight(kTagNap) * s.naps;
+        const auto partial =
+            s.exit_partial + s.acc + weight(kTagWake) * s.wake_nexts - weight(kTagWake) * s.wakeups;
         self->mail(caf::close_atom_v, partial, s.exit_messages + s.received).send(s.barber);
         self->quit();
     };
@@ -196,35 +203,44 @@ caf::behavior room_fun(caf::stateful_actor<room_state> *self, caf::actor factory
     return {
         // Handshake, once, outside the window.
         [self](caf::tick_atom) { self->mail(caf::ok_atom_v).send(self->state().factory); },
-        [self](caf::join_atom, caf::actor customer) {  // Enter
-            auto &s = self->state();
+        [self](caf::join_atom, caf::actor customer, std::uint64_t number) {  // Enter
+            auto               &s    = self->state();
+            const std::uint64_t id_i = identity(number);
             ++s.received;
-            ++s.entered;
             if (s.waiting == s.seats.size()) {
                 ++s.rejected;
+                s.acc -= (weight(kTagFull) + weight(kTagReturned)) * id_i;
                 self->mail(caf::leave_atom_v).send(customer);
                 return;
             }
+            s.acc += weight(kTagEnter) * id_i;
             if (s.asleep) {
                 s.asleep = false;
                 ++s.wakeups;
-                self->mail(caf::get_atom_v).send(caf::actor_cast<caf::actor>(self));
+                s.acc += weight(kTagWait) * id_i;
+                self->mail(caf::get_atom_v, std::uint64_t{0})
+                    .send(caf::actor_cast<caf::actor>(self));
             } else {
                 self->mail(caf::idle_atom_v).send(customer);
             }
-            s.seats[(s.head + s.waiting++) % s.seats.size()] = std::move(customer);
+            s.seats[(s.head + s.waiting++) % s.seats.size()] = seat{std::move(customer), number};
         },
-        [self, maybe_exit](caf::get_atom) {  // Next
+        [self, maybe_exit](caf::get_atom, std::uint64_t number) {  // Next
             auto &s = self->state();
             ++s.received;
-            ++s.nexts;
-            if (s.waiting != 0) {
-                caf::actor customer = std::move(s.seats[s.head]);
-                s.head              = (s.head + 1) % s.seats.size();
-                --s.waiting;
-                self->mail(caf::join_atom_v, std::move(customer)).send(s.barber);
+            if (number == 0) {
+                ++s.wake_nexts;
             } else {
-                ++s.naps;
+                if (++s.barber_nexts > s.haircuts) fail("the room received more Nexts than haircuts");
+                s.acc += weight(kTagNext) * identity(number);
+            }
+            if (s.waiting != 0) {
+                seat next = std::move(s.seats[s.head]);
+                s.head    = (s.head + 1) % s.seats.size();
+                --s.waiting;
+                self->mail(caf::join_atom_v, std::move(next.customer), next.number).send(s.barber);
+            } else {
+                s.acc -= weight(kTagNap);
                 s.asleep = true;
                 self->mail(caf::idle_atom_v).send(s.barber);
             }
@@ -270,15 +286,15 @@ caf::behavior factory_fun(caf::stateful_actor<factory_state> *self, std::uint64_
             ++s.received;
             for (std::uint64_t i = 0; i < s.haircuts; ++i) {
                 auto customer = self->spawn<qvocaf::kSpawnOptions>(customer_fun, me, i + 1);
-                self->mail(caf::join_atom_v, std::move(customer)).send(s.room);
+                self->mail(caf::join_atom_v, std::move(customer), i + 1).send(s.room);
                 s.sum += production_work(i, s.apr);
             }
         },
-        [self](caf::redirect_atom, caf::actor customer) {  // Returned
+        [self](caf::redirect_atom, caf::actor customer, std::uint64_t number) {  // Returned
             auto &s = self->state();
             ++s.received;
-            ++s.returned;
-            self->mail(caf::join_atom_v, std::move(customer)).send(s.room);
+            s.sum += weight(kTagReturned) * identity(number);
+            self->mail(caf::join_atom_v, std::move(customer), number).send(s.room);
         },
         [self](caf::ok_atom, std::uint64_t value, std::uint64_t messages) {  // Done
             auto &s = self->state();
@@ -286,9 +302,7 @@ caf::behavior factory_fun(caf::stateful_actor<factory_state> *self, std::uint64_
             s.sum += value;
             s.messages += messages;
             if (++s.served != s.haircuts) return;
-            self->mail(caf::close_atom_v, s.sum + weight(kTagReturned) * s.returned,
-                       s.messages + s.received)
-                .send(s.room);
+            self->mail(caf::close_atom_v, s.sum, s.messages + s.received).send(s.room);
             self->quit();
         },
     };
