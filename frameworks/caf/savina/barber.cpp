@@ -4,10 +4,12 @@
 //                built-in atoms, `self->spawn(...)` from inside a behavior for a child created at
 //                run time, `self->quit()` for an actor's own end) -- CAF's own idioms from
 //                libcaf_core/caf/scheduled_actor.hpp.
-// @idiom-note    The reference's actors one for one. The factory's Start handler loops over every
-//                customer exactly as SleepingBarberAkkaActorBenchmark does -- spawn, mail Enter to
-//                the room, busy-work -- because a CAF mail is enqueued at the receiver at once, so
-//                the room starts while the factory is still producing. Messages are built-in atoms
+// @idiom-note    The reference's actors one for one, and both factory shapes of the spec's `pace`
+//                axis: pace=0 loops over every customer in the Start handler exactly as
+//                SleepingBarberAkkaActorBenchmark does -- spawn, mail Enter to the room,
+//                busy-work -- and pace=1 produces one customer per self-mailed Start. A mail is
+//                enqueued in the room's mailbox at once; whether the room RUNS before the factory's
+//                handler returns is the scheduler's decision. Messages are built-in atoms
 //                plus arguments, typed per receiver: Start `(tick_atom)`, Enter `(join_atom,
 //                actor, uint64 number)`, Full `(leave_atom)`, Wait `(idle_atom)`, Next `(get_atom,
 //                uint64 number)`, Returned `(redirect_atom, actor, uint64 number)`, Done
@@ -56,6 +58,8 @@ struct factory_state {
     caf::actor    barber;
     std::uint64_t haircuts{0};
     std::uint64_t apr{0};
+    bool          paced{false};
+    std::uint64_t produced{0};
     std::uint64_t ready{0};
     std::uint64_t served{0};
     std::uint64_t received{0};
@@ -258,11 +262,12 @@ caf::behavior room_fun(caf::stateful_actor<room_state> *self, caf::actor factory
 }
 
 caf::behavior factory_fun(caf::stateful_actor<factory_state> *self, std::uint64_t haircuts,
-                          std::uint64_t seats, std::uint64_t apr, std::uint64_t ahr,
+                          std::uint64_t seats, std::uint64_t apr, std::uint64_t ahr, bool paced,
                           qvo::Watch *watch, Sink *sink) {
     auto &st    = self->state();
     st.haircuts = haircuts;
     st.apr      = apr;
+    st.paced    = paced;
     st.watch    = watch;
 
     const auto me = caf::actor_cast<caf::actor>(self);
@@ -280,15 +285,18 @@ caf::behavior factory_fun(caf::stateful_actor<factory_state> *self, std::uint64_
             s.watch->start();
             self->mail(caf::tick_atom_v).send(caf::actor_cast<caf::actor>(self));
         },
-        [self](caf::tick_atom) {  // Start: produce every customer, as the reference does
+        // Start. pace=0: every customer from this one handler, as the reference; pace=1: one.
+        [self](caf::tick_atom) {
             auto      &s  = self->state();
             const auto me = caf::actor_cast<caf::actor>(self);
             ++s.received;
-            for (std::uint64_t i = 0; i < s.haircuts; ++i) {
-                auto customer = self->spawn<qvocaf::kSpawnOptions>(customer_fun, me, i + 1);
+            do {
+                const std::uint64_t i        = s.produced++;
+                auto                customer = self->spawn<qvocaf::kSpawnOptions>(customer_fun, me, i + 1);
                 self->mail(caf::join_atom_v, std::move(customer), i + 1).send(s.room);
                 s.sum += production_work(i, s.apr);
-            }
+            } while (!s.paced && s.produced < s.haircuts);
+            if (s.paced && s.produced < s.haircuts) self->mail(caf::tick_atom_v).send(me);
         },
         [self](caf::redirect_atom, caf::actor customer, std::uint64_t number) {  // Returned
             auto &s = self->state();
@@ -313,6 +321,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const auto seats    = static_cast<std::uint64_t>(p.get("room"));
     const auto apr      = static_cast<std::uint64_t>(p.get("apr"));
     const auto ahr      = static_cast<std::uint64_t>(p.get("ahr"));
+    const bool pace     = paced(p);
     const auto cores    = static_cast<std::size_t>(p.get("cores"));
     const bool spin     = p.get("wait") != 0;
     qvocaf::refuse_spin_if_detached(spin);
@@ -325,7 +334,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         caf::actor_system sys{cfg};
         qvocaf::assert_budget(sys, cores);
 
-        sys.spawn<qvocaf::kSpawnOptions>(factory_fun, haircuts, seats, apr, ahr, &watch, &sink);
+        sys.spawn<qvocaf::kSpawnOptions>(factory_fun, haircuts, seats, apr, ahr, pace, &watch,
+                                         &sink);
         sys.await_all_actors_done();
         qvocaf::assert_pins_took();
     }
@@ -345,20 +355,24 @@ int main(int argc, char **argv) {
     spec.framework         = QVO_FRAMEWORK_ID;
     spec.framework_version = QVO_FRAMEWORK_VERSION;
     spec.params            = qvospec::savina::barber::params();
+    // The factory shape this adapter's table cell runs: the reference's (pace=0) until the
+    // quiet-host measurement of both forms names the faster one (benchmarks/savina/barber.md).
+    spec.params["pace"] = 0;
     spec.expected          = qvospec::savina::barber::expected;
     spec.work_unit         = qvospec::savina::barber::kWorkUnit;
     spec.work_units        = qvospec::savina::barber::work_units;
     spec.idiom_source      = "the fib adapter + self->spawn() from a behavior (scheduled_actor.hpp)";
-    spec.idiom_note        = "the reference's actors one for one; the factory's Start handler "
-                             "loops over every customer (spawn, mail Enter, busy-work) as the "
-                             "reference does; built-in atoms typed per receiver; placement left "
-                             "to the work-stealing pool";
+    spec.idiom_note        = "the reference's actors one for one; pace=0: the Start handler loops "
+                             "over every customer (spawn, mail Enter, busy-work) as the reference "
+                             "does, pace=1: one customer per self-mailed Start; built-in atoms "
+                             "typed per receiver; placement left to the work-stealing pool";
     spec.caveats           = qvocaf::caveats(qvocaf::Shape::other);
     spec.caveats.emplace_back(
-        "the factory produces every customer inside ONE handler, as the reference does: a CAF "
-        "mail is enqueued at its receiver at once, so the room and the barber start while the "
-        "factory is still producing -- qb's and the floor's factories pace themselves with one "
-        "Start per customer instead (benchmarks/savina/barber.md)");
+        "the run's `pace` is in its params: 0 is the reference's factory, every customer from one "
+        "handler; 1 adds n-1 self-mailed Starts to the reported count. A mail is enqueued in the "
+        "room's mailbox at once, but the pool decides when the room runs: on the unpinned "
+        "correctness runs at cores=2 with pace=0, CAF woke the barber exactly once -- the room "
+        "did not run until production had ended (benchmarks/savina/barber.md)");
 
     return qvo::run(argc, argv, std::move(spec), savina_barber_caf::body);
 }

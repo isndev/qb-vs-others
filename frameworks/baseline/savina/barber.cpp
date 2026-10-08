@@ -6,19 +6,20 @@
 //                has reported.
 // @idiom-note    The floor does what the semantics require and nothing else: a customer is one
 //                `new`, one slot and one `delete`, the room is a ring of customer ids, and every
-//                message is one ring push. The factory paces itself with one Start per customer,
-//                like qb's. Measured against a factory that loops over every customer in one
-//                handler, the two are level here; the loop is not used because a worker in it
-//                drains none of its inbound rings, and with enough customers the two workers
-//                would each spin on the other's full ring -- a floor must not have a size at which
-//                it hangs. With cores=2 the factory and the customers are on worker 0 and the
-//                room and the barber on worker 1, the placement qb's cell has.
+//                message is one ring push. Both factory shapes of the spec's `pace` axis: pace=0
+//                produces every customer inside the one Start handler, as the reference does;
+//                pace=1 one per self-addressed Start. A worker inside the pace=0 loop drains none
+//                of its inbound rings, so at cores>=2 that shape is refused above `haircuts` =
+//                65 536, the size of one ring (see body()). With cores=2 the factory and the
+//                customers are on worker 0 and the room and the barber on worker 1, the placement
+//                qb's cell has.
 
 #include <qvospec/savina/barber.h>
 
 #include "../baseline_support.h"
 
 #include <cstdio>
+#include <type_traits>
 #include <vector>
 
 namespace savina_barber_baseline {
@@ -104,10 +105,25 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const auto     seats    = static_cast<std::size_t>(p.get("room"));
     const auto     apr      = static_cast<std::uint64_t>(p.get("apr"));
     const auto     ahr      = static_cast<std::uint64_t>(p.get("ahr"));
+    const bool     pace     = paced(p);
     const auto     cores    = static_cast<unsigned>(p.get("cores"));
     const bool     spin     = p.get("wait") != 0;
     const unsigned W        = cores < 1 ? 1u : cores;
     const unsigned shop     = 1 % W;
+
+    // The pace=0 factory sends every Enter from inside one handler, during which worker 0 drains
+    // none of its inbound rings. With one worker that is safe (Mesh::send drains a full ring it
+    // owns inline). With two, worker 1 can fill the ring back to worker 0 (Wait, Start and Done
+    // for every customer it handles) and then spin on it; the loop still finishes as long as the
+    // Enters it sends all fit in the ring to worker 1 -- `haircuts` <= one ring. Above that the two
+    // workers can each spin on the other's full ring, so that configuration is refused here
+    // rather than allowed to hang. (kOneRing is held to the mesh's own capacity below.)
+    constexpr std::uint64_t kOneRing = std::uint64_t{1} << 16;
+    if (!pace && W > 1 && haircuts > kOneRing)
+        qvo::not_applicable("pace=0 at cores>=2 with haircuts above 65 536: the floor's looping "
+                            "factory drains none of its inbound rings, and its Enters no longer "
+                            "fit in the ring to the room's worker -- the two workers could each "
+                            "spin on the other's full ring");
 
     std::vector<Table>  tables(W);
     const std::uint32_t factory = tables[0].alloc(0, W, nullptr);
@@ -139,13 +155,17 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         switch (msg.tag) {
         case kStart: {
             if (msg.dst == factory) {
+                // pace=0: every customer from this one handler, as the reference; pace=1: one.
                 ++f.received;
-                const std::uint64_t i  = f.produced++;
-                auto               *c  = new Customer{i + 1, 0, 0, 0, 0};
-                const std::uint32_t id = tables[worker].alloc(worker, W, c);
-                m.send(worker, qvobase::Msg{room, kEnter, id, i + 1});
-                f.sum += production_work(i, apr);
-                if (f.produced < haircuts) m.send(worker, qvobase::Msg{factory, kStart, 0, 0});
+                do {
+                    const std::uint64_t i  = f.produced++;
+                    auto               *c  = new Customer{i + 1, 0, 0, 0, 0};
+                    const std::uint32_t id = tables[worker].alloc(worker, W, c);
+                    m.send(worker, qvobase::Msg{room, kEnter, id, i + 1});
+                    f.sum += production_work(i, apr);
+                } while (!pace && f.produced < haircuts);
+                if (pace && f.produced < haircuts)
+                    m.send(worker, qvobase::Msg{factory, kStart, 0, 0});
             } else {
                 Customer &c = node(msg.dst);
                 ++c.received;
@@ -267,6 +287,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         }
         }
     });
+    static_assert(std::remove_reference_t<decltype(mesh)>::kRingCapacity == kOneRing,
+                  "the pace=0 refusal above is sized on one ring of the mesh");
     mesh.start();
 
     watch.start();
@@ -287,23 +309,28 @@ int main(int argc, char **argv) {
     spec.framework         = QVO_FRAMEWORK_ID;
     spec.framework_version = QVO_FRAMEWORK_VERSION;
     spec.params            = qvospec::savina::barber::params();
+    // The factory shape this floor's cell runs: the reference's (pace=0) until the quiet-host
+    // measurement of both forms names the faster one (benchmarks/savina/barber.md).
+    spec.params["pace"] = 0;
     spec.expected          = qvospec::savina::barber::expected;
     spec.work_unit         = qvospec::savina::barber::kWorkUnit;
     spec.work_units        = qvospec::savina::barber::work_units;
     spec.idiom_source      = "none -- hand-written floor";
     spec.idiom_note        = "raw pinned threads + one bounded SPSC ring per (worker, worker) "
                              "pair; a customer is a heap node in the factory's worker's slot table, "
-                             "created inside the window and freed after reporting; the factory "
-                             "paces itself with one Start per customer; not an actor framework";
+                             "created inside the window and freed after reporting; pace=0: every "
+                             "customer from one Start handler, pace=1: one per self-addressed "
+                             "Start; not an actor framework";
     spec.caveats           = {
         "THIS IS NOT A FRAMEWORK. A customer is one `new`, one slot and one `delete`, the waiting "
         "room a ring of ids, a message one ring push: the floor for what this coordination costs",
         "the factory and every customer are on worker 0, the room and the barber on worker "
         "1 % cores -- the static placement qb's cell has, so this floor bounds the placing "
         "frameworks and NOT the pools",
-        "the factory paces itself with one Start per customer (n-1 messages the reference's "
-        "looping factory does not send, in the reported count): measured level with the loop, "
-        "and unlike the loop it never stops draining its worker's inbound rings",
+        "the run's `pace` is in its params: 0 is the reference's factory, every customer from "
+        "one handler, refused at cores>=2 above haircuts=65 536 (one ring: a worker inside the "
+        "loop drains none of its inbound rings); 1 adds n-1 self-addressed Starts to the "
+        "reported count",
         "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"};
 
     return qvo::run(argc, argv, std::move(spec), savina_barber_baseline::body);

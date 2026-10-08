@@ -47,19 +47,25 @@ inline constexpr const char *kId = "savina/barber";
 //               runtime orders the room's and the factory's turns by its queue, not by the wall
 //               clock both busy-works are tuned against, and a 1 000-seat room then turns most of
 //               the run into customers bouncing off it -- a retry storm whose size is decided by
-//               each framework's scheduling order, not by the problem. A smaller room is still a
-//               parameter, and every implementation still implements the full branch.
+//               each framework's scheduling order, not by the problem. So the table cell never
+//               times a full room; Savina's 1 000 is a declared side experiment (`room=1000`), and
+//               every implementation still implements the full branch.
 // `apr`      -- average production rate: the factory busy-works `uniform[0, apr) + 10` iterations
 //               after each customer. Savina's own default, 1 000; no deviation.
 // `ahr`      -- average haircut rate: the barber busy-works `uniform[0, ahr) + 10` iterations per
 //               haircut. Savina's own default, 1 000; no deviation.
+// `pace`     -- the factory's SHAPE, a declared axis (barber.md, "The factory's shape"): 0 = the
+//               reference's, every customer produced inside the one Start handler; 1 = paced, one
+//               customer per self-addressed Start (n-1 more messages). Every adapter implements
+//               both; each adapter's table cell runs the faster of its two forms as measured on the
+//               quiet host, and its main() says which. The result document records the value.
 // `cores`    -- 1: everything on one thread; 2: for the frameworks that place, the factory and the
 //               customers it creates on one core, the room and the barber on the other -- the
 //               barber's turn (Next -> Enter) stays on his core, and production overlaps haircuts.
 // `wait`     -- 1 = spin, 0 = park. See ping-pong.h for why this is a declared axis.
 inline std::map<std::string, long long> params() {
-    return {{"haircuts", 5000}, {"room", 5000}, {"apr", 1000},
-            {"ahr", 1000},      {"cores", 2},   {"wait", 1}};
+    return {{"haircuts", 5000}, {"room", 5000}, {"apr", 1000}, {"ahr", 1000},
+            {"pace", 0},        {"cores", 2},   {"wait", 1}};
 }
 
 // The busy work. Savina's busyWait(limit) calls Math.random() `limit` times with
@@ -80,6 +86,16 @@ inline std::uint64_t at_least_one(long long value, const char *name) {
         std::abort();
     }
     return static_cast<std::uint64_t>(value);
+}
+
+// `pace`, which is 0 or 1: true for the paced factory.
+inline bool paced(const qvo::Params &p) {
+    const long long v = p.get("pace");
+    if (v != 0 && v != 1) {
+        std::fprintf(stderr, "savina/barber: pace must be 0 or 1 (got %lld)\n", v);
+        std::abort();
+    }
+    return v == 1;
 }
 
 // Busy work after the i-th customer (i from 0).
@@ -160,6 +176,7 @@ inline std::uint64_t expected(const qvo::Params &p) {
     const auto apr = at_least_one(p.get("apr"), "apr");
     const auto ahr = at_least_one(p.get("ahr"), "ahr");
     (void)at_least_one(p.get("room"), "room");
+    (void)paced(p);
     const std::uint64_t per_customer = weight(kTagStart) + weight(kTagWait) + weight(kTagEnter) +
                                        weight(kTagNext) + weight(kTagCut);
     std::uint64_t acc = 0;
@@ -178,9 +195,9 @@ inline std::uint64_t work_units(const qvo::Params &p) {
 // NO expected_messages. The count depends on the interleaving: every implementation reports the
 // messages its actors received, which is 7n + 3r + a + 3 (n haircuts, r rejections, a wake-ups of
 // the barber: the factory's Start, n+r Enters at the room and n at the barber, r Full, r Returned,
-// n Waits in all, n+a Nexts, n Starts, 2n Dones, two Exits) -- plus n-1 for an implementation whose
-// factory paces itself with one Start per customer (qb, the floor; their idiom notes say why).
-// What a count would assert is asserted per kind by the checksum above.
+// n Waits in all, n+a Nexts, n Starts, 2n Dones, two Exits) -- plus n-1 with `pace=1`, whose
+// factory sends itself one Start per customer. What a count would assert is asserted per kind by
+// the checksum above.
 
 }  // namespace qvospec::savina::barber
 

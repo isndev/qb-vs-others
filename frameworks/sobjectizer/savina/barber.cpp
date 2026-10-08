@@ -6,10 +6,11 @@
 //                an agent to create agents at run time -- with
 //                `so_deregister_agent_coop_normally()` for a customer's own end.
 // @idiom-note    The reference's actors one for one, as agents on their direct mboxes; Savina's
-//                payload-free messages are signals. The factory's Start handler loops over every
-//                customer exactly as SleepingBarberAkkaActorBenchmark does -- a child coop per
-//                customer, Enter to the room, busy-work -- because a SObjectizer send is queued at
-//                the receiver at once, so the room starts while the factory is still producing.
+//                payload-free messages are signals. Both factory shapes of the spec's `pace` axis:
+//                pace=0 loops over every customer in the Start handler exactly as
+//                SleepingBarberAkkaActorBenchmark does -- a child coop per customer, Enter to the
+//                room, busy-work -- and pace=1 produces one customer per self-sent Start. A send
+//                is queued at its receiver at once; when the room runs is the dispatcher's.
 //                Every customer is its own child coop of the shop and deregisters it after
 //                reporting (an agent ends by deregistering its coop; customers sharing one would
 //                take each other down). The factory, the room and the barber are one coop, bound
@@ -108,9 +109,11 @@ public:
 class factory_t final : public so_5::agent_t {
     const std::uint64_t             m_haircuts;
     const std::uint64_t             m_apr;
+    const bool                      m_paced;
     const so_5::disp_binder_shptr_t m_binder;
     qvo::Watch                     &m_watch;
     so_5::mbox_t                    m_room;
+    std::uint64_t                   m_produced{0};
     std::uint64_t                   m_ready{0};
     std::uint64_t                   m_served{0};
     std::uint64_t                   m_received{0};
@@ -118,11 +121,12 @@ class factory_t final : public so_5::agent_t {
     std::uint64_t                   m_sum{0};
 
 public:
-    factory_t(context_t ctx, std::uint64_t haircuts, std::uint64_t apr,
+    factory_t(context_t ctx, std::uint64_t haircuts, std::uint64_t apr, bool paced,
               so_5::disp_binder_shptr_t binder, qvo::Watch &watch)
         : so_5::agent_t{std::move(ctx)}
         , m_haircuts{haircuts}
         , m_apr{apr}
+        , m_paced{paced}
         , m_binder{std::move(binder)}
         , m_watch{watch} {}
 
@@ -136,18 +140,20 @@ public:
                 m_watch.start();
                 so_5::send<msg_start>(so_direct_mbox());
             })
-            // Start: produce every customer, as the reference does.
+            // Start. pace=0: every customer from this one handler, as the reference; pace=1: one.
             .event([this](so_5::mhood_t<msg_start>) {
                 ++m_received;
-                for (std::uint64_t i = 0; i < m_haircuts; ++i) {
-                    so_5::mbox_t customer;
+                do {
+                    const std::uint64_t i = m_produced++;
+                    so_5::mbox_t        customer;
                     so_5::introduce_child_coop(*this, m_binder, [&](so_5::coop_t &coop) {
                         customer = coop.make_agent<customer_t>(so_direct_mbox(), i + 1)
                                        ->so_direct_mbox();
                     });
                     so_5::send<msg_enter>(m_room, std::move(customer), i + 1);
                     m_sum += production_work(i, m_apr);
-                }
+                } while (!m_paced && m_produced < m_haircuts);
+                if (m_paced && m_produced < m_haircuts) so_5::send<msg_start>(so_direct_mbox());
             })
             .event([this](so_5::mhood_t<msg_returned> m) {
                 ++m_received;
@@ -317,6 +323,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const auto seats    = static_cast<std::uint64_t>(p.get("room"));
     const auto apr      = static_cast<std::uint64_t>(p.get("apr"));
     const auto ahr      = static_cast<std::uint64_t>(p.get("ahr"));
+    const bool pace     = paced(p);
     const auto cores    = static_cast<int>(p.get("cores"));
     const bool spin     = p.get("wait") != 0;
 
@@ -324,7 +331,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     so_5::launch([&](so_5::environment_t &env) {
         auto binder = qvoso::make_pool_binder(env, cores, spin);
         env.introduce_coop(binder, [&](so_5::coop_t &coop) {
-            auto *factory = coop.make_agent<factory_t>(haircuts, apr, binder, std::ref(watch));
+            auto *factory =
+                coop.make_agent<factory_t>(haircuts, apr, pace, binder, std::ref(watch));
             auto *room    = coop.make_agent<room_t>(haircuts, seats, std::ref(sink));
             auto *barber  = coop.make_agent<barber_t>(ahr, std::ref(watch), std::ref(sink));
             factory->set_room(room->so_direct_mbox());
@@ -346,25 +354,27 @@ int main(int argc, char **argv) {
     spec.framework         = QVO_FRAMEWORK_ID;
     spec.framework_version = QVO_FRAMEWORK_VERSION;
     spec.params            = qvospec::savina::barber::params();
+    // The factory shape this adapter's table cell runs: the reference's (pace=0) until the
+    // quiet-host measurement of both forms names the faster one (benchmarks/savina/barber.md).
+    spec.params["pace"] = 0;
     spec.expected          = qvospec::savina::barber::expected;
     spec.work_unit         = qvospec::savina::barber::kWorkUnit;
     spec.work_units        = qvospec::savina::barber::work_units;
     spec.idiom_source      = "the fib adapter + so_5::introduce_child_coop (environment.hpp) + "
                              "so_deregister_agent_coop_normally";
     spec.idiom_note        = "the reference's actors one for one on direct mboxes, payload-free "
-                             "messages as signals; the factory's Start handler loops over every "
-                             "customer (child coop, Enter, busy-work) as the reference does; "
-                             "thread_pool(cores) with fifo_t::individual for cores>=2";
+                             "messages as signals; pace=0: the Start handler loops over every "
+                             "customer (child coop, Enter, busy-work) as the reference does, "
+                             "pace=1: one per self-sent Start; thread_pool(cores) with "
+                             "fifo_t::individual for cores>=2";
     spec.caveats           = qvoso::pool_caveats();
     spec.caveats.emplace_back(
         "SObjectizer creates agents only inside a cooperation registered with the environment, "
         "so every customer pays one child-coop registration and one deregistration on top of the "
         "agent itself -- the framework's own dynamic-agent idiom, as in savina/fib");
     spec.caveats.emplace_back(
-        "the factory produces every customer inside ONE handler, as the reference does: a "
-        "SObjectizer send is queued at its receiver at once, so the room and the barber start "
-        "while the factory is still producing -- qb's and the floor's factories pace themselves "
-        "with one Start per customer instead (benchmarks/savina/barber.md)");
+        "the run's `pace` is in its params: 0 is the reference's factory, every customer from one "
+        "handler; 1 adds n-1 self-sent Starts to the reported count (benchmarks/savina/barber.md)");
 
     return qvo::run(argc, argv, std::move(spec), savina_barber_sobjectizer::body);
 }

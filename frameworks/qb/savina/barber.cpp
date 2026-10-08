@@ -1,21 +1,20 @@
 // @benchmark     savina/barber
 // @framework     qb
-// @idiom-source  qb/llm/qb.llm.md -- "VirtualCore" (per pass: drain the inter-core mailbox, drain
-//                the local queue, flush the outgoing pipes) and "Dynamic actor creation"
-//                (`addRefActor<T>()` from inside an actor creates a child ON THE SAME VirtualCore,
-//                its `onInit` run synchronously, the handle's `id()` valid before the call
-//                returns) -- plus `kill()` for a customer's own end.
-// @idiom-note    The factory paces itself: its Start handler creates ONE customer, pushes it to the
-//                room, busy-works the production delay and pushes Start to itself again, where
-//                Savina's factory loops over every customer inside one handler. In qb a push to
-//                another VirtualCore is published by the pass's flush, after the handler returns,
-//                so a factory that looped would hold all its customers until production ended
-//                and the room would never overlap with it; a short handler per item is how qb
-//                writes a producer. The price is n-1 self-addressed Starts the reference does not
-//                send, counted in the reported messages. Every customer is an actor created by the
-//                factory with `addRefActor` -- on the factory's core -- and killed after it reports.
-//                With cores=2 the room and the barber share the other core, so the barber's
-//                Next -> Enter turn never crosses a core.
+// @idiom-source  qb/llm/qb.llm.md -- "`send<T>()` is unordered; `push<T>()` is ordered" (`send`
+//                hands the event to the peer's ring at once instead of the pass's batched flush,
+//                which wins for ONE event with nothing behind it to batch) and "Dynamic actor
+//                creation" (`addRefActor<T>()` from inside an actor creates a child ON THE SAME
+//                VirtualCore, its `onInit` run synchronously, the handle's `id()` valid before the
+//                call returns) -- plus `kill()` for a customer's own end.
+// @idiom-note    Both factory shapes of the spec's `pace` axis. pace=0 is the reference's: one
+//                Start handler creates every customer, hands it to the room and busy-works the
+//                production delay. The hand-over is `send<Enter>`, published into the room's core
+//                at once: a `push` would be published by the pass's flush, after the handler
+//                returns, and would hold every customer until production ended. pace=1 creates one
+//                customer per self-addressed Start, the hand-over the same `send`. Every customer
+//                is an actor created by the factory with `addRefActor` -- on the factory's core --
+//                and killed after it reports. With cores=2 the room and the barber share the
+//                other core, so the barber's Next -> Enter turn never crosses a core.
 
 #include <qvospec/savina/barber.h>
 
@@ -126,6 +125,7 @@ class Factory final : public qb::Actor {
     const Field        &_field;
     const std::uint64_t _haircuts;
     const std::uint64_t _apr;
+    const bool          _paced;
     qvo::Watch         &_watch;
     std::uint64_t       _ready{0};
     std::uint64_t       _produced{0};
@@ -135,9 +135,9 @@ class Factory final : public qb::Actor {
     std::uint64_t       _sum{0};
 
 public:
-    Factory(const Field &field, std::uint64_t haircuts, std::uint64_t apr,
+    Factory(const Field &field, std::uint64_t haircuts, std::uint64_t apr, bool paced,
             qvo::Watch &watch) noexcept
-        : _field(field), _haircuts(haircuts), _apr(apr), _watch(watch) {}
+        : _field(field), _haircuts(haircuts), _apr(apr), _paced(paced), _watch(watch) {}
 
     qb::io::async::task<bool> onInit() final {
         registerEvent<Ready>(*this);
@@ -154,23 +154,33 @@ public:
         push<Start>(id());
     }
 
+    // pace=0: every customer from this one handler, as the reference; pace=1: one per Start.
     void on(Start const &) {
         ++_received;
-        const auto customer = addRefActor<Customer>(id(), _produced + 1);
+        do produce();
+        while (!_paced && _produced < _haircuts);
+        if (_paced && _produced < _haircuts) push<Start>(id());
+    }
+
+    // One customer: created on this core, handed to the room with send<> -- into the room's core
+    // at once, where a push would wait for the pass's flush after this handler -- then the
+    // production delay.
+    void produce() {
+        const std::uint64_t number   = _produced + 1;
+        const auto          customer = addRefActor<Customer>(id(), number);
         if (!customer.valid()) {
             std::fprintf(stderr, "savina/barber qb: addRefActor returned an invalid handle -- the "
                                  "VirtualCore's actor id pool is exhausted\n");
             std::abort();
         }
-        push<Enter>(_field.room, customer.id(), _produced + 1);
-        _sum += production_work(_produced, _apr);
-        if (++_produced < _haircuts) push<Start>(id());
+        send<Enter>(_field.room, customer.id(), number);
+        _sum += production_work(_produced++, _apr);
     }
 
     void on(Returned const &event) {
         ++_received;
         _sum += weight(kTagReturned) * identity(event.number);
-        push<Enter>(_field.room, event.getSource(), event.number);
+        send<Enter>(_field.room, event.getSource(), event.number);
     }
 
     void on(Done const &event) {
@@ -329,6 +339,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const auto seats    = static_cast<std::uint64_t>(p.get("room"));
     const auto apr      = static_cast<std::uint64_t>(p.get("apr"));
     const auto ahr      = static_cast<std::uint64_t>(p.get("ahr"));
+    const bool pace     = paced(p);
     const auto cores    = static_cast<int>(p.get("cores"));
     const bool spin     = p.get("wait") != 0;
 
@@ -341,7 +352,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         for (int c = 0; c < ncores; ++c) qvoqb::configure_core(engine, c, spin);
         const auto shop = static_cast<qb::CoreId>(1 % ncores);
 
-        field.factory = engine.addActor<Factory>(0, std::cref(field), haircuts, apr, std::ref(watch));
+        field.factory =
+            engine.addActor<Factory>(0, std::cref(field), haircuts, apr, pace, std::ref(watch));
         field.room    = engine.addActor<Room>(shop, std::cref(field), haircuts, seats, std::ref(sink));
         field.barber  = engine.addActor<Barber>(shop, std::cref(field), ahr, std::ref(watch),
                                                 std::ref(sink));
@@ -363,21 +375,26 @@ int main(int argc, char **argv) {
     spec.framework         = QVO_FRAMEWORK_ID;
     spec.framework_version = QVO_FRAMEWORK_VERSION;
     spec.params            = qvospec::savina::barber::params();
+    // The factory shape this adapter's table cell runs: the reference's (pace=0) until the
+    // quiet-host measurement of both forms names the faster one (benchmarks/savina/barber.md).
+    spec.params["pace"] = 0;
     spec.expected          = qvospec::savina::barber::expected;
     spec.work_unit         = qvospec::savina::barber::kWorkUnit;
     spec.work_units        = qvospec::savina::barber::work_units;
-    spec.idiom_source      = "qb/llm/qb.llm.md: VirtualCore pass (flush after the handlers) + "
-                             "addRefActor<T>() (same-core child, onInit run synchronously) + kill()";
-    spec.idiom_note        = "the factory creates one customer per self-addressed Start (n-1 more "
-                             "messages than the reference); customers are addRefActor children of "
-                             "the factory, killed after reporting; room and barber share a core";
+    spec.idiom_source      = "qb/llm/qb.llm.md: send<T>() (into the peer's ring at once, not at "
+                             "the pass's flush) + addRefActor<T>() (same-core child, onInit run "
+                             "synchronously) + kill()";
+    spec.idiom_note        = "pace=0: every customer from one Start handler, as the reference; "
+                             "pace=1: one per self-addressed Start; the customer handed to the room "
+                             "with send<Enter> in both; customers are addRefActor children of the "
+                             "factory, killed after reporting; room and barber share a core";
     spec.caveats           = qvoqb::caveats();
     spec.caveats.emplace_back(
-        "the factory paces itself with one Start per customer, where the reference loops over "
-        "every customer in one handler: a qb push to another core is published by the pass's "
-        "flush, after the handler returns, so a looping factory would release its customers only "
-        "once production ended -- qb's idiom is a short handler, and the n-1 extra self-addressed "
-        "messages are in the reported count");
+        "the factory hands each customer to the room with send<Enter>, which publishes it into the "
+        "room's core at once; a push would be published by the pass's flush after the handler, "
+        "and with pace=0 -- the reference's factory, every customer from one handler -- would "
+        "hold every customer until production ended. The run's `pace` is in its params; pace=1 "
+        "adds n-1 self-addressed Starts to the reported count");
     spec.caveats.emplace_back(
         "with cores=2 the factory and every customer live on core 0 (a customer is created on its "
         "creator's core) and the room and the barber on core 1, so the barber's Next -> Enter turn "
