@@ -1,13 +1,14 @@
 // @benchmark     savina/nqueens
 // @framework     baseline  (NOT an actor framework -- the floor)
 // @idiom-source  none. The workload on the many-actor floor of ../baseline_support.h: the master
-//                is actor 0 and worker w is actor 1 + w, each owned by worker thread id % cores.
+//                is actor 0 and worker w is actor cores + w, each owned by thread id % cores.
 // @idiom-note    The floor for this shape is the shared search kernel plus the cheapest relay
 //                the semantics allow: a work item is the two payload words of one ring message,
 //                a result and a done one word each, and the master forwards every child item to
-//                the next worker actor of its rotation. Placement is static (actor id % cores),
-//                the same deal qb's VirtualCores get, so this floor bounds the placing frameworks
-//                and not the pools, which may rebalance the search.
+//                the next worker actor of its rotation. Placement is static and is qb's exactly:
+//                the master on thread 0, worker w on thread w % cores (its id, cores + w, is
+//                chosen for that), so this floor bounds the placing frameworks and not the
+//                pools, which may rebalance the search.
 
 #include <qvospec/savina/nqueens.h>
 
@@ -40,7 +41,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
 
     // Counted before the send: a send to a full ring owned by this thread drains it inline.
     auto hand_out = [&](auto &m, unsigned from, std::uint64_t w0, std::uint64_t w1) {
-        const std::uint32_t to = 1 + next;
+        const std::uint32_t to = W + next;  // worker `next`, owned by thread next % W
         if (++next == workers) next = 0;
         ++sent;
         m.send(from, qvobase::Msg{to, kWork, w0, w1});
@@ -104,15 +105,17 @@ int main(int argc, char **argv) {
     spec.idiom_source      = "none -- hand-written floor";
     spec.idiom_note        = "raw pinned threads + one bounded SPSC ring per (worker, worker) "
                              "pair; the master (actor 0) relays every child item round-robin to "
-                             "worker actors 1..workers, owned by thread id % cores; not an actor "
-                             "framework and not ranked as one";
+                             "worker actor w (id cores + w) on thread w % cores, the master on "
+                             "thread 0 -- qb's placement; not an actor framework and not ranked "
+                             "as one";
     spec.caveats           = {
         "THIS IS NOT A FRAMEWORK. A work item is one ring message carrying the packed board, a "
         "result and a done one word each, and the search is the same shared kernel every "
         "framework runs: the floor for relaying a work-distribution search through one master",
-        "worker actor w is owned by thread (1 + w) % cores and the master by thread 0, fixed "
-        "before the window: with cores=2 the search is split the way the rotation splits it and "
-        "never rebalanced, so this floor bounds the placing frameworks and NOT the pools",
+        "worker w is owned by thread w % cores and the master by thread 0, fixed before the "
+        "window -- qb's placement exactly: with cores=2 the search is split the way the "
+        "rotation splits it and never rebalanced, so this floor bounds the placing frameworks "
+        "and NOT the pools",
         "cores=1 is one thread with every actor's messages in its own ring -- the floor for "
         "single-threaded dispatch, still a real queue",
         "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"};

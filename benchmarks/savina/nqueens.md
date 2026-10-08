@@ -48,8 +48,9 @@ searches the whole tree, and so does this one — the work measured here is the 
 defaults measure. Below the solution count the stop would make *which* solutions were counted, and
 how many more arrive after the stop was sent, a race between the workers; a race has no answer that
 can be asserted (FAIRNESS.md §0), so the parameter is left out rather than implemented and never
-verified. (Savina's own check of its run, `actSolution >= solutionsLimit`, rejects its default run
-for the same reason: 14 200 is below 1 500 000.)
+verified. (Savina's own check of its run, `actSolution >= solutionsLimit`, would fail its default
+run for the same reason: 14 200 is below 1 500 000. The Scala source computes that `valid` and
+never reads it.)
 
 ### Priorities
 
@@ -70,7 +71,7 @@ of the candidates and the full-board validity check are Savina's.
 | qb | the master and the 20 workers on VirtualCore 0 | master on VirtualCore 0, worker `w` on `w % 2`; the master's rotation alternates the cores and **an item runs where the rotation sends it** — qb has no work stealing, so nothing moves an item to an idle core |
 | CAF | `max-threads=1` | `=2`, both pinned; the workers are pool actors and an idle thread steals a runnable one, so the search is balanced dynamically |
 | SObjectizer | `one_thread` dispatcher | `thread_pool` with 2 pinned work threads and `fifo_t::individual`; the master and the workers are one coop, and the pool decides which thread runs a worker's next demand. The master relays a child item by redirecting the received message instance (`so_5::send(mbox, mhood)`), SObjectizer's copy-free relay |
-| floor | one thread | two pinned threads; the master is actor 0 on thread 0 and worker `w` is actor `1 + w` on thread `(1 + w) % 2` — the same static placement qb has, so the floor bounds the placing frameworks and not the pools |
+| floor | one thread | two pinned threads; the master is actor 0 on thread 0 and worker `w` is actor `cores + w` on thread `w % 2` — exactly qb's static placement, the first item included (worker 0 shares the master's thread in both), so the floor bounds the placing frameworks and not the pools |
 
 ## The verified answer
 

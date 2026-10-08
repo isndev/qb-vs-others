@@ -39,7 +39,7 @@ inline constexpr const char *kId = "savina/nqueens";
 // It is the suite's work-distribution shape: almost all the time is the search itself (the
 // kernel below, identical in every implementation), and what a framework decides is WHERE that
 // search runs -- a statically placed worker pool, a work-stealing pool, or a thread pool -- and
-// what a relay through one master costs (about 7 000 items and 14 000 results at the defaults).
+// what a relay through one master costs (4 959 items and 14 200 results at the defaults).
 //
 // `size`      -- the board. Savina's own default, 12 (14 200 solutions).
 // `threshold` -- the depth from which a worker stops splitting and searches sequentially.
