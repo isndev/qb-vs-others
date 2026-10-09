@@ -38,6 +38,7 @@ struct Ready : qb::Event {};
 struct Sink {
     std::uint64_t checksum{0};
     std::uint64_t messages{0};
+    std::uint64_t work_messages{0};  // observed, and asserted >= min_work_messages
 };
 
 // The ids, filled before the engine starts and read-only from then on.
@@ -113,6 +114,7 @@ public:
         _sink.checksum += event.chk;
         if (++_completed != _sent) return;
         _watch.stop();
+        _sink.work_messages = _sent;
         broadcast<qb::KillEvent>();
     }
 };
@@ -146,7 +148,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         engine.start();
         engine.join();
     }
-    return qvo::Answer{sink.checksum, sink.messages};
+    qvo::Answer answer{sink.checksum, sink.messages};
+    answer.observed[kObservedWorkMessages] = sink.work_messages;
+    return answer;
 }
 
 }  // namespace savina_a_star_qb
@@ -160,6 +164,8 @@ int main(int argc, char **argv) {
     spec.expected          = qvospec::savina::a_star::expected;
     spec.work_unit         = qvospec::savina::a_star::kWorkUnit;
     spec.work_units        = qvospec::savina::a_star::work_units;
+    spec.observed_at_least[qvospec::savina::a_star::kObservedWorkMessages] =
+        qvospec::savina::a_star::min_work_messages;
     spec.idiom_source      = "qb/llm/qb.llm.md: forward(dest, e) from a non-const on(Event &) "
                              "+ the big adapter's statically placed field";
     spec.idiom_note        = "the master relays each handed-back Work with forward() to the next "

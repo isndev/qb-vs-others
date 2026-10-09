@@ -268,11 +268,16 @@ inline std::uint64_t work_units(const qvo::Params &p) {
 // The bound below is the framework-free half of closing that: one work message searches at most
 // `threshold` nodes and every reachable node is searched exactly once, so a run sends at least
 // ceil(reachable / threshold) work messages -- 21 at the defaults (20 515 / 1 024 = 20.03). Every
-// work message is acknowledged, so the master's count of work messages sent is the count to hold
-// against it. The harness has no lower-bound assertion yet (Answer::messages is compared for
-// EQUALITY with expected_messages, and only when that is declared), so no adapter reports the
-// count against it today. Measured runs send far more (a-star.md): the bound is a floor on the
-// shape, not an estimate of the traffic.
+// work message is acknowledged, so the master's count of work messages sent -- the origin's plus one
+// per node a worker handed back -- is the count to hold against it. Every adapter reports that count
+// as the observation kObservedWorkMessages (qvo::Answer::observed) and every adapter's main()
+// declares this function as its lower bound (qvo::Spec::observed_at_least), so the harness ASSERTS
+// it like the checksum: a run that reports fewer, or none, fails with no timing. The harness checks
+// it after the checksum has verified, i.e. once "every reachable node searched exactly once" is
+// established -- which is what makes "fewer than ceil(reachable / threshold) messages" mean "some
+// message searched more than threshold nodes". Measured runs send far more (a-star.md): the bound
+// is a floor on the shape, not an estimate of the traffic, and the observed value beside the cell
+// says how far above it each framework's interleaving landed.
 inline std::uint64_t min_work_messages(const qvo::Params &p) {
     const auto threshold = static_cast<std::uint64_t>(p.get("threshold"));
     if (threshold == 0) {
@@ -281,6 +286,12 @@ inline std::uint64_t min_work_messages(const qvo::Params &p) {
     }
     return (work_units(p) + threshold - 1) / threshold;
 }
+
+// The observation every adapter reports (qvo::Answer::observed) and asserts against
+// min_work_messages (qvo::Spec::observed_at_least): the work messages the master sent in the
+// repetition, the origin's included -- one more than the frontier nodes the workers handed back,
+// since the master relays each handed-back node as exactly one work message.
+inline constexpr const char *kObservedWorkMessages = "work_messages";
 
 }  // namespace qvospec::savina::a_star
 

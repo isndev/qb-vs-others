@@ -138,11 +138,35 @@ What the checksum does **not** prove is that the work was redistributed: an adap
 ignored `threshold` would search the whole graph from the first work message and still verify.
 The spec derives the floor that closes it, with no framework: one work message searches at most
 `threshold` nodes and every reachable node is searched once, so a run sends at least
-`min_work_messages = ceil(reachable / threshold)` work messages, 21 at the defaults. The harness
-cannot assert a lower bound yet — `Answer::messages` is compared for equality with
-`expected_messages`, and only when that is declared — so the bound is derived but **not yet
-asserted**; until it is, the threshold is held by the adapters calling the spec's `search()` with
-the parameter, which is a reading of the source, not a check.
+`min_work_messages = ceil(reachable / threshold)` work messages, 21 at the defaults. It is
+**asserted** (next section): a run that reports fewer work messages, or reports none, fails like a
+wrong checksum. The harness checks the bound only after the checksum has verified — once every
+reachable node is known to have been searched exactly once — so a count below the bound can only
+mean that some work message searched more than `threshold` nodes.
+
+## What is observed, not asserted — and the one bound that is
+
+FAIRNESS.md section 0: work whose amount depends on the interleaving is reported beside the cell,
+never silently compared; a minimum the semantics requires is asserted. Every adapter — the three
+frameworks and the floor — returns the master's count of work messages sent as the observation
+`work_messages` (`qvo::Answer::observed`; `kObservedWorkMessages` in the spec): the origin's
+message plus one per frontier node a worker handed back, since the master relays each handed-back
+node as exactly one work message — so it is the hand-back count plus one. Every measured
+repetition's value is written into the result document (`"observed": {"work_messages": {samples,
+min, p50, max}}`) and `tools/report.py` prints the median and the range in a sub-row under the cell,
+so a row whose interleaving handed back half as many nodes as another's is never compared with it
+silently (the counts above: 1 790 on one thread, 1 338 to 1 630 on two).
+
+Every adapter's `main()` also declares `min_work_messages` as the name's lower bound
+(`qvo::Spec::observed_at_least`), and the document records it (`"observed_at_least":
+{"work_messages": 21}` at the defaults). The proof that no correct run can go below it, with no
+framework: the checksum has established that each of the `R` reachable nodes was searched exactly
+once; the spec's `search()` stops a work message after `threshold` nodes, so `W` work messages
+search at most `W · threshold` nodes; hence `W · threshold ≥ R` and `W ≥ ceil(R / threshold)`. An
+adapter that ignored `threshold` would search the graph from the origin's message alone and report
+`W = 1`, below 21: it fails. What the bound does not catch is a threshold merely too large — a
+doubled one still sends hundreds of messages — and that stays held by the adapters calling the
+spec's `search()` with the parameter, which is a reading of the source.
 
 ## The measured window
 

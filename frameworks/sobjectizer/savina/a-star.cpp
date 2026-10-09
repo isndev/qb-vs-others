@@ -25,6 +25,7 @@ using namespace qvospec::savina::a_star;
 struct Sink {
     std::uint64_t checksum{0};
     std::uint64_t messages{0};
+    std::uint64_t work_messages{0};  // observed, and asserted >= min_work_messages
 };
 
 struct msg_work final : public so_5::message_t {
@@ -110,6 +111,7 @@ public:
             m_sink.checksum += m->chk;
             if (++m_completed != m_sent) return;
             m_watch.stop();
+            m_sink.work_messages = m_sent;
             so_environment().stop();
         });
     }
@@ -142,7 +144,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         });
     });
 
-    return qvo::Answer{sink.checksum, sink.messages};
+    qvo::Answer answer{sink.checksum, sink.messages};
+    answer.observed[kObservedWorkMessages] = sink.work_messages;
+    return answer;
 }
 
 }  // namespace savina_a_star_sobjectizer
@@ -156,6 +160,8 @@ int main(int argc, char **argv) {
     spec.expected          = qvospec::savina::a_star::expected;
     spec.work_unit         = qvospec::savina::a_star::kWorkUnit;
     spec.work_units        = qvospec::savina::a_star::work_units;
+    spec.observed_at_least[qvospec::savina::a_star::kObservedWorkMessages] =
+        qvospec::savina::a_star::min_work_messages;
     spec.idiom_source      = "the big adapter + dev/so_5/send_functions.hpp message redirection "
                              "(so_5::send(mbox, mhood_t))";
     spec.idiom_note        = "agents on their DIRECT mboxes; the master redirects each handed-back "

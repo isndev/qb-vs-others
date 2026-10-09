@@ -90,7 +90,11 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     dispatch(mesh, Grid::kOrigin);
     mesh.run();
 
-    return qvo::Answer{result, delivered};
+    // `sent` is final: the master's count of work messages, origin included (one more than the
+    // nodes handed back), read after run() returned on the thread that owned it.
+    qvo::Answer answer{result, delivered};
+    answer.observed[kObservedWorkMessages] = sent;
+    return answer;
 }
 
 }  // namespace savina_a_star_baseline
@@ -104,6 +108,8 @@ int main(int argc, char **argv) {
     spec.expected          = qvospec::savina::a_star::expected;
     spec.work_unit         = qvospec::savina::a_star::kWorkUnit;
     spec.work_units        = qvospec::savina::a_star::work_units;
+    spec.observed_at_least[qvospec::savina::a_star::kObservedWorkMessages] =
+        qvospec::savina::a_star::min_work_messages;
     spec.idiom_source      = "none -- hand-written floor";
     spec.idiom_note        = "raw pinned threads + one bounded SPSC ring per (worker, worker) "
                              "pair; master = actor 0, search worker w = actor w + 1, actor a owned "

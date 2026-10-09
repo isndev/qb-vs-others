@@ -35,6 +35,7 @@ using namespace qvospec::savina::a_star;
 struct Sink {
     std::uint64_t checksum{0};
     std::uint64_t messages{0};
+    std::uint64_t work_messages{0};  // observed, and asserted >= min_work_messages
 };
 
 // What every worker shares: the graph, the claim slots and the two knobs of the search.
@@ -116,6 +117,7 @@ caf::behavior master_fun(caf::stateful_actor<master_state> *self, std::uint32_t 
             s.sink->checksum += chk;
             if (++s.completed != s.sent) return;
             s.watch->stop();
+            s.sink->work_messages = s.sent;
             for (auto &w : s.workers) self->send_exit(w, caf::exit_reason::user_shutdown);
             self->quit();
         },
@@ -145,7 +147,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         sys.await_all_actors_done();
         qvocaf::assert_pins_took();
     }
-    return qvo::Answer{sink.checksum, sink.messages};
+    qvo::Answer answer{sink.checksum, sink.messages};
+    answer.observed[kObservedWorkMessages] = sink.work_messages;
+    return answer;
 }
 
 }  // namespace savina_a_star_caf
@@ -161,6 +165,8 @@ int main(int argc, char **argv) {
     spec.expected          = qvospec::savina::a_star::expected;
     spec.work_unit         = qvospec::savina::a_star::kWorkUnit;
     spec.work_units        = qvospec::savina::a_star::work_units;
+    spec.observed_at_least[qvospec::savina::a_star::kObservedWorkMessages] =
+        qvospec::savina::a_star::min_work_messages;
     spec.idiom_source      = "the fib/big adapters + self->spawn from a behavior + the mail API";
     spec.idiom_note        = "(get_atom, node) / (put_atom, node) / (ok_atom, chk, nodes); the "
                              "master spawns its workers and relays every handed-back node with a "
