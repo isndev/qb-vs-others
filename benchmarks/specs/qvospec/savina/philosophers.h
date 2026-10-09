@@ -37,7 +37,10 @@ inline constexpr const char *kId = "savina/philosophers";
 // most of its traffic is contention that comes to nothing.
 //
 // HOW MANY requests are refused is the scheduler's decision and differs run to run (Savina
-// reports it as "Num retries", measured, never asserted). It is not in the checksum and not in
+// reports it as "Num retries", measured, never asserted). Every adapter REPORTS it, counted by
+// the arbitrator, as the observation `kObservedRefused` (qvo::Answer::observed, printed beside
+// the cell -- FAIRNESS.md section 0); no lower bound is declared, since a run in which no request
+// ever loses a race is a correct run. It is not in the checksum and not in
 // the asserted message count: the asserted value is built from the messages the protocol FIXES
 // -- every Start, every grant, every meal, every Done and every Exit -- each identified by its
 // philosopher and its round, so the value does not depend on who was refused how often (see
@@ -116,6 +119,12 @@ inline std::uint64_t expected_messages(const qvo::Params &p) {
     const auto m = static_cast<std::uint64_t>(p.get("rounds"));
     return 4 * n * m + n;
 }
+
+// The observation every adapter reports (qvo::Answer::observed): the Hungry requests the
+// arbitrator REFUSED in the repetition -- Savina's "Num retries" (each refusal is answered with
+// Denied and re-sent at once, so the refused count is also the retry count). Reported beside the
+// cell, never asserted, and with no lower bound: zero refusals is a legal interleaving.
+inline constexpr const char *kObservedRefused = "refused";
 
 }  // namespace qvospec::savina::philosophers
 

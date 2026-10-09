@@ -51,6 +51,7 @@ struct Exit : qb::Event {
 struct Sink {
     std::uint64_t checksum{0};
     std::uint64_t messages{0};
+    std::uint64_t refused{0};
 };
 
 struct Field {
@@ -118,6 +119,7 @@ class Arbitrator final : public qb::Actor {
     std::vector<std::uint64_t> _dones;   // per philosopher
     std::uint64_t              _chk{0};
     std::uint64_t              _received{0};
+    std::uint64_t              _refused{0};  // observed, not asserted: the scheduler's number
     std::size_t                _ready{0};
     std::size_t                _exited{0};
     bool                       _violation{false};
@@ -151,6 +153,7 @@ public:
         const std::uint32_t right = (i + 1) % _n;
         if (event.step == kHungry) {
             if (_owner[left] != kFree || _owner[right] != kFree) {
+                ++_refused;
                 event.step = kDenied;
                 reply(event);
                 return;
@@ -177,6 +180,7 @@ public:
         _watch.stop();
         _sink.checksum = _chk + (_violation ? kForkViolation : 0);
         _sink.messages = _received;
+        _sink.refused  = _refused;
         broadcast<qb::KillEvent>();
     }
 };
@@ -209,7 +213,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         engine.start();
         engine.join();
     }
-    return qvo::Answer{sink.checksum, sink.messages};
+    qvo::Answer answer{sink.checksum, sink.messages};
+    answer.observed[kObservedRefused] = sink.refused;
+    return answer;
 }
 
 }  // namespace savina_philosophers_qb
@@ -237,10 +243,10 @@ int main(int argc, char **argv) {
         "philosophers wherever stealing puts them");
     spec.caveats.emplace_back(
         "how many requests the arbitrator REFUSES (Savina's 'Num retries') depends on the "
-        "interleaving and is neither asserted nor reported: every refused request and its retry "
-        "are delivered and timed, so a framework whose scheduling makes philosophers collide "
-        "more often does more work in the same cell -- that is the benchmark, as Savina defines "
-        "it");
+        "interleaving: it is REPORTED beside the cell (observed `refused`), never asserted; every "
+        "refused request and its retry are delivered and timed, so a framework whose scheduling "
+        "makes philosophers collide more often does more work in the same cell -- that is the "
+        "benchmark, as Savina defines it, and the observation says how much more");
 
     return qvo::run(argc, argv, std::move(spec), savina_philosophers_qb::body);
 }

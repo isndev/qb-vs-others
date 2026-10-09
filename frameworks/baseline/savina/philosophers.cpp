@@ -63,6 +63,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     std::vector<std::uint64_t> dones(n, 0);
     std::uint64_t              chk       = 0;
     std::uint64_t              received  = 0;
+    std::uint64_t              refused   = 0;  // observed, not asserted: the scheduler's number
     std::uint32_t              exited    = 0;
     bool                       violation = false;
 
@@ -103,6 +104,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
             const std::uint32_t left  = i;
             const std::uint32_t right = (i + 1) % n;
             if (owner[left] != kFree || owner[right] != kFree) {
+                ++refused;
                 m.send(worker, qvobase::Msg{actor_of(i), kDeniedTag, 0, 0});
                 break;
             }
@@ -142,7 +144,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         mesh.send(0, qvobase::Msg{actor_of(i), kStartTag, 0, 0});
     mesh.run();
 
-    return qvo::Answer{chk + (violation ? kForkViolation : 0), received};
+    qvo::Answer answer{chk + (violation ? kForkViolation : 0), received};
+    answer.observed[kObservedRefused] = refused;
+    return answer;
 }
 
 }  // namespace savina_philosophers_baseline
@@ -174,8 +178,9 @@ int main(int argc, char **argv) {
         "with cores=2 the floor is NOT a bound: every message is its own ring hand-off to the "
         "other thread, where qb publishes a pass's events in one batched flush and runs under "
         "this floor -- read it there as the per-message cost of a hand-off",
-        "how many requests are refused depends on the interleaving and is neither asserted nor "
-        "reported; every refused request and its retry are delivered and timed",
+        "how many requests are refused depends on the interleaving: it is REPORTED beside the "
+        "cell (observed `refused`, Savina's 'Num retries'), never asserted; every refused "
+        "request and its retry are delivered and timed",
         "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which "
         "with 20 philosophers retrying is rare"};
 

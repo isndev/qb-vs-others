@@ -22,7 +22,10 @@ request arrives while a neighbour holds a fork depends on how the framework sche
 arbitrator against the philosophers. Savina reports it as "Num retries" and asserts nothing about
 it, and neither does this repository (see *The verified answer*): a framework whose scheduling
 makes the philosophers collide more often does more work in the same cell, and that is the
-benchmark as Savina defines it. It does not measure fairness either — the arbitrator is a
+benchmark as Savina defines it. What this repository adds is that the amount is never hidden:
+every adapter REPORTS it (see *What is observed, not asserted*), and the table prints it in a
+sub-row under the cell, so two cells that refused very different numbers of requests are never
+compared silently. It does not measure fairness either — the arbitrator is a
 first-come rule, not a queue — nor real blocking: nobody waits, a refused philosopher retries.
 
 ## Parameters
@@ -76,8 +79,21 @@ duplicated, an Exit that overtakes its philosopher's last Done, a philosopher th
 eats once too often, or two philosophers fed from one fork changes the total.
 `expected_messages = 4·N·M + N` — N·M Starts, N·M granted requests, N·M Eats, N·M Dones and N
 Exits — is counted at the receivers and asserted alongside. The refused pairs (a refused request
-and its Denied, or a Denied and the retry it triggers) are counted by nobody: their number is the
-scheduler's.
+and its Denied, or a Denied and the retry it triggers) are in neither: their number is the
+scheduler's, and it is reported instead (next section).
+
+## What is observed, not asserted
+
+FAIRNESS.md section 0: work whose amount depends on the interleaving is reported beside the cell,
+never silently compared. Every adapter — the three frameworks and the floor — counts at the
+arbitrator the Hungry requests it REFUSED and returns the count as the observation `refused`
+(`qvo::Answer::observed`, the name is `kObservedRefused` in the spec). It is Savina's "Num
+retries": each refusal is answered with Denied and re-sent at once, so the refused count is also
+the retry count. Every measured repetition's value is written into the result document
+(`"observed": {"refused": {samples, min, p50, max}}`), and `tools/report.py` prints the median and
+the range in a sub-row under the cell. No lower bound is declared (`observed_at_least`): a run in
+which no request ever loses a race is a correct run, so zero is a legal value and nothing is
+asserted about it.
 
 Every message here is needed by a later step — a philosopher has one message of its cycle in
 flight, or two right after a meal (its Done to the arbitrator and its Start to itself) — so a

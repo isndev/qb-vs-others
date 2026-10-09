@@ -27,6 +27,7 @@ using namespace qvospec::savina::philosophers;
 struct Sink {
     std::uint64_t checksum{0};
     std::uint64_t messages{0};
+    std::uint64_t refused{0};
 };
 
 struct msg_hungry final : public so_5::message_t {
@@ -103,6 +104,7 @@ class arbitrator_t final : public so_5::agent_t {
     std::vector<std::uint64_t> m_dones;
     std::uint64_t              m_chk{0};
     std::uint64_t              m_received{0};
+    std::uint64_t              m_refused{0};  // observed, not asserted: the scheduler's number
     std::size_t                m_ready{0};
     std::size_t                m_exited{0};
     bool                       m_violation{false};
@@ -129,6 +131,7 @@ public:
             const std::uint32_t left  = i;
             const std::uint32_t right = (i + 1) % m_n;
             if (m_owner[left] != kFree || m_owner[right] != kFree) {
+                ++m_refused;
                 so_5::send<msg_denied>(m_field.philosophers[i]);
                 return;
             }
@@ -154,6 +157,7 @@ public:
             m_watch.stop();
             m_sink.checksum = m_chk + (m_violation ? kForkViolation : 0);
             m_sink.messages = m_received;
+            m_sink.refused  = m_refused;
             so_environment().stop();
         });
     }
@@ -178,7 +182,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
                     coop.make_agent<philosopher_t>(std::cref(field), i, rounds)->so_direct_mbox());
         });
     });
-    return qvo::Answer{sink.checksum, sink.messages};
+    qvo::Answer answer{sink.checksum, sink.messages};
+    answer.observed[kObservedRefused] = sink.refused;
+    return answer;
 }
 
 }  // namespace savina_philosophers_sobjectizer
@@ -205,8 +211,9 @@ int main(int argc, char **argv) {
         "the arbitrator alone on core 0 and every philosopher on the far side -- see "
         "benchmarks/savina/philosophers.md");
     spec.caveats.emplace_back(
-        "how many requests the arbitrator refuses depends on the interleaving and is neither "
-        "asserted nor reported; every refused request and its retry are delivered and timed");
+        "how many requests the arbitrator refuses depends on the interleaving: it is REPORTED "
+        "beside the cell (observed `refused`, Savina's 'Num retries'), never asserted; every "
+        "refused request and its retry are delivered and timed");
 
     return qvo::run(argc, argv, std::move(spec), savina_philosophers_sobjectizer::body);
 }
