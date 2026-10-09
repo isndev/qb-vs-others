@@ -361,10 +361,10 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         engine.start();
         engine.join();
     }
-    std::fprintf(stderr, "savina/barber qb: rejections=%llu wakeups=%llu\n",
-                 static_cast<unsigned long long>(sink.rejections),
-                 static_cast<unsigned long long>(sink.wakeups));
-    return qvo::Answer{sink.checksum, sink.messages};
+    qvo::Answer answer{sink.checksum, sink.messages};
+    answer.observed[kObservedRejections] = sink.rejections;
+    answer.observed[kObservedWakeups]    = sink.wakeups;
+    return answer;
 }
 
 }  // namespace savina_barber_qb
@@ -381,6 +381,8 @@ int main(int argc, char **argv) {
     spec.expected          = qvospec::savina::barber::expected;
     spec.work_unit         = qvospec::savina::barber::kWorkUnit;
     spec.work_units        = qvospec::savina::barber::work_units;
+    spec.observed_at_least[qvospec::savina::barber::kObservedWakeups] =
+        qvospec::savina::barber::min_wakeups;
     spec.idiom_source      = "qb/llm/qb.llm.md: send<T>() (into the peer's ring at once, not at "
                              "the pass's flush) + addRefActor<T>() (same-core child, onInit run "
                              "synchronously) + kill()";

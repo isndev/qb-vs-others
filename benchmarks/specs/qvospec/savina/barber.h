@@ -39,7 +39,10 @@ inline constexpr const char *kId = "savina/barber";
 // WHICH customers find the barber asleep, and (with a small room) which are turned away and how
 // often, depends on the interleaving and differs run to run and framework to framework. The
 // checksum is therefore built from what every interleaving must deliver (see expected()); the
-// interleaving-dependent counts are reported by every implementation, never asserted.
+// interleaving-dependent counts -- rejections and wake-ups -- are reported by every implementation
+// through qvo::Answer::observed (kObservedRejections, kObservedWakeups below), printed beside the
+// cell, never compared silently; the only thing asserted about them is the minimum the protocol
+// itself fixes, one wake-up (min_wakeups).
 //
 // `haircuts` -- customers, each served exactly once. Savina's own default, 5 000; no deviation.
 // `room`     -- waiting-room capacity. Savina's default is 1 000; the default HERE is 5 000 (= the
@@ -198,6 +201,26 @@ inline std::uint64_t work_units(const qvo::Params &p) {
 // n Waits in all, n+a Nexts, n Starts, 2n Dones, two Exits) -- plus n-1 with `pace=1`, whose
 // factory sends itself one Start per customer. What a count would assert is asserted per kind by
 // the checksum above.
+
+// The two observations every implementation reports (qvo::Answer::observed), both counted by the
+// room: `r`, the customers it turned away (each one Full and one Returned -- Savina's
+// "CustomerAttempts" minus the haircuts; 0 at the default room of one seat per customer, thousands
+// to millions in the `room=1000` side experiment), and `a`, the arrivals that woke the barber.
+inline constexpr const char *kObservedRejections = "rejections";
+inline constexpr const char *kObservedWakeups    = "wakeups";
+
+// The minimum the protocol fixes for `a`, asserted (qvo::Spec::observed_at_least): ONE. The barber
+// starts asleep (the room's `asleep` starts true, Savina's `barberAsleep = true`), and only an
+// arrival the room lets in wakes him; the checksum has already established that every customer was
+// let in and served exactly once, and haircuts >= 1, so the first customer let in finds him asleep
+// and wakes him. Every customer let in either wakes the barber or is told Wait, so a <= n as well.
+// Zero means the room never put the barber to sleep at the start -- a protocol that is not
+// Savina's -- or that the observation was not reported. Rejections have no minimum: r = 0 is the
+// default cell's normal value.
+inline std::uint64_t min_wakeups(const qvo::Params &p) {
+    (void)at_least_one(p.get("haircuts"), "haircuts");
+    return 1;
+}
 
 }  // namespace qvospec::savina::barber
 

@@ -18,7 +18,6 @@
 
 #include "../baseline_support.h"
 
-#include <cstdio>
 #include <type_traits>
 #include <vector>
 
@@ -295,10 +294,11 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     mesh.send(0, qvobase::Msg{factory, kStart, 0, 0});
     mesh.run();
 
-    std::fprintf(stderr, "savina/barber baseline: rejections=%llu wakeups=%llu\n",
-                 static_cast<unsigned long long>(r.rejected),
-                 static_cast<unsigned long long>(r.wakeups));
-    return qvo::Answer{checksum, messages};
+    // The room's counts are final: its worker has stopped, and run() returned on this thread.
+    qvo::Answer answer{checksum, messages};
+    answer.observed[kObservedRejections] = r.rejected;
+    answer.observed[kObservedWakeups]    = r.wakeups;
+    return answer;
 }
 
 }  // namespace savina_barber_baseline
@@ -315,6 +315,8 @@ int main(int argc, char **argv) {
     spec.expected          = qvospec::savina::barber::expected;
     spec.work_unit         = qvospec::savina::barber::kWorkUnit;
     spec.work_units        = qvospec::savina::barber::work_units;
+    spec.observed_at_least[qvospec::savina::barber::kObservedWakeups] =
+        qvospec::savina::barber::min_wakeups;
     spec.idiom_source      = "none -- hand-written floor";
     spec.idiom_note        = "raw pinned threads + one bounded SPSC ring per (worker, worker) "
                              "pair; a customer is a heap node in the factory's worker's slot table, "

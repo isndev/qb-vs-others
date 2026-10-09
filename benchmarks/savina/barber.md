@@ -58,9 +58,11 @@ reason in "What the shape found in qb" below.
 So the default room has a seat per customer and the default run is the same amount of work in
 every framework. Savina's `room=1000` remains a **declared side experiment**: run with
 `--param room=1000`, it verifies in every cell, and its rejections and wake-ups are what it
-reports (every implementation prints them after each repetition — on stderr until the harness
-carries an observation field for them); it is never a table cell. Every implementation implements
-the full room: run with a small `room` and every cell verifies (measured down to `room=5`, and up
+reports: every implementation returns them as the observations `rejections` and `wakeups` (see
+*What is observed, not asserted*), so the side experiment's result document carries them per
+repetition and its report prints them beside each cell; it is never a table cell. Every
+implementation implements the full room: run with a small `room` and every cell verifies
+(measured down to `room=5`, and up
 to 333 667 rejections in one cell) — those cells are not comparable between frameworks either.
 
 ### The factory's shape: `pace`, a declared axis
@@ -137,9 +139,35 @@ receives an `(n+1)`-th stops with an explicit protocol failure rather than a num
 No message count is asserted, because it is not determined: it is `7n + 3r + a + 3` for `n`
 haircuts, `r` rejections and `a` wake-ups of the barber (`n − 1` more with `pace=1`), and
 what an asserted count would check is checked kind by kind by the checksum. The number reported is
-the messages the actors received. Every implementation prints its rejections and wake-ups to
-stderr after each repetition — measured, never asserted, as Savina itself only tracks its
-"CustomerAttempts".
+the messages the actors received. The rejections and the wake-ups are reported instead (next
+section) — measured, not compared silently, as Savina itself only tracks its "CustomerAttempts".
+
+## What is observed, not asserted
+
+FAIRNESS.md section 0: work whose amount depends on the interleaving is reported beside the cell,
+never silently compared; a minimum the semantics requires is asserted. Every adapter — the three
+frameworks and the floor — returns two counts kept by the room (`qvo::Answer::observed`;
+`kObservedRejections` and `kObservedWakeups` in the spec):
+
+- `rejections` — the customers it turned away, each one `Full` and one `Returned`. 0 at the default
+  room of one seat per customer; in the `room=1000` side experiment the number that makes those
+  cells incomparable (5 334 667 against 4 000 in the measurements above).
+- `wakeups` — the arrivals that found the barber asleep and woke him. How production overlaps
+  haircuts shows here: CAF's `cores=2` correctness runs woke him once, SObjectizer's thousands of
+  times.
+
+Every measured repetition's values are written into the result document (`"observed":
+{"rejections": {samples, min, p50, max}, "wakeups": {...}}`) and `tools/report.py` prints the median
+and the range of each in a sub-row under the cell. They used to be printed on stderr after each
+repetition, where no table could show them.
+
+One minimum is asserted (`qvo::Spec::observed_at_least`, recorded in the document as
+`"observed_at_least": {"wakeups": 1}`): **at least one wake-up**. The barber starts asleep — the
+room's flag starts set, Savina's `barberAsleep = true` — and only an arrival the room lets in wakes
+him; the harness checks the bound after the checksum has verified, i.e. once every customer is known
+to have been let in and served exactly once, so the first customer let in found him asleep and woke
+him. A run reporting no wake-up, or not reporting the count, fails with no timing. Rejections have no
+minimum: zero is the default cell's normal value.
 
 ## The measured window
 

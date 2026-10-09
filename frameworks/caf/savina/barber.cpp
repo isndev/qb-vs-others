@@ -29,7 +29,6 @@
 #include <caf/init_global_meta_objects.hpp>
 #include <caf/stateful_actor.hpp>
 
-#include <cstdio>
 #include <utility>
 #include <vector>
 
@@ -339,10 +338,10 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         sys.await_all_actors_done();
         qvocaf::assert_pins_took();
     }
-    std::fprintf(stderr, "savina/barber caf: rejections=%llu wakeups=%llu\n",
-                 static_cast<unsigned long long>(sink.rejections),
-                 static_cast<unsigned long long>(sink.wakeups));
-    return qvo::Answer{sink.checksum, sink.messages};
+    qvo::Answer answer{sink.checksum, sink.messages};
+    answer.observed[kObservedRejections] = sink.rejections;
+    answer.observed[kObservedWakeups]    = sink.wakeups;
+    return answer;
 }
 
 }  // namespace savina_barber_caf
@@ -361,6 +360,8 @@ int main(int argc, char **argv) {
     spec.expected          = qvospec::savina::barber::expected;
     spec.work_unit         = qvospec::savina::barber::kWorkUnit;
     spec.work_units        = qvospec::savina::barber::work_units;
+    spec.observed_at_least[qvospec::savina::barber::kObservedWakeups] =
+        qvospec::savina::barber::min_wakeups;
     spec.idiom_source      = "the fib adapter + self->spawn() from a behavior (scheduled_actor.hpp)";
     spec.idiom_note        = "the reference's actors one for one; pace=0: the Start handler loops "
                              "over every customer (spawn, mail Enter, busy-work) as the reference "
