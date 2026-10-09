@@ -188,13 +188,13 @@ timer thread whose mechanism is chosen at environment creation — wheel, heap o
 
 **qb.** The asynchronous surface *is* C++20 coroutines: `task<T>` (`io/async/coroutine/task.h:435`),
 `shared_task` (`io/async/coroutine/shared_task.h:55`), `coroutine_scope` with joining / cancelling /
-detaching exit policies (`io/async/coroutine/scope.h:76`, `:628`–`:646`), `parallel` (`:700`),
-`when_all` / `when_any` / timeouts (`io/async/coroutine/combinators.h:99`, `:230`, `:712`),
-`channel<T>` and `select` (`io/async/coroutine/channel.h:125`, `:1185`), `generator` /
+detaching exit policies (`io/async/coroutine/scope.h:76`, `:631`–`:649`), `parallel` (`:703`),
+`when_all` / `when_any` / timeouts (`io/async/coroutine/combinators.h:99`, `:438`, `:921`),
+`channel<T>` and `select` (`io/async/coroutine/channel.h:125`, `:1201`), `generator` /
 `async_generator` / `async_stream` (`io/async/coroutine/generator.h:77`, `:289`;
 `io/async/coroutine/stream.h:63`), and six sync primitives — `semaphore`, `async_mutex`,
-`async_rw_lock`, `barrier`, `async_event`, `async_latch` (`io/async/coroutine/sync.h:64`, `:421`,
-`:671`, `:960`, `:1098`, `:1275`) — plus `with_retry` (`io/async/coroutine/retry.h:219`). An actor's
+`async_rw_lock`, `barrier`, `async_event`, `async_latch` (`io/async/coroutine/sync.h:65`, `:427`,
+`:670`, `:983`, `:1124`, `:1304`) — plus `with_retry` (`io/async/coroutine/retry.h:219`). An actor's
 `onInit()` is itself a `task<bool>` (`core/Actor.h:176`) and the engine stashes events while it
 is suspended (`core/VirtualCore.cpp:488`). `Actor::spawn` binds a coroutine to the actor's
 cancellation scope (`core/Actor.h:1291`).
