@@ -111,7 +111,8 @@ master waits in core 0's queue, and so does every worker on core 1 that is waiti
 and SObjectizer's pools have no such constraint — the master is just another runnable actor that
 either thread may pick up next — so on this shape the placing rows pay for the master's placement
 and the pool rows do not. The cell records that asymmetry; it is the same one `big.md` names from
-the other side, where static placement is what pays.
+the other side, where static placement is what pays. One pool row is not that pool on every host:
+on Windows, CAF's pool runs this shape on one of its two threads (*What is observed*, below).
 
 ## The verified answer
 
@@ -155,7 +156,18 @@ node as exactly one work message — so it is the hand-back count plus one. Ever
 repetition's value is written into the result document (`"observed": {"work_messages": {samples,
 min, p50, max}}`) and `tools/report.py` prints the median and the range in a sub-row under the cell,
 so a row whose interleaving handed back half as many nodes as another's is never compared with it
-silently (the counts above: 1 790 on one thread, 1 338 to 1 630 on two).
+silently. On one thread the count is fixed by the order a framework runs the handlers in — 1 790
+for qb, SObjectizer and the floor, 1 602 for CAF — and on two it varies from one repetition to the
+next: 1 319 to 1 824 over the correctness runs of the commit that added this section (every cell,
+two repetitions each, MSVC, g++-14 and clang-19), with one exception.
+
+The exception is CAF at `cores=2` on Windows: 1 602 on every repetition — its one-thread count —
+spin and park, pinned and not. Counting the threads that ran a search (an instrumented build, never
+committed) says why: all 1 602 searches ran on one of CAF's two scheduler threads and never two at
+once, where on Linux (g++-14) the second thread ran about one search in seven and two ran
+together. That Windows row measures CAF's pool running the shape on one thread, not the pool
+freedom from placement described above, and its sub-row shows it: a two-core CAF cell reading
+1 602 on every repetition is that run.
 
 Every adapter's `main()` also declares `min_work_messages` as the name's lower bound
 (`qvo::Spec::observed_at_least`), and the document records it (`"observed_at_least":
@@ -164,9 +176,13 @@ framework: the checksum has established that each of the `R` reachable nodes was
 once; the spec's `search()` stops a work message after `threshold` nodes, so `W` work messages
 search at most `W · threshold` nodes; hence `W · threshold ≥ R` and `W ≥ ceil(R / threshold)`. An
 adapter that ignored `threshold` would search the graph from the origin's message alone and report
-`W = 1`, below 21: it fails. What the bound does not catch is a threshold merely too large — a
-doubled one still sends hundreds of messages — and that stays held by the adapters calling the
-spec's `search()` with the parameter, which is a reading of the source.
+`W = 1`, below 21: it fails. Planted in the qb and floor adapters — the workers passing
+`0xFFFFFFFF` to `search()` instead of `threshold` — the checksum still verifies and the run exits 1
+on `observed work_messages=1, below its asserted lower bound 21`, at `cores=1` and `cores=2`, spin
+and park; an adapter reporting 20, or reporting no `work_messages` at all, exits 1 the same way.
+What the bound does not catch is a threshold merely too large — a doubled one still sends about a
+thousand messages against a bound of 11 — and that stays held by the adapters calling the spec's
+`search()` with the parameter, which is a reading of the source.
 
 ## The measured window
 
