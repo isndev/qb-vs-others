@@ -8,14 +8,15 @@
 //                beside this file (an event answered in place with `reply()`).
 // @idiom-note    The arbiter's StartSmoking is a `send<Smoke>`: one event per decision, and the
 //                arbiter idles until it is acknowledged. The smoker acknowledges by `reply()`ing
-//                the very event it received -- Savina's StartedSmoking -- BEFORE it smokes, and
-//                `reply` goes through `send`: the acknowledgement is in the arbiter's ring while
-//                the smoke runs, which is the overlap the reference's order of statements exists
-//                for (a `push` would be published by the pass's flush, after the smoke). The end
-//                is a `push<Exit>` per smoker -- 200 events in one handler, the batch `push` is
-//                for -- and a `push<Report>` back. Every actor is placed before start with
-//                `Main::addActor`, the one way to put an actor on another VirtualCore: the arbiter
-//                on core 0, smoker j on core (j + 1) % cores.
+//                the very event it received, its own number written into it -- Savina's
+//                StartedSmoking -- BEFORE it smokes, and `reply` goes through `send`: the
+//                acknowledgement is in the arbiter's ring while the smoke runs, which is the
+//                overlap the reference's order of statements exists for (a `push` would be
+//                published by the pass's flush, after the smoke). The end is a `push<Exit>` per
+//                smoker -- 200 events in one handler, the batch `push` is for -- and a
+//                `push<Report>` back. Every actor is placed before start with `Main::addActor`,
+//                the one way to put an actor on another VirtualCore: the arbiter on core 0,
+//                smoker j on core (j + 1) % cores.
 
 #include <qvospec/savina/cigsmok.h>
 
@@ -33,8 +34,9 @@ using namespace qvospec::savina::cigsmok;
 
 struct Ready : qb::Event {};  // handshake, outside the window
 struct Start : qb::Event {};
-// StartSmoking going out (the round, its period, the smoker it was drawn for) and, replied by the
-// smoker unchanged, StartedSmoking coming back.
+// StartSmoking going out (the round, its period, the smoker the arbiter drew) and, replied by the
+// smoker with `smoker` set to its OWN number, StartedSmoking coming back -- the acknowledgement
+// names who answered, as the other three adapters' do.
 struct Smoke : qb::Event {
     std::uint64_t round{0};
     std::uint32_t period{0};
@@ -80,11 +82,13 @@ public:
     }
 
     // StartSmoking: acknowledge first -- the ingredients are off the table -- then smoke, as the
-    // reference does. The acknowledgement is the received event itself, replied.
+    // reference does. The acknowledgement is the received event itself, naming this smoker and
+    // replied; the fields the smoke needs are read before, as reply() hands the event on.
     void on(Smoke &event) {
         ++_received;
         const std::uint64_t round  = event.round;
         const std::uint32_t period = event.period;
+        event.smoker               = _number;
         reply(event);
         _acc += smoke_term(_number, round, period);
     }
@@ -104,8 +108,8 @@ class Arbiter final : public qb::Actor {
     qvo::Watch         &_watch;
     Sink               &_sink;
     std::size_t         _ready{0};
-    std::uint64_t       _outstanding{0};  // the round whose StartedSmoking is awaited
-    std::uint64_t       _played{0};       // rounds acknowledged
+    std::uint64_t       _outstanding{0};  // the round last put on the table (diagnostic only)
+    std::uint64_t       _played{0};       // StartedSmoking received while not exiting
     bool                _exiting{false};
     std::size_t         _reports{0};
     std::uint64_t       _acc{0};          // the arbiter's terms of the checksum (cigsmok.h)
@@ -145,15 +149,15 @@ public:
         choose(0);
     }
 
-    // StartedSmoking. Every one is folded into the sum; only the one naming the outstanding round
-    // plays the next -- a duplicate completes the run with a wrong sum instead of a second round.
+    // StartedSmoking. Every one is folded into the sum and, as in the reference, every one plays
+    // the next round until the last: a duplicate puts a second round on the table and the run
+    // completes with a wrong sum. One naming another round than the last put on the table is
+    // counted for stderr, nothing more.
     void on(Smoke const &event) {
         ++_received;
         _acc += ack_term(event.smoker, event.round);
-        if (_exiting || event.round != _outstanding) {
-            ++_stale;
-            return;
-        }
+        if (_exiting || event.round != _outstanding) ++_stale;
+        if (_exiting) return;
         if (++_played < _rounds) {
             choose(_played);
             return;
@@ -204,7 +208,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         engine.join();
     }
     if (sink.stale != 0)
-        std::fprintf(stderr, "savina/cigsmok qb: %llu StartedSmoking named no outstanding round\n",
+        std::fprintf(stderr,
+                     "savina/cigsmok qb: %llu StartedSmoking did not name the round last "
+                     "chosen\n",
                      static_cast<unsigned long long>(sink.stale));
     return qvo::Answer{sink.checksum, sink.messages};
 }
@@ -225,9 +231,9 @@ int main(int argc, char **argv) {
                              "send<T>() (into the peer's ring at once, not at the pass's flush) "
                              "+ the chameneos adapter";
     spec.idiom_note        = "StartSmoking is a send<Smoke> per decision; the smoker reply()s "
-                             "the same event as StartedSmoking BEFORE it smokes, so the "
-                             "acknowledgement is published while the smoke runs; Exit and Report "
-                             "are push<>; arbiter on VirtualCore 0, smoker j on core "
+                             "the same event, naming itself, as StartedSmoking BEFORE it smokes, "
+                             "so the acknowledgement is published while the smoke runs; Exit and "
+                             "Report are push<>; arbiter on VirtualCore 0, smoker j on core "
                              "(j + 1) % cores";
     spec.caveats           = qvoqb::caveats();
     spec.caveats.emplace_back(

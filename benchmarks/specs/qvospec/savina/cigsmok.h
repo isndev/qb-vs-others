@@ -35,20 +35,23 @@ inline constexpr const char *kId = "savina/cigsmok";
 // receives the next message -- a selective unicast, never a broadcast -- and the per-round cost is
 // one decision, one request and one acknowledgement, with real work running behind it.
 //
-// `rounds`  -- rounds played. Savina's own default, 1 000; no deviation (see cigsmok.md, "The
-//              window at Savina's rounds", for why the quiet-host measurement may raise it).
+// `rounds`  -- rounds played. 50 000 where Savina's default is 1 000 -- a DEVIATION (cigsmok.md,
+//              "Deviation from Savina's rounds, and why"): Savina's count is a window of 520 076
+//              busy-work iterations in which one round in five is a smoker's first delivery. Pass
+//              `--param rounds=1000` to reproduce Savina's count.
 // `smokers` -- smokers, each an actor created with the arbiter before the window. Savina's own
 //              default, 200; no deviation.
 // `smoke`   -- the busy-wait bound: a smoke is `uniform[0, smoke) + 10` iterations. Savina
 //              hard-codes 1 000 (`random.nextInt(1000) + 10`); declared here, at that value, so
-//              the coordination alone can be run (`smoke=1`).
+//              the smoke can be shrunk: `smoke=1` gives every round a fixed 10-iteration smoke,
+//              the least the distribution allows -- not the coordination alone.
 // `cores`   -- 1: everything on one thread; 2: for the frameworks that place, the arbiter on
 //              core 0 and smoker j on core (j + 1) % cores -- half of the smokes on the arbiter's
 //              core, half beside it, so a smoke on the far core overlaps the arbiter's next
 //              decision.
 // `wait`    -- 1 = spin, 0 = park. See ping-pong.h for why this is a declared axis.
 inline std::map<std::string, long long> params() {
-    return {{"rounds", 1000}, {"smokers", 200}, {"smoke", 1000}, {"cores", 2}, {"wait", 1}};
+    return {{"rounds", 50000}, {"smokers", 200}, {"smoke", 1000}, {"cores", 2}, {"wait", 1}};
 }
 
 // Every parameter of this benchmark but the two axes is a count or a bound that must be >= 1.
@@ -87,7 +90,10 @@ inline std::uint32_t period_of(std::uint64_t round, std::uint64_t smoke) noexcep
 }
 
 // The smoke itself: qvo::spin_work, the harness's one busy-work function, identical object code for
-// every framework, seeded by the round so its result does not depend on who smokes it.
+// every framework, seeded by the round so its result does not depend on who smokes it. Savina's
+// busyWait spends each iteration on a Math.random() call -- a compare-and-swap on the one seed
+// every thread shares, contended when two smokes overlap; here an iteration is one qvo::mix with
+// nothing shared between threads: Savina's count, not its cost -- a DEVIATION (cigsmok.md).
 inline std::uint64_t smoke_work(std::uint64_t round, std::uint32_t period) noexcept {
     return qvo::spin_work(qvo::mix(kSmokeSeed + round), static_cast<int>(period));
 }
@@ -108,7 +114,9 @@ inline std::uint64_t smoke_term(std::uint32_t smoker, std::uint64_t round,
 }
 
 // What the arbiter adds for a StartedSmoking naming smoker n and round r -- for EVERY one it
-// receives, including one that names a round that is not outstanding (see expected()).
+// receives, including one that names a round that is not outstanding (see expected()). The
+// smoker that sends it names ITSELF, never the smoker the arbiter drew, so a misrouted
+// StartSmoking moves this term as well as the smoke term.
 inline std::uint64_t ack_term(std::uint32_t smoker, std::uint64_t round) noexcept {
     return identity(smoker) * qvo::mix(kAckKey + round);
 }
@@ -132,20 +140,28 @@ inline std::uint64_t exit_term(std::uint32_t smoker) noexcept {
 // it receives. The value does not depend on the interleaving -- the choices are the round's, and
 // the smoke of round r is the same whichever thread runs it -- and every kind of delivery is in it:
 //
-//   * a StartSmoking lost, doubled or delivered to another smoker moves the smoke term (the
-//     receiver credits ITS identity, and a doubled one smokes twice);
-//   * a StartedSmoking doubled or naming another round adds an ack term no round expects. The
-//     arbiter folds EVERY StartedSmoking into its sum but advances only on the one that names the
-//     outstanding round, so a duplicate completes the run with a wrong sum (exit 1) instead of
-//     starting a second round in parallel or hanging;
-//   * a Report doubled adds a smoker's share twice, and the arbiter, which ends on the
-//     `smokers`-th report, then misses another smoker's share too; a smoker that receives a
-//     second Exit while it still runs reports twice the same way (one that has ended -- qb, CAF --
-//     receives nothing, as an exited actor in the reference).
+//   * a StartSmoking doubled, delivered to another smoker or carrying another period moves the
+//     smoke term (the receiver credits ITS identity, a doubled one smokes twice, another period
+//     is another smoke);
+//   * a StartedSmoking doubled, or naming another smoker or another round, adds an ack term no
+//     round expects. The arbiter folds EVERY StartedSmoking into its sum and, as Savina's arbiter
+//     does, plays the next round on every one it receives until the last: a duplicate puts a
+//     second round on the table and the run still completes -- every round chosen once, every
+//     acknowledgement folded, the extra one included -- with a wrong sum (exit 1). A round still
+//     in flight when the arbiter sends Exit is acknowledged before that smoker's Report: its
+//     StartSmoking left before the Exit to the same smoker, its acknowledgement before the Report
+//     from it, each pair on one ordered path;
+//   * a Report doubled adds a smoker's share twice and, as the arbiter ends on the `smokers`-th
+//     report, leaves another smoker's share out -- unless the duplicate is the last report of
+//     all to arrive: it then comes after the terminal condition, outside the run, and the sum is
+//     right. A smoker that receives a second Exit while it still runs reports twice the same way
+//     (one that has ended -- qb, CAF -- receives nothing, as an exited actor in the reference).
 //
-// A LOST StartedSmoking, Exit or Report -- or an Exit delivered to the wrong smoker, which leaves
-// one smoker without its own -- cannot complete the run at all: the protocol waits for each, as
-// Savina's does. So a drop is proved on the smoke instead (cigsmok.md).
+// A LOST StartSmoking, StartedSmoking, Exit or Report -- or an Exit delivered to the wrong smoker,
+// which leaves one smoker without its own -- cannot complete the run at all: the protocol waits for
+// each, as Savina's does, and the stall is bounded by the driver's timeout (`tools/run.py
+// --timeout`, reported as "timed out", verified false). So a drop is proved on the smoke too
+// (cigsmok.md).
 inline std::uint64_t expected(const qvo::Params &p) {
     const auto rounds  = at_least_one(p.get("rounds"), "rounds");
     const auto smokers = at_least_one(p.get("smokers"), "smokers");

@@ -33,8 +33,8 @@ struct alignas(qvobase::kCacheLine) SmokerState {
 };
 
 struct alignas(qvobase::kCacheLine) ArbiterState {
-    std::uint64_t outstanding{0};  // the round whose StartedSmoking is awaited
-    std::uint64_t played{0};       // rounds acknowledged
+    std::uint64_t outstanding{0};  // the round last put on the table (diagnostic only)
+    std::uint64_t played{0};       // StartedSmoking received while not exiting
     bool          exiting{false};
     std::uint64_t reports{0};
     std::uint64_t acc{0};  // the arbiter's terms of the checksum (cigsmok.h)
@@ -83,14 +83,14 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
             break;
         }
         case kStarted: {
-            // Every StartedSmoking is folded into the sum; only the one naming the outstanding
-            // round plays the next -- a duplicate completes the run with a wrong sum.
+            // Every StartedSmoking is folded into the sum and, as in the reference, every one
+            // plays the next round until the last: a duplicate puts a second round on the table
+            // and the run completes with a wrong sum. One naming another round than the last put
+            // on the table is counted for stderr, nothing more.
             ++a.received;
             a.acc += ack_term(static_cast<std::uint32_t>(msg.b), msg.a);
-            if (a.exiting || msg.a != a.outstanding) {
-                ++a.stale;
-                break;
-            }
+            if (a.exiting || msg.a != a.outstanding) ++a.stale;
+            if (a.exiting) break;
             if (++a.played < rounds) {
                 choose(a.played);
                 break;
@@ -129,7 +129,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
 
     if (a.stale != 0)
         std::fprintf(stderr,
-                     "savina/cigsmok baseline: %llu StartedSmoking named no outstanding round\n",
+                     "savina/cigsmok baseline: %llu StartedSmoking did not name the round "
+                     "last chosen\n",
                      static_cast<unsigned long long>(a.stale));
     return qvo::Answer{checksum, messages};
 }

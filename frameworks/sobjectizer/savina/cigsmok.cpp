@@ -95,8 +95,8 @@ class arbiter_t final : public so_5::agent_t {
     qvo::Watch         &m_watch;
     Sink               &m_sink;
     std::size_t         m_ready{0};
-    std::uint64_t       m_outstanding{0};  // the round whose StartedSmoking is awaited
-    std::uint64_t       m_played{0};       // rounds acknowledged
+    std::uint64_t       m_outstanding{0};  // the round last put on the table (diagnostic only)
+    std::uint64_t       m_played{0};       // StartedSmoking received while not exiting
     bool                m_exiting{false};
     std::size_t         m_reports{0};
     std::uint64_t       m_acc{0};  // the arbiter's terms of the checksum (cigsmok.h)
@@ -133,15 +133,15 @@ public:
                 ++m_received;
                 choose(0);
             })
-            // StartedSmoking. Every one is folded into the sum; only the one naming the
-            // outstanding round plays the next -- a duplicate completes the run with a wrong sum.
+            // StartedSmoking. Every one is folded into the sum and, as in the reference, every
+            // one plays the next round until the last: a duplicate puts a second round on the
+            // table and the run completes with a wrong sum. One naming another round than the
+            // last put on the table is counted for stderr, nothing more.
             .event([this](so_5::mhood_t<msg_started> m) {
                 ++m_received;
                 m_acc += ack_term(m->smoker, m->round);
-                if (m_exiting || m->round != m_outstanding) {
-                    ++m_stale;
-                    return;
-                }
+                if (m_exiting || m->round != m_outstanding) ++m_stale;
+                if (m_exiting) return;
                 if (++m_played < m_rounds) {
                     choose(m_played);
                     return;
@@ -185,7 +185,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     });
     if (sink.stale != 0)
         std::fprintf(stderr,
-                     "savina/cigsmok sobjectizer: %llu StartedSmoking named no outstanding round\n",
+                     "savina/cigsmok sobjectizer: %llu StartedSmoking did not name the "
+                     "round last chosen\n",
                      static_cast<unsigned long long>(sink.stale));
     return qvo::Answer{sink.checksum, sink.messages};
 }

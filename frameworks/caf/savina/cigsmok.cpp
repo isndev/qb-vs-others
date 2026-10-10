@@ -53,8 +53,8 @@ struct arbiter_state {
     std::uint64_t           rounds{0};
     std::uint64_t           smoke{0};
     std::size_t             ready{0};
-    std::uint64_t           outstanding{0};  // the round whose StartedSmoking is awaited
-    std::uint64_t           played{0};       // rounds acknowledged
+    std::uint64_t           outstanding{0};  // the round last put on the table (diagnostic only)
+    std::uint64_t           played{0};       // StartedSmoking received while not exiting
     bool                    exiting{false};
     std::size_t             reports{0};
     std::uint64_t           acc{0};  // the arbiter's terms of the checksum (cigsmok.h)
@@ -127,16 +127,16 @@ caf::behavior arbiter_fun(caf::stateful_actor<arbiter_state> *self, std::uint64_
             ++self->state().received;
             choose(0);
         },
-        // StartedSmoking. Every one is folded into the sum; only the one naming the outstanding
-        // round plays the next -- a duplicate completes the run with a wrong sum.
+        // StartedSmoking. Every one is folded into the sum and, as in the reference, every one
+        // plays the next round until the last: a duplicate puts a second round on the table and
+        // the run completes with a wrong sum. One naming another round than the last put on the
+        // table is counted for stderr, nothing more.
         [self, choose](caf::put_atom, std::uint64_t round, std::uint64_t smoker) {
             auto &s = self->state();
             ++s.received;
             s.acc += ack_term(static_cast<std::uint32_t>(smoker), round);
-            if (s.exiting || round != s.outstanding) {
-                ++s.stale;
-                return;
-            }
+            if (s.exiting || round != s.outstanding) ++s.stale;
+            if (s.exiting) return;
             if (++s.played < s.rounds) {
                 choose(s.played);
                 return;
@@ -180,7 +180,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         qvocaf::assert_pins_took();
     }
     if (sink.stale != 0)
-        std::fprintf(stderr, "savina/cigsmok caf: %llu StartedSmoking named no outstanding round\n",
+        std::fprintf(stderr,
+                     "savina/cigsmok caf: %llu StartedSmoking did not name the round last "
+                     "chosen\n",
                      static_cast<unsigned long long>(sink.stale));
     return qvo::Answer{sink.checksum, sink.messages};
 }
