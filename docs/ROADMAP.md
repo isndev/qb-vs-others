@@ -227,7 +227,7 @@ the JDK unpacks from a zip, and Erlang is the awkward one.
   numbers came from; a marker grammar for "this figure is `<document>.summary.work_p50 /
   work_units`" would close it and has not been written.
 - **The qb-side findings in `docs/TUNING.md` §9 are not tied to a qb commit.** A finding that
-  names `VirtualCore.cpp:199` is true of qb 3.1.0 and of the branch at `32b28130`, and already
+  names `VirtualCore.cpp:200` is true of qb 3.1.0 and of the branch at `32b28130`, and already
   false of the branch at `230c5035` (axis M moved `__flush_all__`; §9 says so in prose, which
   is all it can do); nothing here re-checks the citation when either moves. the qb development tree's `llm-guard.py` does exactly that for its own
   docs and does not read this repository.
