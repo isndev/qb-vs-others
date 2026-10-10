@@ -43,13 +43,13 @@ the thing whose cost was measured; the sections say where the rest lives.
 ## 1. Fault handling
 
 **qb.** A `throw` out of `on(Event&)` is not caught at the actor: dispatch is
-`_router.route(*event, ...)` with no `try` around it (`core/VirtualCore.cpp:200`), and the only
+`_router.route(*event, ...)` with no `try` around it (`core/VirtualCore.cpp:201`), and the only
 handler is at the thread body, which logs and records `VirtualCore::Error::ExceptionThrown`
-(`core/Main.cpp:348`, `:369`, `:373`; the enum at `core/VirtualCore.h:130`). **One throwing
+(`core/Main.cpp:355-365`; the enum at `core/VirtualCore.h:130`). **One throwing
 handler terminates that VirtualCore thread and every actor pinned to it.** Two places do contain
-an exception: a throwing `onInit()` is an init failure the engine reports (`core/VirtualCore.cpp:511`),
+an exception: a throwing `onInit()` is an init failure the engine reports (`core/VirtualCore.cpp:499-511`),
 and an unhandled coroutine exception is logged by `report_unhandled_coroutine_exception`
-(`core/Actor.cpp:356`). Supervision exists as a pattern — `qb::Supervisor`
+(`core/Actor.cpp:357-364`). Supervision exists as a pattern — `qb::Supervisor`
 (`core/patterns/supervisor.h:128`) with `restart_strategy::{one_for_one, one_for_all, rest_for_one}`
 (`:45`), restart intensity over a window (`:138`, `:229`) and an `on_escalate()` hook (`:216`) —
 but it is **cooperative**: the header says a child that dies without calling `stop()` "is not
@@ -76,12 +76,12 @@ deregistration notificators (`so_5/coop.hpp:296`) are the death-watch. No restar
 ## 2. Typed interfaces
 
 **qb.** Registering an event whose `on(E&)` overload is missing is a compile error — the router
-calls `handler.on(event)` in a template (`system/event/router.h:84`, `:302`). But the handler
-*set* is not part of any type: `ActorId` is `{ServiceId, CoreId}` (`core/ActorId.h:384`),
-`Actor::push<E>(ActorId const&, ...)` (`core/Actor.h:929`) accepts any id for any `E`, and an
+calls `handler.on(event)` in a template (`system/event/router.h:84`, `:286`). But the handler
+*set* is not part of any type: `ActorId` is `{ServiceId, CoreId}` (`core/ActorId.h:393-395`),
+`Actor::push<E>(ActorId const&, ...)` (`core/Actor.h:881-882`) accepts any id for any `E`, and an
 event the destination never registered falls into the router's `else` branch
-(`system/event/router.h:904`) and is **logged and dropped** (`core/VirtualCore.cpp:207`).
-`ActorHandle<T>` (`core/Actor.h:1902`) is a same-core reference, not an interface type.
+(`system/event/router.h:880-881`) and is **logged and dropped** (`core/VirtualCore.cpp:207-209`).
+`ActorHandle<T>` (`core/Actor.h:1810-1840`) is a same-core reference, not an interface type.
 
 **CAF.** `typed_actor<TraitOrSignature>` (`libcaf_core/caf/typed_actor.hpp:31`): the message
 interface is the actor's type, `mail()` to a typed handle is checked at compile time, and the
@@ -93,12 +93,12 @@ runtime `type_index` lookup in the mbox's subscriber table (`so_5/impl/local_mbo
 
 ## 3. Request / response
 
-**qb.** `co_await qb::ask(ctx, target, req, timeout)` (`core/patterns/request.h:270`) with
+**qb.** `co_await qb::ask(ctx, target, req, timeout)` (`core/patterns/request.h:98-104`) with
 `qb::answer` on the responder (`:194`), `qb::Request<Resp>` (`:71`) and `qb::deadline` (`:115`);
-`Actor::reply` (`core/Actor.h:1089`), `Actor::forward` (`:1112`). Beyond one ask: `ask_all` /
-`ask_any` (`core/patterns/scatter.h:59`, `:143`), `ask_retry` (`core/patterns/resilience.h:467`),
-`ask_stream` (`core/patterns/streaming.h:325`), request de-duplication (`core/patterns/idempotency.h:65`),
-circuit breaker / rate limiter / bulkhead (`core/patterns/resilience.h:124`, `:279`, `:371`),
+`Actor::reply` (`core/Actor.h:1042`), `Actor::forward` (`:1065`). Beyond one ask: `ask_all` /
+`ask_any` (`core/patterns/scatter.h:59`, `:140`), `ask_retry` (`core/patterns/resilience.h:427`),
+`ask_stream` (`core/patterns/streaming.h:324`), request de-duplication (`core/patterns/idempotency.h:65`),
+circuit breaker / rate limiter / bulkhead (`core/patterns/resilience.h:120`, `:239`, `:331`),
 saga (`core/patterns/saga.h:44`). Every one of these needs the coroutine context.
 
 **CAF.** `mail(...).request(receiver, timeout)` (`libcaf_core/caf/event_based_mail.hpp:48`,
@@ -113,7 +113,7 @@ by hand with two messages, or synchronously through an `mchain`.
 
 ## 4. Networking and distribution
 
-**qb.** No transparent distribution: `ActorId` has no node field (`core/ActorId.h:401`), there is
+**qb.** No transparent distribution: `ActorId` has no node field (`core/ActorId.h:393-395`), there is
 no wire format for events and no `inspect`. Networking is explicit and wide: TCP
 (`io/transport/tcp.h`), TLS (`io/transport/stcp.h`, `io/tcp/ssl/context.h`), UDP
 (`io/transport/udp.h`), Unix domain sockets behind `QB_ENABLE_UDS` (`io/tcp/socket.h:192`,
@@ -132,9 +132,9 @@ third-party packages.
 ## 5. Scheduling
 
 **qb.** One worker thread per `VirtualCore`; every actor is created on a core before `start()`
-(`core/Main.h:243`, `:679`) or on the calling core at runtime (`core/VirtualCore.h:1035`), and
-"an actor never migrates between cores" (`core/Actor.h:215`). `setAffinity` (`core/Main.h:271`),
-`setLatency` (`:286`) and `setIdleSpin` (`:303`) are the only knobs. No work stealing — the word
+(`core/Main.h:242`, `:633`) or on the calling core at runtime (`core/VirtualCore.h:947-950`), and
+"an actor never migrates between cores" (`core/Actor.h:214`). `setAffinity` (`core/Main.h:270`)
+and `setLatency` (`:284`) are the core placement and pacing knobs. No work stealing — the word
 does not occur in `core/`.
 
 **CAF.** A work-stealing pool by default, work-sharing as the alternative
@@ -152,10 +152,11 @@ does not move between dispatchers; within a pool the thread is chosen per demand
 
 ## 6. Priorities, filters, limits
 
-**qb.** `EventQOS0` (`core/Event.h:527`) marks an event droppable under cross-core backpressure
-(`core/Event.h:505`); `EventQOS1` and `EventQOS2` are both aliases of `Event` (`:510`, `:520`)
-— "there is no middle QoS level to select" (`:503`). No ordering by priority, no filters, no
-per-actor limits. `push` is ordered, `send` is documented unordered (`core/Actor.h:932`).
+**qb.** `EventQOS0` (`core/Event.h:516-519`) marks an event droppable under cross-core backpressure
+(`core/VirtualCore.cpp:350-358`); `EventQOS1` and `EventQOS2` are both aliases of `Event`
+(`core/Event.h:509`, `:499`) — "there is no middle QoS level to select" (`:503`). No ordering by
+priority, no filters, no per-actor limits. `push` is ordered, `send` is documented unordered
+(`core/Actor.h:825-826`, `:890-893`).
 
 **CAF.** `message_priority::{high, normal}` (`libcaf_core/caf/message_priority.hpp:15`); a
 `mail(...).urgent()` (`libcaf_core/caf/async_mail.hpp:175`) is pushed to the front of the
@@ -169,12 +170,12 @@ limits `limit_then_drop` / `limit_then_abort` / `limit_then_redirect` / `limit_t
 
 ## 7. Timers
 
-**qb.** `with_timeout<Derived>` (`io/async/io.h:112`) with `setTimeout` (`:150`); one-shot
+**qb.** `with_timeout<Derived>` (`io/async/io.h:111`) with `setTimeout` (`:149`); one-shot
 `Timeout<Func>` (`:211`); `callback(f)` / `callback(f, duration)` (`:368`, `:374`);
 `co_await sleep(duration)` (`io/async/coroutine/utils.h:101`), a cancellable variant
 (`io/async/coroutine/cancellation.h:765`) and an actor-scoped `ctx.sleep` cancelled on kill
-(`core/Actor.h:1283`); periodic `interval(duration)` as an async stream
-(`io/async/coroutine/stream.h:922`).
+(`core/Actor.h:1723-1724`); periodic `interval(duration)` as an async stream
+(`io/async/coroutine/stream.h:832-833`).
 
 **CAF.** `mail(...).delay(d)` / `.schedule(tp)` (`libcaf_core/caf/async_mail.hpp:187`, `:181`),
 `run_delayed` (`libcaf_core/caf/scheduled_actor.hpp:608`), `after()` in behaviours.
@@ -186,18 +187,18 @@ timer thread whose mechanism is chosen at environment creation — wheel, heap o
 
 ## 8. Coroutines
 
-**qb.** The asynchronous surface *is* C++20 coroutines: `task<T>` (`io/async/coroutine/task.h:435`),
+**qb.** The asynchronous surface *is* C++20 coroutines: `task<T>` (`io/async/coroutine/task.h:418`),
 `shared_task` (`io/async/coroutine/shared_task.h:55`), `coroutine_scope` with joining / cancelling /
-detaching exit policies (`io/async/coroutine/scope.h:76`, `:631`–`:649`), `parallel` (`:703`),
-`when_all` / `when_any` / timeouts (`io/async/coroutine/combinators.h:99`, `:438`, `:921`),
+detaching exit policies (`io/async/coroutine/scope.h:76`, `:617-639`), `parallel` (`:689`),
+`when_all` / `when_any` / timeouts (`io/async/coroutine/combinators.h:199`, `:558`, `:883`),
 `channel<T>` and `select` (`io/async/coroutine/channel.h:125`, `:1201`), `generator` /
 `async_generator` / `async_stream` (`io/async/coroutine/generator.h:77`, `:289`;
 `io/async/coroutine/stream.h:63`), and six sync primitives — `semaphore`, `async_mutex`,
-`async_rw_lock`, `barrier`, `async_event`, `async_latch` (`io/async/coroutine/sync.h:65`, `:427`,
-`:670`, `:983`, `:1124`, `:1304`) — plus `with_retry` (`io/async/coroutine/retry.h:219`). An actor's
-`onInit()` is itself a `task<bool>` (`core/Actor.h:176`) and the engine stashes events while it
-is suspended (`core/VirtualCore.cpp:497`). `Actor::spawn` binds a coroutine to the actor's
-cancellation scope (`core/Actor.h:1291`).
+`async_rw_lock`, `barrier`, `async_event`, `async_latch` (`io/async/coroutine/sync.h:64`, `:437`,
+`:671`, `:960`, `:1098`, `:1275`) — plus `with_retry` (`io/async/coroutine/retry.h:219`). An actor's
+`onInit()` is itself a `task<bool>` (`core/Actor.h:354-355`) and the engine stashes events while it
+is suspended (`core/VirtualCore.cpp:159-193`). `Actor::spawn` binds a coroutine to the actor's
+cancellation scope (`core/Actor.h:1209-1244`).
 
 **CAF.** None: no `co_await` anywhere under `libcaf_core/caf/`. The asynchronous vocabulary is
 callbacks, `caf::flow` observables (`libcaf_core/caf/flow/observable.hpp:189`) and
@@ -209,7 +210,7 @@ callbacks, `caf::flow` observables (`libcaf_core/caf/flow/observable.hpp:189`) a
 
 ## 9. Behaviour and state
 
-**qb.** Dispatch is by event type through `registerEvent<E>` (`core/Actor.h:823`); there is no
+**qb.** Dispatch is by event type through `registerEvent<E>` (`core/Actor.h:776`); there is no
 behaviour stack and no state machine. `qb::ICallback` gives a per-tick hook
 (`core/ICallback.h:146`). Patterns shipped beside the core, one header each under
 `core/patterns/`: `batcher`, `ping`/`require` discovery, `dedup_map`, `PubSub<Topic>`,
@@ -230,12 +231,12 @@ actors (`libcaf_core/caf/actor_registry.hpp:32`, `:77`). Groups were **removed i
 
 ## 10. Runtime creation
 
-**qb.** Before `start()`: `CoreInitializer::addActor` / `builder()` (`core/Main.h:243`, `:257`),
-`Main::addActor(CoreId, ...)` (`:725`). At runtime: `Actor::addRefActor<T>` (`core/Actor.h:1174`)
+**qb.** Before `start()`: `CoreInitializer::addActor` / `builder()` (`core/Main.h:242`, `:256`),
+`Main::addActor(CoreId, ...)` (`:615`). At runtime: `Actor::addRefActor<T>` (`core/Actor.h:1127`)
 creates on the **calling core only** — `VirtualCore::_handler` is the thread-local current core
-(`core/VirtualCore.h:1035`) — and `Main::core(id)` is setup-phase only (`core/Main.h:679`).
+(`core/VirtualCore.h:85`, `:947-950`) — and `Main::core(id)` is setup-phase only (`core/Main.h:633`).
 Creating an actor on another core at runtime is done by messaging a factory actor already there;
-the framework has no call for it. Actor allocation is a customisation point (`core/VirtualCore.h:791`).
+the framework has no call for it. Actor allocation is a customisation point (`core/VirtualCore.h:711-715`).
 
 **CAF.** `spawn` from the system or from any actor, on any worker, at any time; the pool
 places it.
@@ -250,7 +251,7 @@ anywhere at any time; the dispatcher binds it.
 nlohmann (`json.h:47`), `qb::crypto` (`io/crypto.h:204`), `qb::compression` (`io/compression.h:45`);
 **no reflection** — events are relocated by byte copy into 64-byte buckets
 (`utility/prefix.h:138`), which is also why an event must use relocatable members such as
-`qb::string<N>` (`core/patterns/request.h:63`). Logging is nanolog through `QB_LOG_DEBUG` …
+`qb::string<N>` (`core/patterns/request.h:59`). Logging is nanolog through `QB_LOG_DEBUG` …
 `QB_LOG_CRIT` (`io.h:272`; `log::init` at `io.h:84`). No metrics.
 
 **CAF.** `actor_system_config` (`libcaf_core/caf/actor_system_config.hpp:28`) reads
@@ -283,9 +284,10 @@ cannot list.
 This row is the one that explains `REPORT.md`, so it is stated in full.
 
 **qb** has **no per-actor mailbox**. The inbound queue is one MPSC ring per **destination core**
-(`core/Main.h:380`, owned at `:495`), written through one staging pipe per (source core,
-destination core) pair (`core/Event.h:700`, `core/VirtualCore.h:474`, flushed at `:530`), and
-the actor is resolved only after dequeue (`core/VirtualCore.cpp:200`). Every event occupies a
+(`core/Main.h:328`, owned at `:383`), written through one staging pipe per (source core,
+destination core) pair (`core/Event.h:689`, `core/VirtualCore.h:270`, flushed at
+`core/VirtualCore.cpp:282`), and the actor is resolved only after dequeue
+(`core/VirtualCore.cpp:201`). Every event occupies a
 whole number of 64-byte buckets (`utility/prefix.h:68`, `:138`). Consequences, all visible in the
 tables: the 120-writer contention of `savina/big` collapses to a 2-writer pipe; a same-core hop
 never touches a shared cache line; and an actor can never leave a busy core.
@@ -303,17 +305,17 @@ queue and only routes (`so_5/impl/local_mbox.hpp:625`).
 Read against the two others, qb's gaps are structural, not cosmetic, and `docs/ROADMAP.md` is
 where any of them would become a plan:
 
-1. **No exception isolation per actor** — a throw takes the core down (`core/VirtualCore.cpp:200`,
-   `core/Main.cpp:369`). CAF and SObjectizer both isolate at the actor.
+1. **No exception isolation per actor** — a throw takes the core down (`core/VirtualCore.cpp:201`,
+   `core/Main.cpp:355-365`). CAF and SObjectizer both isolate at the actor.
 2. **No link / monitor / death-watch** — supervision is cooperative and same-core
    (`core/patterns/supervisor.h:125`).
 3. **No typed actor interfaces** — an event nobody registered is a logged drop
-   (`system/event/router.h:904`).
-4. **No distribution** — no node id, no wire format, no reflection (`core/ActorId.h:401`).
-5. **No message priorities** — `EventQOS1 == EventQOS2 == Event` (`core/Event.h:510`–`509`).
-6. **No migration, no rebalancing** — actors are pinned for life (`core/Actor.h:215`); a hot
+   (`system/event/router.h:880-881`).
+4. **No distribution** — no node id, no wire format, no reflection (`core/ActorId.h:393-395`).
+5. **No message priorities** — `EventQOS1 == EventQOS2 == Event` (`core/Event.h:499-509`).
+6. **No migration, no rebalancing** — actors are pinned for life (`core/Actor.h:214`); a hot
    actor on a cold core stays there.
-7. **No cross-core dynamic spawn** (`core/VirtualCore.h:1035`, `core/Main.h:679`).
+7. **No cross-core dynamic spawn** (`core/VirtualCore.h:947-950`, `core/Main.h:633`).
 8. **No configuration layer** in core.
 
 What qb has that the others do not — a coroutine-first asynchronous model, a real I/O loop with

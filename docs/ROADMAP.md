@@ -226,9 +226,10 @@ the JDK unpacks from a zip, and Erlang is the awkward one.
   that pretended to verify them would verify nothing. Each subsection names the directory its
   numbers came from; a marker grammar for "this figure is `<document>.summary.work_p50 /
   work_units`" would close it and has not been written.
-- **The qb-side findings in `docs/TUNING.md` §9 are not tied to a qb commit.** A finding that
-  names `VirtualCore.cpp:200` is true of qb 3.1.0 and of the branch at `32b28130`, and already
-  false of the branch at `230c5035` (axis M moved `__flush_all__`; §9 says so in prose, which
-  is all it can do); nothing here re-checks the citation when either moves. the qb development tree's `llm-guard.py` does exactly that for its own
-  docs and does not read this repository.
+- **The qb-side findings in `docs/TUNING.md` §9 have no automated citation check against their
+  pinned qb revisions.** The `where` column cites qb 3.1.0 by default: `_router.route` is at
+  `VirtualCore.cpp:201` there, but at `:199` in both `32b28130` and `230c5035`. The branch-only
+  `kFlushRunBuckets` is at `VirtualCore.cpp:277` in `230c5035`. Section 9 states which revision
+  each citation names; nothing here re-checks its line and content. The qb development tree's
+  `llm-guard.py` checks its own docs and does not read this repository.
 - **A footprint probe.** See "Actor creation cost and memory footprint".
