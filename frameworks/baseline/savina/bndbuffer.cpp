@@ -9,7 +9,8 @@
 //                1 + i producer i, 1 + producers + j consumer j -- so with cores=2 the manager is
 //                on worker 0 and each kind is split evenly over the two workers, the placement
 //                qb's cell has. A producer or a consumer is a cache-line-aligned slot, so two of
-//                them owned by different workers never share a line.
+//                them owned by different workers never share a line. A producer that has sent
+//                its exit is ended and handles nothing more, as the frameworks' producers end.
 
 #include <qvospec/savina/bndbuffer.h>
 
@@ -35,6 +36,7 @@ inline std::uint64_t pack(std::uint32_t high, std::uint64_t low) noexcept {
 struct alignas(qvobase::kCacheLine) ProducerState {
     std::uint64_t value{0};  // the chain (spec: produce)
     std::uint32_t produced{0};
+    bool          done{false};  // sent its exit: ended, it handles nothing more
     std::uint64_t fold{0};
     std::uint64_t received{0};
 };
@@ -97,10 +99,11 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     };
 
     qvobase::Mesh mesh(W, spin, [&](auto &m, unsigned worker, const qvobase::Msg &msg) {
-        // The reference's tryExit: every producer done and every consumer available.
+        // The reference's tryExit: every producer done and every consumer available. At-least
+        // tests, identical to the reference's on a correct run: a run that duplicated a message
+        // can step past either count, and it must end with its wrong checksum rather than wait.
         auto try_exit = [&] {
-            if (mgr.done || mgr.ended != counts.producers ||
-                mgr.available.size() != counts.consumers)
+            if (mgr.done || mgr.ended < counts.producers || mgr.available.size() < counts.consumers)
                 return;
             mgr.done = true;
             watch.stop();
@@ -113,10 +116,12 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         case kProduce: {  // at a producer
             const std::uint32_t number = msg.dst - 1;
             ProducerState      &s      = producers[number];
+            if (s.done) break;  // ended: a request that reaches it now changes nothing
             ++s.received;
             s.fold += receipt(number, static_cast<std::uint32_t>(msg.a));
             if (s.produced == counts.items) {  // asked once more after the last item: done
                 m.send(worker, qvobase::Msg{kManager, kDone, s.fold, pack(number, s.received)});
+                s.done = true;
                 break;
             }
             s.value = produce(s.value, number, s.produced, prod_iters);
@@ -143,6 +148,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
                 } else {
                     request(m, worker, producer);
                 }
+                if (!bound_holds(mgr.buffer.size(), mgr.parked.size(), mgr.ended, counts))
+                    ++mgr.overflows;
             } else {  // at a consumer
                 const std::uint32_t number = msg.dst - first_consumer;
                 ConsumerState      &s      = consumers[number];

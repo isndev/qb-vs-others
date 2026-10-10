@@ -11,9 +11,11 @@
 //                drop, redirect or abort past a bound rather than hold a producer back, and a
 //                size-limited mchain that makes `send` WAIT blocks the sending work thread -- the
 //                one a consumer on the same pool may need to drain it -- so neither is this
-//                shape (benchmarks/savina/bndbuffer.md). A producer ends by going silent after
-//                its exit message: SObjectizer ends an agent only with its whole coop, and the
-//                coop ends when the manager stops the environment after the window.
+//                shape (benchmarks/savina/bndbuffer.md). A producer ends with its exit message
+//                the way SObjectizer ends one agent of a live coop: `so_deactivate_agent()`
+//                (dev/so_5/agent.hpp, since 5.7.3) drops every subscription, so nothing reaches
+//                it any more; the agent itself is deregistered with the whole coop, when the
+//                manager stops the environment after the window.
 
 #include <qvospec/savina/bndbuffer.h>
 
@@ -88,6 +90,7 @@ public:
             m_fold += receipt(m_number, m->seq);
             if (m_produced == m_items) {  // asked once more after the last item: done
                 so_5::send<msg_done>(m_manager, m_number, m_fold, m_received);
+                so_deactivate_agent();  // ended: every subscription dropped, nothing handled
                 return;
             }
             m_value = produce(m_value, m_number, m_produced, m_iterations);
@@ -157,9 +160,11 @@ class manager_t final : public so_5::agent_t {
         so_5::send<msg_data>(m_consumers[consumer], item.producer, item.index, item.value);
     }
 
-    // The reference's tryExit: every producer done and every consumer available.
+    // The reference's tryExit: every producer done and every consumer available. At-least tests,
+    // identical to the reference's on a correct run: a run that duplicated a message can step past
+    // either count, and it must end with its wrong checksum rather than wait forever.
     void try_exit() {
-        if (m_done || m_ended != m_counts.producers || m_available.size() != m_counts.consumers)
+        if (m_done || m_ended < m_counts.producers || m_available.size() < m_counts.consumers)
             return;
         m_done = true;
         m_watch.stop();
@@ -216,6 +221,8 @@ public:
                 } else {
                     request(m->producer);
                 }
+                if (!bound_holds(m_buffer.size(), m_parked.size(), m_ended, m_counts))
+                    ++m_overflows;
             })
             .event([this](so_5::mhood_t<msg_available> m) {
                 ++m_received;
@@ -290,14 +297,15 @@ int main(int argc, char **argv) {
                              "one coop on qvoso::make_pool_binder, readiness from so_evt_start";
     spec.idiom_note        = "Savina's manager, producers and consumers one for one as agents on "
                              "direct mboxes; the bounded buffer is the manager's FIFO and Savina's "
-                             "park/un-park protocol; a producer goes silent after its exit "
-                             "message (an agent ends only with its coop); thread_pool(cores) with "
-                             "fifo_t::individual for cores>=2";
+                             "park/un-park protocol; a producer so_deactivate_agent()s after its "
+                             "exit message (an agent is deregistered only with its coop); "
+                             "thread_pool(cores) with fifo_t::individual for cores>=2";
     spec.caveats           = qvoso::pool_caveats();
     spec.caveats.emplace_back(
-        "SObjectizer ends an agent only by deregistering its whole coop, so the 40 producers, "
-        "which the reference ends inside the window, stay registered and idle until the manager "
-        "stops the environment after it; qb and CAF end each producer as the reference does "
+        "SObjectizer deregisters an agent only with its whole coop: each of the 40 producers, "
+        "which the reference ends inside the window, is deactivated there (so_deactivate_agent, "
+        "every subscription dropped) and deregistered with the coop when the manager stops the "
+        "environment after it; qb and CAF end each producer as the reference does "
         "(benchmarks/savina/bndbuffer.md)");
 
     return qvo::run(argc, argv, std::move(spec), savina_bndbuffer_sobjectizer::body);

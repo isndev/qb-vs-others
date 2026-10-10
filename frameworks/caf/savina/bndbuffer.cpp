@@ -165,10 +165,12 @@ caf::behavior manager_fun(caf::stateful_actor<manager_state> *self, Counts count
         self->mail(caf::put_atom_v, item.producer, item.index, item.value)
             .send(s.consumers[consumer]);
     };
-    // The reference's tryExit: every producer done and every consumer available.
+    // The reference's tryExit: every producer done and every consumer available. At-least tests,
+    // identical to the reference's on a correct run: a run that duplicated a message can step past
+    // either count, and it must end with its wrong checksum rather than wait forever.
     auto try_exit = [self] {
         auto &s = self->state();
-        if (s.done || s.ended != s.counts.producers || s.available.size() != s.counts.consumers)
+        if (s.done || s.ended < s.counts.producers || s.available.size() < s.counts.consumers)
             return;
         s.done = true;
         s.watch->stop();
@@ -210,6 +212,7 @@ caf::behavior manager_fun(caf::stateful_actor<manager_state> *self, Counts count
             } else {
                 request(producer);
             }
+            if (!bound_holds(s.buffer.size(), s.parked.size(), s.ended, s.counts)) ++s.overflows;
         },
         [self, request, hand, try_exit](caf::get_atom, std::uint32_t consumer, std::uint64_t delta,
                                         std::uint64_t received) {  // ConsumerAvailable

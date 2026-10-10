@@ -41,9 +41,10 @@ inline constexpr const char *kId = "savina/bndbuffer";
 // That threshold is Savina's: `buffer - producers`, so that a producer that sent an item just
 // before the threshold was reached still finds a slot. The buffer therefore NEVER holds more than
 // `buffer - 1` items (the threshold minus one, plus one item from each producer before it is
-// parked), which the manager asserts: the bound is a property of the protocol, and this is the
-// benchmark that measures what keeping it costs (Huly QB-53). The buffer is the manager's explicit
-// protocol in every implementation -- never a framework's mailbox bound.
+// parked), which the manager asserts (bound_holds() below): the bound is a property of the
+// protocol, and this benchmark is the shape a qb primitive (Huly QB-53, open) would be measured
+// against. The buffer is the manager's explicit protocol in every implementation -- never a
+// framework's mailbox bound.
 //
 // WHICH consumer gets which item, how often a producer is parked and how full the buffer gets
 // depend on the interleaving and differ run to run and framework to framework. The checksum is
@@ -80,10 +81,13 @@ inline constexpr const char *kObservedProducerWaits = "producer_waits";  // prod
 inline constexpr const char *kObservedConsumerWaits = "consumer_waits";  // consumers idled
 inline constexpr const char *kObservedBufferPeak    = "buffer_peak";     // most items buffered
 
-// A parameter outside its domain stops the run before anything is built.
+// A parameter outside its domain stops the run before anything is built, with the harness's
+// "bad command line" exit code (2, qvo/harness.h). Not std::abort(): on Windows that exits 3 --
+// the code a not-applicable cell owns -- and the CRT may raise a dialog that never returns.
 [[noreturn]] inline void refuse(const char *what, long long value) {
     std::fprintf(stderr, "savina/bndbuffer: %s (got %lld)\n", what, value);
-    std::abort();
+    std::fflush(stderr);
+    std::exit(2);
 }
 
 // processItem(cost): `cost x 100` iterations, one when cost <= 0 (Savina's else-branch).
@@ -123,6 +127,21 @@ inline Counts counts(const qvo::Params &p) {
 // parked instead of being asked for its next item. At least 1, since buffer > producers.
 inline std::uint64_t threshold(const Counts &c) noexcept { return c.buffer - c.producers; }
 
+// The invariant that keeps the bound, which every manager checks after each DataItem's park-or-ask
+// (and counts as an overflow when it fails): the items buffered, plus one more from every producer
+// still being asked -- neither parked nor ended -- never exceed `buffer - 1`. It is the manager's
+// own arithmetic, whatever the interleaving: an append below the threshold leaves `buffered -
+// parked` at most `threshold - 1`, an append at it parks the producer that delivered (both grow by
+// one), an un-park pops one of each, so `buffered <= threshold - 1 + parked` always; and a parked
+// producer has neither ended nor an item in flight, so `parked + ended <= producers`. Written
+// without the subtraction, so a broken run that parks a producer twice cannot wrap it. A manager
+// that never parked would fail it once `threshold` items plus one per producer already ended are
+// buffered -- 10 early in a default run, long before the buffer itself reached `buffer`.
+inline bool bound_holds(std::uint64_t buffered, std::uint64_t parked, std::uint32_t ended,
+                        const Counts &c) noexcept {
+    return buffered + c.producers <= (c.buffer - 1) + ended + parked;
+}
+
 // ---------------------------------------------------------------------------------------------
 // The work, and what each item is
 // ---------------------------------------------------------------------------------------------
@@ -157,8 +176,11 @@ inline std::uint64_t produce(std::uint64_t previous, std::uint32_t producer, std
 // processItem(consItem + data)`), which is order-free there only because processItem is a sum;
 // a mix chain is not, and which consumer gets which item is the scheduler's -- so each item is
 // worked on its own, with the same amount of work (benchmarks/savina/bndbuffer.md, deviations).
+// The value is MIXED before it seeds the work, as produce() does: qvo::spin_work starts from
+// `seed | 1`, so a raw value's lowest bit would never reach the result, and an item whose value
+// lost or gained that bit on its way to the consumer would verify (a planted flip did, in phase B).
 inline std::uint64_t consume(std::uint64_t value, int iterations) noexcept {
-    return qvo::spin_work(value ^ kConsumeSeed, iterations);
+    return qvo::spin_work(qvo::mix(value ^ kConsumeSeed), iterations);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -196,16 +218,19 @@ inline std::uint64_t route(std::uint32_t consumer, std::uint32_t producer,
 // receives exactly `items + 1` of them -- one per item, and the one that ends it -- so every
 // interleaving gives the same sum, while a duplicated request moves it: the producer receives one
 // sequence number twice and ends on its `items + 1`-th receipt, so the last number never reaches
-// its sum (a duplicate of that LAST request is the one exception: it finds the producer already
-// ended and changes nothing the producer did). A request delivered to another producer moves both
-// sums -- and starves the producer it was meant for, so that run never ends: a hang, not a number.
+// its sum. Every request that reaches a producer after its end changes nothing: a producer that
+// has ended handles nothing more (qb kill(), CAF quit(), SObjectizer so_deactivate_agent(), the
+// floor's `done`). So a duplicate of a producer's LAST request is invisible -- and so is any
+// duplicated message that arrives after the manager's exit decision, when the sums are already
+// taken. A request delivered to another producer moves both sums -- and starves the producer it
+// was meant for, so that run never ends: a hang, not a number.
 inline std::uint64_t receipt(std::uint32_t producer, std::uint32_t seq) noexcept {
     return producer_identity(producer) * qvo::mix(kProduceTag + seq);
 }
 
-// What the manager adds for every time an append left the buffer holding `buffer` items or more --
-// which Savina's protocol can never do (the header comment). Never zero, so a run that broke the
-// bound cannot verify.
+// What the manager adds for every time an append left the buffer holding `buffer` items or more,
+// and for every DataItem after which bound_holds() failed -- neither of which Savina's protocol
+// can do (the header comment). Never zero, so a run that broke the bound cannot verify.
 inline std::uint64_t overflow_weight() noexcept { return qvo::mix(kOverflowTag); }
 
 // The checksum:
@@ -216,9 +241,12 @@ inline std::uint64_t overflow_weight() noexcept { return qvo::mix(kOverflowTag);
 // where v(p, k) is producer p's chain. The consumer that consumes item (p, k) adds its term minus
 // route(itself, p, k) and the manager adds route(c, p, k) for the consumer c it handed it to
 // (they cancel); each producer reports its receipts when it ends. Every interleaving gives the same
-// total -- which consumer took which item only moves terms that cancel -- and a dropped item, a
-// doubled one, an item produced without its chain, a hand-over delivered to the wrong consumer,
-// a doubled ProduceData or an overflowed buffer moves it.
+// total -- which consumer took which item only moves terms that cancel -- and an item consumed
+// without its term or with the wrong value, a doubled hand-over, an item produced without its
+// chain, a hand-over delivered to the wrong consumer, a doubled ProduceData or a broken bound
+// (bound_holds) moves it. A LOST message -- a ProduceData, a DataItem on either leg, a
+// ConsumerAvailable, a ProducerExit -- moves nothing: the protocol waits for it, so that run never
+// reaches the manager's exit decision. A hang, not a number; the runner's timeout is its verdict.
 inline std::uint64_t expected(const qvo::Params &p) {
     const Counts  c     = counts(p);
     const int     prod  = iterations_of(p.get("prod_cost"));

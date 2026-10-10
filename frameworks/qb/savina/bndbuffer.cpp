@@ -176,9 +176,11 @@ class Manager final : public qb::Actor {
         send<Data>(_field.consumers[consumer], item.producer, item.index, item.value);
     }
 
-    // The reference's tryExit: every producer done and every consumer available.
+    // The reference's tryExit: every producer done and every consumer available. At-least tests,
+    // identical to the reference's on a correct run: a run that duplicated a message can step past
+    // either count, and it must end with its wrong checksum rather than wait forever.
     void try_exit() {
-        if (_done || _ended != _counts.producers || _available.size() != _counts.consumers) return;
+        if (_done || _ended < _counts.producers || _available.size() < _counts.consumers) return;
         _done = true;
         _watch.stop();
         _sink.checksum       = _acc + overflow_weight() * _overflows;
@@ -234,6 +236,7 @@ public:
         } else {
             request(event.producer);
         }
+        if (!bound_holds(_buffer.size(), _parked.size(), _ended, _counts)) ++_overflows;
     }
 
     void on(Available const &event) {

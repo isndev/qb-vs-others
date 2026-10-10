@@ -23,10 +23,27 @@ the work — how fast the hub answers when the actors around it are inside long 
 of zero: one step each) the same run is almost pure coordination — the manager's protocol and the
 messages — which is the side experiment for the cost of keeping the bound itself.
 
+How often the bound is engaged at the defaults is the interleaving's to decide, and every cell
+reports it (`producer_waits`, `buffer_peak`). In the phase-B correctness runs (MSVC, g++-14 and
+clang-19 alike), at one core the floor, qb and SObjectizer hand every item straight to a waiting
+consumer — nothing buffered, no producer ever parked — while CAF's one thread runs its actors in an
+order that parks a producer at 38 040 of the 40 000 items, its buffer at the threshold; at two cores
+CAF parks on most items with its buffer peaking between about 30 and 48, qb parks from once to about
+two thousand times with its buffer peaking at 10 or 11, SObjectizer buffers a handful of items and
+parks none, and the floor buffers none. So **the default cell measures the hub's coordination, with
+the bound engaged to a degree that differs by framework** — reported beside the cell, never hidden —
+and the evidence that every implementation KEEPS the bound comes from the runs that force it:
+`consumers=4` (fewer consumers than producers: all four park a producer on nearly every item and
+fill the buffer to between 27 and 49 of its 49 slots), and `buffer=41` (a threshold of 1: wherever
+one item is buffered, its producer is parked — CAF everywhere, qb and SObjectizer at two cores). A
+manager planted never to park (in qb and the floor) fails at `consumers=4` in every cell; at the
+defaults it went unseen in every cell that never buffered an item (the floor's, qb's at one core) —
+there was nothing to bound.
+
 It does not measure a framework's own flow control: the bound is the manager's protocol in every
-implementation (the next section but one says why no framework's native primitive fits this shape),
-so a framework is never asked to throttle anything. It does not measure fairness between producers
-or consumers either: every list the manager keeps is FIFO by construction, in every implementation.
+implementation (the last section says why no framework's native primitive fits this shape), so a
+framework is never asked to throttle anything. It does not measure fairness between producers or
+consumers either: every list the manager keeps is FIFO by construction, in every implementation.
 
 ## Parameters
 
@@ -51,10 +68,17 @@ threshold was reached still finds a slot: the buffer then holds at most `buffer 
 producers = buffer − 1` items, and **every implementation asserts it** (an append that leaves the
 buffer holding `buffer` items or more puts a non-zero weight into the checksum, so such a run cannot
 verify). Each un-parking frees one buffered item and lets one producer deliver one, so the bound
-holds for the whole run. The parameter must exceed `producers`: at `buffer ≤ producers` Savina's
-threshold is 0 or less, every producer is parked after every item, only a buffered item un-parks
-one, and the run stops forever on the first item handed straight to a waiting consumer — the spec
-refuses that configuration before anything is built.
+holds for the whole run. The invariant that keeps it is asserted too, after every `DataItem`'s
+park-or-ask, through the same weight: the items buffered plus one more from every producer still
+being asked (neither parked nor ended) never exceed `buffer − 1` (`bound_holds` in the spec header,
+which proves it from the manager's own arithmetic). A manager that stopped parking fails it once its
+buffer reaches the threshold plus one item per producer already ended — 10 items early in a default
+run, not 50.
+
+`buffer` must exceed `producers`: at `buffer ≤ producers` Savina's threshold is 0 or less, every
+producer is parked after every item, only a buffered item un-parks one, and the run stops forever on
+the first item handed straight to a waiting consumer — the spec refuses that configuration before
+anything is built (the reason on stderr, exit 2: the harness's code for a bad command line).
 
 ### Deviations from the reference, and why
 
@@ -80,9 +104,12 @@ refuses that configuration before anything is built.
   every consumer when it exits; here the window closes at the manager's exit decision — the
   reference's `tryExit` — and the consumers end after it (qb: the engine-wide `KillEvent`; CAF:
   `close_atom` then `quit`; SObjectizer: the environment's stop; the floor: its threads join).
-  The producers end inside the window, as the reference's do — except in SObjectizer, which ends an
-  agent only with its whole coop: there the producers go silent after their exit message and are
-  deregistered with the coop after the window.
+  The producers end inside the window, as the reference's do: qb's `kill()`s itself, CAF's
+  `quit()`s, the floor's marks itself done — and SObjectizer's, since SObjectizer deregisters an
+  agent only with its whole coop, calls `so_deactivate_agent()` (`dev/so_5/agent.hpp`, since
+  5.7.3), which drops every subscription so that nothing reaches it any more; the agent itself is
+  deregistered with the coop after the window. In all four, a producer that has sent its exit
+  handles nothing more.
 - **The manager's lists.** Savina keeps three `ListBuffer`s; every implementation here keeps the
   same three FIFOs, from one ring in the spec header (`qvospec::savina::bndbuffer::Fifo`), sized
   to the protocol's bound so a correct run never allocates inside the window — the container is
@@ -103,8 +130,9 @@ Which consumer takes which item, how often a producer is parked and how full the
 depend on the interleaving, so the checksum is built from what every interleaving must deliver:
 
 - **every item, once**: the consumer of item `k` of producer `p` adds `identity(p, k) +
-  consume(v)`, where `v` is the value at that point of the producer's chain — a dropped item misses
-  its term, a doubled one counts twice, an item produced without its chain carries the wrong value;
+  consume(v)`, where `v` is the value at that point of the producer's chain — an item consumed
+  without its term misses it, one handed over twice counts twice, an item produced without its
+  chain or altered on its way carries the wrong value;
 - **every hand-over to the consumer it was handed to**: the manager adds `route(c, item)` when it
   hands an item to consumer `c`, and the consumer that receives it subtracts `route(itself, item)`
   (a mix of the consumer's number times the item's identity). The two cancel exactly when the item
@@ -116,17 +144,31 @@ depend on the interleaving, so the checksum is built from what every interleavin
   it — so every interleaving gives the same sum, while a duplicated request makes the producer end
   on its `items + 1`-th receipt with one number twice and the last one missing.
 
-The total is therefore the same for every interleaving. Asserted alongside: the message count,
-`4 × producers × items + 2 × producers` (who receives which message depends on the interleaving,
-how many does not), counted at the receivers. Reported beside the cell, never asserted:
-`producer_waits` (how many times the manager parked a producer), `consumer_waits` (how many times a
-free consumer found the buffer empty and joined the available list — each consumer does at least at
-its last item) and `buffer_peak` (the most items the buffer held, at most `buffer − 1`).
+The total is therefore the same for every interleaving. Asserted alongside: the bound, through the
+overflow weight (above), and the message count, `4 × producers × items + 2 × producers` (who
+receives which message depends on the interleaving, how many does not), counted at the receivers —
+the harness reports the first check a repetition fails, so a run that breaks both reports its
+checksum. The exit decision is the reference's `tryExit` written with at-least tests (every
+producer's exit received, every consumer available): identical on a correct run, and a run that
+duplicated a message, which can step past either count, ends with its wrong checksum instead of
+waiting forever.
 
-What the checksum cannot see, said plainly: a duplicate of a producer's LAST request reaches a
-producer that has already ended and changes nothing it did; and a request delivered to the wrong
-producer starves the one it was meant for, so that run never reaches its end — a hang, which
-produces no number, rather than a wrong one.
+Reported beside the cell, never asserted: `producer_waits` (how many times the manager parked a
+producer), `consumer_waits` (how many times a free consumer found the buffer empty and joined the
+available list — every consumer that took an item does so at least once, at its last one; that is
+all 40 whenever there are 40 items or more, since the list starts with every consumer and its first
+40 pops are those 40) and `buffer_peak` (the
+most items the buffer held — reported; its `buffer − 1` bound is asserted through the overflow
+weight).
+
+What the checksum cannot see, said plainly. A **lost** message — a `ProduceData`, a `DataItem` on
+either leg, a `ConsumerAvailable`, a `ProducerExit` — moves no sum: the protocol waits for it, so
+that run never reaches the manager's exit decision. It hangs, and the runner's timeout is its
+verdict (`tools/run.py --timeout`); the checksum catches a lost TERM or skipped work, never a lost
+message. A request delivered to the wrong producer starves the one it was meant for: a hang too.
+And a duplicate that arrives where nothing is counted any more changes nothing: a duplicate of a
+producer's LAST request reaches a producer that has already ended, and any duplicate that arrives
+after the manager's exit decision finds the sums already taken.
 
 ## The measured window
 
@@ -134,8 +176,8 @@ Opens when the manager — having heard from every producer and consumer that it
 window) — marks every consumer available and asks every producer for its first item, Savina's
 `onPostStart`; closes at the reference's `tryExit`, when the manager has every producer's exit and
 every consumer available. All 40 000 productions, hand-overs and consumptions are inside it, and so
-are the producers' ends, as in the reference (SObjectizer's excepted, above). The floor's second
-thread is created just before it.
+are the producers' ends, as in the reference (SObjectizer's deregistration excepted, above). The
+floor's second thread is created just before it.
 
 ## Backpressure: what each framework offers, and why the buffer is the manager's here
 
@@ -144,16 +186,25 @@ manager's FIFO and its park / un-park rule, the same code in all four adapters. 
 offers natively, read from its own source:
 
 - **qb** offers no bound a program can lean on between actors. `push` and `send` always succeed
-  (`noexcept`); the mailbox between two VirtualCores is a bounded ring (1 023 64-byte buckets per
-  sending core, `qb::detail::max_deliverable_buckets`), but a full ring is not a signal to the
-  sending ACTOR: the sending core keeps the event in its own outbound queue and retries the flush on
-  its next passes, and `getCoreStats().sends_blocked` counts the attempts that found the ring full
-  — observability, not control. `qb::EventQOS0` is the one event the flush may drop when the ring
-  is full. `qb::io::async::channel` is bounded, with a send that suspends while it is full, but it
-  is single-threaded — coroutines of one VirtualCore — not a channel between actors on two cores.
-  So in qb a bounded buffer between actors is written as a protocol, exactly as here; a public
-  `try_push`, soft caps or a per-pipe policy are Huly QB-53, open. This benchmark is the shape such
-  a primitive would have to beat.
+  (`noexcept`). The mailbox from one VirtualCore to another is a bounded ring — one single-producer
+  ring per (sending core, receiving core) pair, shared by every actor of the sending core, of
+  `qb::detail::max_deliverable_buckets` cache-line buckets (1 023 of 64 bytes on x86-64) — but a
+  full ring is not a signal to the sending ACTOR: the sending core keeps the event in its own
+  outbound pipe, its flush spins and then yields a bounded number of times on it
+  (`kFlushSpinAttempts`, `kFlushYieldAttempts` in `core/VirtualCore.cpp`) and then leaves the rest
+  for its next pass, and `getCoreStats().sends_blocked` counts the attempts that found the ring full
+  — observability, not control. `Actor::try_send(Event const &)` (`core/Actor.h`,
+  `core/Actor.cpp`) does return `false` when the peer core's ring is full, but it is public only as
+  module plumbing — documented `@private`, absent from `qb.llm.api.md` — and the ring it tests is
+  the core pair's, so it bounds what a whole core sends, never what one actor may send another:
+  it is not a bound between two actors. Here no ring can fill anyway: at most 80 events are ever
+  in flight (one per producer, one per consumer), each one bucket, so `sends_blocked` cannot move.
+  `qb::EventQOS0` is the one event the flush may drop when the ring is full.
+  `qb::io::async::channel` is bounded, with a send that suspends while it is full, but it is
+  single-threaded — coroutines of one VirtualCore — not a channel between actors on two cores. So
+  in qb a bounded buffer between actors is written as a protocol, exactly as here; a public
+  `try_push`, soft caps or a per-pipe policy are Huly QB-53, open, and this benchmark is the shape
+  such a qb primitive would be measured against.
 - **CAF**'s mailboxes are unbounded; its native backpressure is the flow API (`caf/flow`, over
   `caf::async::spsc_buffer`, a soft-bounded buffer that signals demand to its producer whenever its
   consumer takes data out). A flow implementation would replace the manager by a stream pipeline —
