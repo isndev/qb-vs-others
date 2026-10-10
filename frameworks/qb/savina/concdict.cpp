@@ -13,9 +13,10 @@
 //                peer at once (VirtualCore::reply is a `send`, not the pass's batched flush), which
 //                is what a request its sender then idles for wants (qb.llm.md, send vs push).
 //                form=1: one coroutine per worker, spawned at Start, awaits
-//                `qb::ask<OpAsk>(ctx, dictionary, 0, key, value, write)` once per request and folds
-//                each answer; the worker's `on(OpAsk&)` routes it with `resolve_ask`. The frame
-//                captures a shared_ptr to the worker's counter, never `this` (qb.llm.md section 4).
+//                `qb::ask<OpAsk>(ctx, dictionary, qb::duration::zero(), key, value, write)` (a
+//                timeout <= 0 waits indefinitely) once per request and folds each answer; the
+//                worker's `on(OpAsk&)` routes it with `resolve_ask`. The frame captures a
+//                shared_ptr to the worker's counter, never `this` (qb.llm.md section 4).
 //                Master and dictionary on VirtualCore 0, worker w on core (1 + w) % cores.
 
 #include <qvospec/savina/concdict.h>

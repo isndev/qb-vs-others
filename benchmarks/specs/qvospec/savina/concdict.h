@@ -114,6 +114,7 @@ inline constexpr std::uint64_t kReplySeed  = 0xc0dc7d1c20000000ULL;
 inline constexpr std::uint64_t kDoneSeed   = 0xc0dc7d1c30000000ULL;
 inline constexpr std::uint64_t kEntrySeed  = 0xc0dc7d1c40000000ULL;
 inline constexpr std::uint64_t kDigestSeed = 0xc0dc7d1c50000000ULL;
+inline constexpr std::uint64_t kWriteSeed  = 0xc0dc7d1c60000000ULL;
 
 // Request j of worker w (both from 0): Savina's draw, made deterministic and PARTITIONED.
 //
@@ -147,17 +148,25 @@ inline Operation operation(const Shape &s, std::uint32_t worker, std::uint64_t j
 inline std::uint64_t entry_key(std::uint32_t key, std::uint32_t value) noexcept {
     return qvo::mix(kEntrySeed + (std::uint64_t{key} << 32) + value);
 }
+// Every write the dictionary applies, in the checksum: write_key(k, v) for a put of v under k.
+inline std::uint64_t write_key(std::uint32_t key, std::uint32_t value) noexcept {
+    return qvo::mix(kWriteSeed + (std::uint64_t{key} << 32) + value);
+}
 
 // The dictionary itself -- ONE class, compiled into every adapter, so the work a request does
 // inside the dictionary actor is the same object code for every framework (FAIRNESS.md 1.3): a
 // std::unordered_map lookup, and for a write an assignment. It is built before the framework is
 // (outside the window, by the thread that runs body()) and handed to the dictionary actor.
 //
-// Beside the map it keeps `digest`, the wrapping sum over the keys written of
-// entry_key(k, now) - entry_key(k, before): two mixes per write, which telescope to
-// sum(entry_key(k, final) - entry_key(k, k)) -- a function of the final content alone, reported at
-// the end without walking 524 287 entries. A write lost, applied to the wrong key or stored with
-// the wrong value moves it.
+// Beside the map it keeps `digest`, a wrapping sum of two parts. Per write, entry_key(k, now) -
+// entry_key(k, before), which telescopes to sum(entry_key(k, final) - entry_key(k, k)) -- a
+// function of the final content alone, reported at the end without walking 524 287 entries. And
+// per write, write_key(k, value): the final content alone cannot see a write that was answered but
+// never stored when the same worker rewrites that key before reading it, so every write applied
+// is counted by itself too -- the set of writes is fixed by the partition, so this part is plain
+// arithmetic as well. Three mixes per write (a tenth of the requests at the default `write`). A
+// write skipped, applied to the wrong key or stored with the wrong value moves the digest,
+// whatever follows it.
 class Store {
 public:
     explicit Store(std::uint32_t keys) {
@@ -177,7 +186,7 @@ public:
     std::uint32_t write(std::uint32_t key, std::uint32_t value) {
         const auto it = _map.find(key);
         if (it == _map.end()) fail("a write of a key outside the dictionary");
-        _digest += entry_key(key, value) - entry_key(key, it->second);
+        _digest += entry_key(key, value) - entry_key(key, it->second) + write_key(key, value);
         it->second = value;
         return value;
     }
@@ -207,14 +216,22 @@ inline std::uint64_t digest_key(std::uint64_t digest) noexcept {
 // the master adds done_key(w, F(w)) for every Done and digest_key(D) for the dictionary's final
 // digest D. Every interleaving gives the same total: worker w has one request in flight at a time,
 // the dictionary serves requests one at a time, and nobody but w touches w's keys, so answer_j is
-// the initial value of its key or w's own last write to it before j, and the final content of
-// every key is w's last write to it. Computed here by replaying each worker's requests against its
-// own partition, with no framework linked.
+// the initial value of its key or w's own last write to it before j, the final content of every
+// key is w's last write to it, and the writes the dictionary applies are w's writes. Computed here
+// by replaying each worker's requests against its own partition, with no framework linked.
 //
-// A request lost or answered twice, an answer delivered to the wrong worker or carrying the wrong
-// value, a write dropped or misapplied, a worker or the dictionary that never reported -- each moves
-// the sum. A duplicate of a worker's LAST answer lands after its Done and moves nothing a checksum
-// can see; a worker that receives it stops the run (fail()), when it is still there to receive it.
+// What the sum moves for: an answer carrying the wrong value, a write answered but not stored,
+// stored under the wrong key or with the wrong value, an answer not folded, a report counted twice,
+// a Done naming the wrong worker. An answer duplicated mid-run shifts every later term of that
+// worker's fold, and leaves it two requests in flight: it reaches its last answer early, and the
+// answer still in flight stops the run (fail()) if the worker is still there to receive it.
+// What it CANNOT report, because the run never gets that far: a request or an answer lost, an
+// answer delivered to the wrong worker, a worker or the dictionary that never reports -- each
+// worker has one request in flight and the master waits for every Done and the Report, so each of
+// those leaves an actor waiting for a message that never comes and the run HANGS; the run's
+// timeout (tools/run.py --timeout) fails the cell. A duplicate of a worker's LAST answer lands after
+// its Done and moves nothing a checksum can see; a worker that receives it stops the run (fail()),
+// when it is still there to receive it.
 inline std::uint64_t expected(const qvo::Params &p) {
     const Shape s = shape(p);
     (void)asks(p);
@@ -229,6 +246,7 @@ inline std::uint64_t expected(const qvo::Params &p) {
             if (o.write) {
                 own[o.key] = o.value;
                 answer     = o.value;
+                digest += write_key(o.key, o.value);
             } else {
                 const auto it = own.find(o.key);
                 answer        = it == own.end() ? o.key : it->second;

@@ -71,8 +71,9 @@ publishable as a side document. Until that measurement every adapter runs `form=
   run — the dictionary writes the answer into the event and `reply()`s it, the worker folds it,
   rewrites the same event into its next request and `reply()`s it back (qb's documented reply idiom,
   the one its ping-pong uses); `reply()` hands the event to the peer at once, as `send` does.
-  `form=1` is one coroutine per worker awaiting `qb::ask<OpAsk>(ctx, dictionary, 0, key, value,
-  write)` per request, the answer routed by `resolve_ask` in the worker's handler.
+  `form=1` is one coroutine per worker awaiting `qb::ask<OpAsk>(ctx, dictionary,
+  qb::duration::zero(), key, value, write)` per request — a timeout `<= 0` waits indefinitely
+  (`request.h`) — the answer routed by `resolve_ask` in the worker's handler.
 - **CAF**: the dictionary's handlers RETURN the answer and CAF sends it to the sender — for an
   ordinary message as an ordinary message (`response_promise::respond_to`; the response id of an
   asynchronous message is asynchronous). `form=0` sends the request with `mail().send()` and takes
@@ -105,26 +106,46 @@ count of the answers it has received — and reports the total `F(w)` to the mas
 last answer; the master adds `done_key(w, F(w))` for every report, and `digest_key(D)` for the
 dictionary's digest `D`, as wrapping sums. `D` is kept by the `Store` itself: every write adds
 `entry_key(k, new) − entry_key(k, old)`, which telescopes to a function of the map's final content,
-so it is reported at the end without walking half a million entries. Because nobody but *w* touches
-*w*'s keys, every answer and every final value is plain arithmetic: the spec header replays each
-worker's requests against its own partition, with no framework linked.
+so it is reported at the end without walking half a million entries, and `write_key(k, value)`,
+which counts the write itself — the final content alone cannot see a write that was answered but
+never stored when the same worker rewrites that key before reading it. Because nobody but *w*
+touches *w*'s keys, every answer, every write and every final value is plain arithmetic: the spec
+header replays each worker's requests against its own partition, with no framework linked.
 
-A request lost or answered twice, an answer delivered to the wrong worker or carrying another
-request's value, a write dropped, misapplied or stored under the wrong key, a worker or the
-dictionary that never reported — each moves the total. What it cannot see is a duplicate of a
-worker's LAST answer, which lands after that worker's report; a worker that receives an answer
-after its last request stops the run loudly (`fail()`) when it is still there to receive it.
+The total moves for an answer carrying the wrong value, a write answered but not stored, a write
+stored under the wrong key, an answer the worker does not fold, a report counted twice and two
+reports that swap their workers' names — each planted alone, at `cores=1` and `cores=2`, in all
+four adapters, and failing every one of those cells on the checksum.
 `expected_messages = 2 × workers × messages + 2 × workers + 2` — every request and every answer,
 each worker's start and report, the dictionary's exit and report — is counted at the receivers and
-asserted alongside; `form=1` sends the same requests and answers, so the count is the same.
+asserted alongside (a master that counts one message too many fails every adapter's cells on the
+count alone); `form=1` sends the same requests and answers, so the count is the same.
+
+An answer duplicated mid-run shifts every later term of its worker's fold and leaves that worker
+two requests in flight: it reaches its last answer early, and the answer still in flight then
+reaches it — a worker that receives an answer after its last request stops the run loudly
+(`fail()`) when it is still there to receive it, and that is how the planted duplicate (qb and the
+floor, `cores=1` and `2`) ended every time; a worker already gone leaves the shifted fold to fail
+the sum. What neither can see is a duplicate of a worker's LAST answer, which lands after that
+worker's report: `fail()` catches it only when the worker is still there to receive it.
+
+What a checksum cannot report is a message that never arrives: a request or an answer lost, an
+answer delivered to the wrong worker, a worker or the dictionary that never reports. Each worker
+has one request in flight and the master waits for every report, so each of those leaves an actor
+waiting for a message that never comes — the run **hangs**, and the run's timeout
+(`tools/run.py --timeout`) fails the cell.
 
 Nothing in this shape depends on the interleaving once the keys are partitioned, so it reports no
 `observed` counts and asserts no `observed_at_least`: every quantity it has is asserted.
 
 ## The measured window
 
-Opens when the master sends the twenty starts into an already-running system — every worker and
-the dictionary have reported ready, so every thread is up — and closes when the master has the
-twentieth worker's report: every request answered. The dictionary's exit and its report (the
-digest) are after the window and inside the message count. The map is built before the framework,
-outside the window and outside the framework's own setup, by the same thread for every adapter.
+Opens when the master sends the twenty starts into an already-running system — in the three
+frameworks every worker and the dictionary have reported ready, so every thread is up — and closes
+when the master has the twentieth worker's report: every request answered. The floor has no
+ready handshake: at `cores=2` its window opens right after its second thread is created, before
+that thread is confirmed running, so its start-up, once, is inside the floor's window — a cost
+only the floor pays, as in `bank-transaction`; a start barrier for every floor is a harness-wide
+decision, not this benchmark's. The dictionary's exit and its report (the digest) are after the
+window and inside the message count. The map is built before the framework, outside the window
+and outside the framework's own setup, by the same thread for every adapter.
