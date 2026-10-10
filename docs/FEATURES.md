@@ -169,7 +169,7 @@ limits `limit_then_drop` / `limit_then_abort` / `limit_then_redirect` / `limit_t
 
 ## 7. Timers
 
-**qb.** `with_timeout<Derived>` (`io/async/io.h:112`) with `setTimeout` (`:150`); one-shot
+**qb.** `with_timeout<Derived>` (`io/async/io.h:124`) with `setTimeout` (`:162`); one-shot
 `Timeout<Func>` (`:211`); `callback(f)` / `callback(f, duration)` (`:368`, `:374`);
 `co_await sleep(duration)` (`io/async/coroutine/utils.h:101`), a cancellable variant
 (`io/async/coroutine/cancellation.h:765`) and an actor-scoped `ctx.sleep` cancelled on kill
@@ -189,8 +189,8 @@ timer thread whose mechanism is chosen at environment creation — wheel, heap o
 **qb.** The asynchronous surface *is* C++20 coroutines: `task<T>` (`io/async/coroutine/task.h:435`),
 `shared_task` (`io/async/coroutine/shared_task.h:55`), `coroutine_scope` with joining / cancelling /
 detaching exit policies (`io/async/coroutine/scope.h:76`, `:631`–`:649`), `parallel` (`:703`),
-`when_all` / `when_any` / timeouts (`io/async/coroutine/combinators.h:99`, `:438`, `:921`),
-`channel<T>` and `select` (`io/async/coroutine/channel.h:125`, `:1201`), `generator` /
+`when_all` / `when_any` / timeouts (`io/async/coroutine/combinators.h:99`, `:453`, `:948`),
+`channel<T>` and `select` (`io/async/coroutine/channel.h:125`, `:1210`), `generator` /
 `async_generator` / `async_stream` (`io/async/coroutine/generator.h:77`, `:289`;
 `io/async/coroutine/stream.h:63`), and six sync primitives — `semaphore`, `async_mutex`,
 `async_rw_lock`, `barrier`, `async_event`, `async_latch` (`io/async/coroutine/sync.h:65`, `:427`,
@@ -247,7 +247,7 @@ anywhere at any time; the dispatcher binds it.
 
 **qb.** No configuration file and no CLI layer in core (`argv`, `getopt`, `.ini`, `toml`,
 `yaml` do not occur in `core/`); `Main` / `CoreInitializer` are the configuration. `qb::json` is
-nlohmann (`json.h:47`), `qb::crypto` (`io/crypto.h:204`), `qb::compression` (`io/compression.h:45`);
+nlohmann (`json.h:47`), `qb::crypto` (`io/crypto.h:204`), `qb::compression` (`io/compression.h:47`);
 **no reflection** — events are relocated by byte copy into 64-byte buckets
 (`utility/prefix.h:138`), which is also why an event must use relocatable members such as
 `qb::string<N>` (`core/patterns/request.h:63`). Logging is nanolog through `QB_LOG_DEBUG` …
