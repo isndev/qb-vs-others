@@ -13,12 +13,12 @@ It measures **a producer and a consumer coordinated through a bounded buffer, wi
 creation on the producer's side**: 5 000 customers are created inside the window, each told two or
 three things, each reporting once and dying, while the factory busy-works the production delay and
 the barber the haircut. The busy work is the harness's `qvo::spin_work` — the same object code for
-every framework, the production and the haircut equal on average — so what differs between the
-frameworks is the cost of creating and ending a customer, of the seven messages each one takes
-(eight with `pace=1`), and above all **whether production overlaps haircuts when there are two
-cores**: a framework that lets the room and the barber run while the factory is still producing
-finishes in roughly the time of the longer side, one that does not pays both sides one after the
-other.
+every framework, the production and the haircut equal on average, and not Savina's own busy loop
+(a deviation, below) — so what differs between the frameworks is the cost of creating and ending a
+customer, of the seven messages each one takes (eight with `pace=1`), and above all **whether
+production overlaps haircuts when there are two cores**: a framework that lets the room and the
+barber run while the factory is still producing finishes in roughly the time of the longer side,
+one that does not pays both sides one after the other.
 
 **The table cell does not time a full room.** Its room has a seat per customer (the deviation
 below), so nobody is ever turned away in it; the `Full` / `Returned` path is implemented by every
@@ -31,8 +31,8 @@ measure fairness either: the room is FIFO by construction, in every implementati
 |---|---|---|---|
 | `haircuts` | 5 000 | 5 000 | no deviation; 5 000 customers created, served and ended per repetition |
 | `room` | 5 000 | 1 000 | **deviation — see below**; one seat per customer; Savina's 1 000 is a declared side experiment |
-| `apr` | 1 000 | 1 000 | no deviation; `uniform[0, apr) + 10` busy-work iterations after each customer |
-| `ahr` | 1 000 | 1 000 | no deviation; `uniform[0, ahr) + 10` busy-work iterations per haircut |
+| `apr` | 1 000 | 1 000 | Savina's `uniform[0, apr) + 10` busy-work iterations after each customer; the iteration itself is a **deviation — see below** |
+| `ahr` | 1 000 | 1 000 | Savina's `uniform[0, ahr) + 10` busy-work iterations per haircut; the iteration itself is a **deviation — see below** |
 | `pace` | 0 | n/a | the factory's shape, a **declared axis** — see below; 0 = the reference's |
 | `cores` | 2 | n/a | factory and customers on one core, room and barber on the other, for the frameworks that place |
 | `wait` | 1 (spin) | n/a | spin/park; both values are always measured and published |
@@ -62,8 +62,24 @@ reports: every implementation returns them as the observations `rejections` and 
 *What is observed, not asserted*), so the side experiment's result document carries them per
 repetition and its report prints them beside each cell; it is never a table cell. Every
 implementation implements the full room: run with a small `room` and every cell verifies
-(measured down to `room=5`, and up
-to 333 667 rejections in one cell) — those cells are not comparable between frameworks either.
+(measured down to `room=5`, and up to 333 667 rejections in one cell) — those cells are not
+comparable between frameworks either.
+
+### Deviation from Savina's busy work, and why
+
+Savina's `busyWait(limit)` (`SleepingBarberConfig.java`) runs `limit` iterations of
+`Math.random(); test++;`, and `Math.random()` draws from the ONE `java.util.Random` every thread of
+the JVM shares: each iteration is a compare-and-swap on that generator's seed, contended whenever
+the factory and the barber busy-work at the same time. Here an iteration is one step of
+`qvo::spin_work`, `x = mix(x + i)` — two multiplies and three xor-shifts on a local, no shared
+state — and only the iteration COUNT follows Savina: `uniform[0, rate) + 10`, drawn from a
+deterministic stream (the spec's `production_work` and `haircut_work`). Same count, different cost
+per iteration, for two reasons. A deterministic unit has a result the checksum can include, so a
+skipped production or haircut moves the sum (Savina's loop returns only its count). And an
+uncontended unit costs the same whether production and haircuts overlap or not: a shared
+generator would make every iteration dearer exactly when they do — what the `cores=2` cell is
+about — through a contention that belongs to none of the frameworks under test. A cell's absolute
+time is therefore not comparable with Savina's published figures.
 
 ### The factory's shape: `pace`, a declared axis
 
@@ -85,10 +101,15 @@ do show what each runtime does with the shape:
   receive its customers during production — and the run still loses the overlap past a few hundred
   customers, for the reason in "What the shape found in qb".
 - **CAF**: a mail is enqueued in the room's mailbox at once, but when the room RUNS is the
-  pool's decision: at the default parameters and `cores=2`, CAF woke the barber exactly once in
-  every correctness run, with either `pace` — the room did not run until production had ended.
+  pool's decision: at the default parameters and `cores=2`, CAF woke the barber once in nearly
+  every repetition, with either `pace` — the room did not run until production had ended. Nearly:
+  each of 44 such repetitions built with g++-14 on WSL2 woke him exactly once, but on the loaded
+  Windows host 3 of 44 MSVC repetitions woke him 2, 3 and 15 times — in those, the room did run
+  during production, briefly.
 - **SObjectizer**: a send is queued at the receiver at once, and at `cores=2` the room ran during
-  production in both shapes (thousands of wake-ups of the barber).
+  production in both shapes: hundreds to thousands of wake-ups of the barber (567 to 3 539 in each
+  of 44 g++-14 repetitions; on the loaded Windows host, 2 of 44 MSVC repetitions woke him only once
+  or twice).
 - **The floor**: a worker inside the `pace=0` loop drains none of its inbound rings. At `cores=1`
   that is safe — `Mesh::send` drains a full ring it owns inline. At `cores=2` the room's worker can
   fill the ring back to the factory's (Wait, Start and Done for every customer it handles, 65 536
@@ -153,8 +174,10 @@ frameworks and the floor — returns two counts kept by the room (`qvo::Answer::
   room of one seat per customer; in the `room=1000` side experiment the number that makes those
   cells incomparable (5 334 667 against 4 000 in the measurements above).
 - `wakeups` — the arrivals that found the barber asleep and woke him. How production overlaps
-  haircuts shows here: CAF's `cores=2` correctness runs woke him once, SObjectizer's thousands of
-  times.
+  haircuts shows here: at `cores=2` CAF's correctness runs woke him once in nearly every
+  repetition, SObjectizer's hundreds to thousands of times (the counts are in *The factory's
+  shape* above), and the same framework varies from one repetition to the next — which is why the
+  count is printed per cell rather than assumed.
 
 Every measured repetition's values are written into the result document (`"observed":
 {"rejections": {samples, min, p50, max}, "wakeups": {...}}`) and `tools/report.py` prints the median

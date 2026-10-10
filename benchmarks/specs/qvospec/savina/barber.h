@@ -77,6 +77,13 @@ inline std::map<std::string, long long> params() {
 // qvo::spin_work -- the harness's one busy-work function, identical object code for every
 // framework. The barber's stream is indexed by HIS haircut count, not by the customer, so the sum
 // of all haircut results is the same whichever customer each haircut lands on.
+//
+// Same iteration COUNT, different iteration COST -- a DEVIATION (barber.md, "Deviation from
+// Savina's busy work"). Savina's iteration is `Math.random(); test++;`: a compare-and-swap on the
+// seed of the one java.util.Random every JVM thread shares, contended whenever the factory and the
+// barber busy-work at once. Ours is one mix() step on a local: deterministic, so its result can
+// enter the checksum (a skipped production or haircut moves the sum), and uncontended, so it costs
+// the same whether production and haircuts overlap or not.
 inline constexpr std::uint64_t kProductionRate = 0x5ba4be4f00000001ULL;
 inline constexpr std::uint64_t kProductionSeed = 0x5ba4be4f00000002ULL;
 inline constexpr std::uint64_t kHaircutRate    = 0x5ba4be4f00000003ULL;
