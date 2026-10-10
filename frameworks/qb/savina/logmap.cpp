@@ -5,16 +5,19 @@
 //                qb/llm/qb.llm.md -- "reply vs forward" (both reuse the received event; `reply`
 //                swaps dest and source), "`send<T>()` is unordered; `push<T>()` is ordered", and
 //                "Put the actors that talk to each other most on the SAME core".
-// @idiom-note    The ask is qb's own request/reply on ONE event: the worker pushes
+// @idiom-note    The ask is qb's own request/reply on the RECEIVED event: the worker pushes
 //                `Compute{term}` to its computer, the computer overwrites the term with the next
-//                one and `reply()`s the same event, and the worker, when it still owes terms,
-//                writes its new term into that event and `reply()`s it back -- so a series' whole
-//                chain of round trips recycles the event in place and allocates nothing. `push`,
-//                not `send`, everywhere: the master's burst must reach each worker in order
-//                (every NextTerm before the GetTerm), and a round trip's two hops stay on one core
-//                where `send` has nothing to publish early. No `qb::ask`: its correlation registry
-//                and coroutine resume buy nothing for a worker with one request in flight and one
-//                peer (bank-transaction is the shape that prices `qb::ask`). A worker and its
+//                one and `reply()`s the event, and the worker, when it still owes terms,
+//                `reply()`s it straight back (it already carries the term to grow from) -- every
+//                hop after the first re-sends the event it received: `reply()` swaps dest and
+//                source and copies the event's one bucket into the core's pipe, with no
+//                allocation and no construction. `push` for what an actor originates: the
+//                master's burst must reach each worker in order (every NextTerm before the
+//                GetTerm). A round trip's two hops stay on one core, where a `send` publishes
+//                nothing early: on the same core it is the same copy into the pipe. No
+//                `qb::ask`: its correlation registry and coroutine resume buy nothing for a
+//                worker with one request in flight and one peer (bank-transaction is the shape
+//                that prices `qb::ask`). A worker and its
 //                computer talk to nobody else, so they share a VirtualCore -- series i on core
 //                (1 + i) % cores, the master on core 0 -- and no round trip crosses a core; the
 //                held NextTerm requests are a count (they carry nothing).
@@ -260,9 +263,10 @@ int main(int argc, char **argv) {
     spec.work_units        = qvospec::savina::logmap::work_units;
     spec.idiom_source      = "qb/src/qb/core/Actor.h reply() + qb/llm/qb.llm.md (reply vs forward, "
                              "push vs send, same-core placement)";
-    spec.idiom_note        = "push<Compute> to the computer, which reply()s the same event with "
-                             "the next term; a worker still owing terms reply()s it straight "
-                             "back, so a chain recycles one event; held NextTerms are a count; "
+    spec.idiom_note        = "push<Compute> to the computer, which reply()s the received event "
+                             "with the next term; a worker still owing terms reply()s it "
+                             "straight back, so every later hop re-sends the received event (a "
+                             "copy into the pipe, no allocation); held NextTerms are a count; "
                              "master on VirtualCore 0, series i (worker + computer) on core "
                              "(1 + i) % cores";
     spec.caveats           = qvoqb::caveats();
@@ -272,9 +276,12 @@ int main(int argc, char **argv) {
         "-- qb.llm.md's rule for actors that talk only to each other; the pools place each "
         "worker and computer freely and may split a pair");
     spec.caveats.emplace_back(
-        "the master's NextTerm burst (terms x series pushes from one handler) reaches a remote "
-        "core at the handler's end, through the pass's flush; the chains on that core start "
-        "after it, as they do in every framework whose master sends the whole burst first");
+        "the master's NextTerm burst (terms x series pushes from one handler) leaves for a "
+        "remote core only in the flush that follows the handler, so at cores=2 no remote chain "
+        "starts before the master has pushed the whole burst; CAF's and SObjectizer's pools can "
+        "run a worker on the other thread from the first message the master enqueues for it, "
+        "and the floor's thread 1 drains its ring while the burst is still being sent -- the "
+        "`held` observation beside the cell says how much of the burst each found waiting");
 
     return qvo::run(argc, argv, std::move(spec), savina_logmap_qb::body);
 }

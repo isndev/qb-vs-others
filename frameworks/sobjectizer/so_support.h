@@ -163,24 +163,52 @@ inline void push_sweep_caveat(std::vector<std::string> &c) {
     }
 }
 
+// The pool itself, for cores >= 2: make_pool_binder binds every agent to it with
+// fifo_t::individual, and an adapter that needs a second binder on the SAME pool (the group
+// sweep below) takes it from here, so the two can never differ in threads, queue lock or pinning.
+inline so_5::disp::thread_pool::dispatcher_handle_t make_pool_dispatcher(so_5::environment_t &env,
+                                                                         int cores, bool spin) {
+    so_5::disp::thread_pool::disp_params_t params;
+    params.thread_count(static_cast<std::size_t>(cores < 1 ? 1 : cores));
+    params.tune_queue_params([spin](auto &q) { tune_pool_queue(q, spin); });
+    params.work_thread_factory(std::make_shared<PinningThreadFactory>(qvo::pinned_cpus()));
+    return so_5::disp::thread_pool::make_dispatcher(env, "qvo-tp", std::move(params));
+}
+
 inline so_5::disp_binder_shptr_t make_pool_binder(so_5::environment_t &env, int cores,
                                                   bool spin) {
-    auto factory = std::make_shared<PinningThreadFactory>(qvo::pinned_cpus());
-
-    if (cores >= 2) {
-        so_5::disp::thread_pool::disp_params_t params;
-        params.thread_count(static_cast<std::size_t>(cores));
-        params.tune_queue_params([spin](auto &q) { tune_pool_queue(q, spin); });
-        params.work_thread_factory(factory);
-        return so_5::disp::thread_pool::make_dispatcher(env, "qvo-tp", std::move(params))
+    if (cores >= 2)
+        return make_pool_dispatcher(env, cores, spin)
             .binder(so_5::disp::thread_pool::bind_params_t{}.fifo(
                 so_5::disp::thread_pool::fifo_t::individual));
-    }
 
+    auto factory = std::make_shared<PinningThreadFactory>(qvo::pinned_cpus());
     so_5::disp::one_thread::disp_params_t params;
     params.tune_queue_params([spin](auto &q) { tune_queue(q, spin); });
     params.work_thread_factory(factory);
     return so_5::disp::one_thread::make_dispatcher(env, "qvo-ot", std::move(params)).binder();
+}
+
+// The group sweep -- FAIRNESS.md 1.1's "both are implemented" applied to SObjectizer's own
+// placement. A shape whose agents form independent GROUPS that talk only to each other
+// (savina/logmap: a series' worker and its rate computer) may bind each group as its OWN coop
+// with fifo_t::cooperation on make_pool_dispatcher's pool: a group's demands then share one
+// queue and run on one thread at a time, SObjectizer's spelling of qb placing the group on one
+// VirtualCore, where the table cell's fifo_t::individual lets the pool split it.
+// QVO_SO_GROUP_COOPS=1 asks an adapter that HAS groups for that binding at cores >= 2 (one_thread
+// already runs everything on one thread); an adapter without groups ignores it. A document
+// measured under it carries group_coops_caveat() FIRST and is not a table cell until a quiet-host
+// sweep shows it faster.
+inline bool group_coops() {
+    const char *v = std::getenv("QVO_SO_GROUP_COOPS");
+    return v != nullptr && std::strtoll(v, nullptr, 10) != 0;
+}
+
+inline std::string group_coops_caveat(const std::string &group) {
+    return "SWEEP DOCUMENT, NOT A TABLE CELL: QVO_SO_GROUP_COOPS=1 -- each group (" + group +
+           ") is its own coop bound with fifo_t::cooperation to the same thread_pool, one demand "
+           "queue per group, where the table cell binds every agent with fifo_t::individual (the "
+           "agents outside a group keep it)";
 }
 
 inline std::vector<std::string> pool_caveats() {

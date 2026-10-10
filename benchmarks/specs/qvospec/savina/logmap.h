@@ -100,9 +100,13 @@ inline std::uint64_t identity(std::uint64_t i) noexcept { return qvo::mix(i + 1)
 // worker folds them IN ORDER, every term it receives, by its exact bit pattern (FNV-1a's 64-bit
 // step over one 64-bit word). An ordered fold, not a sum: a logistic orbit at these rates settles
 // on a period-4 cycle, so a run that computed four terms too few would end on the same final
-// term, and a fold over the final term alone would verify it. Here a term dropped, added or
-// answered out of turn changes the fold. The seed is the series' identity, so two series that
-// exchanged a term change both folds.
+// term, and a fold over the final term alone would verify it. Here a NextTerm dropped,
+// duplicated or delivered to the wrong worker, a request served at another series' rate, an
+// answer duplicated and one bit of one term changed each change a fold, and the run ends on a
+// wrong checksum. An answer LOST, or delivered to a worker that did not ask for it, does not end
+// the run at all: the worker that asked waits for it forever, so the run never verifies and only
+// tools/run.py --timeout ends it (recorded `timeout`). The seed is the series' identity, so two
+// series that exchanged a term change both folds.
 inline constexpr std::uint64_t kFoldPrime = 0x100000001b3ULL;
 inline std::uint64_t chain_seed(std::uint64_t i) noexcept { return identity(i); }
 inline std::uint64_t chain_step(std::uint64_t chain, double term) noexcept {

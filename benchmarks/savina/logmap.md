@@ -93,9 +93,9 @@ same value in every document, on every host.
 
 | framework | `cores=1` | `cores=2` |
 |---|---|---|
-| qb | everything on VirtualCore 0 | master on VirtualCore 0, series *i*'s worker AND computer on core (1 + *i*) % 2 — fixed before start, so no round trip crosses a core (qb.llm.md: put the actors that talk to each other most on the same core). The ask is ONE event per chain: the worker `push`es `Compute{term}`, the computer overwrites the term and `reply()`s the same event, and a worker still owing terms `reply()`s it straight back — nothing is allocated per hop. `push`, not `send`: the burst must reach each worker in order, and a same-core hop has nothing to publish early. The master's burst reaches the remote core at the end of its handler, through the pass's flush |
+| qb | everything on VirtualCore 0 | master on VirtualCore 0, series *i*'s worker AND computer on core (1 + *i*) % 2 — fixed before start, so no round trip crosses a core (qb.llm.md: put the actors that talk to each other most on the same core). The ask is request/reply on the received event: the worker `push`es `Compute{term}`, the computer overwrites the term and `reply()`s the event, and a worker still owing terms `reply()`s it straight back — `reply()` swaps dest and source and re-sends the received event, a copy of its one bucket into the core's pipe, with no allocation. `push` for the burst, which must reach each worker in order; a same-core hop has nothing to publish early. The master's burst leaves for the remote core only in the flush that follows its handler |
 | CAF | `max-threads=1` | `=2`, both pinned; the pool places the master, the workers and the computers. The worker sends its term as a bare `double`, the computer's handler RETURNS the next term and CAF delivers it to the sender (`response_promise::respond_to`: a stack-held promise for an asynchronous message, no allocation beyond the message) — Savina's `sender() ! result`. A computer made ready by its worker's message is prepended to the worker's own queue, so a pair usually shares a thread; which pairs share one, and whether a hop crosses a core, is the scheduler's decision |
-| SObjectizer | `one_thread` dispatcher | `thread_pool` with 2 pinned work threads, `fifo_t::individual`; the dispatcher places. The ask is ONE `mutable_msg<msg_term>` per chain, redirected computer → worker → computer with `so_5::send(mbox, std::move(cmd))` — SObjectizer's own idiom for a message passed along (`sample/so_5/mutable_msg_agents`), no allocation per hop. A SObjectizer message has no sender, so the term carries the worker's index, as Savina's ComputeMessage carries its sender |
+| SObjectizer | `one_thread` dispatcher | `thread_pool` with 2 pinned work threads, `fifo_t::individual`; the dispatcher places. The ask is ONE `mutable_msg<msg_term>` per chain, redirected computer → worker → computer with `so_5::send(mbox, std::move(cmd))` — SObjectizer's own idiom for a message passed along (`sample/so_5/mutable_msg_agents`), no message allocated per hop (the thread_pool's queue still allocates one demand node per delivery). A SObjectizer message has no sender, so the term carries the worker's index, as Savina's ComputeMessage carries its sender. A side document under `QVO_SO_GROUP_COOPS=1` binds each series as its own coop with `fifo_t::cooperation` on the same pool — SObjectizer's own spelling of qb's pair placement; it carries `SWEEP DOCUMENT, NOT A TABLE CELL` until a quiet host shows it is the faster form (FAIRNESS.md § 1.1) |
 | floor | one thread, the master and every series in its ring | two pinned threads, qb's placement: a series is ONE slot holding its worker's and its computer's state; a request is a push into the owner's own ring and the answer a push back. The per-actor mailbox and the per-role dispatch are engineered out — that is what the floor is for. The burst is sent from the caller's thread, which is worker 0: at `cores=1` a full ring is drained inline, so the chains run in slices of a ring while the burst is still being sent |
 
 ## The verified answer
@@ -108,9 +108,13 @@ a run that computed four terms too few would end on the same final term, and ser
 however many it computes. When worker *i* answers GetTerm the master adds `series_key(i, chain)`;
 when computer *i* reports the master adds `computer_key(i, served)` — wrapping sums of `mix()`.
 The expected total is the same recurrence run with no framework linked (`series_chain` in the spec
-header). A term dropped, computed twice, answered to the wrong worker, computed at the wrong
-series' rate, or answered by GetTerm before the chain ended changes a fold; a request served twice
-or never changes a report. `expected_messages = series × (3·terms + 4)` — per worker `terms`
+header). A NextTerm dropped, duplicated or delivered to the wrong worker, a request sent to the
+wrong computer (computed at another series' rate), an answer duplicated, one bit of one term
+changed, or a GetTerm answered before the chain ended changes a fold, and a request served twice
+or never changes a report: the run ends, on a wrong checksum. An answer LOST, or delivered to a
+worker that did not ask for it, does not end the run at all — the worker that asked waits for it
+forever — so such a run never verifies, and only `tools/run.py --timeout` ends it, recorded as
+`timeout`. `expected_messages = series × (3·terms + 4)` — per worker `terms`
 NextTerm, `terms` answers and one GetTerm, per computer `terms` requests and one stop, and the
 master's `series` answers and `series` reports — is counted at the receivers and asserted
 alongside.

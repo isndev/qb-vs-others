@@ -36,8 +36,11 @@ enum Tag : std::uint32_t {
     kReport  = 7
 };
 
-// One series: its worker's state and its computer's, owned by one worker thread.
-struct Series {
+// One series: its worker's state and its computer's, owned by one worker thread. A line of its
+// own: neighbouring series belong to different threads at cores=2 ((1 + i) % 2), and 72 bytes
+// packed in a vector would share cache lines with the neighbours' -- false sharing between the
+// two threads on every term, a cost of the floor's layout and not of the workload.
+struct alignas(qvobase::kCacheLine) Series {
     double        rate{0};
     double        term{0};
     std::uint64_t chain{0};
@@ -206,8 +209,8 @@ int main(int argc, char **argv) {
         "computer's state, with no mailbox and no per-actor dispatch: the request and the answer "
         "are two pushes into the owner thread's own ring, the held requests a count",
         "the master lives on thread 0 and series i on thread (1 + i) % cores -- the placement "
-        "qb's cell fixes -- so no round trip crosses a core; with cores=2 the burst to the odd "
-        "series and their answers to the master do",
+        "qb's cell fixes -- so no round trip crosses a core; with cores=2 the burst to the even "
+        "series (i = 0, 2, 4, ...: thread (1 + i) % 2 = 1) and their answers to the master do",
         "the terms x series NextTerm burst is pushed from the caller's thread, which IS worker 0: "
         "a full ring of its own is drained inline (Mesh::send), so at cores=1 the chains run in "
         "slices of a ring (65 536 messages) while the burst is still being sent, where a "

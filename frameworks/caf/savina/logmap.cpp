@@ -276,7 +276,8 @@ int main(int argc, char **argv) {
         "the computer's answer is a value RETURNED from its handler, which CAF sends to the "
         "sender of an asynchronous message as an ordinary message (response_promise::respond_to, "
         "no allocation beyond the message itself); every hop allocates its message, which is "
-        "CAF's model -- qb and SObjectizer recycle one event per chain");
+        "CAF's model -- qb's reply() re-sends the received event as a copy into its pipe, and "
+        "SObjectizer redirects one message instance per chain");
 
     return qvo::run(argc, argv, std::move(spec), savina_logmap_caf::body);
 }

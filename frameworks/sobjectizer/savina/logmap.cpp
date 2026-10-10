@@ -7,17 +7,23 @@
 //                and the bank-transaction adapter beside this file (agents on their DIRECT mboxes,
 //                the field's mboxes shared before start, dev/so_5/disp/thread_pool/pub.hpp via
 //                qvoso::make_pool_binder).
-// @idiom-note    The ask is one MUTABLE message per round trip, recycled: the worker sends
+// @idiom-note    The ask is one MUTABLE message per chain, redirected: the worker sends
 //                `mutable_msg<msg_term>{term, sender}` to its computer's direct mbox, the computer
 //                overwrites the term with the next one and redirects the same instance to the
-//                sender's mbox, and the worker, when it still owes terms, writes its new term and
-//                redirects it back -- so a series' whole chain moves one message object and
-//                allocates nothing per hop, SObjectizer's own idiom for a message passed along
-//                (it exists to avoid exactly that copy). SObjectizer messages carry no sender, so
+//                sender's mbox, and the worker, when it still owes terms, redirects it back (it
+//                already carries the term to grow from) -- so a series' whole chain moves ONE
+//                message object and constructs or allocates no message per hop, SObjectizer's own
+//                idiom for a message passed along (it exists to avoid exactly that copy). What a
+//                delivery still costs is the dispatcher's: the thread_pool allocates one demand
+//                node per push (dev/so_5/disp/thread_pool/impl/basic_event_queue.hpp, push()),
+//                one_thread a slot of its deque. SObjectizer messages carry no sender, so
 //                the term carries the worker's index, as Savina's ComputeMessage carries its
 //                sender. NextTerm, GetTerm, the readiness and the stop are signals. The held
 //                NextTerm requests are a count. Master, workers and computers on a thread_pool of
 //                `cores` pinned work threads with fifo_t::individual, placed by the dispatcher.
+//                QVO_SO_GROUP_COOPS=1 binds each series as its own coop with fifo_t::cooperation
+//                on the same pool instead (so_support.h, the group sweep): a SWEEP document, not
+//                a table cell, until a quiet host says it is the faster form (FAIRNESS.md 1.1).
 
 #include <qvospec/savina/logmap.h>
 
@@ -217,13 +223,40 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
 
     Sink  sink;
     Field field;
+    field.workers.reserve(series);
+    field.computers.reserve(series);
     so_5::launch([&](so_5::environment_t &env) {
+        if (cores >= 2 && qvoso::group_coops()) {
+            // The group sweep (so_support.h): series i -- its worker and its computer -- is one
+            // coop bound with fifo_t::cooperation, the master one bound with fifo_t::individual,
+            // all on ONE pool. Every coop is built and the field filled BEFORE the first is
+            // registered: an agent reads the field from its first handler on.
+            using so_5::disp::thread_pool::bind_params_t;
+            using so_5::disp::thread_pool::fifo_t;
+            const auto pool  = qvoso::make_pool_dispatcher(env, cores, spin);
+            const auto group = pool.binder(bind_params_t{}.fifo(fifo_t::cooperation));
+            auto master = env.make_coop(pool.binder(bind_params_t{}.fifo(fifo_t::individual)));
+            field.master = master->make_agent<master_t>(std::cref(field), terms, std::ref(watch),
+                                                        std::ref(sink))
+                               ->so_direct_mbox();
+            std::vector<so_5::coop_unique_holder_t> pairs;
+            pairs.reserve(series);
+            for (std::uint32_t i = 0; i < series; ++i) {
+                auto pair = env.make_coop(group);
+                field.computers.push_back(
+                    pair->make_agent<computer_t>(std::cref(field), i)->so_direct_mbox());
+                field.workers.push_back(
+                    pair->make_agent<worker_t>(std::cref(field), i)->so_direct_mbox());
+                pairs.push_back(std::move(pair));
+            }
+            env.register_coop(std::move(master));
+            for (auto &pair : pairs) env.register_coop(std::move(pair));
+            return;
+        }
         env.introduce_coop(qvoso::make_pool_binder(env, cores, spin), [&](so_5::coop_t &coop) {
             field.master = coop.make_agent<master_t>(std::cref(field), terms, std::ref(watch),
                                                      std::ref(sink))
                                ->so_direct_mbox();
-            field.workers.reserve(series);
-            field.computers.reserve(series);
             for (std::uint32_t i = 0; i < series; ++i) {
                 field.computers.push_back(
                     coop.make_agent<computer_t>(std::cref(field), i)->so_direct_mbox());
@@ -256,15 +289,22 @@ int main(int argc, char **argv) {
                              "carries its sender's index; held NextTerms are a count; "
                              "thread_pool(cores) with fifo_t::individual for cores>=2";
     spec.caveats           = qvoso::pool_caveats();
+    if (qvoso::group_coops())
+        spec.caveats.insert(spec.caveats.begin(),
+                            qvoso::group_coops_caveat(
+                                "series i: its worker and its rate computer, at cores >= 2; "
+                                "cores=1 is one_thread either way"));
     spec.caveats.emplace_back(
         "the master, the workers and the computers are placed by the thread_pool: which thread "
         "runs a worker's or a computer's next demand is the dispatcher's decision, so a round "
         "trip may cross a core; qb's cell pins series i (worker + computer) on core "
         "(1 + i) % cores -- see benchmarks/savina/logmap.md");
     spec.caveats.emplace_back(
-        "a round trip recycles ONE mutable message (so_5::send(mbox, std::move(cmd)), "
-        "SObjectizer's redirection of a mutable message): no allocation per hop, as qb's reply() "
-        "recycles its event; NextTerm and GetTerm are signals, which carry no instance");
+        "a chain redirects ONE mutable message (so_5::send(mbox, std::move(cmd)), SObjectizer's "
+        "redirection of a mutable message): no message is allocated per hop, though the "
+        "thread_pool's queue allocates one demand node per delivery (thread_pool/impl/"
+        "basic_event_queue.hpp, push()); qb's reply() re-sends the received event as a copy into "
+        "its pipe; NextTerm and GetTerm are signals, which carry no instance");
 
     return qvo::run(argc, argv, std::move(spec), savina_logmap_sobjectizer::body);
 }
