@@ -27,8 +27,10 @@ around it:
   threads, and a list actor that changes thread finds its list in the other core's cache;
 - how far the interleaving lets the list grow before each walk — a contains issued after more
   inserts walks a longer list. That amount of work is not the same in every cell, so it is
-  **reported beside the cell** (`contains_walk`, `write_walk`, `size_walk`, `contains_found`) and
-  never compared silently (FAIRNESS.md § 0).
+  **reported beside the cell** (`contains_walk`, `write_walk`, `size_walk`) and never compared
+  silently (FAIRNESS.md § 0). `contains_found` is reported beside them but is not an observation
+  of the interleaving: Savina's generator fixes it at 0 (below), and every contains answer is
+  asserted, so a cell that found a value has already failed verification.
 
 It does **not** measure parallelism: the walk is one actor's, serial by the problem's definition,
 and a second core can only take the workers and the messaging off the list's core. It does not
@@ -72,7 +74,8 @@ states, so the values inserted and the values looked for never meet. Every conta
 list and answers false. These are properties of the reference's workload and they are reproduced
 exactly, not corrected — a "fixed" generator would be a different benchmark, and Savina's own
 numbers were measured on this one. The checksum asserts every answer that follows from them
-(below), and `contains_found`, reported beside every cell, is the run's own confirmation: 0.
+(below), and `contains_found`, reported beside every cell, is the run's own confirmation: 0, by
+construction rather than by interleaving.
 
 ### The reply path: `form`, a declared axis
 
@@ -159,31 +162,47 @@ A/A spread.
 Every request carries its identity — the worker's number and the request's index in that
 worker's sequence — and the list echoes it, with the request's kind, in the answer. A worker knows
 what it asked without reading the answer (its sequence is the generator's), and for each answer it
-adds `reply_term(what it asked, what the answer says it answers, the asserted result)`: equal in a
-correct run, so the term is fixed by the request alone. An answer delivered to the wrong worker, an
-answer delivered twice (every later answer of that worker is then one index off), an answer of the
-wrong kind, or a wrong result where the result is fixed, moves the worker's sum. A copy that reaches
-a worker after its last request — its sum already reported — stops the run with an explicit protocol
-failure (`fail()`, as in `concdict`) rather than a number, and so does, with `form=1`, a qb answer
-that no ask of the worker waits for.
+adds `answer_term`: `reply_term(what it asked, what the answer says it answers, the asserted
+result)` — equal in a correct run, so the term is fixed by the request alone — plus, for a size
+query, the length the answer reports (below). An answer delivered to the wrong worker, an answer
+delivered twice (every later answer of that worker is then one index off), an answer of the wrong
+kind, or a wrong result where the result is fixed, moves the worker's sum. In qb, SObjectizer and
+the floor, a copy that reaches a worker after its last request — its sum already reported — stops
+the run with an explicit protocol failure (`fail()`, as in `concdict`) rather than a number, and
+so does, with `form=1`, a qb answer that no ask of the worker waits for. A CAF worker has quit
+after sending its report (`quit()`, the reference's `exit()`), so a late copy is dropped with its
+mailbox and reaches no handler: it changes nothing the run reports.
 
 Which results are fixed, whatever the interleaving:
 
 - an **insert** answers the value it inserted (the reference's `ResultMessage`) — asserted;
 - a **contains of a value no worker inserts** answers false — asserted. With Savina's generator that
   is every contains (above);
-- a contains of a value some worker inserts would depend on whether that insert came first — the
-  rule is written for it (the table of inserted values is computed, not assumed) though the
-  generator never produces one; a size query answers the length at that moment — both are taken as
-  0 in the sum and not asserted.
+- a contains of a value some worker inserts is fixed in two cases — the asker inserted it earlier
+  (true: that insert was applied before the asker could ask again) and only the asker inserts it,
+  later (false) — and otherwise depends on whether another worker's insert came first. The rule
+  asserts none of the three, the conservative choice: the generator never produces one, so nothing
+  is lost, and the table of inserted values is computed, not assumed, so the rule does not depend
+  on the generator. Such an answer is taken as 0 in `reply_term`;
+- a **size query** answers the length at that moment, which the interleaving decides — taken as 0
+  in `reply_term`, and asserted all the same, as a SUM: `SortedList::size` adds to the size walk
+  exactly the length it answers, so the lengths the workers receive add up to the list's
+  `size_walk` in every interleaving. Each worker adds every length it receives, the list subtracts
+  its `size_walk` from what it reports, and a length altered on its way — or answered without its
+  walk — is left in the checksum.
 
-The master adds every worker's sum, and after the window the list's final contents add their fold:
-element *k* of the list, in order, contributes `content_term(k, item)`, so the fold asserts the
-order as well as the multiset. The contents are fixed by the multiset of inserts, which no
-interleaving changes (each worker's inserts are its own and each is applied once); an insert lost or
-applied twice moves the fold. An answer LOST does not move a number: its worker waits for it, the run
-cannot end, and the harness's caller sees a hang — every message of this shape is on the critical
-path.
+The list adds a term per request it RECEIVES — `request_term(identity, kind, payload)`, as the
+request arrived — since the workers' terms only check what comes back: a contains of a value
+nobody inserts answers false whatever value it carried, so without it a payload altered on its way
+to the list would still verify. The sum of those terms is fixed by the requests, whatever order
+they arrive in. After the window the list reports `list_term`: those request terms, minus its size
+walk, plus the fold of its final contents — element *k* of the list, in order, contributes
+`content_term(k, item)`, so the fold asserts the order as well as the multiset. The contents are
+fixed by the multiset of inserts, which no interleaving changes (each worker's inserts are its own
+and each is applied once); an insert lost or applied twice moves the fold. The master adds every
+worker's sum and the list's term. An answer LOST does not move a number: its worker waits for it,
+the run cannot end, and the harness's caller sees a hang — every message of this shape is on the
+critical path.
 
 `expected_messages = 2 × workers + 2 × workers × messages` is asserted alongside: the workers' DoWork,
 the requests, the answers and the workers' reports, counted at the receivers; `form=1` sends the
@@ -204,12 +223,17 @@ checksum, and its walk falls short of the bound.
 Opens when the master, having heard from the list and from every worker that they have started
 (outside the window), sends each worker its DoWork; closes when the master receives the last
 worker's report — the reference's terminal condition, the master's last `EndWorkMessage`. Every
-request, every walk and every answer is inside it. The list's final contents are folded after it
-(the master's Finish and the list's Report, not counted; the floor reads its list once its threads
-have joined), and the table of values any worker
+request, every walk and every answer is inside it. The list's term — its final contents' fold, its
+request terms, its size walk — is computed after it (the master's Finish and the list's Report, not
+counted; the floor reads its list once its threads have joined), and the table of values any worker
 inserts — which tells a worker which contains answers are fixed — is built before it, the same
 framework-free code in every adapter.
 
 The walk is compiled into each binary with that binary's flags. It is out of line
 (`QVOSPEC_CONCSLL_NOINLINE`) so that no framework's handler can inline it into a different shape and
-so that its code can be compared across the four binaries.
+so that its code can be compared across the four binaries — and it has been, on the three
+toolchains of the report (MSVC, g++-14, clang-19; the MSVC listings compiled with `/FAs` from each
+adapter's own command line, the ELF binaries disassembled): each binary holds exactly ONE copy of
+`add`, `contains` and `size`, and within a toolchain the four copies are the same instructions,
+once addresses are set aside (g++'s inlined arena growth names a string constant at a different
+offset in each binary). Where each copy lands in memory is the linker's, as for any code.

@@ -57,12 +57,14 @@ struct msg_end final : public so_5::message_t {
     msg_end(std::uint64_t a, std::uint64_t r) noexcept : acc(a), received(r) {}
 };
 struct msg_finish final : public so_5::signal_t {};
+// list -> master, after the window: its list_term (the final contents and the requests it
+// received) and what it counted.
 struct msg_report final : public so_5::message_t {
-    std::uint64_t fold;
+    std::uint64_t term;
     std::uint64_t received;
     ListStats     stats;
-    msg_report(std::uint64_t f, std::uint64_t r, const ListStats &s) noexcept
-        : fold(f), received(r), stats(s) {}
+    msg_report(std::uint64_t t, std::uint64_t r, const ListStats &s) noexcept
+        : term(t), received(r), stats(s) {}
 };
 
 struct Field {
@@ -75,6 +77,7 @@ class list_t final : public so_5::agent_t {
     const Field  &m_field;
     SortedList    m_list;
     std::uint64_t m_received{0};
+    std::uint64_t m_requests{0};  // the request terms, as the requests arrived
 
 public:
     list_t(context_t ctx, const Field &field) : so_5::agent_t{std::move(ctx)}, m_field{field} {}
@@ -82,6 +85,7 @@ public:
     void so_define_agent() override {
         so_subscribe_self().event([this](mutable_mhood_t<msg_op> cmd) {
             ++m_received;
+            m_requests += request_term(cmd->request, cmd->kind, cmd->value);
             switch (cmd->kind) {
             case kWrite: m_list.add(cmd->value); break;  // the answer is the value inserted
             case kContains: cmd->value = m_list.contains(cmd->value) ? 1 : 0; break;
@@ -93,7 +97,8 @@ public:
             so_5::send(to, std::move(cmd));
         });
         so_subscribe_self().event([this](so_5::mhood_t<msg_finish>) {
-            so_5::send<msg_report>(m_field.master, m_list.fold(), m_received, m_list.stats());
+            so_5::send<msg_report>(m_field.master, list_term(m_list, m_requests), m_received,
+                                   m_list.stats());
         });
     }
 
@@ -132,14 +137,14 @@ public:
             so_5::send<so_5::mutable_msg<msg_op>>(m_field.list, request_id(m_index, m_seq), m_asked.kind,
                                                   m_asked.value, m_index);
         });
-        // The answer to the request in flight, checked against what was asked (reply_term); the
+        // The answer to the request in flight, checked against what was asked (answer_term); the
         // next request is written into the same message and leaves from here -- the reference's
         // Worker.process.
         so_subscribe_self().event([this](mutable_mhood_t<msg_op> cmd) {
             ++m_received;
             if (m_seq >= m_messages) fail("a worker answered after its last request");
-            m_acc += reply_term(request_id(m_index, m_seq), m_asked.kind, cmd->request, cmd->kind,
-                                asserted_result(m_asked, cmd->value, m_written));
+            m_acc += answer_term(request_id(m_index, m_seq), m_asked, cmd->request, cmd->kind, cmd->value,
+                                 m_written);
             if (++m_seq == m_messages) return finish();
             m_asked      = m_script.next();
             cmd->request = request_id(m_index, m_seq);
@@ -185,7 +190,7 @@ public:
             if (++m_ended == m_field.workers.size()) close_window();
         });
         so_subscribe_self().event([this](so_5::mhood_t<msg_report> r) {
-            m_sink.checksum += r->fold;
+            m_sink.checksum += r->term;
             m_sink.messages += r->received;
             m_sink.stats = r->stats;
             so_environment().stop();

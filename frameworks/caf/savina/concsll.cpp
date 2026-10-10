@@ -56,6 +56,7 @@ struct list_state {
     caf::actor    master;
     SortedList    list;
     std::uint64_t received{0};
+    std::uint64_t requests{0};  // the request terms, as the requests arrived
 };
 
 struct worker_state {
@@ -94,26 +95,29 @@ caf::behavior list_fun(caf::stateful_actor<list_state> *self) {
         [self](caf::add_atom, std::uint64_t id, std::int32_t value) -> answer_t {
             auto &s = self->state();
             ++s.received;
+            s.requests += request_term(id, kWrite, value);
             s.list.add(value);
             return {id, static_cast<std::uint32_t>(kWrite), value};
         },
         [self](caf::get_atom, std::uint64_t id, std::int32_t value) -> answer_t {
             auto &s = self->state();
             ++s.received;
+            s.requests += request_term(id, kContains, value);
             return {id, static_cast<std::uint32_t>(kContains),
                     static_cast<std::int32_t>(s.list.contains(value) ? 1 : 0)};
         },
         [self](caf::get_atom, std::uint64_t id) -> answer_t {
             auto &s = self->state();
             ++s.received;
+            s.requests += request_term(id, kSize, 0);
             return {id, static_cast<std::uint32_t>(kSize), s.list.size()};
         },
-        // After the window: the final contents and the counts, then done.
+        // After the window: the list's term (contents and requests) and the counts, then done.
         [self](caf::close_atom) {
             auto            &s = self->state();
             const ListStats &t = s.list.stats();
-            self->mail(caf::ok_atom_v, s.list.fold(), s.received, t.contains_walk, t.write_walk, t.size_walk,
-                       t.contains_found)
+            self->mail(caf::ok_atom_v, list_term(s.list, s.requests), s.received, t.contains_walk,
+                       t.write_walk, t.size_walk, t.contains_found)
                 .send(s.master);
             self->quit();
         },
@@ -156,14 +160,13 @@ void finish(worker_actor *self) {
     self->quit();
 }
 
-// The answer to the request in flight, checked against what was asked (reply_term); the next
+// The answer to the request in flight, checked against what was asked (answer_term); the next
 // request leaves from here -- the reference's Worker.process.
 void answered(worker_actor *self, std::uint64_t id, std::uint32_t kind, std::int32_t value) {
     auto &s = self->state();
     ++s.received;
     if (s.seq >= s.messages) fail("a worker answered after its last request");
-    s.acc += reply_term(request_id(s.index, s.seq), s.asked.kind, id, kind,
-                        asserted_result(s.asked, value, *s.written));
+    s.acc += answer_term(request_id(s.index, s.seq), s.asked, id, kind, value, *s.written);
     if (++s.seq == s.messages)
         finish(self);
     else
@@ -237,10 +240,10 @@ caf::behavior master_fun(caf::stateful_actor<master_state> *self, caf::actor lis
             s.sink->messages += received;
             if (++s.ended == s.workers.size()) close_window(self);
         },
-        [self](caf::ok_atom, std::uint64_t fold, std::uint64_t received, std::uint64_t contains_walk,
+        [self](caf::ok_atom, std::uint64_t term, std::uint64_t received, std::uint64_t contains_walk,
                std::uint64_t write_walk, std::uint64_t size_walk, std::uint64_t contains_found) {
             auto &s = self->state();
-            s.sink->checksum += fold;
+            s.sink->checksum += term;
             s.sink->messages += received;
             s.sink->stats = ListStats{contains_walk, write_walk, size_walk, contains_found};
             self->quit();

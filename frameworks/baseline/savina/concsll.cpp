@@ -62,6 +62,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
 
     SortedList              sorted;
     std::uint64_t           list_received = 0;
+    std::uint64_t           list_requests = 0;  // the request terms, as the requests arrived
     std::vector<WorkerSlot> slots;
     slots.reserve(c.workers);
     for (std::uint32_t w = 0; w < c.workers; ++w) slots.emplace_back(Script(w, c));
@@ -88,6 +89,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         case kSize: {  // the list
             ++list_received;
             const auto value = static_cast<std::int32_t>(static_cast<std::uint32_t>(msg.b));
+            list_requests += request_term(msg.a, msg.tag, value);
             std::int32_t answer;
             if (msg.tag == kWrite) {
                 sorted.add(value);
@@ -118,8 +120,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
             if (s.seq >= c.messages) fail("a worker answered after its last request");
             const auto kind  = static_cast<std::uint32_t>(msg.b >> 32);
             const auto value = static_cast<std::int32_t>(static_cast<std::uint32_t>(msg.b));
-            s.acc += reply_term(request_id(w, s.seq), s.asked.kind, msg.a, kind,
-                                asserted_result(s.asked, value, written));
+            s.acc += answer_term(request_id(w, s.seq), s.asked, msg.a, kind, value, written);
             if (++s.seq == c.messages)
                 finish(m, worker, w);
             else
@@ -147,8 +148,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     }
     mesh.run();
 
-    // After the window, every thread joined: the list's contents and counts.
-    result += sorted.fold();
+    // After the window, every thread joined: the list's term (contents and requests) and counts.
+    result += list_term(sorted, list_requests);
     delivered += list_received + master_received;
     qvo::Answer answer{result, delivered};
     answer.observed = observations(sorted.stats());

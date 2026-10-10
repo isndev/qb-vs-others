@@ -65,13 +65,14 @@ struct End : qb::Event {
     End(std::uint64_t a, std::uint64_t r) noexcept : acc(a), received(r) {}
 };
 struct Finish : qb::Event {};
-// list -> master, after the window: the final contents and what the list counted.
+// list -> master, after the window: its list_term (the final contents and the requests it
+// received) and what it counted.
 struct Report : qb::Event {
-    std::uint64_t fold;
+    std::uint64_t term;
     std::uint64_t received;
     ListStats     stats;
-    Report(std::uint64_t f, std::uint64_t r, const ListStats &s) noexcept
-        : fold(f), received(r), stats(s) {}
+    Report(std::uint64_t t, std::uint64_t r, const ListStats &s) noexcept
+        : term(t), received(r), stats(s) {}
 };
 
 // Where the verified answer is left for the harness: written by the master on its core, read after
@@ -109,11 +110,13 @@ class ListActor final : public qb::Actor {
     const Field  &_field;
     SortedList    _list;
     std::uint64_t _received{0};
+    std::uint64_t _requests{0};  // the request terms, as the requests arrived
 
     // The reference SortedList.process: walk, write the answer into the request, answer the sender.
     template <typename E>
     void serve(E &op) {
         ++_received;
+        _requests += request_term(op.request, op.kind, op.value);
         switch (op.kind) {
         case kWrite: _list.add(op.value); break;  // the answer is the value inserted: already there
         case kContains: op.value = _list.contains(op.value) ? 1 : 0; break;
@@ -137,7 +140,9 @@ public:
     void on(ListOp &op) { serve(op); }
     void on(ListAsk &op) { serve(op); }
 
-    void on(Finish const &) { push<Report>(_field.master, _list.fold(), _received, _list.stats()); }
+    void on(Finish const &) {
+        push<Report>(_field.master, list_term(_list, _requests), _received, _list.stats());
+    }
 };
 
 // What the form=1 coroutine and the worker share: the worker's handler counts every answer it
@@ -172,8 +177,7 @@ class Worker final : public qb::Actor {
                 const Request       asked  = script.next();
                 const std::uint64_t id     = request_id(index, j);
                 const ListAsk       answer = co_await ask_list(ctx, list, id, asked);
-                acc += reply_term(id, asked.kind, answer.request, answer.kind,
-                                  asserted_result(asked, answer.value, *written));
+                acc += answer_term(id, asked, answer.request, answer.kind, answer.value, *written);
             }
             ctx.push_to<End>(master, acc, st->received);
         });
@@ -217,19 +221,19 @@ public:
         send<ListOp>(_field.list, request_id(_index, 0), _asked.kind, _asked.value);
     }
 
-    // form=0: the answer to request `_seq`, checked against what was asked (reply_term); then the
+    // form=0: the answer to request `_seq`, checked against what was asked (answer_term); then the
     // same event goes back as the next request -- the reference's Worker.process -- or, after the
     // last, the worker reports.
     void on(ListOp &answer) {
         ++_received;
         if (_seq >= _config.messages) fail("a worker answered after its last request");
-        _acc += reply_term(request_id(_index, _seq), _asked.kind, answer.request, answer.kind,
-                           asserted_result(_asked, answer.value, _written));
+        _acc += answer_term(request_id(_index, _seq), _asked, answer.request, answer.kind, answer.value,
+                            _written);
         if (++_seq == _config.messages) return finish();
-        _asked       = _script.next();
-        answer.request    = request_id(_index, _seq);
-        answer.kind  = _asked.kind;
-        answer.value = _asked.value;
+        _asked         = _script.next();
+        answer.request = request_id(_index, _seq);
+        answer.kind    = _asked.kind;
+        answer.value   = _asked.value;
         reply(answer);
     }
 
@@ -281,7 +285,7 @@ public:
     }
 
     void on(Report const &report) {
-        _sink.checksum += report.fold;
+        _sink.checksum += report.term;
         _sink.messages += report.received;
         _sink.stats = report.stats;
         broadcast<qb::KillEvent>();

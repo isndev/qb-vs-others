@@ -192,8 +192,13 @@ inline std::uint64_t request_id(std::uint32_t worker, std::uint64_t seq) noexcep
 
 // What the list walked, by request kind, and how many contains found their value. The amount of
 // walking depends on the interleaving (a contains issued after more writes walks a longer list),
-// so these are OBSERVATIONS, reported beside the cell; a lower bound that every interleaving
-// guarantees is asserted for each walk (see observed_at_least).
+// so the three walks are OBSERVATIONS, reported beside the cell; a lower bound that every
+// interleaving guarantees is asserted for each (see observed_at_least), and the size walk also
+// enters the checksum (answer_term, list_term). `contains_found` is NOT an interleaving
+// observation: Savina's generator fixes it at 0 (Script: no contains is of a written value), and
+// the answer to a contains of a value no worker writes is asserted false (asserted_result), so a
+// run that found a value has already failed its checksum -- it is reported as the run's own
+// confirmation of that property of the workload.
 struct ListStats {
     std::uint64_t contains_walk{0};
     std::uint64_t write_walk{0};
@@ -266,6 +271,8 @@ public:
         return found;
     }
 
+    // The answer IS the walk: the length it returns is exactly what it adds to size_walk, which is
+    // what lets the checksum assert every size answer (answer_term, list_term).
     QVOSPEC_CONCSLL_NOINLINE std::int32_t size() noexcept {
         std::int32_t r = 0;
         for (const Node *n = _head; n != nullptr; n = n->next) ++r;
@@ -339,11 +346,16 @@ inline std::vector<std::uint8_t> written_values(const Config &c) {
 // What every interleaving fixes about the answer to `own`, given the answer that came back:
 //   a write    -- the list answers the value it inserted (the reference's ResultMessage): fixed;
 //   a contains -- of a value NO worker ever writes: false, whatever the order -- fixed. Of a value
-//                 some worker writes: it depends on whether that write came first -- not asserted.
-//                 With Savina's generator the second case never happens (Script), but the rule
-//                 does not depend on the generator: the table is computed, not assumed;
-//   a size     -- the length at that moment: not asserted (it is at least the worker's own earlier
-//                 writes, which the size walk's lower bound asserts instead).
+//                 some worker writes, two cases are fixed as well -- the asker wrote it earlier
+//                 (true: that write was applied before the asker could ask again) and only the
+//                 asker writes it, later (false) -- and the rest depends on whether another
+//                 worker's write came first. This rule asserts none of the three, the
+//                 conservative choice: with Savina's generator no contains is of a written value
+//                 (Script), so it loses nothing, and the rule does not depend on the generator --
+//                 the table is computed, not assumed;
+//   a size     -- the length at that moment: not fixed, so not asserted here. Every size answer is
+//                 asserted all the same, against the list's own walk (answer_term), and is at
+//                 least the worker's own earlier writes, which the size walk's lower bound asserts.
 // A fixed answer enters the checksum as it ARRIVED; anything else as 0.
 inline std::int32_t asserted_result(const Request &own, std::int32_t result,
                                     const std::vector<std::uint8_t> &written) noexcept {
@@ -359,12 +371,13 @@ inline std::int32_t expected_result(const Request &own) noexcept {
     return own.kind == kWrite ? own.value : 0;
 }
 
-// The term a worker adds per answer. `own_id` / `own_kind` are what the worker ASKED (its own
-// number and the request's index in its sequence, which the worker knows without reading the
-// answer); `carried_id` / `carried_kind` are what the answer SAYS it answers. In a correct run they
-// are equal, so the term is fixed by the request alone; an answer delivered to the wrong worker, a
-// duplicated answer (every later answer of that worker is then one index off), or an answer of
-// the wrong kind changes it -- and so does a wrong fixed answer (asserted_result).
+// The term a worker adds per answer, before the size length answer_term adds to it. `own_id` /
+// `own_kind` are what the worker ASKED (its own number and the request's index in its sequence,
+// which the worker knows without reading the answer); `carried_id` / `carried_kind` are what the
+// answer SAYS it answers. In a correct run they are equal, so the term is fixed by the request
+// alone; an answer delivered to the wrong worker, a duplicated answer (every later answer of that
+// worker is then one index off), or an answer of the wrong kind changes it -- and so does a wrong
+// fixed answer (asserted_result).
 inline std::uint64_t reply_term(std::uint64_t own_id, std::uint32_t own_kind, std::uint64_t carried_id,
                                 std::uint32_t carried_kind, std::int32_t asserted) noexcept {
     const std::uint64_t carried = qvo::mix(carried_id + 0x5851f42d4c957f2dULL);
@@ -373,13 +386,46 @@ inline std::uint64_t reply_term(std::uint64_t own_id, std::uint32_t own_kind, st
                     + static_cast<std::uint32_t>(asserted));
 }
 
-// Every worker adds reply_term for each of its `messages` answers and reports the sum to the
-// master with its last one; the list's final contents add their fold. Order-independent: the
-// workers' sums are fixed by their own sequences, and the final contents by the multiset of
+// What a worker adds for the answer `result` to its request `own` (identity `own_id`), the answer
+// saying it answers `carried_id` / `carried_kind`: reply_term with the fixed answer where there is
+// one, plus -- for a size request -- the length the answer reports. A length is not fixed by the
+// interleaving, but SortedList::size adds to the size walk exactly the length it answers, so the
+// size answers the workers receive sum to the list's size walk in EVERY interleaving; list_term
+// subtracts that walk, and a size answer altered on its way, or not taken from the walk, is left
+// in the checksum (a sum: it sees any one altered length, not two alterations that cancel).
+inline std::uint64_t answer_term(std::uint64_t own_id, const Request &own, std::uint64_t carried_id,
+                                 std::uint32_t carried_kind, std::int32_t result,
+                                 const std::vector<std::uint8_t> &written) noexcept {
+    const std::uint64_t length = own.kind == kSize ? static_cast<std::uint32_t>(result) : 0u;
+    return reply_term(own_id, own.kind, carried_id, carried_kind, asserted_result(own, result, written))
+           + length;
+}
+
+// What the list adds for every request it RECEIVES: the request's identity, kind and payload as
+// they arrived (a size request carries 0). The workers' terms check what comes back; this checks
+// what went out -- a contains of a value nobody writes answers false whatever value it carried,
+// so without it a payload altered on its way to the list would still verify.
+inline std::uint64_t request_term(std::uint64_t id, std::uint32_t kind, std::int32_t value) noexcept {
+    return qvo::mix(qvo::mix(id + 0x2545f4914f6cdd1dULL) + (std::uint64_t{kind} << 32)
+                    + static_cast<std::uint32_t>(value));
+}
+
+// What the list reports after the window: its final contents' fold, plus the request terms it
+// added (`requests`), minus every size step it walked (the workers' answer_terms add them back).
+// Called once, after the window, never on the hot path.
+inline std::uint64_t list_term(const SortedList &list, std::uint64_t requests) noexcept {
+    return list.fold() + requests - list.stats().size_walk;
+}
+
+// Every worker adds answer_term for each of its `messages` answers and reports the sum to the
+// master with its last one; the list reports list_term. Order-independent: the workers' sums are
+// fixed by their own sequences except for the size answers, which list_term cancels; the request
+// terms by the requests, whatever order they arrive in; and the final contents by the multiset of
 // writes, which no interleaving changes (each worker's writes are its own, and every write is
-// applied exactly once). A write lost or applied twice moves the fold; an answer lost hangs its
-// worker (one request in flight per worker -- the run cannot end), and every other corruption of
-// an answer moves the worker's sum.
+// applied exactly once). A write lost or applied twice moves the fold; a request whose identity,
+// kind or payload changed on its way, or that the list received twice, moves the request terms;
+// an answer lost hangs its worker (one request in flight per worker -- the run cannot end), and
+// every other corruption of an answer moves the worker's sum.
 inline std::uint64_t expected(const qvo::Params &p) {
     const Config              c = Config::of(p);
     std::uint64_t             acc = 0;
@@ -390,6 +436,7 @@ inline std::uint64_t expected(const qvo::Params &p) {
             const Request       r  = s.next();
             const std::uint64_t id = request_id(w, j);
             acc += reply_term(id, r.kind, id, r.kind, expected_result(r));
+            acc += request_term(id, r.kind, r.value);
             if (r.kind == kWrite) contents.push_back(r.value);
         }
     }
