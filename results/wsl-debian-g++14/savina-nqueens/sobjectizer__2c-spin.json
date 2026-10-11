@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/nqueens",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 77555313403798665,
+  "expected_messages": 29076,
+  "work_unit": "solution",
+  "work_units": 14200,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "size": 12, "threshold": 4, "wait": 1, "workers": 20},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-11T00:52:29Z"
+  },
+  "idiom": {
+    "source": "the big adapter (direct mboxes, make_pool_binder, ready signal) + message redirection so_5::send(mbox, mhood) (send_functions.hpp)",
+    "note": "one coop: the master redirects each child item, as received, to the next worker round-robin; workers send items, results and one msg_done to the master's direct mbox; thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the master hands items out round-robin like every other cell, but which pool thread runs a worker's next demand is the thread_pool's decision, so the search is balanced by the dispatcher where qb's cell keeps worker w on core w % cores"],
+  "failures": [],
+  "work_ns": [100438951.0, 100045259.0, 101025388.0, 101288269.0, 101798139.0, 100387769.0, 102701851.0, 101919410.0, 101766026.0],
+  "total_ns": [101079966.0, 100613370.0, 102365408.0, 104099399.0, 102476645.0, 100872307.0, 103298159.0, 102594086.0, 102391824.0],
+  "outside_window_ns": [641015.0, 568111.0, 1340020.0, 2811130.0, 678506.0, 484538.0, 596308.0, 674676.0, 625798.0],
+  "summary": {
+    "work_min": 100045259.0,
+    "work_p50": 101288269.0,
+    "work_p99": 102639255.7,
+    "work_iqr": 1359188.0
+  }
+}

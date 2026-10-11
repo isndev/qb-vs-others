@@ -1,0 +1,46 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/a-star",
+  "framework": "caf",
+  "framework_version": "1.1.0",
+  "verified": true,
+  "expected_checksum": 4796879656839427763,
+  "expected_messages": 0,
+  "work_unit": "node",
+  "work_units": 20515,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "grid": 30, "threshold": 1024, "wait": 1, "work": 100, "workers": 20},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-11T00:42:43Z"
+  },
+  "idiom": {
+    "source": "the fib/big adapters + self->spawn from a behavior + the mail API",
+    "note": "(get_atom, node) / (put_atom, node) / (ok_atom, chk, nodes); the master spawns its workers and relays every handed-back node with a fresh mail round-robin; placement left to the work-stealing pool"
+  },
+  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship", "the workers are placed by the work-stealing pool, so how many hand-backs cross a core is the scheduler's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/a-star.md", "the claim slots are shared memory every worker CASes, as in Savina's own implementation -- the one input not passed by message, identical for every framework (a-star.h, Claims)"],
+  "failures": [],
+  "work_ns": [4153314.0, 4184964.0, 4501749.0, 4222057.0, 4184992.0, 4310079.0, 4210603.0, 4185438.0, 4290958.0],
+  "total_ns": [5630478.0, 5495876.0, 5862556.0, 5678951.0, 5607265.0, 5692528.0, 5606614.0, 5536711.0, 5697184.0],
+  "outside_window_ns": [1477164.0, 1310912.0, 1360807.0, 1456894.0, 1422273.0, 1382449.0, 1396011.0, 1351273.0, 1406226.0],
+  "observed": {
+    "work_messages": {"samples": [1757, 1814, 1829, 1756, 1798, 1623, 1757, 1727, 1538], "min": 1538, "p50": 1757.0, "max": 1829}
+  },
+  "observed_at_least": {"work_messages": 21},
+  "summary": {
+    "work_min": 4153314.0,
+    "work_p50": 4210603.0,
+    "work_p99": 4486415.4,
+    "work_iqr": 105966.0
+  }
+}

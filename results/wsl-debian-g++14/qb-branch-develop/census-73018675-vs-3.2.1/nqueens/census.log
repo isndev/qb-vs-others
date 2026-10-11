@@ -1,0 +1,14 @@
+
+savina/nqueens: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2
+
+  2c-spin
+    cand         median-of-medians   7315.1   min   6966.4   max   8380.5   n=12   [7119 8302 8329 8299 8381 8310 7016 6966 7005 6976 6997 7511]
+    shipped      median-of-medians   7103.8   min   6953.4   max   8293.4   n=12   [7158 7049 8288 7587 7429 8293 6953 7047 8284 7008 6966 6991]
+    cand vs shipped: 7315.1 vs 7103.8 (+3.0%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians   7322.7   min   6964.1   max   8367.6   n=12   [7108 6977 6993 7537 8336 8312 7017 8331 6964 8368 7003 8280]
+    shipped      median-of-medians   7719.9   min   6951.9   max   8383.0   n=12   [7153 8383 8344 7010 7019 8300 6952 7056 8353 7022 8286 8337]
+    cand vs shipped: 7322.7 vs 7719.9 (-5.1%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> census/nqueens

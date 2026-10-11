@@ -1,0 +1,46 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/a-star",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 4796879656839427763,
+  "expected_messages": 0,
+  "work_unit": "node",
+  "work_units": 20515,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "grid": 30, "threshold": 1024, "wait": 0, "work": 100, "workers": 20},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-11T00:39:10Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; master = actor 0, search worker w = actor w + 1, actor a owned by thread a % cores; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers and there is no per-actor mailbox: a thread's inbound ring is shared by every actor it owns, and the search -- graph, claims, busy work -- is the spec's own code, the same every framework runs", "actor a lives on thread a % cores (master = 0, search worker w = w + 1), the placement qb has: with cores=2 a node handed back crosses a thread whenever its next worker lives on the other one, and nothing rebalances beyond the master's round-robin", "the claim slots are shared memory every worker CASes, as in Savina's own implementation (a-star.h, Claims)", "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [5687545.0, 5531934.0, 5767614.0, 5579595.0, 5618918.0, 5580358.0, 5623055.0, 5593750.0, 5580524.0],
+  "total_ns": [6740096.0, 6556900.0, 6792753.0, 6647861.0, 6649324.0, 6772227.0, 6663445.0, 6623015.0, 6607792.0],
+  "outside_window_ns": [1052551.0, 1024966.0, 1025139.0, 1068266.0, 1030406.0, 1191869.0, 1040390.0, 1029265.0, 1027268.0],
+  "observed": {
+    "work_messages": {"samples": [1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790], "min": 1790, "p50": 1790.0, "max": 1790}
+  },
+  "observed_at_least": {"work_messages": 21},
+  "summary": {
+    "work_min": 5531934.0,
+    "work_p50": 5593750.0,
+    "work_p99": 5761208.5,
+    "work_iqr": 42697.0
+  }
+}

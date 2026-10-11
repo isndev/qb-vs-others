@@ -1,0 +1,47 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bndbuffer",
+  "framework": "qb",
+  "framework_version": "3.2.1",
+  "verified": true,
+  "expected_checksum": 13580315395847872333,
+  "expected_messages": 160080,
+  "work_unit": "item",
+  "work_units": 40000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"buffer": 50, "cons_cost": 25, "consumers": 40, "cores": 1, "items": 1000, "prod_cost": 25, "producers": 40, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-11T00:36:22Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md: send<T>() (into the peer's ring at once, not at the pass's flush) + kill() + broadcast<qb::KillEvent>(); the bank-transaction adapter's Ready handshake and fixed placement",
+    "note": "Savina's manager, producers and consumers one for one; the bounded buffer is the manager's FIFO and Savina's park/un-park protocol (qb has no bounded mailbox or credit primitive between actors); every hand-over is send<>; manager on VirtualCore 0, producer i on core (1 + i) % cores, consumer j on (1 + producers + j) % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "every hand-over is send<>, which publishes a cross-core event into the peer's ring at once; a push would be published by the pass's flush, after every busy-work handler the pass runs -- each actor has at most one message in flight to or from the manager, so the unordered primitive changes no outcome", "placement is fixed before start: the manager on VirtualCore 0, producer i on core (1 + i) % cores, consumer j on core (1 + producers + j) % cores, so with cores=2 half of each kind shares the manager's core and about half the hand-overs cross a core; the manager answers only between the busy-work handlers of its own core -- the pools place freely"],
+  "failures": [],
+  "work_ns": [527087581.0, 525686164.0, 524876961.0, 525181252.0, 524475900.0, 523469927.0, 522930454.0, 525030802.0, 523544082.0],
+  "total_ns": [527596849.0, 526275149.0, 525383190.0, 525644168.0, 524940338.0, 523955620.0, 523397426.0, 525464320.0, 523996506.0],
+  "outside_window_ns": [509268.0, 588985.0, 506229.0, 462916.0, 464438.0, 485693.0, 466972.0, 433518.0, 452424.0],
+  "observed": {
+    "buffer_peak": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0},
+    "consumer_waits": {"samples": [40000, 40000, 40000, 40000, 40000, 40000, 40000, 40000, 40000], "min": 40000, "p50": 40000.0, "max": 40000},
+    "producer_waits": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0}
+  },
+  "summary": {
+    "work_min": 522930454.0,
+    "work_p50": 524876961.0,
+    "work_p99": 526975467.6,
+    "work_iqr": 1637170.0
+  }
+}

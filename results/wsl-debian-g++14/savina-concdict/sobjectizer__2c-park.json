@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/concdict",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 15850935008049653307,
+  "expected_messages": 400042,
+  "work_unit": "operation",
+  "work_units": 200000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "form": 0, "keys": 524287, "messages": 10000, "wait": 0, "workers": 20, "write": 10},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-11T00:49:35Z"
+  },
+  "idiom": {
+    "source": "dev/sample/so_5/mutable_msg_agents/main.cpp (a mutable_msg resent with so_5::send(next, std::move(cmd))) + the bank-transaction adapter",
+    "note": "one mutable_msg<msg_op> per worker travels worker <-> dictionary on the direct mboxes for the whole run, rewritten in place; no request/reply primitive (form=1 not applicable); thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "form=0 resends ONE mutable message per worker for all its requests (SObjectizer's own mutable_msg redirection, its faster idiom: the documentation's lead -- so_5::send<msg>() of a new message per request and per answer -- allocates two messages per round trip); qb's reply() recycles one event the same way, CAF builds a message per request and per answer", "SObjectizer 5.8 has no asynchronous request/reply with a continuation, so the form=1 documents of this benchmark are not applicable here, by the harness's third verdict", "the master, the dictionary and the 20 workers are placed by the thread_pool; qb's cell pins the master and the dictionary on core 0 and worker w on core (1 + w) % cores -- see benchmarks/savina/concdict.md", "the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the environment by the thread that runs the repetition; its lookups are part of every framework's figure"],
+  "failures": [],
+  "work_ns": [103010806.0, 92702148.0, 95039135.0, 95747611.0, 115589795.0, 103814460.0, 97776800.0, 105573025.0, 109920642.0],
+  "total_ns": [117704143.0, 107051609.0, 115985388.0, 110874194.0, 136641913.0, 118939309.0, 112935877.0, 120239293.0, 127834269.0],
+  "outside_window_ns": [14693337.0, 14349461.0, 20946253.0, 15126583.0, 21052118.0, 15124849.0, 15159077.0, 14666268.0, 17913627.0],
+  "summary": {
+    "work_min": 92702148.0,
+    "work_p50": 103010806.0,
+    "work_p99": 115136262.8,
+    "work_iqr": 9825414.0
+  }
+}

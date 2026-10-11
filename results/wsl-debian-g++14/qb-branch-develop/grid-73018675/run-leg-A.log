@@ -1,0 +1,44 @@
+run.py: 10 binaries, frameworks: qb
+run.py: pinning to CPUs 0,2, 9 repetitions + 2 warmup
+  savina/a-star            qb           2c-spin  ok  p50=3,162,586 ns
+  savina/a-star            qb           2c-park  ok  p50=3,100,911 ns
+  savina/a-star            qb           1c-spin  ok  p50=5,729,693 ns
+  savina/a-star            qb           1c-park  ok  p50=5,755,504 ns
+  savina/barber            qb           2c-spin  ok  p50=13,786,453 ns
+  savina/barber            qb           2c-park  ok  p50=13,807,965 ns
+  savina/barber            qb           1c-spin  ok  p50=14,059,039 ns
+  savina/barber            qb           1c-park  ok  p50=14,193,070 ns
+  savina/bndbuffer         qb           2c-spin  ok  p50=267,327,704 ns
+  savina/bndbuffer         qb           2c-park  ok  p50=267,001,845 ns
+  savina/bndbuffer         qb           1c-spin  ok  p50=524,876,961 ns
+  savina/bndbuffer         qb           1c-park  ok  p50=525,001,978 ns
+  savina/cigsmok           qb           2c-spin  ok  p50=58,023,541 ns
+  savina/cigsmok           qb           2c-park  ok  p50=58,120,971 ns
+  savina/cigsmok           qb           1c-spin  ok  p50=68,158,881 ns
+  savina/cigsmok           qb           1c-park  ok  p50=67,885,387 ns
+  savina/concdict          qb           2c-spin  ok  p50=8,964,571 ns
+  savina/concdict          qb           2c-park  ok  p50=9,080,448 ns
+  savina/concdict          qb           1c-spin  ok  p50=7,737,686 ns
+  savina/concdict          qb           1c-park  ok  p50=8,052,503 ns
+  savina/concsll           qb           2c-spin  ok  p50=3,415,676,708 ns
+  savina/concsll           qb           2c-park  ok  p50=3,422,237,025 ns
+  savina/concsll           qb           1c-spin  ok  p50=3,367,984,931 ns
+  savina/concsll           qb           1c-park  ok  p50=3,349,336,227 ns
+  savina/fork-join-create  qb           2c-spin  ok  p50=1,308,148 ns
+  savina/fork-join-create  qb           2c-park  ok  p50=1,202,517 ns
+  savina/fork-join-create  qb           1c-spin  ok  p50=3,076,919 ns
+  savina/fork-join-create  qb           1c-park  ok  p50=3,044,535 ns
+  savina/logmap            qb           2c-spin  ok  p50=3,645,859 ns
+  savina/logmap            qb           2c-park  ok  p50=3,647,432 ns
+  savina/logmap            qb           1c-spin  ok  p50=4,644,154 ns
+  savina/logmap            qb           1c-park  ok  p50=4,949,626 ns
+  savina/nqueens           qb           2c-spin  ok  p50=107,003,404 ns
+  savina/nqueens           qb           2c-park  ok  p50=117,689,965 ns
+  savina/nqueens           qb           1c-spin  ok  p50=191,384,239 ns
+  savina/nqueens           qb           1c-park  ok  p50=192,209,503 ns
+  savina/philosophers      qb           2c-spin  ok  p50=19,352,418 ns
+  savina/philosophers      qb           2c-park  ok  p50=18,991,600 ns
+  savina/philosophers      qb           1c-spin  ok  p50=9,611,268 ns
+  savina/philosophers      qb           1c-park  ok  p50=9,487,146 ns
+
+run.py: 40 cells, 0 not verified, 0 not applicable -> out-cand1

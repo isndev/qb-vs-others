@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/cigsmok",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 17266270140101833701,
+  "expected_messages": 100401,
+  "work_unit": "round",
+  "work_units": 50000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "rounds": 50000, "smoke": 1000, "smokers": 200, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-11T00:39:36Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the arbiter is actor 0 on worker 0, smoker j actor j + 1 on worker (j + 1) % cores; the acknowledgement is pushed before the smoke; not an actor framework"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A round is one ring push to the chosen smoker and one back, a smoker's state one cache line: the floor for what this coordination costs", "the arbiter is on worker 0 and smoker j on worker (j + 1) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [61521348.0, 58300010.0, 58117966.0, 58185633.0, 58756105.0, 61671518.0, 58522984.0, 62301714.0, 61571846.0],
+  "total_ns": [63332502.0, 60192502.0, 59882462.0, 59911811.0, 60619630.0, 63688110.0, 60440354.0, 64313510.0, 63679826.0],
+  "outside_window_ns": [1811154.0, 1892492.0, 1764496.0, 1726178.0, 1863525.0, 2016592.0, 1917370.0, 2011796.0, 2107980.0],
+  "summary": {
+    "work_min": 58117966.0,
+    "work_p50": 58756105.0,
+    "work_p99": 62251298.3,
+    "work_iqr": 3271836.0
+  }
+}

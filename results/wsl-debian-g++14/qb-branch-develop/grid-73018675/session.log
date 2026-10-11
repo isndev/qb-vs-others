@@ -1,0 +1,51 @@
+# Savina wave A, WSL2 session of 2026-10-11 (UTC): leg A candidate 73018675 -> grid-73018675/,
+# leg C the field with shipped qb v3.2.1 -> ../../savina-<shape>/ (merged into ../../run.json),
+# leg A2 candidate again -> grid-73018675-pass2/, leg D the declared forms -> ../../wave-a-form-sweep/.
+# 9 repetitions + 2 warmup, CPUs 0,2, cwd ~/wa (ext4). run.json's pseudonymised host was restored to the
+# machine name for run.py's same-host merge check and pseudonymised again afterwards.
+# The guest's state at the start and the end (top -bn1 header lines; top's clock reads UTC+2):
+top - 02:35:07 up 6 days,  1:49,  5 users,  load average: 0.50, 1.37, 1.63
+Tasks:  56 total,   1 running,  55 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.0 us,  0.4 sy,  0.0 ni, 99.2 id,  0.4 wa,  0.0 hi,  0.0 si,  0.0 st 
+MiB Mem :  31966.1 total,  29984.6 free,   1089.9 used,   1434.0 buff/cache     
+MiB Swap:   8192.0 total,   7729.4 free,    462.6 used.  30876.3 avail Mem 
+== quiet-60s-start 2026-10-11T00:35:07Z loadavg 0.50 1.37 1.63
+== A-candidate-start 2026-10-11T00:36:07Z loadavg 0.18 1.12 1.52
+A rc=0
+== A-candidate-end / C-field-start 2026-10-11T00:39:10Z loadavg 1.14 1.24 1.51
+C rc=0
+== C-field-end / A2-candidate-start 2026-10-11T00:52:40Z loadavg 1.26 1.28 1.36
+A2 rc=0
+== A2-candidate-end / D-sweep-start 2026-10-11T00:55:42Z loadavg 1.24 1.33 1.37
+  D concdict-qb-form1 2c-spin rc=0 verified=True
+  D concdict-qb-form1 2c-park rc=0 verified=True
+  D concdict-qb-form1 1c-spin rc=0 verified=True
+  D concdict-qb-form1 1c-park rc=0 verified=True
+  D concdict-caf-form1 2c-spin rc=0 verified=True
+  D concdict-caf-form1 2c-park rc=0 verified=True
+  D concdict-caf-form1 1c-spin rc=0 verified=True
+  D concdict-caf-form1 1c-park rc=0 verified=True
+  D concsll-qb-form1 2c-spin rc=0 verified=True
+  D concsll-qb-form1 2c-park rc=0 verified=True
+  D concsll-qb-form1 1c-spin rc=0 verified=True
+  D concsll-qb-form1 1c-park rc=0 verified=True
+  D concsll-caf-form1 2c-spin rc=0 verified=True
+  D concsll-caf-form1 2c-park rc=0 verified=True
+  D concsll-caf-form1 1c-spin rc=0 verified=True
+  D concsll-caf-form1 1c-park rc=0 verified=True
+  D logmap-sobjectizer-QVO_SO_GROUP_COOPS1 2c-spin rc=0 verified=True
+  D logmap-sobjectizer-QVO_SO_GROUP_COOPS1 2c-park rc=0 verified=True
+== D-sweep-end 2026-10-11T01:00:52Z loadavg 1.13 1.25 1.33
+top - 03:00:52 up 6 days,  2:15,  5 users,  load average: 1.13, 1.25, 1.33
+Tasks:  53 total,   1 running,  52 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+MiB Mem :  31966.1 total,  29984.2 free,   1086.4 used,   1437.5 buff/cache     
+MiB Swap:   8192.0 total,   7729.4 free,    462.6 used.  30879.7 avail Mem 
+A: ok=40 unverified=0 failed=0 n/a=0 | run.py: 40 cells, 0 not verified, 0 not applicable -> out-cand1
+C: ok=160 unverified=0 failed=0 n/a=0 | run.py: 160 cells, 0 not verified, 0 not applicable -> out-field
+A2: ok=40 unverified=0 failed=0 n/a=0 | run.py: 40 cells, 0 not verified, 0 not applicable -> out-cand2
+out-cand1: 40 documents
+out-field: 160 documents
+out-cand2: 40 documents
+out-sweep: 18 documents
+MEASURE-DONE

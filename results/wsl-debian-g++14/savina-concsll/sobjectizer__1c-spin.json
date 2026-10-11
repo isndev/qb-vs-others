@@ -1,0 +1,49 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/concsll",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 12205235669177764196,
+  "expected_messages": 320040,
+  "work_unit": "request",
+  "work_units": 160000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "form": 0, "messages": 8000, "size_percent": 1, "wait": 1, "workers": 20, "write_percent": 10},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-11T00:51:42Z"
+  },
+  "idiom": {
+    "source": "dev/sample/so_5/mutable_msg_agents + chameneos_prealloc_msgs (a mutable message modified and re-sent) + dev/so_5/send_functions.hpp",
+    "note": "one mutable_msg<msg_op> per worker for the run, redirected list -> worker -> list with so_5::send(mbox, std::move(cmd)); thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "each worker's request and answer travel in ONE mutable message, allocated when the window opens and redirected back and forth for the whole run (SObjectizer's own chameneos_prealloc_msgs idiom): no message is allocated per request, where qb writes each event into its ring and CAF allocates one message per send", "the list, the master and the workers are placed by the thread_pool: which thread walks the list, and whether it changes thread between two requests, is the dispatcher's decision -- qb's cell pins the list alone on VirtualCore 0, see benchmarks/savina/concsll.md", "the list walk is the same source in every framework (qvospec SortedList: out of line, nodes from its own arena) and dominates the window by construction -- each request walks up to the whole list, thousands of nodes, against one message each way. What differs between the cells is the cost of workers x messages request/answer round trips, where the list actor runs (and whether it keeps its cache), and how far the interleaving lets the list grow before each walk: the walks are reported beside the cell as observations, each with an asserted lower bound"],
+  "failures": [],
+  "work_ns": [3350997218.0, 3360211518.0, 3361415388.0, 3368889698.0, 3363993435.0, 3363439460.0, 3359209916.0, 3408289836.0, 3384461348.0],
+  "total_ns": [3351856323.0, 3364141531.0, 3362445085.0, 3369934615.0, 3365046097.0, 3364469545.0, 3360322780.0, 3409288211.0, 3385575831.0],
+  "outside_window_ns": [859105.0, 3930013.0, 1029697.0, 1044917.0, 1052662.0, 1030085.0, 1112864.0, 998375.0, 1114483.0],
+  "observed": {
+    "contains_found": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0},
+    "contains_walk": {"samples": [1155676458, 1155676458, 1155676458, 1155676458, 1155676458, 1155676458, 1155676458, 1155676458, 1155676458], "min": 1155676458, "p50": 1155676458.0, "max": 1155676458},
+    "size_walk": {"samples": [1234, 1234, 1234, 1234, 1234, 1234, 1234, 1234, 1234], "min": 1234, "p50": 1234.0, "max": 1234},
+    "write_walk": {"samples": [64958357, 64958357, 64958357, 64958357, 64958357, 64958357, 64958357, 64958357, 64958357], "min": 64958357, "p50": 64958357.0, "max": 64958357}
+  },
+  "observed_at_least": {"contains_walk": 57777849, "size_walk": 65, "write_walk": 3248656},
+  "summary": {
+    "work_min": 3350997218.0,
+    "work_p50": 3363439460.0,
+    "work_p99": 3406383557.0,
+    "work_iqr": 8678180.0
+  }
+}

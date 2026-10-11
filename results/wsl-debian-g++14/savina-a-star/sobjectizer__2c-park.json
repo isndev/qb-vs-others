@@ -1,0 +1,46 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/a-star",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 4796879656839427763,
+  "expected_messages": 0,
+  "work_unit": "node",
+  "work_units": 20515,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "grid": 30, "threshold": 1024, "wait": 0, "work": 100, "workers": 20},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-11T00:49:08Z"
+  },
+  "idiom": {
+    "source": "the big adapter + dev/so_5/send_functions.hpp message redirection (so_5::send(mbox, mhood_t))",
+    "note": "agents on their DIRECT mboxes; the master redirects each handed-back msg_work instance to the next worker round-robin; thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the workers are placed by the thread_pool, so how many hand-backs cross a core is the dispatcher's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/a-star.md", "the claim slots are shared memory every worker CASes, as in Savina's own implementation -- the one input not passed by message, identical for every framework (a-star.h, Claims)"],
+  "failures": [],
+  "work_ns": [6146572.0, 4509059.0, 3862060.0, 6361013.0, 4220863.0, 4596171.0, 3942547.0, 3854721.0, 3750551.0],
+  "total_ns": [7436485.0, 5941614.0, 8731513.0, 7676032.0, 5513352.0, 5925070.0, 5287425.0, 5185753.0, 10412624.0],
+  "outside_window_ns": [1289913.0, 1432555.0, 4869453.0, 1315019.0, 1292489.0, 1328899.0, 1344878.0, 1331032.0, 6662073.0],
+  "observed": {
+    "work_messages": {"samples": [1790, 1467, 1408, 1790, 1477, 1606, 1486, 1403, 1414], "min": 1403, "p50": 1477.0, "max": 1790}
+  },
+  "observed_at_least": {"work_messages": 21},
+  "summary": {
+    "work_min": 3750551.0,
+    "work_p50": 4220863.0,
+    "work_p99": 6343857.7,
+    "work_iqr": 734111.0
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/concsll",
+  "framework": "caf",
+  "framework_version": "1.1.0",
+  "verified": true,
+  "expected_checksum": 12205235669177764196,
+  "expected_messages": 320040,
+  "work_unit": "request",
+  "work_units": 160000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "form": 0, "messages": 8000, "size_percent": 1, "wait": 1, "workers": 20, "write_percent": 10},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-11T00:43:52Z"
+  },
+  "idiom": {
+    "source": "CAF 1.1.0 examples/message_passing/calculator.cpp (handlers return the answer) + libcaf_core/caf/response_promise.cpp + the chameneos adapter",
+    "note": "the list handler returns the answer and CAF routes it to the sender; form=0: plain mail(...).send(list), the answer an ordinary message; form=1: mail(...).request(list, infinite).then(); placement left to the pool"
+  },
+  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship", "the list actor is placed by the work-stealing pool like every other actor: which of the cores walks the list, and whether it changes thread between two requests (and so whether its list stays in one core's cache), is the scheduler's decision -- qb's cell pins the list alone on VirtualCore 0, see benchmarks/savina/concsll.md", "the list walk is the same source in every framework (qvospec SortedList: out of line, nodes from its own arena) and dominates the window by construction -- each request walks up to the whole list, thousands of nodes, against one message each way. What differs between the cells is the cost of workers x messages request/answer round trips, where the list actor runs (and whether it keeps its cache), and how far the interleaving lets the list grow before each walk: the walks are reported beside the cell as observations, each with an asserted lower bound"],
+  "failures": [],
+  "work_ns": [3497628026.0, 3482839705.0, 3495047720.0, 3462726421.0, 3541252636.0, 3536606194.0, 3518571002.0, 3517721341.0, 3524897195.0],
+  "total_ns": [3498676603.0, 3483846350.0, 3496050145.0, 3463811405.0, 3542207777.0, 3537652329.0, 3519631836.0, 3518818416.0, 3525990006.0],
+  "outside_window_ns": [1048577.0, 1006645.0, 1002425.0, 1084984.0, 955141.0, 1046135.0, 1060834.0, 1097075.0, 1092811.0],
+  "observed": {
+    "contains_found": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0},
+    "contains_walk": {"samples": [1159292708, 1156602865, 1158246435, 1156319910, 1159044465, 1156025482, 1156857784, 1156714415, 1158266307], "min": 1156025482, "p50": 1156857784.0, "max": 1159292708},
+    "size_walk": {"samples": [10768, 9884, 9325, 11416, 9806, 8140, 8952, 9280, 10419], "min": 8140, "p50": 9806.0, "max": 11416},
+    "write_walk": {"samples": [64858233, 64988507, 64879962, 64936893, 64785990, 64863159, 64908047, 64803086, 64841350], "min": 64785990, "p50": 64863159.0, "max": 64988507}
+  },
+  "observed_at_least": {"contains_walk": 57777849, "size_walk": 65, "write_walk": 3248656},
+  "summary": {
+    "work_min": 3462726421.0,
+    "work_p50": 3517721341.0,
+    "work_p99": 3540880920.6,
+    "work_iqr": 29849475.0
+  }
+}

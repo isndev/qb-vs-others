@@ -1,0 +1,24 @@
+
+savina/fib: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2
+
+  1c-spin
+    cand         median-of-medians    100.9   min     98.2   max    105.5   n=12   [101 102 105 100 99 101 98 102 103 98 98 101]
+    shipped      median-of-medians     98.9   min     96.0   max    100.9   n=12   [98 99 99 100 98 100 101 99 96 97 99 99]
+    cand vs shipped: 100.9 vs 98.9 (+2.0%) -- distributions OVERLAP: no measurable difference
+
+  1c-park
+    cand         median-of-medians    100.7   min     98.7   max    102.8   n=12   [103 102 99 103 101 100 99 103 100 102 99 101]
+    shipped      median-of-medians     99.7   min     93.9   max    104.5   n=12   [98 98 105 100 99 95 101 100 101 101 99 94]
+    cand vs shipped: 100.7 vs 99.7 (+1.0%) -- distributions OVERLAP: no measurable difference
+
+  2c-spin
+    cand         median-of-medians     62.4   min     57.4   max     63.2   n=12   [58 63 59 62 59 63 57 63 63 61 63 63]
+    shipped      median-of-medians     58.5   min     57.2   max     61.5   n=12   [59 61 58 61 58 61 58 60 57 57 58 59]
+    cand vs shipped: 62.4 vs 58.5 (+6.7%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians     63.0   min     57.3   max     65.4   n=12   [63 63 64 63 65 57 62 60 62 64 60 63]
+    shipped      median-of-medians     58.0   min     56.8   max     61.4   n=12   [58 58 58 58 59 57 60 57 58 61 57 59]
+    cand vs shipped: 63.0 vs 58.0 (+8.6%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 96 launches, 0 not verified -> census/fib

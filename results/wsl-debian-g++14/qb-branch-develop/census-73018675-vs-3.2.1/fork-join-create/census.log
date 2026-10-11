@@ -1,0 +1,24 @@
+
+savina/fork-join-create: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2
+
+  1c-spin
+    cand         median-of-medians     74.4   min     72.3   max     77.6   n=12   [78 75 74 75 73 74 75 74 72 74 76 76]
+    shipped      median-of-medians     61.2   min     59.6   max     69.7   n=12   [63 63 60 62 61 62 70 60 60 60 68 61]
+    cand vs shipped: 74.4 vs 61.2 (+21.5%) -- distributions separate
+
+  1c-park
+    cand         median-of-medians     74.8   min     72.7   max     78.6   n=12   [77 75 75 74 73 75 75 75 73 73 79 75]
+    shipped      median-of-medians     62.9   min     59.8   max     71.6   n=12   [66 62 61 62 64 65 68 72 60 61 64 60]
+    cand vs shipped: 74.8 vs 62.9 (+19.0%) -- distributions separate
+
+  2c-spin
+    cand         median-of-medians     31.9   min     29.5   max     36.3   n=12   [35 31 32 32 33 32 36 33 30 36 32 31]
+    shipped      median-of-medians     32.6   min     30.2   max     35.9   n=12   [30 31 32 36 31 35 31 33 33 35 33 32]
+    cand vs shipped: 31.9 vs 32.6 (-2.0%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians     32.8   min     30.6   max     37.1   n=12   [32 37 32 34 33 31 36 36 31 36 33 32]
+    shipped      median-of-medians     31.0   min     29.0   max     36.0   n=12   [31 29 30 35 29 29 36 34 32 31 31 32]
+    cand vs shipped: 32.8 vs 31.0 (+5.8%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 96 launches, 0 not verified -> census/fork-join-create

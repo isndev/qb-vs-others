@@ -1,0 +1,45 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/philosophers",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 4215202917252104846,
+  "expected_messages": 800020,
+  "work_unit": "meal",
+  "work_units": 200000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "philosophers": 20, "rounds": 10000, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-11T00:42:43Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the arbitrator is owned by thread 0 and philosopher i by thread 1 + i % (cores - 1); not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Philosophers are slots of a vector and the arbitrator has no mailbox: the 20 philosophers share one SPSC ring into worker 0, so the 20-producer fan-in the frameworks pay for is engineered out here by placement", "the arbitrator lives on thread 0 and philosopher i on thread 1 + i % (cores - 1), so with cores=2 every request and every answer crosses a core -- the same placement qb's cell fixes", "cores=1 is one thread with the arbitrator and the philosophers in its own ring -- the floor for single-threaded dispatch, still a real queue, and the cell this floor bounds", "with cores=2 the floor is NOT a bound: every message is its own ring hand-off to the other thread, where qb publishes a pass's events in one batched flush and runs under this floor -- read it there as the per-message cost of a hand-off", "how many requests are refused depends on the interleaving: it is REPORTED beside the cell (observed `refused`, Savina's 'Num retries'), never asserted; every refused request and its retry are delivered and timed", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 20 philosophers retrying is rare"],
+  "failures": [],
+  "work_ns": [8700895.0, 8702241.0, 8689266.0, 8813532.0, 9176253.0, 9059203.0, 8669359.0, 9061537.0, 8712462.0],
+  "total_ns": [8755404.0, 8756161.0, 8743157.0, 8867942.0, 9233012.0, 9114816.0, 8725045.0, 9115703.0, 8768080.0],
+  "outside_window_ns": [54509.0, 53920.0, 53891.0, 54410.0, 56759.0, 55613.0, 55686.0, 54166.0, 55618.0],
+  "observed": {
+    "refused": {"samples": [285670, 285670, 285670, 285670, 285670, 285670, 285670, 285670, 285670], "min": 285670, "p50": 285670.0, "max": 285670}
+  },
+  "summary": {
+    "work_min": 8669359.0,
+    "work_p50": 8712462.0,
+    "work_p99": 9167075.7,
+    "work_iqr": 358308.0
+  }
+}

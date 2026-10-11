@@ -1,0 +1,45 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/logmap",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 18398876595009951523,
+  "expected_messages": 750040,
+  "work_unit": "term",
+  "work_units": 250000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "series": 10, "terms": 25000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-11T00:42:28Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the master is owned by thread 0 and series i -- its worker and computer roles in one slot -- by thread (1 + i) % cores; a request is a push into the owner's own ring and the answer a push back; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A series is one slot of a vector holding its worker's and its computer's state, with no mailbox and no per-actor dispatch: the request and the answer are two pushes into the owner thread's own ring, the held requests a count", "the master lives on thread 0 and series i on thread (1 + i) % cores -- the placement qb's cell fixes -- so no round trip crosses a core; with cores=2 the burst to the even series (i = 0, 2, 4, ...: thread (1 + i) % 2 = 1) and their answers to the master do", "the terms x series NextTerm burst is pushed from the caller's thread, which IS worker 0: a full ring of its own is drained inline (Mesh::send), so at cores=1 the chains run in slices of a ring (65 536 messages) while the burst is still being sent, where a framework's master finishes its handler first; at cores=2 the ring to thread 1 holds 65 536 of its 125 000 NextTerm and the caller spins until thread 1 makes room", "cores=1 is one thread with the master and every series in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [5860025.0, 6180186.0, 6135299.0, 6711746.0, 6156291.0, 5979231.0, 6571627.0, 5975856.0, 6590401.0],
+  "total_ns": [7745808.0, 7864690.0, 7872675.0, 8394782.0, 7922498.0, 7695442.0, 8382445.0, 7628943.0, 8296974.0],
+  "outside_window_ns": [1885783.0, 1684504.0, 1737376.0, 1683036.0, 1766207.0, 1716211.0, 1810818.0, 1653087.0, 1706573.0],
+  "observed": {
+    "held": {"samples": [249955, 249940, 249960, 249950, 249960, 249955, 249960, 249930, 249955], "min": 249930, "p50": 249955.0, "max": 249960}
+  },
+  "summary": {
+    "work_min": 5860025.0,
+    "work_p50": 6156291.0,
+    "work_p99": 6702038.4,
+    "work_iqr": 592396.0
+  }
+}
