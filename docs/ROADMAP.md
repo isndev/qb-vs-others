@@ -28,8 +28,9 @@ ambition has already misled the reader.
   session, plus a 528-launch interleaved census per host (`results/<host>/savina-<shape>/`,
   `results/<host>/qb-branch-develop/grid-73018675/`, `docs/TUNING.md` §21) — 292 cells per host,
   eighteen shapes. The first shapes whose cells carry OBSERVATIONS beside the number (FAIRNESS.md
-  §0: refused requests, wake-ups, producer waits, work messages). Not yet on macOS or the arm64
-  guest.
+  §0: refused requests, wake-ups, producer waits, work messages). The one shape the candidate lost
+  on (fork-join-create at one core, WSL2) was traced to qb's arena and fixed, and the fix measured
+  level with 3.2.1 in a second session (§21.6). Not yet on macOS or the arm64 guest.
 - **The two CAF coherence defects, closed** (`docs/TUNING.md` §1.1 and §8). The spin-knob sweep
   was run on both axes — poll budget 100 → 10⁶ at fixed steal interval, steal interval 1 → 10⁶ at
   fixed budget; ten documents in `results/desktop-win11-msvc19/caf-spin-sweep/` — and no
@@ -189,7 +190,8 @@ pipeline. What remains, in two waves, roughly in order of what they would teach:
 
 Wave A left four things for the shapes that follow it (§21.5): a quiet-host form sweep is part of
 publishing a shape whose adapters declare more than one idiom — it found SObjectizer's logmap
-2.0–2.5 × faster with its coops grouped, a form the table does not carry yet; `concsll.md`
+2.0–2.5 × faster with its coops grouped, which became the adapter's default and the re-measured
+row's form; `concsll.md`
 promises a one-time measurement of the other placement (the list sharing a core with half the
 workers) that no adapter can switch to today; `tools/report.py` prints one version per framework
 for a host whose shapes were measured with two qb builds; and the first `perf` / ETW profile of

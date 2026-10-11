@@ -40,7 +40,7 @@ argument it exists to win:
 | `savina/fib`, `savina/chameneos` × the same four (+ CAF-detached declared omitted) | **done on Windows and WSL2**: 16 cells each per host, shipped qb 3.1.0 like the five before them (`results/<host>/savina-fib/`, `savina-chameneos/`, rendered in each host's `REPORT.md`), **116 cells per host**; on macOS and on the arm64 Linux guest since 2026-09-19, with the candidate as the qb column. Written against the qb branch they produced (`results/<host>/qb-branch-perf-dense-table-growth/`): fib found a 43 s defect in unreleased `develop` and drove three qb commits, and its shipped-3.1.0 cell is a LOGGING figure — nine `LOG_INFO` lines per actor lifetime, 515 819 lines per repetition, 159 / 459 ms (WSL2 / Windows, 2c-spin) against the branch's 7.6 / 10.5 in the same session, CAF 39 / 53, floor 3.4 / 4.0 (`docs/TUNING.md` §11) |
 | `savina/bank-transaction` × the same four (+ CAF-detached declared omitted) | **done on Windows and WSL2** (2026-09-07): 16 cells per host, shipped qb 3.1.0 (`results/<host>/savina-bank-transaction/`, rendered in each host's `REPORT.md`), **132 cells per host**; on macOS and on the arm64 Linux guest since 2026-09-19, with the candidate as the qb column. The first shape that WAITS for a reply — one `qb::ask` / CAF `request().then()` per transfer, 50 000 of them — and it found five defects on qb's ask path in one afternoon (`docs/TUNING.md` §12, qb `fa1c5ce3`): shipped 3.1.0 measures 14.7 / 9.2 ms (WSL2, 1c / 2c spin) and 25.5 / 29.2 (Windows), qb `develop` before the fixes 9.4 / 5.1 and 13.7 / 8.0, after them **8.1 / 4.6** and **12.9 / 7.6** in the same session (`results/<host>/qb-branch-perf-coro-scope-local-refcount/`), against CAF 41.5 / 36.6 and 57.8 / 57.5, SObjectizer 19.5 / 25.5 and 29.6 / 38.0, floor 1.1 / 6.3 and 3.5 / 32.2 |
 | **The 3.2.0 candidate grid** — qb `develop` × all eight shapes | **done on Windows and WSL2, twice**: at the midpoint (`43f62afe`, 2026-09-07) and at the final commit (**`77b358d8`**, 2026-09-09) — 96 qb cells per host each time (candidate / shipped 3.1.0 / candidate, 9 + 2, one quiet session per host, `results/<host>/qb-branch-develop/`), the fastest framework in all 64 cells both times, every WSL2 cell faster at the end than at the midpoint (ping-pong 1c 66 → 23 ns, ring 1c 39 → 17), the Windows two-core cells level-or-better under the interleaved census; the two `framework=qb` grids below, `docs/TUNING.md` §13 and §13.4. — and **a third time on 2026-09-13**, at the release candidate **`f2779605`**, with the WHOLE field in the same session (`grid-f2779605/`, `grid-shipped-3.1.0-20260913/`, `census-f2779605-field/`; point 7 and §13.5): fastest in all 64 cells, no cell slower than 3.1.0, at or under the raw-thread floor on the two-core census cells — and **a fourth time on 2026-09-19, on the two arm64 hosts**, at **`174e515a`**: `f2779605` plus the four changes that landed after it (the actor arena QB-212, `pin_frame_copy` QB-213, the frame-free `qb::ask` QB-214, `qb::growable_ring` QB-215), against shipped 3.1.0 AND against `f2779605` in one session per host, the whole field beside them (`results/macbook-m4pro-macos-clang21/qb-branch-develop/`, `results/utm-debian13-arm64-g++14/qb-branch-develop/`; §13.9): fastest in all 64 cells again, no cell slower than 3.1.0, fib −22 % and bank-transaction −18 % against `f2779605` on macOS — and two small cells the arena costs, attributed there |
-| **Savina wave A** — `savina/fork-join-create`, `nqueens`, `a-star`, `philosophers`, `barber`, `bndbuffer`, `cigsmok`, `concdict`, `concsll`, `logmap` × qb, CAF, SObjectizer, floor (CAF-detached declared omitted) | **done on Windows and WSL2** (2026-10-11): 160 cells per host, one quiet session per host, **shipped qb 3.2.1** as the qb column (`results/<host>/savina-<shape>/`, rendered in each host's `REPORT.md`, the tables below), **292 cells per host**; the 3.3.0 candidate `73018675` beside it in the same session (`results/<host>/qb-branch-develop/grid-73018675/`) and a 528-launch census per host: level on every cell but fork-join-create at one core on WSL2 (+19 to +25 %). Not yet on macOS or the arm64 guest. `docs/TUNING.md` §21 |
+| **Savina wave A** — `savina/fork-join-create`, `nqueens`, `a-star`, `philosophers`, `barber`, `bndbuffer`, `cigsmok`, `concdict`, `concsll`, `logmap` × qb, CAF, SObjectizer, floor (CAF-detached declared omitted) | **done on Windows and WSL2** (2026-10-11): 160 cells per host, one quiet session per host, **shipped qb 3.2.1** as the qb column (`results/<host>/savina-<shape>/`, rendered in each host's `REPORT.md`, the tables below), **292 cells per host**; the 3.3.0 candidate `73018675` beside it in the same session (`results/<host>/qb-branch-develop/grid-73018675/`) and a 528-launch census per host: level on every cell but fork-join-create at one core on WSL2 (+19 to +25 %), traced to qb's arena and fixed, the fix level with 3.2.1 in a second session (`results/<host>/qb-branch-perf-fjcreate-regression/`). Not yet on macOS or the arm64 guest. `docs/TUNING.md` §21 |
 | The other 12 Savina benchmarks (of 30) | **not yet written** — waves B and C, see [docs/ROADMAP.md](docs/ROADMAP.md) |
 | Linux axis (WSL2 Debian 13 / g++ 14.2) | **run**, the same 132 cells, re-measured with the candidate on 2026-09-13, and the 160 of wave A on 2026-10-11 with shipped 3.2.1 — with the WSL2 caveat below. **A native-arm64 Linux guest** (UTM / QEMU on the Apple M4 Pro, Debian 13 / g++ 14.2, vCPUs 2 and 4) joined on 2026-09-19: the same 132 cells with the candidate `174e515a`, and a guest's park floor of its own (20.8 µs); bare-metal Linux not yet |
 | macOS axis (Apple M4 Pro / AppleClang 21, arm64) | **run**, all 132 cells since 2026-09-19 (84 on 2026-09-05; the 160 of wave A not yet) — **unpinned** (macOS has no verified affinity API; every document says `pinned:false`, and every two-core figure is read from a launch census); the candidate `174e515a` beside shipped 3.1.0 and `f2779605` in the same session, `docs/TUNING.md` §13.9 (§9.13 for the 2026-09-05 session) |
@@ -494,7 +494,8 @@ customers (`barber`), a bounded buffer (`bndbuffer`), a shared actor answering t
 request/reply chains (`concdict`, `concsll`) and chained round trips into deep mailboxes
 (`logmap`); each `benchmarks/savina/<shape>.md` page says what its cell measures and where it
 deviates from Savina. Measured on 2026-10-11 in one quiet session per host (WSL2 00:35–01:01 UTC,
-Windows 01:02–01:28 UTC, the other side idle each time), 9 repetitions + 2 warmup, CPUs 0 and 2,
+Windows 01:02–01:28 UTC, the other side idle each time; the logmap row again at 03:42–03:45 UTC
+once its SObjectizer form changed, point 5), 9 repetitions + 2 warmup, CPUs 0 and 2,
 **with shipped qb 3.2.1 as the qb column** — the release a user installs, as fib, chameneos and
 bank-transaction joined with shipped 3.1.0 — and the 3.3.0 candidate measured beside it in the
 same session (`results/<host>/qb-branch-develop/grid-73018675/`). Per unit of work — an actor, a
@@ -514,9 +515,9 @@ Windows / MSVC, one core, spin:
 | cigsmok | **qb 1.35 µs** | SObjectizer 1.50 µs | **1.38 µs** | CAF 1.83 µs · qb 1.11× |
 | concdict | **qb 59 ns** | SObjectizer 209 ns | 45 ns | CAF 580 ns · qb 3.54× |
 | concsll | **SObjectizer 21.10 µs** | qb 21.12 µs | 21.01 µs | CAF 21.70 µs · SObjectizer and qb: no measurable difference |
-| logmap | **qb 26 ns** | SObjectizer 228 ns | 20 ns | CAF 721 ns · qb 8.68× |
+| logmap | **qb 26 ns** | SObjectizer 232 ns | 19 ns | CAF 726 ns · qb 8.85× |
 
-Windows / MSVC, two cores, spin (`logmap` is left out of the two-core tables — see the last point below):
+Windows / MSVC, two cores, spin:
 
 <!-- check-report: results/desktop-win11-msvc19 cfg=2c-spin -->
 | benchmark | fastest | second | floor | the rest |
@@ -530,6 +531,7 @@ Windows / MSVC, two cores, spin (`logmap` is left out of the two-core tables —
 | cigsmok | **SObjectizer 1.13 µs** | qb 1.17 µs | **1.17 µs** | CAF 1.83 µs · SObjectizer 1.04× |
 | concdict | **qb 63 ns** | SObjectizer 486 ns | **97 ns** | CAF 582 ns · qb 7.68× |
 | concsll | **SObjectizer 21.55 µs** | qb 21.59 µs | 21.21 µs | CAF 21.89 µs · SObjectizer and qb: no measurable difference |
+| logmap | **qb 19 ns** | SObjectizer 258 ns | **bimodal**, ~12 ns or ~142 ns | CAF 406 ns · qb 13.77× |
 
 WSL2 / g++ 14.2, one core, spin:
 
@@ -545,7 +547,7 @@ WSL2 / g++ 14.2, one core, spin:
 | cigsmok | **qb 1.35 µs** | SObjectizer 1.46 µs | 1.33 µs | CAF 1.66 µs · qb 1.08× |
 | concdict | **qb 41 ns** | SObjectizer 172 ns | 26 ns | CAF 366 ns · qb 4.19× |
 | concsll | **SObjectizer 21.02 µs** | qb 21.10 µs | 20.90 µs | CAF 21.51 µs · SObjectizer and qb: no measurable difference |
-| logmap | **qb 21 ns** | SObjectizer 190 ns | 12 ns | CAF 508 ns · qb 9.24× |
+| logmap | **qb 20 ns** | SObjectizer 194 ns | 12 ns | CAF 500 ns · qb 9.72× |
 
 WSL2 / g++ 14.2, two cores, spin:
 
@@ -561,6 +563,7 @@ WSL2 / g++ 14.2, two cores, spin:
 | cigsmok | **SObjectizer 918 ns** | qb 1.15 µs | **1.18 µs** | CAF 1.65 µs · SObjectizer 1.26× |
 | concdict | **qb 51 ns** | SObjectizer 350 ns | **53 ns** | CAF 372 ns · qb 6.81× |
 | concsll | **qb 21.18 µs** | SObjectizer 21.66 µs | 21.00 µs | CAF 21.99 µs · qb 1.02× |
+| logmap | **qb 15 ns** | SObjectizer 213 ns | **39 ns** | CAF 330 ns · qb 14.13× |
 
 The park columns are in each host's `REPORT.md` and rank the same, but for two cells: cigsmok at
 2c-park, where qb leads on WSL2 (1.15 µs against CAF's 1.64; SObjectizer parks at 1.74) and is
@@ -578,8 +581,8 @@ What the ten say, read with their sub-rows:
    handlers' own work is most of the cell — nqueens' search, concsll's list walk, a-star's and
    cigsmok's busy work.
 2. **Where the messages are the work, the margin is an order of magnitude**: fork-join-create
-   15–22 × (40 000 actors created and destroyed per repetition; CAF second), logmap 8.7–10 × at one
-   core, philosophers 6–9 ×, concdict 3.5–8 ×.
+   15–22 × (40 000 actors created and destroyed per repetition; CAF second), logmap 8.9–10 × at one
+   core and 13–14 × at two, philosophers 6–9 ×, concdict 3.5–8 ×.
 3. **The sub-rows matter here more than anywhere**: FAIRNESS.md §0's observations. CAF's two-core
    philosophers on Windows refuses ~1.2 M requests per run where qb refuses ~0.3 M, so its 3.9 µs
    per meal is not the same work; CAF's bounded buffer parks a producer on most items where qb's
@@ -588,16 +591,20 @@ What the ten say, read with their sub-rows:
    interleaved census on the cells the grids left in doubt**: level on every cell on Windows; on
    WSL2 level on all but two — **fork-join-create at one core is 19–25 % slower** (61.6 → 76.9 ns
    per actor at 1c-spin; census 61.2 → 74.4, separate), a cost `fib` does not show, and logmap
-   2c-spin 4 % faster (`docs/TUNING.md` §21.3).
-5. **One field cell is not its framework's faster form, and is left out of the two-core tables
-   above**: logmap's SObjectizer at two cores reads 441 / 561 ns per term (WSL2 / Windows) with
-   every agent on `fifo_t::individual`, and 217 / 245 with each series' coop on
-   `fifo_t::cooperation` — the adapter's own `QVO_SO_GROUP_COOPS` form, measured in the same
-   session (`results/<host>/wave-a-form-sweep/`) and 2.0–2.5 × faster. FAIRNESS.md §1.1 puts the
-   faster form in the table; until the adapter's default changes and the cell is re-measured,
-   qb's logmap margin at two cores is quoted against it: 14 × (WSL2) and 12 × (Windows), not the
-   21 × / 20 × the cell reads against CAF. The two reply forms of concdict and concsll were
-   measured the same way and the cell's `form=0` stays the faster or level one for qb and CAF.
+   2c-spin 4 % faster (`docs/TUNING.md` §21.3). The slower cells were traced to a 64 KiB free at
+   each core thread's exit that let glibc trim its arena's top, so the next engine re-faulted
+   ~770 pages inside the window; qb's fix measures level with 3.2.1 in a later same-session A/B
+   (`results/<host>/qb-branch-perf-fjcreate-regression/`, §21.6).
+5. **logmap's SObjectizer cells are its faster form.** The first session's form sweep measured
+   each series' coop on `fifo_t::cooperation` 2.0–2.5 × faster than every agent on
+   `fifo_t::individual` (`results/<host>/wave-a-form-sweep/`); FAIRNESS.md §1.1 puts the faster
+   form in the table, so the adapter's default flipped at two cores (`QVO_SO_GROUP_COOPS=0` keeps
+   the individual binding, as a sweep document) and the whole logmap row — four frameworks, four
+   configurations — was re-measured in one quiet session per host, which is what the tables above
+   carry: SObjectizer is now second at two cores, 213 / 258 ns per term (WSL2 / Windows) against
+   435–598 / 618–624 for the individual binding in that session, and qb's margin there is
+   13–14 ×. The two reply forms of concdict and concsll were measured the same way and the cell's
+   `form=0` stays the faster or level one for qb and CAF.
 
 ## Running it
 

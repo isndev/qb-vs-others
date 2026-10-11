@@ -56,7 +56,8 @@ are all in this repository.
   - [21.2 The field, shape by shape](#212-the-field-shape-by-shape)
   - [21.3 The 3.3.0 candidate against shipped 3.2.1](#213-the-330-candidate-against-shipped-321)
   - [21.4 The forms the adapters declared, measured](#214-the-forms-the-adapters-declared-measured)
-  - [21.5 What the session leaves](#215-what-the-session-leaves)
+  - [21.5 What the sessions leave](#215-what-the-sessions-leave)
+  - [21.6 The fork-join-create regression: cause, fix, and the same-session A/B](#216-the-fork-join-create-regression-cause-fix-and-the-same-session-ab)
 
 ---
 
@@ -2865,9 +2866,13 @@ or from qb on either compiler (g++ prints three `-Wmaybe-uninitialized` from lib
 | A2 | the candidate again → `grid-73018675-pass2/` | 00:52:40–00:55:42 | 01:19:37–01:22:42 | 40 + 40 |
 | D | the declared forms → `wave-a-form-sweep/` (§21.4) | 00:55:42–01:00:52 | 01:22:42–01:27:56 | 18 + 18 |
 | E | the interleaved census, candidate against 3.2.1 → `qb-branch-develop/census-73018675-vs-3.2.1/` | 01:30:47–01:31:34 | 01:32:30–01:33:44 | 528 + 528 launches |
+| F, E′ | second session: fork-join-create, candidate / fix / shipped / fix / candidate, then two censuses → `qb-branch-perf-fjcreate-regression/` (§21.6) | 03:43:12–03:43:15 | 03:44:51–03:44:58 | 20 + 20, 96 + 96 launches |
+| L, S | second session: the whole logmap row with the grouped SObjectizer default → `savina-logmap/`, and the individual binding → `wave-a-form-sweep/` (§21.4) | 03:43:15–03:43:25 | 03:44:58–03:45:13 | 16 + 2 per host |
 
 Each session opened with 60 s of quiet (30 s before the census, which ran in a second window once
-the two `fib` binaries it adds were built). The idle state is in each grid's `session.log`: the
+the two `fib` binaries it adds were built; the second session — WSL2 03:42:12–03:43:25, Windows
+03:43:51–03:45:13 — opened with 60 s and ended before the one load window on the host that day,
+03:46:50–03:50:00, a push of qb and the superproject with its pre-push checks). The idle state is in each grid's `session.log`: the
 WSL2 guest 99.2 % idle and at load 0.18 when leg A began, nothing in `top` but idle services;
 Windows `\Processor(_Total)` at 0–1.9 % before the session and 0–2.5 % after it. Every document
 verified — 0 unverified, 0 `n/a`, 0 failed over 1 036 documents and 1 056 census launches — and
@@ -2882,7 +2887,7 @@ Per unit of work, p50, WSL2 / Windows, spin unless said (`results/<host>/savina-
 `REPORT.md` has every cell and every observation sub-row, README.md's four wave-A tables the
 1c-spin and 2c-spin columns). Over the 40 cells per host qb leads with separate distributions in
 32 (WSL2) and 34 (Windows), is level in 7 / 5 and behind in one; the geometric mean of the best
-other framework over qb is 2.70 / 2.77.
+other framework over qb is 2.65 / 2.73 (with the re-measured logmap row of §21.4).
 
 - **fork-join-create** (an actor: forked, one Job, one Done, killed) — qb **62 / 103 ns** at one
   core against CAF's 929 ns / 2.04 µs and SObjectizer's 1.34 / 2.69 µs, 15 / 20 ×; the floor's
@@ -2939,12 +2944,13 @@ other framework over qb is 2.70 / 2.77.
   level and on WSL2 1.02 × ahead, and 1.02 / 1.04 × CAF at 2c-park. A second core buys nobody anything: the list is
   serial. CAF's one-thread order makes its size queries walk 80 759 nodes against everyone
   else's 1 234 — the sub-row shows it, the time does not.
-- **logmap** (a term) — chained round trips into deep mailboxes: 21 / 26 ns at one core against
-  SObjectizer's 190 / 228 (9.2 / 8.7 ×), floor 12 / 20; at two cores 15 / 20 ns, every round trip
-  on its own core by qb's placement, 21 / 20 × CAF's 327 / 400 — and 14 / 12 × SObjectizer's
-  FASTER form, which is not the cell yet (§21.4). `held` is 249 990 requests per run for the
-  three frameworks; the floor, which drains its burst inline when a ring fills (the page), holds
-  fewer.
+- **logmap** (a term; the row of the second session, §21.4) — chained round trips into deep
+  mailboxes: 20 / 26 ns at one core against SObjectizer's 194 / 232 (9.7 / 8.9 ×), floor 12 / 19;
+  at two cores 15 / 19 ns, every round trip on its own core by qb's placement, 14.1 / 13.8 ×
+  SObjectizer's 213 / 258 — its grouped binding, the cell's since §21.4 — and CAF third at 330 /
+  406. The Windows floor's 2c-spin is bimodal (1 of 9 repetitions at ~12 ns per term, 8 at ~142).
+  `held` is 249 990 requests per run for the three frameworks; the floor, which drains its burst
+  inline when a ring fills (the page), holds fewer.
 
 ### 21.3 The 3.3.0 candidate against shipped 3.2.1
 
@@ -2968,11 +2974,12 @@ cells of one shape, and one cell faster.** fork-join-create at one core is 19–
 the candidate in both grid passes (61.6 → 76.9 / 75.2 ns at 1c-spin) and in the census, every
 distribution separate; its two-core cells are level, `fib` — the other creation shape — is level
 at one core and overlapping at two, and MSVC shows nothing. It is a g++ / glibc, one-core cost of
-the flat burst that 3.3.0 added and a recursive lifetime does not pay. It is not attributed: no
-profile and no bisect are in this protocol, and `v3.2.1..73018675` is 92 commits. Under the merge
-rule of the 3.3.0 performance programme (Huly QB-244: a hot-path change slower beyond its spread
-is refused unless the loss is documented and agreed), it is a finding for the train, not for this
-repository.
+the flat burst that 3.3.0 added and a recursive lifetime does not pay. It was not attributed in this
+session (`v3.2.1..73018675` is 92 commits); under the merge rule of the 3.3.0 performance
+programme (Huly QB-244: a hot-path change slower beyond its spread is refused unless the loss is
+documented and agreed) it went to the train as Huly QB-1009, was bisected, explained and fixed,
+and the fix was measured in a second session — §21.6. The grids and the census above stay as
+measured at `73018675`.
 
 The grids alone would have said three things the census does not: philosophers 4.6–25 % faster on
 WSL2 with separate distributions (the control's two-core cells sat in a slower launch mode the
@@ -2992,22 +2999,36 @@ form in the same session as the field (`results/<host>/wave-a-form-sweep/`, 9 + 
 | concdict, qb `form=1` (`qb::ask` from a coroutine per worker) against `reply()` of the event, 1c-spin / 2c-spin | 41.0 → 54.0 / 51.4 → 56.6 | 59.2 → 83.5 / 63.3 → 87.7 | `form=0` faster: +30 to +41 % at one core, separate; +10 % (overlapping) / +39 % at 2c-spin |
 | concdict, CAF `form=1` (`request().then()`), 1c-spin / 2c-spin | 366 → 371 / 372 → 384 | 580 → 610 / 582 → 606 | level (overlapping, −1 to +5 % over the four configurations) — `form=0` stays |
 | concsll, qb and CAF `form=1`, every configuration | −0.7 to +1.1 % | −1.7 to +0.6 % | level — the walk is the cell |
-| logmap, SObjectizer with each series' coop on `fifo_t::cooperation` (`QVO_SO_GROUP_COOPS=1`), 2c-spin / 2c-park | **441 → 217 / 540 → 216** | **561 → 245 / 633 → 270** | **the grouped form is 2.0–2.5 × faster**, separate |
+| logmap, SObjectizer with each series' coop on `fifo_t::cooperation` (`QVO_SO_GROUP_COOPS=1`), 2c-spin / 2c-park | **441 → 217 / 540 → 216** | **561 → 245 / 633 → 270** | **the grouped form is 2.0–2.5 × faster**, separate — the cell's form since |
 
-The first three keep the cell's form. The fourth does not: **the published logmap SObjectizer
-two-core cells are not SObjectizer's faster form.** The adapter's default (every agent on
-`fifo_t::individual`) has to become the grouped coops at two cores and the four cells be
-re-measured (`run.py --only sobjectizer --benchmark savina/logmap --config 2c-spin,2c-park` per
-host) — an adapter change, which this measurement campaign did not make. Until then README.md
-leaves logmap out of its two-core tables and quotes qb's margin there against the grouped form
-(14 × WSL2, 12 × Windows), not the cell's 21 × / 20 ×; and `REPORT.md` ranks SObjectizer third
-behind CAF at two cores where the grouped form would place it second.
+The first three keep the cell's form. The fourth did not: **the logmap SObjectizer two-core cells
+of the first session were not SObjectizer's faster form.** `frameworks/sobjectizer/so_support.h`'s
+own rule makes a grouped document a table cell once a quiet host shows it faster, so qb-vs-others
+`9ddd1306` inverted the default for logmap only — `group_coops(bool default_when_unset)`, logmap
+passing `true`; `QVO_SO_GROUP_COOPS=0` now asks for the individual binding, whose documents carry
+"SWEEP DOCUMENT, NOT A TABLE CELL … fifo_t::individual" first. No other adapter calls it, and all
+72 SObjectizer cells, run once on each compiler, kept their caveats, idiom and parameters but
+logmap's. The whole logmap row (four frameworks, four configurations, 16 cells, the
+shipped-3.2.1 field build) was then re-measured in the second session of each host, so every ratio
+README.md transcribes for logmap comes from one session (FAIRNESS.md §1.4), with the individual
+binding beside it as sweep documents:
 
-### 21.5 What the session leaves
+| logmap, SObjectizer, ns per term (second session) | WSL2 | Windows |
+|---|---:|---:|
+| the cell, grouped, 2c-spin / 2c-park | **213.3 / 216.9** | **257.8 / 268.5** |
+| the sweep document, individual, 2c-spin / 2c-park | 435.4 / 598.1 | 617.8 / 623.9 |
+| individual over grouped, every distribution separate | 2.04 × / 2.76 × | 2.40 × / 2.32 × |
 
-- **The fork-join-create regression on WSL2 (§21.3)**, for the 3.3.0 train: a profile of the
-  candidate's one-core burst against 3.2.1's, then a bisect over the 92 commits.
-- **logmap's SObjectizer form (§21.4)**: the adapter default, and four cells.
+SObjectizer is now second behind qb at two cores, ahead of CAF (330 / 406 ns at 2c-spin), and qb's
+margin there is 14.1 / 13.8 × at 2c-spin and 14.3 / 12.8 × at 2c-park, where the first session's
+cells read 21 / 20 × against CAF.
+
+### 21.5 What the sessions leave
+
+- **The fork-join-create regression on WSL2 (§21.3)** — attributed and fixed since, §21.6; the fix
+  is a qb change for the 3.3.0 train, and the field and the candidate grid stay as measured.
+- **logmap's SObjectizer form (§21.4)** — the adapter's default since `9ddd1306`, the row
+  re-measured.
 - **concsll's other placement**: `benchmarks/savina/concsll.md` promises one measurement of the
   list sharing its core with half the workers (concdict's placement), for qb and the floor
   together, before the cell is final. No adapter can switch to it today; it was not measured.
@@ -3025,3 +3046,39 @@ behind CAF at two cores where the grouped form would place it second.
   1.74 µs). Windows' raw spin floor is bimodal at two cores on three shapes (fork-join-create,
   a-star, logmap), so qb's ratio to it there is a ratio to whichever mode a run fell in.
 - **macOS and the arm64 guest** have not run wave A.
+
+### 21.6 The fork-join-create regression: cause, fix, and the same-session A/B
+
+§21.3's one loss, on WSL2 / g++ only, went to the 3.3.0 train as Huly QB-1009. Bisected to qb
+`0e818396` (which removed `thread_arena`'s `owned_current_` thread-local) and shown with gdb in the
+fix's commit message: at every core thread's exit the arena's reaper freed the thread's 64 KiB
+first chunk with `::operator delete`; since `0e818396` that chunk sits right below glibc's arena
+top, so the free merged into a top that crossed the dynamic trim threshold, glibc `madvise`d 4 MB
+away, and the next engine's core thread re-faulted ~770 pages while it created its actors — inside
+the window, which is why only the shape that creates 40 000 actors in one burst on one core showed
+it (9 124 minor faults per run against 1 908, by the fix's commit message). The fix, qb branch
+`perf/fjcreate-regression` (`840065b0`, `8674749a`, `4b6a4300` on `73018675`), hands a thread's
+first chunk to a process-wide spare list that the next thread's first refill takes: no free at
+exit, no trim, a warm chunk. **Measured at `4b6a4300` (on `73018675`); lands on qb `develop` as
+`4ef5270f` (`a1f5e087`, `14a11d23`, `4ef5270f`, rebased over two test-only commits), `src/`
+identical.**
+
+The A/B, in each host's second quiet session (`results/<host>/qb-branch-perf-fjcreate-regression/`,
+its README the full table with spreads): qb cells only, three builds of one harness tree through
+the same adapters — candidate / fix / shipped 3.2.1 / fix / candidate, 9 + 2 — then two
+interleaved censuses on the one-core cells (12 launches of 3 + 1, AB/BA); ns per actor, p50:
+
+| cell | WSL2: shipped / candidate, 2 passes / fix, 2 passes | WSL2 census: fix against candidate / shipped | Windows: shipped / candidate / fix | Windows census |
+|---|---|---|---|---|
+| 1c-spin | 61.2 / **76.6, 76.6** / 63.9, 62.8 | −17.0 % (separate) / −0.4 % | 102.5 / 100.6, 103.5 / 105.6, 102.0 | −2.1 % / −0.5 % |
+| 1c-park | 61.0 / **75.9, 74.9** / 62.8, 63.3 | −14.1 % (separate) / +1.1 % | 101.8 / 103.6, 102.2 / 99.8, 100.2 | −2.3 % / −0.3 % |
+| 2c-spin | 29.6 / 33.1, 30.6 / 30.5, 34.6 | — | 59.1 / 59.4, 59.2 / 58.9, 57.1 | — |
+| 2c-park | 30.3 / 30.7, 32.1 / 30.9, 32.0 | — | 54.2 / 59.1, 55.1 / 55.2, 57.2 | — |
+
+On WSL2 the candidate's two one-core cells sit 22.7–25.1 % above shipped with separate
+distributions in both passes — the wave-A finding, reproduced — and the fix's 2.6–4.3 % above it,
+overlapping: level with 3.2.1 by census, 14–17 % under the candidate, separate. The bisect's own
+A/B read 61.1 / 76.7 / 62.8 at 1c-park; this session reads 61.0 / 75.9 and 74.9 / 62.8 and 63.3.
+Every two-core cell overlaps. On Windows all three builds are level, as the wave-A census already
+read the candidate there. The wave-A field keeps shipped 3.2.1 as its qb column, and
+`qb-branch-develop/grid-73018675/` stays as measured at `73018675`, with this section as its note.
