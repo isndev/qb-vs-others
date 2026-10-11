@@ -30,9 +30,23 @@ from pathlib import Path
 # The floor is not a framework and is never ranked against one. It is printed in its own row,
 # below a rule, because its job is to bound the field rather than to join it.
 FLOOR = "baseline"
+_AUTO = object()
 
 
-def load(results: Path) -> dict:
+def manifest_bytes(results: Path) -> bytes | None:
+    try:
+        return (results / "run.json").read_bytes()
+    except FileNotFoundError:
+        return None
+
+
+def check_manifest_stable(results: Path, expected: bytes | None) -> None:
+    if manifest_bytes(results) != expected:
+        sys.exit(f"report.py: {results / 'run.json'} changed during report generation -- "
+                 "refusing a possible mixture of attempts; retry after the run finishes")
+
+
+def load(results: Path, *, _snapshot: bytes | None | object = _AUTO) -> dict:
     """Read `<results>/<benchmark-slug>/<framework>__<config>.json` -- that shape and no other.
 
     tools/run.py writes each document one level down, in a directory NAMED for the benchmark the
@@ -42,8 +56,25 @@ def load(results: Path) -> dict:
     by the published number depending on nothing but sort order. Measured before this rule
     existed: the branch A/B files loaded first and lost to the shipped cells on the alphabet
     alone. Such directories are named on stderr and left out; a key that still arrives twice is
-    a hard stop, not a last-writer-wins.
+    a hard stop, not a last-writer-wins. When run.json exists, its cell list is authoritative:
+    an older canonical document left by a smaller full rerun cannot enter the report. The manifest
+    must keep the same bytes across this scan, or a concurrent rerun could mix cell generations.
     """
+    manifest = results / "run.json"
+    snapshot = manifest_bytes(results) if _snapshot is _AUTO else _snapshot
+    declared = None
+    if snapshot is not None:
+        run = json.loads(snapshot)
+        if run.get("status") not in (None, "complete"):
+            sys.exit(f"report.py: {manifest} records an incomplete run -- refusing to render a "
+                     "possible mixture of old and new cells")
+        if "cells" in run:
+            declared = {}
+            for cell in run["cells"]:
+                key = (cell["benchmark"], cell["config"], cell["framework"])
+                if key in declared:
+                    sys.exit(f"report.py: {manifest} lists {key} twice")
+                declared[key] = cell["status"]
     cells = {}
     origin = {}
     side = set()
@@ -70,11 +101,29 @@ def load(results: Path) -> dict:
         p = d.get("params", {})
         cfg = f"{p.get('cores', '?')}c-{'spin' if p.get('wait') else 'park'}"
         key = (bench, cfg, fw)
+        if declared is not None:
+            status = declared.get(key)
+            if status is None:
+                sys.exit(f"report.py: {f} describes {key}, absent from run.json -- an older "
+                         "cell must not survive a complete rerun")
+            if ((status == "ok" and (d.get("verified") is not True or d.get("not_applicable")))
+                    or (status == "n/a" and (d.get("verified") is not False
+                                             or not d.get("not_applicable")))
+                    or (status in ("failed", "timeout", "unverified")
+                        and (d.get("verified") is not False or d.get("not_applicable")
+                             or d.get("work_ns")))
+                    or status not in ("ok", "n/a", "failed", "timeout", "unverified")):
+                sys.exit(f"report.py: {f} contradicts its run.json status {status!r}")
         if key in origin:
             sys.exit(f"report.py: {f} and {origin[key]} both describe {fw} / {bench} / {cfg} "
                      "-- two documents for one cell; refusing to pick one")
         origin[key] = f
         cells.setdefault(bench, {}).setdefault(cfg, {})[fw] = d
+    if declared is not None:
+        missing = set(declared) - set(origin)
+        if missing:
+            sys.exit(f"report.py: {manifest} lists cells with no document: {sorted(missing)}")
+    check_manifest_stable(results, snapshot)
     return cells
 
 
@@ -168,14 +217,12 @@ def render(results: Path, out_path: Path | None = None) -> str:
     `results/<host>/REPORT.md`. `tools/check-report.py` calls this and compares bytes against the
     committed file, which is what makes "generated, never edited" a measurement.
     """
-    cells = load(results)
+    snapshot = manifest_bytes(results)
+    cells = load(results, _snapshot=snapshot)
     if not cells:
         sys.exit("report.py: no results found -- refusing to render an empty report")
 
-    run = {}
-    rj = results / "run.json"
-    if rj.exists():
-        run = json.loads(rj.read_text())
+    run = json.loads(snapshot) if snapshot is not None else {}
 
     where = out_path.resolve().parent if out_path else ROOT
     try:
@@ -207,6 +254,8 @@ def render(results: Path, out_path: Path | None = None) -> str:
         for cfg in bench.values():
             for d in cfg.values():
                 e = d.get("env", {})
+                if not e.get("compiler"):
+                    continue  # A runner-authored failure has no measured binary/toolchain.
                 key = (e.get("compiler"), e.get("compiler_version"), e.get("cxx_flags"))
                 env_seen.setdefault(key, set()).add(d.get("framework"))
     if len(env_seen) > 1:
@@ -239,7 +288,10 @@ def render(results: Path, out_path: Path | None = None) -> str:
         for cfg in sorted(cells[bench]):
             fws = cells[bench][cfg]
             out.append(f"### {cfg}\n")
-            units = {work_unit(d)[0] for d in fws.values() if not d.get("not_applicable")}
+            # Runner-authored failures have no measured denominator. They must stay visible as
+            # FAILED without inventing a unit that conflicts with the surviving measurements.
+            units = {work_unit(d)[0] for d in fws.values()
+                     if d.get("verified") and not d.get("not_applicable")}
             if len(units) > 1:
                 sys.exit(f"report.py: {bench} {cfg}: the documents disagree on the work unit "
                          f"({sorted(units)}) -- one table cannot divide its rows by different "
@@ -317,7 +369,9 @@ def render(results: Path, out_path: Path | None = None) -> str:
                     out.append(f"- *({', '.join(sorted(owners))})* {c}")
                 out.append("\n</details>\n")
 
-    return "\n".join(out) + "\n"
+    rendered = "\n".join(out) + "\n"
+    check_manifest_stable(results, snapshot)
+    return rendered
 
 
 def main() -> int:

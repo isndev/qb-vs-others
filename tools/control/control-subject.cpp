@@ -19,6 +19,8 @@
 //   short-count   right checksum, wrong message count. Catches a framework reaching the correct
 //                 answer by doing a different amount of work.
 //   no-window     never marks the measured window, so a timing would be meaningless.
+//   fail-second   correct first call, wrong checksum on the second (partial measured run).
+//   fail-first    wrong first call, correct later calls (also a defective warmup).
 //
 // It is deliberately NOT built by qvo_add_benchmark and its name does not start with "qvo-", so
 // tools/run.py cannot discover it and no planted result can ever reach a published table.
@@ -37,6 +39,8 @@ std::string plant() {
 }
 
 qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
+    static unsigned   calls = 0;  // body calls are sequential within one harness process
+    const unsigned    call  = calls++;
     const auto        rounds = static_cast<std::uint64_t>(p.get("messages"));
     const std::string mode   = plant();
 
@@ -63,7 +67,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
 
     if (mode != "no-window") watch.stop();
 
-    if (mode == "wrong-answer") acc += 1;
+    if (mode == "wrong-answer" || (mode == "fail-second" && call == 1) ||
+        (mode == "fail-first" && call == 0))
+        acc += 1;
     if (mode == "short-count") delivered -= 2;
 
     return qvo::Answer{acc, delivered};

@@ -157,7 +157,7 @@ using Body = std::function<Answer(const Params &, Watch &)>;
 //   --param k=v         set a declared parameter
 //   --cpus 0,2,4,6      affinity set; the harness ABORTS if the pin is refused
 //   --no-pin            run unpinned, and record `pinned:false` so the report can exclude it
-//   --out FILE          JSON destination (default: stdout)
+//   --out FILE          JSON destination, atomically replaced (default: stdout)
 //   --describe          print the spec as JSON and exit without running
 int run(int argc, char **argv, Spec spec, Body body);
 

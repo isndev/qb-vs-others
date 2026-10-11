@@ -6,13 +6,16 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <system_error>
 
 #if defined(_WIN32)
 #    define WIN32_LEAN_AND_MEAN
 #    include <windows.h>
+#    include <shellapi.h>
 #else
 #    include <pthread.h>
 #    include <sched.h>
@@ -81,6 +84,47 @@ std::string json_escape(const std::string &s) {
 }
 
 std::string quoted(const std::string &s) { return "\"" + json_escape(s) + "\""; }
+
+void write_document(const std::filesystem::path &out_path, const std::string &doc) {
+    if (out_path.empty()) {
+        std::cout << doc;
+        return;
+    }
+
+    // Keep the temporary file beside --out: the replacement is atomic on the same filesystem.
+    // The runner also stages each process attempt, but direct harness callers need this guarantee.
+    static std::atomic<unsigned long long> sequence{0};
+#if defined(_WIN32)
+    const auto pid = GetCurrentProcessId();
+#else
+    const auto pid = getpid();
+#endif
+    std::filesystem::path tmp = out_path;
+    tmp += ".qvo-tmp-" + std::to_string(pid) + "-"
+           + std::to_string(sequence.fetch_add(1, std::memory_order_relaxed));
+    {
+        std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
+        if (!f) fatal("cannot write output temporary file");
+        f.write(doc.data(), static_cast<std::streamsize>(doc.size()));
+        f.close();
+        if (!f) {
+            std::error_code ignored;
+            std::filesystem::remove(tmp, ignored);
+            fatal("cannot finish writing output temporary file");
+        }
+    }
+#if defined(_WIN32)
+    const bool replaced = MoveFileExW(tmp.c_str(), out_path.c_str(),
+                                      MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+    const bool replaced = std::rename(tmp.c_str(), out_path.c_str()) == 0;
+#endif
+    if (!replaced) {
+        std::error_code ignored;
+        std::filesystem::remove(tmp, ignored);
+        fatal("cannot replace output document");
+    }
+}
 
 // -------------------------------------------------------------------------------------------
 // CPU affinity
@@ -346,11 +390,18 @@ std::uint64_t spin_work(std::uint64_t seed, int iterations) noexcept {
 int run(int argc, char **argv, Spec spec, Body body) {
     int         repetitions = 5;
     int         warmup      = 1;
-    std::string out_path;
+    std::filesystem::path out_path;
     bool        describe = false;
     bool        no_pin   = false;
     Pin         pin;
     Params      params;
+
+#if defined(_WIN32)
+    // The C runtime's narrow argv can lose characters outside the current ANSI code page.
+    // Keep the native path for --out, including a Unicode results directory from Python.
+    int      wide_argc = 0;
+    LPWSTR * wide_argv = CommandLineToArgvW(GetCommandLineW(), &wide_argc);
+#endif
 
     for (const auto &kv : spec.params) params.set(kv.first, kv.second);
 
@@ -365,7 +416,13 @@ int run(int argc, char **argv, Spec spec, Body body) {
         } else if (a == "--warmup") {
             warmup = std::atoi(next().c_str());
         } else if (a == "--out") {
+#if defined(_WIN32)
+            next();  // Advance the narrow parser; the native path comes from the wide argument.
+            if (!wide_argv || wide_argc != argc) fatal("cannot decode native Windows --out path");
+            out_path = std::filesystem::path(wide_argv[i]);
+#else
             out_path = next();
+#endif
         } else if (a == "--cpus") {
             pin.cpus      = parse_cpu_list(next());
             pin.requested = true;
@@ -385,6 +442,9 @@ int run(int argc, char **argv, Spec spec, Body body) {
             fatal("unknown argument: " + a);
         }
     }
+#if defined(_WIN32)
+    if (wide_argv) LocalFree(wide_argv);
+#endif
 
     if (repetitions < 1) fatal("--repetitions must be >= 1");
     if (warmup < 0) fatal("--warmup must be >= 0");
@@ -468,14 +528,7 @@ int run(int argc, char **argv, Spec spec, Body body) {
             j << "  \"work_ns\": [],\n";
             j << "  \"summary\": {}\n";
             j << "}\n";
-            const std::string doc = j.str();
-            if (out_path.empty()) {
-                std::cout << doc;
-            } else {
-                std::ofstream f(out_path, std::ios::binary);
-                if (!f) fatal("cannot write " + out_path);
-                f << doc;
-            }
+            write_document(out_path, j.str());
             std::fprintf(stderr, "qvo: %s/%s NOT APPLICABLE: %s\n", spec.framework.c_str(),
                          spec.benchmark.c_str(), na.reason.c_str());
             return 3;
@@ -512,6 +565,13 @@ int run(int argc, char **argv, Spec spec, Body body) {
     }
 
     const bool ok = failures.empty() && work_ns.size() == static_cast<std::size_t>(repetitions);
+    if (!ok) {
+        // A run with a failed repetition has no publishable timing, even when earlier repetitions
+        // passed. Keep the reasons, but remove every partial sample before emitting the document.
+        work_ns.clear();
+        total_ns.clear();
+        setup_ns.clear();
+    }
 
     std::ostringstream j;
     j << "{\n";
@@ -578,22 +638,19 @@ int run(int argc, char **argv, Spec spec, Body body) {
         std::snprintf(buf, sizeof buf, "%.1f", v);
         j << "    \"" << name << "\": " << buf << (last ? "\n" : ",\n");
     };
-    j << "  \"summary\": {\n";
-    stat("work_min", work_ns.empty() ? 0.0 : *std::min_element(work_ns.begin(), work_ns.end()), false);
-    stat("work_p50", percentile(work_ns, 0.50), false);
-    stat("work_p99", percentile(work_ns, 0.99), false);
-    stat("work_iqr", percentile(work_ns, 0.75) - percentile(work_ns, 0.25), true);
-    j << "  }\n";
+    if (ok) {
+        j << "  \"summary\": {\n";
+        stat("work_min", *std::min_element(work_ns.begin(), work_ns.end()), false);
+        stat("work_p50", percentile(work_ns, 0.50), false);
+        stat("work_p99", percentile(work_ns, 0.99), false);
+        stat("work_iqr", percentile(work_ns, 0.75) - percentile(work_ns, 0.25), true);
+        j << "  }\n";
+    } else {
+        j << "  \"summary\": {}\n";
+    }
     j << "}\n";
 
-    const std::string doc = j.str();
-    if (out_path.empty()) {
-        std::cout << doc;
-    } else {
-        std::ofstream f(out_path, std::ios::binary);
-        if (!f) fatal("cannot write " + out_path);
-        f << doc;
-    }
+    write_document(out_path, j.str());
 
     if (!ok) {
         std::fprintf(stderr, "qvo: %s/%s FAILED VERIFICATION\n", spec.framework.c_str(),

@@ -64,6 +64,15 @@ floor is 2× faster than qb". Without a floor, a table in which every framework 
 win for whoever is least slow. With a floor it reads as what it is: a measure of how much of the
 gap is inherent to *being a framework at all*.
 
+The `big` and `bank-transaction` floors keep adjacent actor or account slots owned by different
+workers on separate cache lines. Their earlier packed vectors could make two workers write the
+same line even though the workload gives each slot one owner. This source-layout correction has
+not yet been timed. It separates the inline vector slots; the bank's deque storage remains a
+separate system allocation. The published result JSON and generated reports still describe the
+earlier binaries; no old floor figure or framework-to-floor ratio is a measurement of the
+corrected layout. The `chameneos` floor needs no such separation: all creatures belong to one
+worker.
+
 ### 1.3 Same everything, and the differences are enumerated
 
 | Held equal | How |
@@ -164,17 +173,44 @@ cells of a published table, each subsection names the directory they came from, 
 `docs/ROADMAP.md` records the gap. `tools/check-roster.py` closes the other silence — a
 framework missing from a benchmark, or a results document that no roster cell explains.
 
+`tools/run.py` gives each process a fresh output file beside its cell, checks that the document
+names the requested framework and configuration and carries the verdict matching the exit code,
+then atomically replaces the cell. A failed launch replaces any older timing with an unverified
+document carrying no samples. `run.json` is marked `in_progress` before any cell changes and
+`complete` only after every cell is published; `tools/report.py` refuses an interrupted run or a
+canonical cell that the completed manifest does not list. Each run has a new `run_id`, and the
+report compares the manifest before and after loading and rendering so a concurrent rerun cannot
+mix its cells into the prior report.
+An atomic directory lock covers discovery as well as measurement, so even a second runner's
+`--describe` processes cannot disturb an active run. A filter that selects no cells is refused
+before the manifest changes; every named `--only`, `--benchmark`, and `--config` value must also
+exist in the discovered roster or configuration list. Every prior cell selected by those filters
+must have a current binary and be remeasured. When both `--only` and `--benchmark` are given,
+every named framework/benchmark pair must exist; with either axis omitted, the runner uses the
+supported discovered pairs without inventing unsupported combinations. If a run is interrupted,
+measure again into a new directory, or discard the entire old output directory before a complete
+rerun. A partial rerun cannot recover an interrupted directory.
+
+The runner's file and verdict boundary has a portable control with a synthetic process; it runs
+without building or measuring a framework: `python3 tools/test_run.py`.
+
+For a launch census over physical binary copies and A/A controls, `tools/launch-census.py
+--shuffle-seed N` archives one reproducible family order in `launch-order.jsonl` and executes
+that exact plan. The default fixed order and the two-binary `--alternate-order` mode remain
+available; these ordering modes cannot be combined.
+
 The harness has its own negative control, and it has been run:
 
 ```
 python3 tools/negative-control.py --build build/final
-    CAUGHT=7 CONFIRMED=4 MISSED=0
+    CAUGHT=10 CONFIRMED=6 MISSED=0
 ```
 
 It plants one defect at a time — a message lost 1 time in 10⁷, a single lost message, a duplicate
 delivery, a wrong checksum, a right checksum reached by the wrong amount of work, a body that
-never marked its measurement window, a CPU pin that cannot be applied — and asserts each is
-**rejected**, with no timing emitted. It also asserts four legitimate shapes are **not** rejected,
+never marked its measurement window, a CPU pin that cannot be applied, and a defective repetition
+before or after a success, including during warmup — and asserts each is **rejected**, with no
+partial samples or summary emitted. It also asserts six legitimate shapes are **not** rejected,
 because a battery that fails everything is not a working battery.
 
 The two document guards have theirs, and it plants in a sandbox copy while hashing the real

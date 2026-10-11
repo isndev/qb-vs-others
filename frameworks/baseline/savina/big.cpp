@@ -24,7 +24,9 @@ using namespace qvospec::savina::big;
 // kStart: none.  kPing: a = pinger, b = k.  kPong: a = value.  kDone: a = acc, b = messages.
 enum Tag : std::uint32_t { kStart = 1, kPing = 2, kPong = 3, kDone = 4 };
 
-struct Actor {
+// Adjacent actor IDs belong to different workers when cores=2. Keep their mutable state off
+// each other's cache line; the ring is the only intended cross-worker hand-off.
+struct alignas(qvobase::kCacheLine) Actor {
     TargetSequence seq;
     std::uint64_t  acc{0};
     std::uint32_t  sent{0};
@@ -36,6 +38,9 @@ struct Actor {
 
     Actor(std::uint32_t self, std::uint32_t n) : seq(self, n) {}
 };
+
+static_assert(alignof(Actor) >= qvobase::kCacheLine);
+static_assert(sizeof(Actor) % qvobase::kCacheLine == 0);
 
 qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const auto     actors = static_cast<std::uint32_t>(p.get("actors"));
@@ -124,6 +129,7 @@ int main(int argc, char **argv) {
         "mailbox contention the frameworks pay for is engineered out here by static placement",
         "actor a lives on thread a % cores, so with cores=2 roughly half the pings and half the "
         "pongs cross a core",
+        "adjacent actor slots owned by different workers occupy separate cache lines",
         "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded "
         "dispatch, still a real queue",
         "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which "

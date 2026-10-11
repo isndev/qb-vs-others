@@ -29,8 +29,8 @@ from pathlib import Path
 
 # Floors. Raise them in the same commit that adds a control; a count that goes DOWN is a control
 # that stopped firing, which is indistinguishable from a guard that stopped guarding.
-FLOOR_CAUGHT = 7
-FLOOR_CONFIRMED = 4
+FLOOR_CAUGHT = 10
+FLOOR_CONFIRMED = 6
 
 caught = confirmed = missed = 0
 
@@ -50,13 +50,15 @@ def verdict(kind: str, what: str, detail: str = "") -> None:
 
 
 def run_subject(exe: Path, plant: str, extra: list[str] | None = None,
-                messages: int = 20000000) -> tuple[int, dict | None, str]:
+                messages: int = 20000000, repetitions: int = 1,
+                warmup: int = 0) -> tuple[int, dict | None, str]:
     """Run the control subject with one planted defect. Returns (rc, result_json_or_None, stderr)."""
     env = dict(os.environ)
     env["QVO_CONTROL_PLANT"] = plant
     with tempfile.TemporaryDirectory() as td:
         out = Path(td) / "r.json"
-        cmd = [str(exe), "--repetitions", "1", "--warmup", "0", "--out", str(out),
+        cmd = [str(exe), "--repetitions", str(repetitions), "--warmup", str(warmup),
+               "--out", str(out),
                "--param", f"messages={messages}", "--param", "cores=1", "--param", "wait=1"]
         cmd += extra or []
         p = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=900)
@@ -111,6 +113,28 @@ def main() -> int:
                 "every control below is meaningless: a battery that rejects everything is not a "
                 f"working battery (rc={rc}, err={err.strip()[:100]})")
 
+    # --out is a native path on Windows. Replacing an existing document under a directory whose
+    # name is outside the active ANSI code page checks both the wide argument and wide rename path.
+    with tempfile.TemporaryDirectory() as td:
+        out = Path(td) / "résultats-日本語" / "cell.json"
+        out.parent.mkdir()
+        out.write_text('{"stale": true}')
+        cmd = [str(exe), "--repetitions", "1", "--warmup", "0", "--no-pin",
+               "--out", str(out), "--param", "messages=1000", "--param", "cores=1",
+               "--param", "wait=1"]
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        try:
+            fresh = json.loads(out.read_text())
+        except (OSError, json.JSONDecodeError):
+            fresh = None
+        if (p.returncode == 0 and fresh and fresh.get("verified") is True
+                and len(fresh.get("work_ns", [])) == 1
+                and not list(out.parent.glob("*.qvo-tmp-*"))):
+            verdict("CONFIRMED", "a Unicode --out path atomically replaces an older document")
+        else:
+            verdict("MISSED", "a Unicode --out path could not replace an older document",
+                    f"rc={p.returncode}, err={p.stderr.strip()[:100]}")
+
     print("\n== B. message loss -- the defect the checksum exists for ==")
     expect_rejected(exe, "drop-rare", "one message dropped in 10^7 (20M messages, 2 losses)")
     expect_rejected(exe, "drop-one", "exactly one message dropped in the whole run",
@@ -160,6 +184,38 @@ def main() -> int:
     else:
         verdict("MISSED", "an undeclared --param was accepted",
                 "a typo in a parameter name would then run a different benchmark than intended")
+
+    print("\n== H. one defective repetition invalidates the whole run ==")
+    for plant, warmup, failed_rep, what in (
+        ("fail-second", 0, 1, "success then failure publishes no partial timing"),
+        ("fail-first", 0, 0, "failure then success publishes no partial timing"),
+        ("fail-first", 1, 0, "a defective warmup invalidates later measured successes"),
+    ):
+        rc, doc, err = run_subject(exe, plant, messages=1000,
+                                  repetitions=2, warmup=warmup, extra=["--no-pin"])
+        if (rc == 1 and doc and doc.get("verified") is False
+                and doc.get("repetitions") == 2 and doc.get("warmup") == warmup
+                and len(doc.get("failures", [])) == 1
+                and doc["failures"][0].startswith(f"repetition {failed_rep}: checksum ")
+                and all(doc.get(key) == [] for key in
+                        ("work_ns", "total_ns", "outside_window_ns"))
+                and doc.get("summary") == {}):
+            verdict("CAUGHT", what, doc["failures"][0])
+        else:
+            verdict("MISSED", what, f"rc={rc}, doc={doc}, err={err.strip()[:100]}")
+
+    rc, doc, err = run_subject(exe, "none", messages=1000, repetitions=2,
+                              warmup=1, extra=["--no-pin"])
+    if (rc == 0 and doc and doc.get("verified") is True and doc.get("failures") == []
+            and doc.get("repetitions") == 2 and doc.get("warmup") == 1
+            and all(len(doc.get(key, [])) == 2 for key in
+                    ("work_ns", "total_ns", "outside_window_ns"))
+            and set(doc.get("summary", {})) ==
+            {"work_min", "work_p50", "work_p99", "work_iqr"}):
+        verdict("CONFIRMED", "a correct warmup and two repetitions retain every sample")
+    else:
+        verdict("MISSED", "a correct multi-repetition run lost samples",
+                f"rc={rc}, doc={doc}, err={err.strip()[:100]}")
 
     print(f"\n== census ==\n  CAUGHT={caught} CONFIRMED={confirmed} MISSED={missed} "
           f"(floors: CAUGHT>={FLOOR_CAUGHT} CONFIRMED>={FLOOR_CONFIRMED})")

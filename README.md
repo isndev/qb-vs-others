@@ -33,7 +33,7 @@ argument it exists to win:
 
 | | state |
 |---|---|
-| Harness, verification, pinning, reporting | **done**, and negative-controlled: 7 CAUGHT / 4 CONFIRMED / **0 MISSED** |
+| Harness, verification, pinning, reporting | **done**, and negative-controlled: 10 CAUGHT / 6 CONFIRMED / **0 MISSED**; includes mixed repetitions and defective warmup |
 | `savina/ping-pong`, `counting`, `thread-ring`, `fork-join`, `big` × qb, CAF, SObjectizer, floor (+ CAF-detached on ping-pong) | **done**, 84 cells per host: 82 verified + 2 declared `n/a` (a `caf::detached` actor has no spin mode) — first with shipped 3.1.0 (2026-09-04), **re-measured whole on 2026-09-13 with the 3.2.0 candidate `f2779605` in the candidate's own session** (every framework, 9 + 2, both hosts), which is what the tables below show |
 | The document guards (`tools/check-roster.py`, `tools/check-report.py`) | **done**, and negative-controlled: 33 CAUGHT / 3 CONFIRMED / **0 MISSED** (`tools/guards-negative-control.py`) |
 | Feature comparison, cited to the three sources | [docs/FEATURES.md](docs/FEATURES.md) |
@@ -45,6 +45,13 @@ argument it exists to win:
 | macOS axis (Apple M4 Pro / AppleClang 21, arm64) | **run**, all 132 cells since 2026-09-19 (84 on 2026-09-05) — **unpinned** (macOS has no verified affinity API; every document says `pinned:false`, and every two-core figure is read from a launch census); the candidate `174e515a` beside shipped 3.1.0 and `f2779605` in the same session, `docs/TUNING.md` §13.9 (§9.13 for the 2026-09-05 session) |
 | Seastar | not yet — Linux-only, and its dependencies need root on this host |
 | Cross-language references (Erlang, Pekko, Actix, Orleans) | not yet |
+
+**Floor layout correction (QB-990).** The `big` and `bank-transaction` raw-thread implementations
+now separate inline records owned by different workers at the cache-line boundary. Their published
+floor figures and framework-to-floor comparisons below were measured before that correction. They
+remain the recorded historical results; a quiet-host, same-session remeasurement is still needed
+before claiming any performance effect or replacing them. The `chameneos` layout is unchanged
+because all creatures are owned by one worker.
 
 Five benchmarks are five shapes — a two-actor round trip, a many-to-one funnel, a ring, a
 scatter-gather and an all-to-all — and the results below should be read per shape, not as one
@@ -523,7 +530,16 @@ Three things about a run worth knowing before reading its output:
 - **A filtered run merges, and refuses to merge across conditions.** `--only`, `--benchmark`
   and `--config` re-run a subset; the manifest keeps every cell that was not re-run and counts
   `merged_partial_runs`. It refuses if the host, platform, CPU set, repetition or warmup count
-  differ from the manifest already there — a table stitched from two hosts is not a table.
+  differ from the manifest already there — a table stitched from two hosts is not a table. Each
+  attempt publishes a fresh complete document; a failed relaunch replaces an older result with
+  an unverified cell. While a run is active or after an interruption, `run.json` says
+  `in_progress` and the report refuses the directory. Use a new `--out` for recovery, or discard
+  the entire old output directory before a complete rerun. The output lock covers binary
+  discovery and measurement; empty selections and unknown values in `--only`, `--benchmark`, or
+  `--config` are refused before `run.json` changes. Every old cell selected by the filters must
+  have a current binary. If both framework and benchmark filters are explicit, every named pair
+  must exist; with one axis omitted, only the supported discovered pairs run.
+  The report also checks that `run.json` stayed the same throughout rendering.
 - **The report reads `results/<host>/<benchmark>/` only.** Side experiments live in sibling
   directories (`qb-branch-perf-core-hot-path/`, `caf-spin-sweep/`, `sobjectizer-spin-sweep/`) whose documents declare a
   benchmark their directory is not named for; `report.py` names them on stderr and leaves them
