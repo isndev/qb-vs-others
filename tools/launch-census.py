@@ -12,6 +12,8 @@ and read the DISTRIBUTION of per-launch medians -- median-of-medians, min, max -
 number. Interleaving is what makes host drift land on both sides. For a two-binary A/B,
 --alternate-order balances the first launch position within each configuration (AB, BA,
 AB, BA, ...) rather than confounding order with the first or second half of a session.
+--shuffle-seed records one reproducible order for a larger family of physical copies and A/A
+controls, then executes exactly that recorded plan.
 
 Usage
 -----
@@ -24,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import statistics
 import subprocess
 import sys
@@ -44,8 +47,12 @@ def describe(exe: Path) -> dict:
     return json.loads(out.stdout)
 
 
-def launch_order(bins: list[tuple], launch: int, alternate_order: bool) -> list[tuple]:
-    return list(reversed(bins)) if alternate_order and launch % 2 == 0 else bins
+def launch_order(bins: list[tuple], launch: int, alternate_order: bool,
+                 rng: random.Random | None = None) -> list[tuple]:
+    order = list(reversed(bins)) if alternate_order and launch % 2 == 0 else list(bins)
+    if rng is not None:
+        rng.shuffle(order)
+    return order
 
 
 def main() -> int:
@@ -56,12 +63,17 @@ def main() -> int:
     ap.add_argument("--launches", type=int, default=10)
     ap.add_argument("--repetitions", type=int, default=3)
     ap.add_argument("--warmup", type=int, default=1)
-    ap.add_argument("--alternate-order", action="store_true",
+    ordering = ap.add_mutually_exclusive_group()
+    ordering.add_argument("--alternate-order", action="store_true",
                     help="for two binaries and an even launch count, alternate AB/BA within each configuration")
+    ordering.add_argument("--shuffle-seed", type=int,
+                          help="seeded launch order for binary families, including physical copies and A/A controls")
     ap.add_argument("--cpus", default=None)
     ap.add_argument("--no-pin", action="store_true")
     ap.add_argument("--timeout", type=int, default=600)
     args = ap.parse_args()
+    if args.launches < 1 or args.repetitions < 1 or args.warmup < 0:
+        sys.exit("launch-census.py: launches/repetitions must be positive and warmup nonnegative")
     if args.no_pin == bool(args.cpus):
         sys.exit("launch-census.py: say how to place the run: exactly one of --cpus / --no-pin")
 
@@ -72,6 +84,8 @@ def main() -> int:
         if not p.is_file():
             sys.exit(f"launch-census.py: {p} is not a file")
         bins.append((label, p, describe(p)))
+    if len({label for label, _, _ in bins}) != len(bins):
+        sys.exit("launch-census.py: binary labels must be unique")
     if args.alternate_order and (len(bins) != 2 or args.launches < 2 or args.launches % 2):
         sys.exit("launch-census.py: --alternate-order needs exactly two binaries and an even launch count >= 2")
     bench = {d["benchmark"] for _, _, d in bins}
@@ -81,8 +95,11 @@ def main() -> int:
     slug = bench.replace("/", "-")
     args.out.mkdir(parents=True, exist_ok=True)
     cfgs = [c for c in args.config.split(",") if c]
+    rng = random.Random(args.shuffle_seed) if args.shuffle_seed is not None else None
+    orders = {(cfg, i): launch_order(bins, i, args.alternate_order, rng)
+              for cfg in cfgs for i in range(1, args.launches + 1)}
     planned = [
-        {"config": cfg, "launch": i, "order": [label for label, _, _ in launch_order(bins, i, args.alternate_order)]}
+        {"config": cfg, "launch": i, "order": [label for label, _, _ in orders[(cfg, i)]]}
         for cfg in cfgs for i in range(1, args.launches + 1)
     ]
     (args.out / "launch-order.jsonl").write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in planned), encoding="utf-8")
@@ -93,7 +110,7 @@ def main() -> int:
     for cfg in cfgs:
         params = CONFIGS[cfg]
         for i in range(1, args.launches + 1):
-            for label, exe, _ in launch_order(bins, i, args.alternate_order):
+            for label, exe, _ in orders[(cfg, i)]:
                 dest = args.out / f"{label}__{slug}-{cfg}-launch{i}.json"
                 cmd = [str(exe), "--repetitions", str(args.repetitions), "--warmup", str(args.warmup),
                        "--out", str(dest), "--param", f"cores={params['cores']}",
@@ -113,7 +130,8 @@ def main() -> int:
 
     print(f"\n{bench}: per-launch medians, ns per unit -- {args.launches} launches interleaved, "
           f"{args.repetitions} rep + {args.warmup} warmup each"
-          + (", AB/BA order balanced" if args.alternate_order else ", fixed launch order")
+          + (f", seeded shuffle {args.shuffle_seed}" if args.shuffle_seed is not None else
+             ", AB/BA order balanced" if args.alternate_order else ", fixed launch order")
           + (", unpinned" if args.no_pin else f", cpus {args.cpus}"))
     for cfg in cfgs:
         print(f"\n  {cfg}")

@@ -40,12 +40,17 @@ struct Pending {
     std::uint64_t txn;
 };
 
-struct Account {
+// Adjacent accounts alternate workers when cores=2. Isolate their inline state so balance,
+// deque metadata and receive counters do not add accidental cache-line traffic to the floor.
+struct alignas(qvobase::kCacheLine) Account {
     std::uint64_t       balance{0};
     bool                busy{false};
     std::deque<Pending> held;
     std::uint64_t       received{0};
 };
+
+static_assert(alignof(Account) >= qvobase::kCacheLine);
+static_assert(sizeof(Account) % qvobase::kCacheLine == 0);
 
 qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const auto     accounts     = static_cast<std::uint32_t>(p.get("accounts"));
@@ -172,6 +177,7 @@ int main(int argc, char **argv) {
         "the teller lives on thread 0 and account a on thread (1 + a) % cores -- the same "
         "placement qb's cell fixes -- so with cores=2 about half the deposits and half the "
         "transfers and acknowledgements cross a core",
+        "adjacent account slots owned by different workers occupy separate cache lines",
         "the 50 000 transfers are pushed into the rings BEFORE worker 0 runs, from the caller's "
         "thread, so the teller's burst is the ring capacity the spec keeps N under, not a "
         "mailbox that grows",

@@ -26,3 +26,5 @@ jobs:
         run: python3 tools/check-roster.py
       - name: the two guards still reject the defects they exist for
         run: python3 tools/guards-negative-control.py
+      - name: runner rejects stale or contradictory process output
+        run: python3 tools/test_run.py

@@ -103,6 +103,9 @@ if(NOT MSVC)
     find_package(Threads REQUIRED)
     target_link_libraries(qvo-harness PUBLIC Threads::Threads)
 endif()
+if(WIN32)
+    target_link_libraries(qvo-harness PUBLIC shell32)  # CommandLineToArgvW for Unicode --out paths
+endif()
 
 # -------------------------------------------------------------------------------------------
 # Adapters
