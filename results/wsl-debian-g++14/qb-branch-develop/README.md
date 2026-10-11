@@ -223,8 +223,12 @@ median of the twelve launch medians, shipped → candidate. The field beside the
   100.9, 99.7 → 100.7) and overlapping at two (+7 / +9 %), and the Windows half reads the same
   cells level (−1 / −4 % in the grids, −0.9 / +1.3 % by census). So it is a one-core,
   g++ / glibc cost of the shape fib does not have: one creator forking 40 000 actors in one
-  loop before any of them runs, the whole burst alive at once on one core. Not attributed here —
-  no profile and no bisect are in this protocol; `73018675` against `v3.2.1` is 92 commits.
+  loop before any of them runs, the whole burst alive at once on one core. Not attributed in this
+  session; **attributed and fixed since** (Huly QB-1009): a 64 KiB free at each core thread's exit
+  let glibc trim its arena's top and the next engine re-faulted ~770 pages inside the window — first
+  bad commit `0e818396` — and qb's `perf/fjcreate-regression` (measured at `4b6a4300`, lands as
+  `4ef5270f`) measures level with 3.2.1 in a later same-session A/B,
+  `../qb-branch-perf-fjcreate-regression/`. This grid stays as measured at `73018675`.
 - **philosophers**: the grids read the candidate 4.6–25 % faster with separate distributions, the
   census reads every configuration level (−1.3 to −4.7 %, overlapping). The grid's control
   cells at two cores (119.2 / 126.9 ns) sit in a slower launch mode the census's shipped side

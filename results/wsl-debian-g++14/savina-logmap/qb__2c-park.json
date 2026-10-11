@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-10-11T00:49:00Z"
+    "utc": "2026-10-11T03:43:20Z"
   },
   "idiom": {
     "source": "qb/src/qb/core/Actor.h reply() + qb/llm/qb.llm.md (reply vs forward, push vs send, same-core placement)",
@@ -30,16 +30,16 @@
   },
   "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "placement is fixed before start: the master on VirtualCore 0, series i's worker AND computer together on core (1 + i) % cores, so no round trip of a chain crosses a core -- qb.llm.md's rule for actors that talk only to each other; the pools place each worker and computer freely and may split a pair", "the master's NextTerm burst (terms x series pushes from one handler) leaves for a remote core only in the flush that follows the handler, so at cores=2 no remote chain starts before the master has pushed the whole burst; CAF's and SObjectizer's pools can run a worker on the other thread from the first message the master enqueues for it, and the floor's thread 1 drains its ring while the burst is still being sent -- the `held` observation beside the cell says how much of the burst each found waiting"],
   "failures": [],
-  "work_ns": [3759825.0, 3849231.0, 3785206.0, 3764108.0, 3814907.0, 3790189.0, 3811818.0, 3879463.0, 3806121.0],
-  "total_ns": [4344840.0, 4476505.0, 4329767.0, 4314418.0, 4480902.0, 4378655.0, 4361925.0, 4439921.0, 4396528.0],
-  "outside_window_ns": [585015.0, 627274.0, 544561.0, 550310.0, 665995.0, 588466.0, 550107.0, 560458.0, 590407.0],
+  "work_ns": [3871155.0, 4062286.0, 3902809.0, 3791332.0, 3762621.0, 3856920.0, 3776547.0, 3744366.0, 3792225.0],
+  "total_ns": [4359201.0, 4512074.0, 4331005.0, 4182298.0, 4222801.0, 4546774.0, 4323130.0, 4284896.0, 4366326.0],
+  "outside_window_ns": [488046.0, 449788.0, 428196.0, 390966.0, 460180.0, 689854.0, 546583.0, 540530.0, 574101.0],
   "observed": {
     "held": {"samples": [249990, 249990, 249990, 249990, 249990, 249990, 249990, 249990, 249990], "min": 249990, "p50": 249990.0, "max": 249990}
   },
   "summary": {
-    "work_min": 3759825.0,
-    "work_p50": 3806121.0,
-    "work_p99": 3877044.4,
-    "work_iqr": 29701.0
+    "work_min": 3744366.0,
+    "work_p50": 3792225.0,
+    "work_p99": 4049527.8,
+    "work_iqr": 94608.0
   }
 }

@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-10-11T00:42:28Z"
+    "utc": "2026-10-11T03:43:15Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,16 +30,16 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. A series is one slot of a vector holding its worker's and its computer's state, with no mailbox and no per-actor dispatch: the request and the answer are two pushes into the owner thread's own ring, the held requests a count", "the master lives on thread 0 and series i on thread (1 + i) % cores -- the placement qb's cell fixes -- so no round trip crosses a core; with cores=2 the burst to the even series (i = 0, 2, 4, ...: thread (1 + i) % 2 = 1) and their answers to the master do", "the terms x series NextTerm burst is pushed from the caller's thread, which IS worker 0: a full ring of its own is drained inline (Mesh::send), so at cores=1 the chains run in slices of a ring (65 536 messages) while the burst is still being sent, where a framework's master finishes its handler first; at cores=2 the ring to thread 1 holds 65 536 of its 125 000 NextTerm and the caller spins until thread 1 makes room", "cores=1 is one thread with the master and every series in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
   "failures": [],
-  "work_ns": [5860025.0, 6180186.0, 6135299.0, 6711746.0, 6156291.0, 5979231.0, 6571627.0, 5975856.0, 6590401.0],
-  "total_ns": [7745808.0, 7864690.0, 7872675.0, 8394782.0, 7922498.0, 7695442.0, 8382445.0, 7628943.0, 8296974.0],
-  "outside_window_ns": [1885783.0, 1684504.0, 1737376.0, 1683036.0, 1766207.0, 1716211.0, 1810818.0, 1653087.0, 1706573.0],
+  "work_ns": [6329961.0, 10415596.0, 10667232.0, 8290297.0, 12346304.0, 9698299.0, 10386234.0, 6481368.0, 5960526.0],
+  "total_ns": [7981217.0, 12023412.0, 12270709.0, 9915581.0, 14056603.0, 11304248.0, 12167708.0, 8372295.0, 7862779.0],
+  "outside_window_ns": [1651256.0, 1607816.0, 1603477.0, 1625284.0, 1710299.0, 1605949.0, 1781474.0, 1890927.0, 1902253.0],
   "observed": {
-    "held": {"samples": [249955, 249940, 249960, 249950, 249960, 249955, 249960, 249930, 249955], "min": 249930, "p50": 249955.0, "max": 249960}
+    "held": {"samples": [249945, 249975, 249920, 249925, 249940, 249935, 249960, 249950, 249980], "min": 249920, "p50": 249945.0, "max": 249980}
   },
   "summary": {
-    "work_min": 5860025.0,
-    "work_p50": 6156291.0,
-    "work_p99": 6702038.4,
-    "work_iqr": 592396.0
+    "work_min": 5960526.0,
+    "work_p50": 9698299.0,
+    "work_p99": 12211978.2,
+    "work_iqr": 3934228.0
   }
 }

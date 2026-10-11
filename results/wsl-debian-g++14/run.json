@@ -969,30 +969,6 @@
       "status": "ok"
     },
     {
-      "benchmark": "savina/logmap",
-      "framework": "baseline",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
-      "framework": "baseline",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
-      "framework": "baseline",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
-      "framework": "baseline",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
       "benchmark": "savina/nqueens",
       "framework": "baseline",
       "config": "2c-spin",
@@ -1204,30 +1180,6 @@
     },
     {
       "benchmark": "savina/fork-join-create",
-      "framework": "caf",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
-      "framework": "caf",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
-      "framework": "caf",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
-      "framework": "caf",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
       "framework": "caf",
       "config": "1c-park",
       "status": "ok"
@@ -1449,30 +1401,6 @@
       "status": "ok"
     },
     {
-      "benchmark": "savina/logmap",
-      "framework": "qb",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
-      "framework": "qb",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
-      "framework": "qb",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
-      "framework": "qb",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
       "benchmark": "savina/nqueens",
       "framework": "qb",
       "config": "2c-spin",
@@ -1689,30 +1617,6 @@
       "status": "ok"
     },
     {
-      "benchmark": "savina/logmap",
-      "framework": "sobjectizer",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
-      "framework": "sobjectizer",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
-      "framework": "sobjectizer",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/logmap",
-      "framework": "sobjectizer",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
       "benchmark": "savina/nqueens",
       "framework": "sobjectizer",
       "config": "2c-spin",
@@ -1756,10 +1660,106 @@
     },
     {
       "benchmark": "savina/philosophers",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
       "framework": "sobjectizer",
       "config": "1c-park",
       "status": "ok"
     }
   ],
-  "merged_partial_runs": 1
+  "merged_partial_runs": 2
 }

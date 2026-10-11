@@ -22,7 +22,7 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-10-11T00:45:49Z"
+    "utc": "2026-10-11T03:43:17Z"
   },
   "idiom": {
     "source": "examples/message_passing/calculator.cpp (a returned value goes back to the sender) + the ping-pong adapter",
@@ -30,16 +30,16 @@
   },
   "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship", "a worker and its computer are placed by the work-stealing pool: a computer made ready by its worker's message is prepended to the worker's own queue, so a pair usually runs on one thread, but which pairs share a thread and whether a round trip crosses a core is the scheduler's decision; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md", "the computer's answer is a value RETURNED from its handler, which CAF sends to the sender of an asynchronous message as an ordinary message (response_promise::respond_to, no allocation beyond the message itself); every hop allocates its message, which is CAF's model -- qb's reply() re-sends the received event as a copy into its pipe, and SObjectizer redirects one message instance per chain"],
   "failures": [],
-  "work_ns": [89387288.0, 85506731.0, 81146433.0, 80830253.0, 82119163.0, 84063460.0, 81979210.0, 85157539.0, 80488364.0],
-  "total_ns": [89796781.0, 85911885.0, 81569718.0, 81233533.0, 82511820.0, 84503615.0, 82428306.0, 85890867.0, 80894178.0],
-  "outside_window_ns": [409493.0, 405154.0, 423285.0, 403280.0, 392657.0, 440155.0, 449096.0, 733328.0, 405814.0],
+  "work_ns": [83185893.0, 85242343.0, 77559723.0, 85059575.0, 84074411.0, 77663156.0, 82892512.0, 81080153.0, 82593809.0],
+  "total_ns": [83607018.0, 85635621.0, 77940810.0, 85443451.0, 84542679.0, 78040553.0, 83249823.0, 81513840.0, 82996040.0],
+  "outside_window_ns": [421125.0, 393278.0, 381087.0, 383876.0, 468268.0, 377397.0, 357311.0, 433687.0, 402231.0],
   "observed": {
     "held": {"samples": [249990, 249990, 249990, 249990, 249990, 249990, 249990, 249990, 249990], "min": 249990, "p50": 249990.0, "max": 249990}
   },
   "summary": {
-    "work_min": 80488364.0,
-    "work_p50": 82119163.0,
-    "work_p99": 89076843.4,
-    "work_iqr": 4011106.0
+    "work_min": 77559723.0,
+    "work_p50": 82892512.0,
+    "work_p99": 85227721.6,
+    "work_iqr": 2994258.0
   }
 }

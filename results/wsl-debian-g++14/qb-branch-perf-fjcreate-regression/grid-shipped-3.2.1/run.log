@@ -1,0 +1,8 @@
+run.py: 49 binaries, frameworks: baseline, caf, qb, sobjectizer
+run.py: pinning to CPUs 0,2, 9 repetitions + 2 warmup
+  savina/fork-join-create  qb           2c-spin  ok  p50=1,184,948 ns
+  savina/fork-join-create  qb           2c-park  ok  p50=1,210,655 ns
+  savina/fork-join-create  qb           1c-spin  ok  p50=2,448,716 ns
+  savina/fork-join-create  qb           1c-park  ok  p50=2,440,402 ns
+
+run.py: 4 cells, 0 not verified, 0 not applicable -> /home/qvo/wa/rm/fjc/grid-shipped-3.2.1

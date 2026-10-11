@@ -1,0 +1,29 @@
+top - 05:42:12 up 6 days,  4:56,  5 users,  load average: 0.16, 0.39, 0.41
+Tasks:  57 total,   1 running,  56 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+MiB Mem :  31966.1 total,  29594.9 free,   1106.2 used,   1807.8 buff/cache     
+MiB Swap:   8192.0 total,   7729.4 free,    462.6 used.  30859.9 avail Mem 
+== quiet-60s 2026-10-11T03:42:12Z loadavg 0.16 0.39 0.41
+== F-start 2026-10-11T03:43:12Z loadavg 0.06 0.31 0.39
+F1 rc=0 ok=4 | run.py: 4 cells, 0 not verified, 0 not applicable -> /home/qvo/wa/rm/fjc/grid-73018675
+F2 rc=0 ok=4 | run.py: 4 cells, 0 not verified, 0 not applicable -> /home/qvo/wa/rm/fjc/grid-4b6a4300
+F3 rc=0 ok=4 | run.py: 4 cells, 0 not verified, 0 not applicable -> /home/qvo/wa/rm/fjc/grid-shipped-3.2.1
+F4 rc=0 ok=4 | run.py: 4 cells, 0 not verified, 0 not applicable -> /home/qvo/wa/rm/fjc/grid-4b6a4300-pass2
+F5 rc=0 ok=4 | run.py: 4 cells, 0 not verified, 0 not applicable -> /home/qvo/wa/rm/fjc/grid-73018675-pass2
+== F-end/E-start 2026-10-11T03:43:13Z loadavg 0.06 0.31 0.39
+E1 rc=0 | launch-census.py: 48 launches, 0 not verified -> /home/qvo/wa/rm/fjc/census-4b6a4300-vs-73018675
+E2 rc=0 | launch-census.py: 48 launches, 0 not verified -> /home/qvo/wa/rm/fjc/census-4b6a4300-vs-shipped-3.2.1
+== E-end/L-start 2026-10-11T03:43:15Z loadavg 0.21 0.34 0.39
+L rc=0 ok=16 | run.py: 16 cells, 0 not verified, 0 not applicable -> /home/qvo/wa/rm/out-logmap
+== L-end/S-start 2026-10-11T03:43:22Z loadavg 0.28 0.35 0.40
+S 2c-spin rc=0
+S 2c-park rc=0
+== S-end 2026-10-11T03:43:25Z loadavg 0.41 0.38 0.41
+top - 05:43:25 up 6 days,  4:58,  5 users,  load average: 0.41, 0.38, 0.41
+Tasks:  53 total,   1 running,  52 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+MiB Mem :  31966.1 total,  29564.0 free,   1102.6 used,   1841.5 buff/cache     
+MiB Swap:   8192.0 total,   7729.4 free,    462.6 used.  30863.5 avail Mem 
+ASSERTED: 5 x 4 fork-join-create qb cells, 16 logmap cells, 2 sweep documents -- all verified, 9 + 2, forms as declared
+SESSION2-DONE
+== note: the one load window on the host that day (the maintainer's push of qb develop and the superproject root: pre-push clang-format censuses, python doc guards, git) ran 03:46:50-03:50:00 UTC by its owner's account, after this host's last leg had ended -- no cell overlaps it; the session-end `top` header above shows the guest idle

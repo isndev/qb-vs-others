@@ -22,24 +22,24 @@
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-10-11T00:52:28Z"
+    "utc": "2026-10-11T03:43:22Z"
   },
   "idiom": {
     "source": "dev/sample/so_5/mutable_msg_agents/main.cpp (a mutable message redirected along a chain) + dev/so_5/disp/thread_pool/pub.hpp",
-    "note": "one mutable_msg<msg_term> per round trip, redirected computer -> worker -> computer with so_5::send(mbox, std::move(cmd)); the term carries its sender's index; held NextTerms are a count; thread_pool(cores) with fifo_t::individual for cores>=2"
+    "note": "one mutable_msg<msg_term> per round trip, redirected computer -> worker -> computer with so_5::send(mbox, std::move(cmd)); the term carries its sender's index; held NextTerms are a count; thread_pool(cores) for cores>=2, each series (worker + computer) its own coop on fifo_t::cooperation, the master on fifo_t::individual (QVO_SO_GROUP_COOPS=0: every agent on fifo_t::individual, a sweep document)"
   },
-  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the master, the workers and the computers are placed by the thread_pool: which thread runs a worker's or a computer's next demand is the dispatcher's decision, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md", "a chain redirects ONE mutable message (so_5::send(mbox, std::move(cmd)), SObjectizer's redirection of a mutable message): no message is allocated per hop, though the thread_pool's queue allocates one demand node per delivery (thread_pool/impl/basic_event_queue.hpp, push()); qb's reply() re-sends the received event as a copy into its pipe; NextTerm and GetTerm are signals, which carry no instance"],
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and each series -- its worker and its rate computer -- its own coop on fifo_t::cooperation (one demand queue per series, run by one work thread at a time) and the master on fifo_t::individual; cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the grouped binding is the faster of the two by the quiet-host sweep of 2026-10-11 (2.0-2.5x at cores=2 on both x86 hosts, results/<host>/wave-a-form-sweep/, docs/TUNING.md 21.4; FAIRNESS.md 1.1); QVO_SO_GROUP_COOPS=0 measures the individual binding as a sweep document", "the thread_pool decides which work thread serves a series' queue and the master: a series' worker and computer never run at the same time, but its queue may be served by either thread, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md", "a chain redirects ONE mutable message (so_5::send(mbox, std::move(cmd)), SObjectizer's redirection of a mutable message): no message is allocated per hop, though the thread_pool's queue allocates one demand node per delivery (thread_pool/impl/basic_event_queue.hpp, push()); qb's reply() re-sends the received event as a copy into its pipe; NextTerm and GetTerm are signals, which carry no instance"],
   "failures": [],
-  "work_ns": [48031854.0, 48023296.0, 47587570.0, 48562432.0, 47375502.0, 46639169.0, 47230484.0, 46729173.0, 47968761.0],
-  "total_ns": [48693886.0, 48681165.0, 48333888.0, 49333584.0, 48078147.0, 47418007.0, 47848828.0, 47256377.0, 48556801.0],
-  "outside_window_ns": [662032.0, 657869.0, 746318.0, 771152.0, 702645.0, 778838.0, 618344.0, 527204.0, 588040.0],
+  "work_ns": [47479697.0, 47561985.0, 48819077.0, 48540136.0, 49687930.0, 47485508.0, 48940199.0, 47392726.0, 48395027.0],
+  "total_ns": [48115597.0, 48276634.0, 49340942.0, 49119246.0, 50329505.0, 48137465.0, 49769718.0, 47958623.0, 49200032.0],
+  "outside_window_ns": [635900.0, 714649.0, 521865.0, 579110.0, 641575.0, 651957.0, 829519.0, 565897.0, 805005.0],
   "observed": {
     "held": {"samples": [249990, 249990, 249990, 249990, 249990, 249990, 249990, 249990, 249990], "min": 249990, "p50": 249990.0, "max": 249990}
   },
   "summary": {
-    "work_min": 46639169.0,
-    "work_p50": 47587570.0,
-    "work_p99": 48519985.8,
-    "work_iqr": 792812.0
+    "work_min": 47392726.0,
+    "work_p50": 48395027.0,
+    "work_p99": 49628111.5,
+    "work_iqr": 1333569.0
   }
 }
