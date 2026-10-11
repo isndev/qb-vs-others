@@ -210,6 +210,9 @@ inline std::uint64_t mix(std::uint64_t x) noexcept {
 
 // Busy work with a data dependency the optimizer cannot delete. Several Savina benchmarks specify
 // a per-message computation; using the same function in every framework keeps that constant.
+// The walk starts from `seed | 1` (harness.cpp), so bit 0 of the seed never reaches the result: a
+// spec that folds spin_work's result to check a message value must seed it with `mix(value ^ k)`,
+// never the raw value -- else a value altered in bit 0 alone still verifies (savina/bndbuffer).
 std::uint64_t spin_work(std::uint64_t seed, int iterations) noexcept;
 
 // Prevents the optimizer from deleting a computation whose result is otherwise unused.
