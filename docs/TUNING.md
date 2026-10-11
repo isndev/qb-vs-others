@@ -3227,15 +3227,27 @@ interleaved launches of 3 + 1 per configuration (`tools/launch-census.py --alter
 z = 3.1) and **+1.54 % at 2c-park** (17.57 → 17.84, CI +0.50…+2.63 %, 25 of 40, z = 3.5), and the same census on
 the pair built with `-falign-functions/-loops/-jumps=64` on both sides (`census-big-align/`) keeps it: +1.11 %
 (CI −0.08…+2.40 %, 26 of 40, z = 2.5) and +0.89 % (CI +0.06…+1.90 %, 29 of 40, z = 2.8). A shift that survives
-the alignment control is cost, not layout: ~0.2 ns per round trip. The gate itself never runs in this cell
-(the census of `sends_blocked` reads 0 on both cores), so the cost is the one the listings announce —
-`__flush_pipes__`'s run-gathering loop, which publishes big's 1.2 M events per core in runs of two, was
-re-register-allocated when the refused-event branch grew (550 → 613 instructions on g++, the loop's `%r14`
-working register moved to `%rax` and two spills moved on the frame). It is bounded to the run-heavy cells that
-never block (chameneos and counting read +0.1 / −0.1 % inside their spreads; Windows reads big +0.5 % inside
-0.6 %), and it has an obvious remedy for a follow-up: the refused-event branch — the stall test, the backoff and
-the exhausted bail — moved out of line into a cold helper, so the hot loop keeps the control's allocation. The
-cost is recorded in qb's CHANGELOG beside the gains.
+the alignment control is cost, not layout of the binary: ~0.3 ns per flushed run. The gate itself never runs in
+this cell (the census of `sends_blocked` reads 0 on both cores). The obvious remedy — the refused-event branch,
+stall test, backoff and bails, out of line in a cold `__refused__` at the end of the file, so the hot loop
+would keep the control's registers — was built and measured, and it does not remove the cost: **+1.98 % at
+2c-spin (CI +0.65…+2.93 %, 30 of 40, z = 3.9) and +1.62 % at 2c-park (CI +0.74…+2.77 %, 32 of 40, z = 4.0)**
+(`census-big-remedy/`), the function re-laid by g++ once more (539 → 450 instructions, a new frame) rather than
+restored. Four controls in the same session then located the mechanism (`census-big-pad/`, `-members/`,
+`-align/`, `-B/`): the CONTROL plus 640 bytes of never-executed code at the end of VirtualCore.cpp is level
+(−0.12 / −0.35 %, z −0.4 / −1.2: not the binary's size or its 4K aliasing); the remedy with its two new members
+moved to the class tail keeps the cost (+1.60 / +2.02 %, z 2.8 / 3.6: not the member layout); the aligned pair
+keeps it (not function or loop alignment); the control's own `__flush_pipes__` body with two cold calls in
+never-executed code still recompiles with every register renamed (539 → 507); and the loop isolated in a
+`QB_NOINLINE` function of its own is far worse — **+6.7 / +6.4 %**, every launch above the control's — the
+call per flushed run and a vectorised update of the two per-run counters (`movdqu`/`paddq`/`movups` on the
+core's metrics) that GCC chose for the standalone loop. What is left is the compiler's schedule of the
+run-gathering loop, which g++ and MSVC redo whenever the function changes, however cold the change; it cannot be
+pinned from the source, and a 0.3 ns per flushed run on a cell that never blocks is what it costs. The form
+shipped is the cold helper (the right structure for the next edit of that branch); on it the barber re-reads
+−28.6 % (WSL2) and −29.2 % (Windows) at 2c-spin, ping-pong 2c −0.4 % and thread-ring 2c +0.9 % (copy spreads
+2.5 / 0.3 %) in a short A/B against the control, chameneos and counting read +0.1 / −0.1 % inside their
+spreads, Windows big +0.5 % inside 0.6 %. The cost is recorded in qb's CHANGELOG beside the gains.
 
 The codegen says where the rule can cost: `__workflow_loop__`, `__receive__` and `send` are
 instruction-identical on both compilers (two `__LINE__` immediates apart), `__flush_pipes__` grew from 550

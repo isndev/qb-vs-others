@@ -1,0 +1,5 @@
+barber-2c-spin-pace0
+  ctl    copies  2829.2  2828.2  2818.8   median-of-copies  2828.2   copy spread 2818.8..2829.2 (0.4 %)   pooled  2823.8
+  cand   copies  2003.5  2002.6  1997.8   median-of-copies  2002.6   copy spread 1997.8..2003.5 (0.3 %)   pooled  2002.2
+  cand vs ctl: -29.2 % (median of copy medians)
+
