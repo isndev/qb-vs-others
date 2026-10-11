@@ -1,0 +1,24 @@
+
+savina/fork-join-create: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2
+
+  1c-spin
+    cand         median-of-medians    104.2   min     98.4   max    110.8   n=12   [111 102 104 103 103 108 98 105 106 103 106 105]
+    shipped      median-of-medians    105.2   min     98.4   max    108.3   n=12   [106 108 103 98 105 103 108 108 101 108 102 106]
+    cand vs shipped: 104.2 vs 105.2 (-0.9%) -- distributions OVERLAP: no measurable difference
+
+  1c-park
+    cand         median-of-medians    104.6   min     97.4   max    108.7   n=12   [109 105 102 104 100 97 109 105 106 102 105 101]
+    shipped      median-of-medians    103.3   min     98.4   max    113.2   n=12   [101 106 103 100 107 104 113 100 100 107 98 105]
+    cand vs shipped: 104.6 vs 103.3 (+1.3%) -- distributions OVERLAP: no measurable difference
+
+  2c-spin
+    cand         median-of-medians     58.0   min     53.3   max     59.9   n=12   [55 55 58 60 59 59 59 58 57 59 55 53]
+    shipped      median-of-medians     56.6   min     53.7   max     61.4   n=12   [59 57 56 55 60 56 56 57 61 58 56 54]
+    cand vs shipped: 58.0 vs 56.6 (+2.6%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians     57.0   min     54.1   max     61.4   n=12   [57 58 57 54 57 54 59 57 60 61 56 57]
+    shipped      median-of-medians     56.1   min     54.3   max     60.6   n=12   [55 61 55 55 54 55 57 54 58 58 59 59]
+    cand vs shipped: 57.0 vs 56.1 (+1.8%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 96 launches, 0 not verified -> D:\repo\qvo-wave-a\build\wa-out\census\fork-join-create

@@ -1,0 +1,49 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/concsll",
+  "framework": "qb",
+  "framework_version": "3.2.1",
+  "verified": true,
+  "expected_checksum": 12205235669177764196,
+  "expected_messages": 320040,
+  "work_unit": "request",
+  "work_units": 160000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "form": 1, "messages": 8000, "size_percent": 1, "wait": 0, "workers": 20, "write_percent": 10},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:25:21Z"
+  },
+  "idiom": {
+    "source": "form=0: qb.llm.md reply(e) (reuses the received event) + the ping-pong adapter; form=1: qb/src/qb/core/patterns/request.h qb::ask + the bank-transaction adapter",
+    "note": "form=0: one ListOp event per worker bounces worker <-> list through reply() for the whole run; form=1: one coroutine per worker awaits qb::ask per request; list alone on VirtualCore 0, master and workers on core 1"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "form=0 recycles ONE event per worker for all its requests: reply() swaps destination and source and hands the same bytes back (qb's documented reply idiom), so no request or answer is constructed after the first -- CAF builds a message per request and per answer; SObjectizer's form=0 resends one mutable message the same way. The run's `form` is in its params; form=1 is qb::ask, a pending-ask slot and a coroutine resume per request", "placement is fixed before start: the list actor alone on VirtualCore 0, the master and every worker on core 1 (1 + w % (cores - 1) above two cores), so with cores=2 every request and every answer crosses a core and the list's core runs nothing but the list -- the pools place freely, and may move the list between their threads", "the list walk is the same source in every framework (qvospec SortedList: out of line, nodes from its own arena) and dominates the window by construction -- each request walks up to the whole list, thousands of nodes, against one message each way. What differs between the cells is the cost of workers x messages request/answer round trips, where the list actor runs (and whether it keeps its cache), and how far the interleaving lets the list grow before each walk: the walks are reported beside the cell as observations, each with an asserted lower bound"],
+  "failures": [],
+  "work_ns": [3385975600.0, 3389698200.0, 3395298100.0, 3392935500.0, 3340416500.0, 3369921300.0, 3333680500.0, 3334401100.0, 3343458100.0],
+  "total_ns": [3387400900.0, 3391081700.0, 3396731200.0, 3394329600.0, 3341848600.0, 3371167300.0, 3334919800.0, 3336471800.0, 3344831700.0],
+  "outside_window_ns": [1425300.0, 1383500.0, 1433100.0, 1394100.0, 1432100.0, 1246000.0, 1239300.0, 2070700.0, 1373600.0],
+  "observed": {
+    "contains_found": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0},
+    "contains_walk": {"samples": [1155676458, 1155676458, 1155676458, 1155676458, 1155676458, 1155676458, 1155676458, 1155676458, 1155676458], "min": 1155676458, "p50": 1155676458.0, "max": 1155676458},
+    "size_walk": {"samples": [1234, 1234, 1234, 1234, 1234, 1234, 1234, 1234, 1234], "min": 1234, "p50": 1234.0, "max": 1234},
+    "write_walk": {"samples": [64958357, 64958357, 64958357, 64958357, 64958357, 64958357, 64958357, 64958357, 64958357], "min": 64958357, "p50": 64958357.0, "max": 64958357}
+  },
+  "observed_at_least": {"contains_walk": 57777849, "size_walk": 65, "write_walk": 3248656},
+  "summary": {
+    "work_min": 3333680500.0,
+    "work_p50": 3369921300.0,
+    "work_p99": 3395109092.0,
+    "work_iqr": 49281700.0
+  }
+}

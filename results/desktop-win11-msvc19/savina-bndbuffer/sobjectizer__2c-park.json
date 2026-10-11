@@ -1,0 +1,47 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bndbuffer",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 13580315395847872333,
+  "expected_messages": 160080,
+  "work_unit": "item",
+  "work_units": 40000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"buffer": 50, "cons_cost": 25, "consumers": 40, "cores": 2, "items": 1000, "prod_cost": 25, "producers": 40, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:16:19Z"
+  },
+  "idiom": {
+    "source": "the bank-transaction adapter: agents on direct mboxes, one coop on qvoso::make_pool_binder, readiness from so_evt_start",
+    "note": "Savina's manager, producers and consumers one for one as agents on direct mboxes; the bounded buffer is the manager's FIFO and Savina's park/un-park protocol; a producer so_deactivate_agent()s after its exit message (an agent is deregistered only with its coop); thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "SObjectizer deregisters an agent only with its whole coop: each of the 40 producers, which the reference ends inside the window, is deactivated there (so_deactivate_agent, every subscription dropped) and deregistered with the coop when the manager stops the environment after it; qb and CAF end each producer as the reference does (benchmarks/savina/bndbuffer.md)"],
+  "failures": [],
+  "work_ns": [292216800.0, 292377400.0, 295002600.0, 292832100.0, 291146000.0, 296038100.0, 291472400.0, 291037600.0, 292707600.0],
+  "total_ns": [292706800.0, 292881800.0, 295571800.0, 293547400.0, 291825200.0, 296572300.0, 292030500.0, 291578100.0, 293198200.0],
+  "outside_window_ns": [490000.0, 504400.0, 569200.0, 715300.0, 679200.0, 534200.0, 558100.0, 540500.0, 490600.0],
+  "observed": {
+    "buffer_peak": {"samples": [5, 4, 10, 4, 7, 6, 7, 4, 5], "min": 4, "p50": 5.0, "max": 10},
+    "consumer_waits": {"samples": [14776, 20309, 5113, 17874, 6476, 9669, 6046, 16110, 16206], "min": 5113, "p50": 14776.0, "max": 20309},
+    "producer_waits": {"samples": [0, 0, 37, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 37}
+  },
+  "summary": {
+    "work_min": 291037600.0,
+    "work_p50": 292377400.0,
+    "work_p99": 295955260.0,
+    "work_iqr": 1359700.0
+  }
+}

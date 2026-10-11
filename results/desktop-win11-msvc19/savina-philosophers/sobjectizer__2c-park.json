@@ -1,0 +1,45 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/philosophers",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 4215202917252104846,
+  "expected_messages": 800020,
+  "work_unit": "meal",
+  "work_units": 200000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "philosophers": 20, "rounds": 10000, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:19:35Z"
+  },
+  "idiom": {
+    "source": "the chameneos adapter + dev/so_5/disp/thread_pool/pub.hpp",
+    "note": "agents on their DIRECT mboxes, msg_hungry / msg_eat / msg_denied / msg_done / msg_start (to its own mbox) / msg_exit, the field's mboxes shared before start, thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the arbitrator and the 20 philosophers are placed by the thread_pool, so whether the arbitrator's queue is written cross-core is the dispatcher's decision; qb's cell pins the arbitrator alone on core 0 and every philosopher on the far side -- see benchmarks/savina/philosophers.md", "how many requests the arbitrator refuses depends on the interleaving: it is REPORTED beside the cell (observed `refused`, Savina's 'Num retries'), never asserted; every refused request and its retry are delivered and timed"],
+  "failures": [],
+  "work_ns": [235939000.0, 229748900.0, 215299800.0, 211262900.0, 218682300.0, 225513200.0, 216147900.0, 214334600.0, 219823200.0],
+  "total_ns": [236442800.0, 230390200.0, 215788800.0, 211682300.0, 219143100.0, 225989400.0, 216568800.0, 214833400.0, 220575200.0],
+  "outside_window_ns": [503800.0, 641300.0, 489000.0, 419400.0, 460800.0, 476200.0, 420900.0, 498800.0, 752000.0],
+  "observed": {
+    "refused": {"samples": [132819, 121908, 112406, 101969, 101928, 122368, 101986, 112058, 101800], "min": 101800, "p50": 112058.0, "max": 132819}
+  },
+  "summary": {
+    "work_min": 211262900.0,
+    "work_p50": 218682300.0,
+    "work_p99": 235443792.0,
+    "work_iqr": 10213400.0
+  }
+}

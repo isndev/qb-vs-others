@@ -1,0 +1,47 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/barber",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 1788098052791974171,
+  "expected_messages": 0,
+  "work_unit": "haircut",
+  "work_units": 5000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"ahr": 1000, "apr": 1000, "cores": 2, "haircuts": 5000, "pace": 0, "room": 5000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:16:10Z"
+  },
+  "idiom": {
+    "source": "the fib adapter + so_5::introduce_child_coop (environment.hpp) + so_deregister_agent_coop_normally",
+    "note": "the reference's actors one for one on direct mboxes, payload-free messages as signals; pace=0: the Start handler loops over every customer (child coop, Enter, busy-work) as the reference does, pace=1: one per self-sent Start; thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "SObjectizer creates agents only inside a cooperation registered with the environment, so every customer pays one child-coop registration and one deregistration on top of the agent itself -- the framework's own dynamic-agent idiom, as in savina/fib", "the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler; 1 adds n-1 self-sent Starts to the reported count (benchmarks/savina/barber.md)", "SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop (unbinding the agent from the dispatcher, releasing the coop and its agent) on a dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/mt_env_infrastructure.cpp), handed each finished coop by the work threads under a shared mutex: 5 000 customer coops per repetition here. That thread is OUTSIDE the `cores` work-thread budget, runs inside the pinned CPU set competing with the work threads, and the coops still in its chain when the window closes are released after it -- see benchmarks/savina/barber.md, \"The measured window\""],
+  "failures": [],
+  "work_ns": [1046095100.0, 24177900.0, 42235600.0, 23911400.0, 34585900.0, 25740600.0, 34281300.0, 47719400.0, 241878600.0],
+  "total_ns": [1047818600.0, 28502100.0, 42600400.0, 27944200.0, 37294800.0, 28176700.0, 36668300.0, 48211100.0, 242594500.0],
+  "outside_window_ns": [1723500.0, 4324200.0, 364800.0, 4032800.0, 2708900.0, 2436100.0, 2387000.0, 491700.0, 715900.0],
+  "observed": {
+    "rejections": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0},
+    "wakeups": {"samples": [3054, 3010, 3533, 3173, 3917, 787, 3861, 2071, 2799], "min": 787, "p50": 3054.0, "max": 3917}
+  },
+  "observed_at_least": {"wakeups": 1},
+  "summary": {
+    "work_min": 23911400.0,
+    "work_p50": 34585900.0,
+    "work_p99": 981757780.0,
+    "work_iqr": 21978800.0
+  }
+}

@@ -23,6 +23,189 @@ Read [FAIRNESS.md](FAIRNESS.md) before reading any table below. In particular: t
 | `qb` | 3.1.0 |
 | `sobjectizer` | 5.8.5.1 |
 
+## savina/a-star
+
+### 1c-park
+
+| framework | verified | median | per node | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 5.82 ms | 284 ns | 77.70 us | 6.24 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 6.51 ms | 317 ns | 134.90 us | 6.68 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 6.63 ms | 323 ns | 459.70 us | 7.14 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,602 [1,602–1,602] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 5.77 ms | 281 ns | 203.70 us | 6.46 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.12x** faster than `sobjectizer` in this configuration.
+
+The fastest framework costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Actors are integers and there is no per-actor mailbox: a thread's inbound ring is shared by every actor it owns, and the search -- graph, claims, busy work -- is the spec's own code, the same every framework runs
+- *(baseline)* actor a lives on thread a % cores (master = 0, search worker w = w + 1), the placement qb has: with cores=2 a node handed back crosses a thread whenever its next worker lives on the other one, and nothing rebalances beyond the master's round-robin
+- *(baseline)* the claim slots are shared memory every worker CASes, as in Savina's own implementation (a-star.h, Claims)
+- *(baseline)* cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the workers are placed by the work-stealing pool, so how many hand-backs cross a core is the scheduler's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/a-star.md
+- *(caf, qb, sobjectizer)* the claim slots are shared memory every worker CASes, as in Savina's own implementation -- the one input not passed by message, identical for every framework (a-star.h, Claims)
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* actor a lives on VirtualCore a % cores (master = 0, search worker w = w + 1), fixed before start: the only redistribution is the master's round-robin, Savina's own, so with cores=2 a node handed back crosses a core whenever its next worker lives on the other one
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the workers are placed by the thread_pool, so how many hand-backs cross a core is the dispatcher's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/a-star.md
+
+</details>
+
+### 1c-spin
+
+| framework | verified | median | per node | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 5.75 ms | 280 ns | 22.80 us | 5.80 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 6.37 ms | 311 ns | 6.50 us | 6.60 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 6.59 ms | 321 ns | 187.30 us | 6.88 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,602 [1,602–1,602] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 5.72 ms | 279 ns | 120.50 us | 5.92 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.11x** faster than `sobjectizer` in this configuration.
+
+The fastest framework costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Actors are integers and there is no per-actor mailbox: a thread's inbound ring is shared by every actor it owns, and the search -- graph, claims, busy work -- is the spec's own code, the same every framework runs
+- *(baseline)* actor a lives on thread a % cores (master = 0, search worker w = w + 1), the placement qb has: with cores=2 a node handed back crosses a thread whenever its next worker lives on the other one, and nothing rebalances beyond the master's round-robin
+- *(baseline)* the claim slots are shared memory every worker CASes, as in Savina's own implementation (a-star.h, Claims)
+- *(baseline)* cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the workers are placed by the work-stealing pool, so how many hand-backs cross a core is the scheduler's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/a-star.md
+- *(caf, qb, sobjectizer)* the claim slots are shared memory every worker CASes, as in Savina's own implementation -- the one input not passed by message, identical for every framework (a-star.h, Claims)
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* actor a lives on VirtualCore a % cores (master = 0, search worker w = w + 1), fixed before start: the only redistribution is the master's round-robin, Savina's own, so with cores=2 a node handed back crosses a core whenever its next worker lives on the other one
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the workers are placed by the thread_pool, so how many hand-backs cross a core is the dispatcher's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/a-star.md
+
+</details>
+
+### 2c-park
+
+| framework | verified | median | per node | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 3.15 ms | 154 ns | 40.70 us | 3.31 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,382 [1,335–1,584] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 3.82 ms | 186 ns | 422.50 us | 4.28 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,492 [1,351–1,600] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 6.43 ms | 314 ns | 1.94 ms | 6.96 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,602 [1,523–1,725] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 3.29 ms | 160 ns | 68.50 us | 4.18 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,523 [1,322–1,548] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.21x** faster than `sobjectizer` in this configuration.
+
+The fastest framework sits **below the floor** (0.96x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Actors are integers and there is no per-actor mailbox: a thread's inbound ring is shared by every actor it owns, and the search -- graph, claims, busy work -- is the spec's own code, the same every framework runs
+- *(baseline)* actor a lives on thread a % cores (master = 0, search worker w = w + 1), the placement qb has: with cores=2 a node handed back crosses a thread whenever its next worker lives on the other one, and nothing rebalances beyond the master's round-robin
+- *(baseline)* the claim slots are shared memory every worker CASes, as in Savina's own implementation (a-star.h, Claims)
+- *(baseline)* cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the workers are placed by the work-stealing pool, so how many hand-backs cross a core is the scheduler's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/a-star.md
+- *(caf, qb, sobjectizer)* the claim slots are shared memory every worker CASes, as in Savina's own implementation -- the one input not passed by message, identical for every framework (a-star.h, Claims)
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* actor a lives on VirtualCore a % cores (master = 0, search worker w = w + 1), fixed before start: the only redistribution is the master's round-robin, Savina's own, so with cores=2 a node handed back crosses a core whenever its next worker lives on the other one
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the workers are placed by the thread_pool, so how many hand-backs cross a core is the dispatcher's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/a-star.md
+
+</details>
+
+### 2c-spin
+
+| framework | verified | median | per node | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 3.11 ms | 152 ns | 69.80 us | 3.20 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,357 [1,320–1,484] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 3.74 ms | 183 ns | 141.80 us | 4.06 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,383 [1,353–1,480] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 4.55 ms | 222 ns | 1.04 ms | 6.38 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,602 [1,587–1,727] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 13.18 ms | 642 ns | 5.77 ms | 43.43 ms |
+| | <sub>**bimodal**: 8 of 9 repetitions at ~642 ns per node, 1 at ~2.24 us. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
+| | <sub>**observed, not asserted**: `work_messages` median 1,335 [1,272–1,600] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.20x** faster than `sobjectizer` in this configuration.
+
+The fastest framework sits **below the floor** (0.24x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Actors are integers and there is no per-actor mailbox: a thread's inbound ring is shared by every actor it owns, and the search -- graph, claims, busy work -- is the spec's own code, the same every framework runs
+- *(baseline)* actor a lives on thread a % cores (master = 0, search worker w = w + 1), the placement qb has: with cores=2 a node handed back crosses a thread whenever its next worker lives on the other one, and nothing rebalances beyond the master's round-robin
+- *(baseline)* the claim slots are shared memory every worker CASes, as in Savina's own implementation (a-star.h, Claims)
+- *(baseline)* cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the workers are placed by the work-stealing pool, so how many hand-backs cross a core is the scheduler's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/a-star.md
+- *(caf, qb, sobjectizer)* the claim slots are shared memory every worker CASes, as in Savina's own implementation -- the one input not passed by message, identical for every framework (a-star.h, Claims)
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* actor a lives on VirtualCore a % cores (master = 0, search worker w = w + 1), fixed before start: the only redistribution is the master's round-robin, Savina's own, so with cores=2 a node handed back crosses a core whenever its next worker lives on the other one
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the workers are placed by the thread_pool, so how many hand-backs cross a core is the dispatcher's decision; qb's cell fixes actor a on core a % cores -- see benchmarks/savina/a-star.md
+
+</details>
+
 ## savina/bank-transaction
 
 ### 1c-park
@@ -197,6 +380,194 @@ The fastest framework costs **1.19x the floor** — that multiple is what being 
 
 </details>
 
+## savina/barber
+
+### 1c-park
+
+| framework | verified | median | per haircut | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 14.31 ms | 2.86 us | 257.70 us | 23.43 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 27.91 ms | 5.58 us | 969.50 us | 53.83 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 29.47 ms | 5.89 us | 323.80 us | 30.64 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 13.78 ms | 2.76 us | 157.90 us | 15.40 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.95x** faster than `sobjectizer` in this configuration.
+
+The fastest framework costs **1.04x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A customer is one `new`, one slot and one `delete`, the waiting room a ring of ids, a message one ring push: the floor for what this coordination costs
+- *(baseline)* the factory and every customer are on worker 0, the room and the barber on worker 1 % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler, refused at cores>=2 above haircuts=65 536 (one ring: a worker inside the loop drains none of its inbound rings); 1 adds n-1 self-addressed Starts to the reported count
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler; 1 adds n-1 self-mailed Starts to the reported count. A mail is enqueued in the room's mailbox at once, but the pool decides when the room runs: on the unpinned correctness runs at cores=2 with pace=0, CAF woke the barber exactly once -- the room did not run until production had ended (benchmarks/savina/barber.md)
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* the factory hands each customer to the room with send<Enter>, which publishes it into the room's core at once; a push would be published by the pass's flush after the handler, and with pace=0 -- the reference's factory, every customer from one handler -- would hold every customer until production ended. The run's `pace` is in its params; pace=1 adds n-1 self-addressed Starts to the reported count
+- *(qb)* with cores=2 the factory and every customer live on core 0 (a customer is created on its creator's core) and the room and the barber on core 1, so the barber's Next -> Enter turn stays on his core and production overlaps haircuts -- the static placement the floor has; the pools place by themselves
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* SObjectizer creates agents only inside a cooperation registered with the environment, so every customer pays one child-coop registration and one deregistration on top of the agent itself -- the framework's own dynamic-agent idiom, as in savina/fib
+- *(sobjectizer)* the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler; 1 adds n-1 self-sent Starts to the reported count (benchmarks/savina/barber.md)
+- *(sobjectizer)* SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop (unbinding the agent from the dispatcher, releasing the coop and its agent) on a dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/mt_env_infrastructure.cpp), handed each finished coop by the work threads under a shared mutex: 5 000 customer coops per repetition here. That thread is OUTSIDE the `cores` work-thread budget, runs inside the pinned CPU set competing with the work threads, and the coops still in its chain when the window closes are released after it -- see benchmarks/savina/barber.md, "The measured window"
+
+</details>
+
+### 1c-spin
+
+| framework | verified | median | per haircut | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 14.36 ms | 2.87 us | 284.00 us | 14.72 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 27.74 ms | 5.55 us | 2.08 ms | 51.25 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 29.49 ms | 5.90 us | 648.50 us | 30.80 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 13.69 ms | 2.74 us | 96.60 us | 13.98 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.93x** faster than `sobjectizer` in this configuration.
+
+The fastest framework costs **1.05x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A customer is one `new`, one slot and one `delete`, the waiting room a ring of ids, a message one ring push: the floor for what this coordination costs
+- *(baseline)* the factory and every customer are on worker 0, the room and the barber on worker 1 % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler, refused at cores>=2 above haircuts=65 536 (one ring: a worker inside the loop drains none of its inbound rings); 1 adds n-1 self-addressed Starts to the reported count
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler; 1 adds n-1 self-mailed Starts to the reported count. A mail is enqueued in the room's mailbox at once, but the pool decides when the room runs: on the unpinned correctness runs at cores=2 with pace=0, CAF woke the barber exactly once -- the room did not run until production had ended (benchmarks/savina/barber.md)
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* the factory hands each customer to the room with send<Enter>, which publishes it into the room's core at once; a push would be published by the pass's flush after the handler, and with pace=0 -- the reference's factory, every customer from one handler -- would hold every customer until production ended. The run's `pace` is in its params; pace=1 adds n-1 self-addressed Starts to the reported count
+- *(qb)* with cores=2 the factory and every customer live on core 0 (a customer is created on its creator's core) and the room and the barber on core 1, so the barber's Next -> Enter turn stays on his core and production overlaps haircuts -- the static placement the floor has; the pools place by themselves
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* SObjectizer creates agents only inside a cooperation registered with the environment, so every customer pays one child-coop registration and one deregistration on top of the agent itself -- the framework's own dynamic-agent idiom, as in savina/fib
+- *(sobjectizer)* the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler; 1 adds n-1 self-sent Starts to the reported count (benchmarks/savina/barber.md)
+- *(sobjectizer)* SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop (unbinding the agent from the dispatcher, releasing the coop and its agent) on a dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/mt_env_infrastructure.cpp), handed each finished coop by the work threads under a shared mutex: 5 000 customer coops per repetition here. That thread is OUTSIDE the `cores` work-thread budget, runs inside the pinned CPU set competing with the work threads, and the coops still in its chain when the window closes are released after it -- see benchmarks/savina/barber.md, "The measured window"
+
+</details>
+
+### 2c-park
+
+| framework | verified | median | per haircut | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 14.00 ms | 2.80 us | 107.90 us | 14.17 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 46 [1–50] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 22.35 ms | 4.47 us | 794.80 us | 29.26 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–2] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 25.14 ms | 5.03 us | 8.48 ms | 41.75 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1,357 [52–3,382] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 7.59 ms | 1.52 us | 514.10 us | 16.27 ms |
+| | <sub>**bimodal**: 8 of 9 repetitions at ~1.50 us per haircut, 1 at ~3.40 us. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 37 [1–403] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.60x** faster than `caf` in this configuration.
+
+The fastest framework costs **1.85x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A customer is one `new`, one slot and one `delete`, the waiting room a ring of ids, a message one ring push: the floor for what this coordination costs
+- *(baseline)* the factory and every customer are on worker 0, the room and the barber on worker 1 % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler, refused at cores>=2 above haircuts=65 536 (one ring: a worker inside the loop drains none of its inbound rings); 1 adds n-1 self-addressed Starts to the reported count
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler; 1 adds n-1 self-mailed Starts to the reported count. A mail is enqueued in the room's mailbox at once, but the pool decides when the room runs: on the unpinned correctness runs at cores=2 with pace=0, CAF woke the barber exactly once -- the room did not run until production had ended (benchmarks/savina/barber.md)
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* the factory hands each customer to the room with send<Enter>, which publishes it into the room's core at once; a push would be published by the pass's flush after the handler, and with pace=0 -- the reference's factory, every customer from one handler -- would hold every customer until production ended. The run's `pace` is in its params; pace=1 adds n-1 self-addressed Starts to the reported count
+- *(qb)* with cores=2 the factory and every customer live on core 0 (a customer is created on its creator's core) and the room and the barber on core 1, so the barber's Next -> Enter turn stays on his core and production overlaps haircuts -- the static placement the floor has; the pools place by themselves
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* SObjectizer creates agents only inside a cooperation registered with the environment, so every customer pays one child-coop registration and one deregistration on top of the agent itself -- the framework's own dynamic-agent idiom, as in savina/fib
+- *(sobjectizer)* the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler; 1 adds n-1 self-sent Starts to the reported count (benchmarks/savina/barber.md)
+- *(sobjectizer)* SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop (unbinding the agent from the dispatcher, releasing the coop and its agent) on a dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/mt_env_infrastructure.cpp), handed each finished coop by the work threads under a shared mutex: 5 000 customer coops per repetition here. That thread is OUTSIDE the `cores` work-thread budget, runs inside the pinned CPU set competing with the work threads, and the coops still in its chain when the window closes are released after it -- see benchmarks/savina/barber.md, "The measured window"
+
+</details>
+
+### 2c-spin
+
+| framework | verified | median | per haircut | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 13.99 ms | 2.80 us | 187.20 us | 14.38 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 49 [7–61] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 22.79 ms | 4.56 us | 1.96 ms | 30.07 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 34.59 ms | 6.92 us | 21.98 ms | 981.76 ms |
+| | <sub>**bimodal**: 7 of 9 repetitions at ~6.86 us per haircut, 2 at ~128.80 us. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 3,054 [787–3,917] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 13.18 ms | 2.64 us | 8.80 ms | 22.30 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 2 [1–381] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.63x** faster than `caf` in this configuration.
+
+The fastest framework costs **1.06x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A customer is one `new`, one slot and one `delete`, the waiting room a ring of ids, a message one ring push: the floor for what this coordination costs
+- *(baseline)* the factory and every customer are on worker 0, the room and the barber on worker 1 % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler, refused at cores>=2 above haircuts=65 536 (one ring: a worker inside the loop drains none of its inbound rings); 1 adds n-1 self-addressed Starts to the reported count
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler; 1 adds n-1 self-mailed Starts to the reported count. A mail is enqueued in the room's mailbox at once, but the pool decides when the room runs: on the unpinned correctness runs at cores=2 with pace=0, CAF woke the barber exactly once -- the room did not run until production had ended (benchmarks/savina/barber.md)
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* the factory hands each customer to the room with send<Enter>, which publishes it into the room's core at once; a push would be published by the pass's flush after the handler, and with pace=0 -- the reference's factory, every customer from one handler -- would hold every customer until production ended. The run's `pace` is in its params; pace=1 adds n-1 self-addressed Starts to the reported count
+- *(qb)* with cores=2 the factory and every customer live on core 0 (a customer is created on its creator's core) and the room and the barber on core 1, so the barber's Next -> Enter turn stays on his core and production overlaps haircuts -- the static placement the floor has; the pools place by themselves
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* SObjectizer creates agents only inside a cooperation registered with the environment, so every customer pays one child-coop registration and one deregistration on top of the agent itself -- the framework's own dynamic-agent idiom, as in savina/fib
+- *(sobjectizer)* the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler; 1 adds n-1 self-sent Starts to the reported count (benchmarks/savina/barber.md)
+- *(sobjectizer)* SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop (unbinding the agent from the dispatcher, releasing the coop and its agent) on a dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/mt_env_infrastructure.cpp), handed each finished coop by the work threads under a shared mutex: 5 000 customer coops per repetition here. That thread is OUTSIDE the `cores` work-thread budget, runs inside the pinned CPU set competing with the work threads, and the coops still in its chain when the window closes are released after it -- see benchmarks/savina/barber.md, "The measured window"
+
+</details>
+
 ## savina/big
 
 ### 1c-park
@@ -355,6 +726,180 @@ The fastest framework sits **below the floor** (0.52x) — which means it is not
 
 </details>
 
+## savina/bndbuffer
+
+### 1c-park
+
+| framework | verified | median | per item | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 525.85 ms | 13.15 us | 5.19 ms | 531.05 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 538.70 ms | 13.47 us | 1.29 ms | 539.72 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 566.74 ms | 14.17 us | 4.33 ms | 578.34 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 10 [10–10] over 9 repetitions; `consumer_waits` median 1,600 [1,600–1,600] over 9 repetitions; `producer_waits` median 38,040 [38,040–38,040] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 527.81 ms | 13.20 us | 4.94 ms | 532.26 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.02x** faster than `sobjectizer` in this configuration.
+
+The fastest framework sits **below the floor** (1.00x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Every actor is a fixed id with a cache-line slot, every message one ring push: the floor for what this coordination costs
+- *(baseline)* the manager is on worker 0, producer i on worker (1 + i) % cores and consumer j on worker (1 + producers + j) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the manager, the 40 producers and the 40 consumers are placed by the work-stealing pool; qb's cell pins the manager on core 0 and splits each kind evenly over the cores -- see benchmarks/savina/bndbuffer.md
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* every hand-over is send<>, which publishes a cross-core event into the peer's ring at once; a push would be published by the pass's flush, after every busy-work handler the pass runs -- each actor has at most one message in flight to or from the manager, so the unordered primitive changes no outcome
+- *(qb)* placement is fixed before start: the manager on VirtualCore 0, producer i on core (1 + i) % cores, consumer j on core (1 + producers + j) % cores, so with cores=2 half of each kind shares the manager's core and about half the hand-overs cross a core; the manager answers only between the busy-work handlers of its own core -- the pools place freely
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* SObjectizer deregisters an agent only with its whole coop: each of the 40 producers, which the reference ends inside the window, is deactivated there (so_deactivate_agent, every subscription dropped) and deregistered with the coop when the manager stops the environment after it; qb and CAF end each producer as the reference does (benchmarks/savina/bndbuffer.md)
+
+</details>
+
+### 1c-spin
+
+| framework | verified | median | per item | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 524.40 ms | 13.11 us | 7.15 ms | 530.41 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 538.43 ms | 13.46 us | 1.49 ms | 541.45 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 565.26 ms | 14.13 us | 4.09 ms | 575.10 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 10 [10–10] over 9 repetitions; `consumer_waits` median 1,600 [1,600–1,600] over 9 repetitions; `producer_waits` median 38,040 [38,040–38,040] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 523.51 ms | 13.09 us | 4.45 ms | 537.79 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.03x** faster than `sobjectizer` in this configuration.
+
+The fastest framework costs **1.00x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Every actor is a fixed id with a cache-line slot, every message one ring push: the floor for what this coordination costs
+- *(baseline)* the manager is on worker 0, producer i on worker (1 + i) % cores and consumer j on worker (1 + producers + j) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the manager, the 40 producers and the 40 consumers are placed by the work-stealing pool; qb's cell pins the manager on core 0 and splits each kind evenly over the cores -- see benchmarks/savina/bndbuffer.md
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* every hand-over is send<>, which publishes a cross-core event into the peer's ring at once; a push would be published by the pass's flush, after every busy-work handler the pass runs -- each actor has at most one message in flight to or from the manager, so the unordered primitive changes no outcome
+- *(qb)* placement is fixed before start: the manager on VirtualCore 0, producer i on core (1 + i) % cores, consumer j on core (1 + producers + j) % cores, so with cores=2 half of each kind shares the manager's core and about half the hand-overs cross a core; the manager answers only between the busy-work handlers of its own core -- the pools place freely
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* SObjectizer deregisters an agent only with its whole coop: each of the 40 producers, which the reference ends inside the window, is deactivated there (so_deactivate_agent, every subscription dropped) and deregistered with the coop when the manager stops the environment after it; qb and CAF end each producer as the reference does (benchmarks/savina/bndbuffer.md)
+
+</details>
+
+### 2c-park
+
+| framework | verified | median | per item | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 268.30 ms | 6.71 us | 4.65 ms | 275.76 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 10 [10–10] over 9 repetitions; `consumer_waits` median 16,357 [2,417–16,770] over 9 repetitions; `producer_waits` median 6 [1–11] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 290.25 ms | 7.26 us | 23.17 ms | 324.65 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 45 [22–47] over 9 repetitions; `consumer_waits` median 693 [370–1,218] over 9 repetitions; `producer_waits` median 25,371 [19,100–32,796] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 292.38 ms | 7.31 us | 1.36 ms | 295.96 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 5 [4–10] over 9 repetitions; `consumer_waits` median 14,776 [5,113–20,309] over 9 repetitions; `producer_waits` median 0 [0–37] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 463.82 ms | 11.60 us | 2.66 ms | 475.13 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.08x** faster than `caf` in this configuration.
+
+The fastest framework sits **below the floor** (0.58x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Every actor is a fixed id with a cache-line slot, every message one ring push: the floor for what this coordination costs
+- *(baseline)* the manager is on worker 0, producer i on worker (1 + i) % cores and consumer j on worker (1 + producers + j) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the manager, the 40 producers and the 40 consumers are placed by the work-stealing pool; qb's cell pins the manager on core 0 and splits each kind evenly over the cores -- see benchmarks/savina/bndbuffer.md
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* every hand-over is send<>, which publishes a cross-core event into the peer's ring at once; a push would be published by the pass's flush, after every busy-work handler the pass runs -- each actor has at most one message in flight to or from the manager, so the unordered primitive changes no outcome
+- *(qb)* placement is fixed before start: the manager on VirtualCore 0, producer i on core (1 + i) % cores, consumer j on core (1 + producers + j) % cores, so with cores=2 half of each kind shares the manager's core and about half the hand-overs cross a core; the manager answers only between the busy-work handlers of its own core -- the pools place freely
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* SObjectizer deregisters an agent only with its whole coop: each of the 40 producers, which the reference ends inside the window, is deactivated there (so_deactivate_agent, every subscription dropped) and deregistered with the coop when the manager stops the environment after it; qb and CAF end each producer as the reference does (benchmarks/savina/bndbuffer.md)
+
+</details>
+
+### 2c-spin
+
+| framework | verified | median | per item | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 266.86 ms | 6.67 us | 2.41 ms | 272.82 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 10 [10–10] over 9 repetitions; `consumer_waits` median 16,206 [13,733–16,433] over 9 repetitions; `producer_waits` median 93 [1–841] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 291.46 ms | 7.29 us | 1.16 ms | 294.70 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 5 [3–6] over 9 repetitions; `consumer_waits` median 15,783 [6,865–20,446] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 291.69 ms | 7.29 us | 1.03 ms | 326.04 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 46 [35–47] over 9 repetitions; `consumer_waits` median 711 [474–1,106] over 9 repetitions; `producer_waits` median 26,918 [18,871–31,784] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 449.02 ms | 11.23 us | 2.13 ms | 457.42 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.09x** faster than `sobjectizer` in this configuration.
+
+The fastest framework sits **below the floor** (0.59x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Every actor is a fixed id with a cache-line slot, every message one ring push: the floor for what this coordination costs
+- *(baseline)* the manager is on worker 0, producer i on worker (1 + i) % cores and consumer j on worker (1 + producers + j) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the manager, the 40 producers and the 40 consumers are placed by the work-stealing pool; qb's cell pins the manager on core 0 and splits each kind evenly over the cores -- see benchmarks/savina/bndbuffer.md
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* every hand-over is send<>, which publishes a cross-core event into the peer's ring at once; a push would be published by the pass's flush, after every busy-work handler the pass runs -- each actor has at most one message in flight to or from the manager, so the unordered primitive changes no outcome
+- *(qb)* placement is fixed before start: the manager on VirtualCore 0, producer i on core (1 + i) % cores, consumer j on core (1 + producers + j) % cores, so with cores=2 half of each kind shares the manager's core and about half the hand-overs cross a core; the manager answers only between the busy-work handlers of its own core -- the pools place freely
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* SObjectizer deregisters an agent only with its whole coop: each of the 40 producers, which the reference ends inside the window, is deactivated there (so_deactivate_agent, every subscription dropped) and deregistered with the coop when the manager stops the environment after it; qb and CAF end each producer as the reference does (benchmarks/savina/bndbuffer.md)
+
+</details>
+
 ## savina/chameneos
 
 ### 1c-park
@@ -510,6 +1055,544 @@ The fastest framework sits **below the floor** (0.30x) — which means it is not
 - *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
 - *(sobjectizer)* the mall and the 100 creatures are placed by the thread_pool, so whether the mall's queue is written cross-core is the dispatcher's decision; qb's cell pins the mall alone on core 0 and every creature on the far side -- see benchmarks/savina/chameneos.md
+
+</details>
+
+## savina/cigsmok
+
+### 1c-park
+
+| framework | verified | median | per round | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 67.50 ms | 1.35 us | 808.60 us | 67.78 ms |
+| `sobjectizer` | yes | 76.69 ms | 1.53 us | 796.50 us | 80.33 ms |
+| `caf` | yes | 90.99 ms | 1.82 us | 1.05 ms | 95.78 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 67.83 ms | 1.36 us | 1.68 ms | 69.94 ms |
+
+`qb` is **1.14x** faster than `sobjectizer` in this configuration.
+
+The fastest framework sits **below the floor** (1.00x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A round is one ring push to the chosen smoker and one back, a smoker's state one cache line: the floor for what this coordination costs
+- *(baseline)* the arbiter is on worker 0 and smoker j on worker (j + 1) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the smoker mails StartedSmoking before it smokes, which makes the arbiter runnable; in the pool a receiver made ready from a worker is prepended to THAT worker's queue (worker::delay), so the arbiter's next decision runs after the smoke on the same thread unless the other worker steals it -- whether a decision overlaps a smoke is the scheduler's, and is not reported (benchmarks/savina/cigsmok.md)
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* placement is fixed before start: the arbiter on VirtualCore 0 and smoker j on core (j + 1) % cores, so with cores=2 half the smokers share the arbiter's core. A smoke on the far core overlaps the arbiter's next decision; a smoke on the arbiter's core holds the arbiter until it ends (its acknowledgement waits on the same thread). The pools place the arbiter and the smokers wherever stealing puts them
+- *(qb)* the acknowledgement is the received StartSmoking reply()ed, which goes through send<>: published into the arbiter's core at once, before the smoke, where a push<> would be published by the pass's flush after it -- benchmarks/savina/cigsmok.md
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the arbiter and the 200 smokers are placed by the thread_pool, so whether a smoke runs beside the arbiter's next decision or holds the thread it needs is the dispatcher's decision; qb's cell fixes the arbiter on core 0 and smoker j on core (j + 1) % cores -- see benchmarks/savina/cigsmok.md
+
+</details>
+
+### 1c-spin
+
+| framework | verified | median | per round | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 67.60 ms | 1.35 us | 676.60 us | 68.55 ms |
+| `sobjectizer` | yes | 75.15 ms | 1.50 us | 872.20 us | 76.26 ms |
+| `caf` | yes | 91.54 ms | 1.83 us | 485.60 us | 92.52 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 68.78 ms | 1.38 us | 8.02 ms | 79.52 ms |
+
+`qb` is **1.11x** faster than `sobjectizer` in this configuration.
+
+The fastest framework sits **below the floor** (0.98x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A round is one ring push to the chosen smoker and one back, a smoker's state one cache line: the floor for what this coordination costs
+- *(baseline)* the arbiter is on worker 0 and smoker j on worker (j + 1) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the smoker mails StartedSmoking before it smokes, which makes the arbiter runnable; in the pool a receiver made ready from a worker is prepended to THAT worker's queue (worker::delay), so the arbiter's next decision runs after the smoke on the same thread unless the other worker steals it -- whether a decision overlaps a smoke is the scheduler's, and is not reported (benchmarks/savina/cigsmok.md)
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* placement is fixed before start: the arbiter on VirtualCore 0 and smoker j on core (j + 1) % cores, so with cores=2 half the smokers share the arbiter's core. A smoke on the far core overlaps the arbiter's next decision; a smoke on the arbiter's core holds the arbiter until it ends (its acknowledgement waits on the same thread). The pools place the arbiter and the smokers wherever stealing puts them
+- *(qb)* the acknowledgement is the received StartSmoking reply()ed, which goes through send<>: published into the arbiter's core at once, before the smoke, where a push<> would be published by the pass's flush after it -- benchmarks/savina/cigsmok.md
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the arbiter and the 200 smokers are placed by the thread_pool, so whether a smoke runs beside the arbiter's next decision or holds the thread it needs is the dispatcher's decision; qb's cell fixes the arbiter on core 0 and smoker j on core (j + 1) % cores -- see benchmarks/savina/cigsmok.md
+
+</details>
+
+### 2c-park
+
+| framework | verified | median | per round | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 58.66 ms | 1.17 us | 853.10 us | 60.53 ms |
+| `sobjectizer` | yes | 60.27 ms | 1.21 us | 2.82 ms | 63.99 ms |
+| `caf` | yes | 91.17 ms | 1.82 us | 4.02 ms | 94.66 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 76.14 ms | 1.52 us | 3.04 ms | 80.11 ms |
+
+**`qb` and `sobjectizer` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
+
+The fastest framework sits **below the floor** (0.77x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A round is one ring push to the chosen smoker and one back, a smoker's state one cache line: the floor for what this coordination costs
+- *(baseline)* the arbiter is on worker 0 and smoker j on worker (j + 1) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the smoker mails StartedSmoking before it smokes, which makes the arbiter runnable; in the pool a receiver made ready from a worker is prepended to THAT worker's queue (worker::delay), so the arbiter's next decision runs after the smoke on the same thread unless the other worker steals it -- whether a decision overlaps a smoke is the scheduler's, and is not reported (benchmarks/savina/cigsmok.md)
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* placement is fixed before start: the arbiter on VirtualCore 0 and smoker j on core (j + 1) % cores, so with cores=2 half the smokers share the arbiter's core. A smoke on the far core overlaps the arbiter's next decision; a smoke on the arbiter's core holds the arbiter until it ends (its acknowledgement waits on the same thread). The pools place the arbiter and the smokers wherever stealing puts them
+- *(qb)* the acknowledgement is the received StartSmoking reply()ed, which goes through send<>: published into the arbiter's core at once, before the smoke, where a push<> would be published by the pass's flush after it -- benchmarks/savina/cigsmok.md
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the arbiter and the 200 smokers are placed by the thread_pool, so whether a smoke runs beside the arbiter's next decision or holds the thread it needs is the dispatcher's decision; qb's cell fixes the arbiter on core 0 and smoker j on core (j + 1) % cores -- see benchmarks/savina/cigsmok.md
+
+</details>
+
+### 2c-spin
+
+| framework | verified | median | per round | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `sobjectizer` | yes | 56.44 ms | 1.13 us | 1.21 ms | 57.24 ms |
+| `qb` | yes | 58.70 ms | 1.17 us | 220.40 us | 59.29 ms |
+| `caf` | yes | 91.56 ms | 1.83 us | 2.02 ms | 94.67 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 58.55 ms | 1.17 us | 3.95 ms | 64.01 ms |
+
+`sobjectizer` is **1.04x** faster than `qb` in this configuration.
+
+The fastest framework sits **below the floor** (0.96x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A round is one ring push to the chosen smoker and one back, a smoker's state one cache line: the floor for what this coordination costs
+- *(baseline)* the arbiter is on worker 0 and smoker j on worker (j + 1) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the smoker mails StartedSmoking before it smokes, which makes the arbiter runnable; in the pool a receiver made ready from a worker is prepended to THAT worker's queue (worker::delay), so the arbiter's next decision runs after the smoke on the same thread unless the other worker steals it -- whether a decision overlaps a smoke is the scheduler's, and is not reported (benchmarks/savina/cigsmok.md)
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* placement is fixed before start: the arbiter on VirtualCore 0 and smoker j on core (j + 1) % cores, so with cores=2 half the smokers share the arbiter's core. A smoke on the far core overlaps the arbiter's next decision; a smoke on the arbiter's core holds the arbiter until it ends (its acknowledgement waits on the same thread). The pools place the arbiter and the smokers wherever stealing puts them
+- *(qb)* the acknowledgement is the received StartSmoking reply()ed, which goes through send<>: published into the arbiter's core at once, before the smoke, where a push<> would be published by the pass's flush after it -- benchmarks/savina/cigsmok.md
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the arbiter and the 200 smokers are placed by the thread_pool, so whether a smoke runs beside the arbiter's next decision or holds the thread it needs is the dispatcher's decision; qb's cell fixes the arbiter on core 0 and smoker j on core (j + 1) % cores -- see benchmarks/savina/cigsmok.md
+
+</details>
+
+## savina/concdict
+
+### 1c-park
+
+| framework | verified | median | per operation | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 11.56 ms | 58 ns | 1.40 ms | 14.85 ms |
+| `sobjectizer` | yes | 44.95 ms | 225 ns | 4.39 ms | 50.94 ms |
+| `caf` | yes | 116.49 ms | 582 ns | 6.05 ms | 122.25 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 9.96 ms | 50 ns | 1.03 ms | 12.94 ms |
+
+`qb` is **3.89x** faster than `sobjectizer` in this configuration.
+
+The fastest framework costs **1.16x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Workers are slots of a vector with no mailbox, and the dictionary's twenty-writer fan-in is a scan of one SPSC ring per thread, not a shared mailbox: the per-actor queue every framework keeps is engineered out
+- *(baseline)* the master and the dictionary live on thread 0 and worker w on thread (1 + w) % cores -- the same placement qb's cell fixes -- so with cores=2 half the round trips cross a core
+- *(baseline)* no request/response primitive: the form=1 documents are not applicable here, by the harness's third verdict, and this form=0 cell is the floor for both forms
+- *(baseline)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the threads by the thread that runs the repetition; its lookups are part of the floor's figure as of every framework's
+- *(baseline)* cores=1 is one thread with every role in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle thread on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* every request and every answer is a new CAF message (a ref-counted, type-erased tuple): CAF messages are immutable and cannot be sent back the way qb's reply() and SObjectizer's mutable-message resend recycle one; with form=1 each request also allocates its continuation, keyed by the response id. The run's `form` is in its params
+- *(caf)* the master, the dictionary and the 20 workers are placed by the work-stealing pool; qb's cell pins the master and the dictionary on core 0 and worker w on core (1 + w) % cores -- see benchmarks/savina/concdict.md
+- *(caf)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the actor system by the thread that runs the repetition; its lookups are part of every framework's figure
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* form=0 recycles ONE event per worker for all its requests: reply() swaps destination and source and hands the same bytes back (qb's documented reply idiom), so no request or answer is constructed after the first -- CAF builds a message per request and per answer; SObjectizer's form=0 resends one mutable message the same way. The run's `form` is in its params; form=1 is qb::ask, a pending-ask slot and a coroutine resume per request
+- *(qb)* placement is fixed before start: the master and the dictionary on VirtualCore 0, worker w on core (1 + w) % cores, so with cores=2 half the round trips cross a core and the dictionary's core also runs half the workers -- the pools place freely
+- *(qb)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the engine by the thread that runs the repetition; its lookups are part of every framework's figure
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* form=0 resends ONE mutable message per worker for all its requests (SObjectizer's own mutable_msg redirection, its faster idiom: the documentation's lead -- so_5::send<msg>() of a new message per request and per answer -- allocates two messages per round trip); qb's reply() recycles one event the same way, CAF builds a message per request and per answer
+- *(sobjectizer)* SObjectizer 5.8 has no asynchronous request/reply with a continuation, so the form=1 documents of this benchmark are not applicable here, by the harness's third verdict
+- *(sobjectizer)* the master, the dictionary and the 20 workers are placed by the thread_pool; qb's cell pins the master and the dictionary on core 0 and worker w on core (1 + w) % cores -- see benchmarks/savina/concdict.md
+- *(sobjectizer)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the environment by the thread that runs the repetition; its lookups are part of every framework's figure
+
+</details>
+
+### 1c-spin
+
+| framework | verified | median | per operation | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 11.83 ms | 59 ns | 1.20 ms | 14.39 ms |
+| `sobjectizer` | yes | 41.85 ms | 209 ns | 5.98 ms | 47.99 ms |
+| `caf` | yes | 116.03 ms | 580 ns | 5.89 ms | 120.43 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 9.10 ms | 45 ns | 1.14 ms | 11.39 ms |
+
+`qb` is **3.54x** faster than `sobjectizer` in this configuration.
+
+The fastest framework costs **1.30x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Workers are slots of a vector with no mailbox, and the dictionary's twenty-writer fan-in is a scan of one SPSC ring per thread, not a shared mailbox: the per-actor queue every framework keeps is engineered out
+- *(baseline)* the master and the dictionary live on thread 0 and worker w on thread (1 + w) % cores -- the same placement qb's cell fixes -- so with cores=2 half the round trips cross a core
+- *(baseline)* no request/response primitive: the form=1 documents are not applicable here, by the harness's third verdict, and this form=0 cell is the floor for both forms
+- *(baseline)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the threads by the thread that runs the repetition; its lookups are part of the floor's figure as of every framework's
+- *(baseline)* cores=1 is one thread with every role in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle thread on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* every request and every answer is a new CAF message (a ref-counted, type-erased tuple): CAF messages are immutable and cannot be sent back the way qb's reply() and SObjectizer's mutable-message resend recycle one; with form=1 each request also allocates its continuation, keyed by the response id. The run's `form` is in its params
+- *(caf)* the master, the dictionary and the 20 workers are placed by the work-stealing pool; qb's cell pins the master and the dictionary on core 0 and worker w on core (1 + w) % cores -- see benchmarks/savina/concdict.md
+- *(caf)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the actor system by the thread that runs the repetition; its lookups are part of every framework's figure
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* form=0 recycles ONE event per worker for all its requests: reply() swaps destination and source and hands the same bytes back (qb's documented reply idiom), so no request or answer is constructed after the first -- CAF builds a message per request and per answer; SObjectizer's form=0 resends one mutable message the same way. The run's `form` is in its params; form=1 is qb::ask, a pending-ask slot and a coroutine resume per request
+- *(qb)* placement is fixed before start: the master and the dictionary on VirtualCore 0, worker w on core (1 + w) % cores, so with cores=2 half the round trips cross a core and the dictionary's core also runs half the workers -- the pools place freely
+- *(qb)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the engine by the thread that runs the repetition; its lookups are part of every framework's figure
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* form=0 resends ONE mutable message per worker for all its requests (SObjectizer's own mutable_msg redirection, its faster idiom: the documentation's lead -- so_5::send<msg>() of a new message per request and per answer -- allocates two messages per round trip); qb's reply() recycles one event the same way, CAF builds a message per request and per answer
+- *(sobjectizer)* SObjectizer 5.8 has no asynchronous request/reply with a continuation, so the form=1 documents of this benchmark are not applicable here, by the harness's third verdict
+- *(sobjectizer)* the master, the dictionary and the 20 workers are placed by the thread_pool; qb's cell pins the master and the dictionary on core 0 and worker w on core (1 + w) % cores -- see benchmarks/savina/concdict.md
+- *(sobjectizer)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the environment by the thread that runs the repetition; its lookups are part of every framework's figure
+
+</details>
+
+### 2c-park
+
+| framework | verified | median | per operation | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 14.41 ms | 72 ns | 1.88 ms | 17.84 ms |
+| `caf` | yes | 117.14 ms | 586 ns | 2.84 ms | 125.59 ms |
+| `sobjectizer` | yes | 120.01 ms | 600 ns | 6.67 ms | 128.35 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 23.32 ms | 117 ns | 1.07 ms | 25.28 ms |
+
+`qb` is **8.13x** faster than `caf` in this configuration.
+
+The fastest framework sits **below the floor** (0.62x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Workers are slots of a vector with no mailbox, and the dictionary's twenty-writer fan-in is a scan of one SPSC ring per thread, not a shared mailbox: the per-actor queue every framework keeps is engineered out
+- *(baseline)* the master and the dictionary live on thread 0 and worker w on thread (1 + w) % cores -- the same placement qb's cell fixes -- so with cores=2 half the round trips cross a core
+- *(baseline)* no request/response primitive: the form=1 documents are not applicable here, by the harness's third verdict, and this form=0 cell is the floor for both forms
+- *(baseline)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the threads by the thread that runs the repetition; its lookups are part of the floor's figure as of every framework's
+- *(baseline)* cores=1 is one thread with every role in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle thread on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* every request and every answer is a new CAF message (a ref-counted, type-erased tuple): CAF messages are immutable and cannot be sent back the way qb's reply() and SObjectizer's mutable-message resend recycle one; with form=1 each request also allocates its continuation, keyed by the response id. The run's `form` is in its params
+- *(caf)* the master, the dictionary and the 20 workers are placed by the work-stealing pool; qb's cell pins the master and the dictionary on core 0 and worker w on core (1 + w) % cores -- see benchmarks/savina/concdict.md
+- *(caf)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the actor system by the thread that runs the repetition; its lookups are part of every framework's figure
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* form=0 recycles ONE event per worker for all its requests: reply() swaps destination and source and hands the same bytes back (qb's documented reply idiom), so no request or answer is constructed after the first -- CAF builds a message per request and per answer; SObjectizer's form=0 resends one mutable message the same way. The run's `form` is in its params; form=1 is qb::ask, a pending-ask slot and a coroutine resume per request
+- *(qb)* placement is fixed before start: the master and the dictionary on VirtualCore 0, worker w on core (1 + w) % cores, so with cores=2 half the round trips cross a core and the dictionary's core also runs half the workers -- the pools place freely
+- *(qb)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the engine by the thread that runs the repetition; its lookups are part of every framework's figure
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* form=0 resends ONE mutable message per worker for all its requests (SObjectizer's own mutable_msg redirection, its faster idiom: the documentation's lead -- so_5::send<msg>() of a new message per request and per answer -- allocates two messages per round trip); qb's reply() recycles one event the same way, CAF builds a message per request and per answer
+- *(sobjectizer)* SObjectizer 5.8 has no asynchronous request/reply with a continuation, so the form=1 documents of this benchmark are not applicable here, by the harness's third verdict
+- *(sobjectizer)* the master, the dictionary and the 20 workers are placed by the thread_pool; qb's cell pins the master and the dictionary on core 0 and worker w on core (1 + w) % cores -- see benchmarks/savina/concdict.md
+- *(sobjectizer)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the environment by the thread that runs the repetition; its lookups are part of every framework's figure
+
+</details>
+
+### 2c-spin
+
+| framework | verified | median | per operation | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 12.66 ms | 63 ns | 1.77 ms | 14.33 ms |
+| `sobjectizer` | yes | 97.29 ms | 486 ns | 3.02 ms | 102.15 ms |
+| `caf` | yes | 116.43 ms | 582 ns | 10.07 ms | 122.85 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 19.31 ms | 97 ns | 2.06 ms | 26.34 ms |
+
+`qb` is **7.68x** faster than `sobjectizer` in this configuration.
+
+The fastest framework sits **below the floor** (0.66x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Workers are slots of a vector with no mailbox, and the dictionary's twenty-writer fan-in is a scan of one SPSC ring per thread, not a shared mailbox: the per-actor queue every framework keeps is engineered out
+- *(baseline)* the master and the dictionary live on thread 0 and worker w on thread (1 + w) % cores -- the same placement qb's cell fixes -- so with cores=2 half the round trips cross a core
+- *(baseline)* no request/response primitive: the form=1 documents are not applicable here, by the harness's third verdict, and this form=0 cell is the floor for both forms
+- *(baseline)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the threads by the thread that runs the repetition; its lookups are part of the floor's figure as of every framework's
+- *(baseline)* cores=1 is one thread with every role in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle thread on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* every request and every answer is a new CAF message (a ref-counted, type-erased tuple): CAF messages are immutable and cannot be sent back the way qb's reply() and SObjectizer's mutable-message resend recycle one; with form=1 each request also allocates its continuation, keyed by the response id. The run's `form` is in its params
+- *(caf)* the master, the dictionary and the 20 workers are placed by the work-stealing pool; qb's cell pins the master and the dictionary on core 0 and worker w on core (1 + w) % cores -- see benchmarks/savina/concdict.md
+- *(caf)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the actor system by the thread that runs the repetition; its lookups are part of every framework's figure
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* form=0 recycles ONE event per worker for all its requests: reply() swaps destination and source and hands the same bytes back (qb's documented reply idiom), so no request or answer is constructed after the first -- CAF builds a message per request and per answer; SObjectizer's form=0 resends one mutable message the same way. The run's `form` is in its params; form=1 is qb::ask, a pending-ask slot and a coroutine resume per request
+- *(qb)* placement is fixed before start: the master and the dictionary on VirtualCore 0, worker w on core (1 + w) % cores, so with cores=2 half the round trips cross a core and the dictionary's core also runs half the workers -- the pools place freely
+- *(qb)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the engine by the thread that runs the repetition; its lookups are part of every framework's figure
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* form=0 resends ONE mutable message per worker for all its requests (SObjectizer's own mutable_msg redirection, its faster idiom: the documentation's lead -- so_5::send<msg>() of a new message per request and per answer -- allocates two messages per round trip); qb's reply() recycles one event the same way, CAF builds a message per request and per answer
+- *(sobjectizer)* SObjectizer 5.8 has no asynchronous request/reply with a continuation, so the form=1 documents of this benchmark are not applicable here, by the harness's third verdict
+- *(sobjectizer)* the master, the dictionary and the 20 workers are placed by the thread_pool; qb's cell pins the master and the dictionary on core 0 and worker w on core (1 + w) % cores -- see benchmarks/savina/concdict.md
+- *(sobjectizer)* the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the environment by the thread that runs the repetition; its lookups are part of every framework's figure
+
+</details>
+
+## savina/concsll
+
+### 1c-park
+
+| framework | verified | median | per request | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 3,362.36 ms | 21.01 us | 10.76 ms | 3,381.40 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 3,365.85 ms | 21.04 us | 14.49 ms | 3,387.61 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 3,491.16 ms | 21.82 us | 23.13 ms | 3,511.74 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,159,996,386 [1,159,996,386–1,159,996,386] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 80,759 [80,759–80,759] over 9 repetitions (asserted ≥ 65); `write_walk` median 65,183,103 [65,183,103–65,183,103] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 3,350.40 ms | 20.94 us | 32.97 ms | 3,395.89 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+**`qb` and `sobjectizer` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
+
+The fastest framework costs **1.00x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. The list and the workers are slots with no mailbox; a request is one push into a ring two threads share and its answer one push back -- the walk is the same SortedList every framework's list actor holds, so the floor bounds the messaging around it
+- *(baseline)* the list lives on thread 0 alone and the master and the workers on thread 1 -- the same placement qb's cell fixes -- so with cores=2 every request and every answer crosses a core
+- *(baseline)* cores=1 is one thread with the list, the master and the workers in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle thread on a condition variable -- at cores=2 the workers' thread has nothing to do while the list walks, so it may park between answers and be woken by the next one
+- *(baseline, caf, qb, sobjectizer)* the list walk is the same source in every framework (qvospec SortedList: out of line, nodes from its own arena) and dominates the window by construction -- each request walks up to the whole list, thousands of nodes, against one message each way. What differs between the cells is the cost of workers x messages request/answer round trips, where the list actor runs (and whether it keeps its cache), and how far the interleaving lets the list grow before each walk: the walks are reported beside the cell as observations, each with an asserted lower bound
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the list actor is placed by the work-stealing pool like every other actor: which of the cores walks the list, and whether it changes thread between two requests (and so whether its list stays in one core's cache), is the scheduler's decision -- qb's cell pins the list alone on VirtualCore 0, see benchmarks/savina/concsll.md
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* form=0 recycles ONE event per worker for all its requests: reply() swaps destination and source and hands the same bytes back (qb's documented reply idiom), so no request or answer is constructed after the first -- CAF builds a message per request and per answer; SObjectizer's form=0 resends one mutable message the same way. The run's `form` is in its params; form=1 is qb::ask, a pending-ask slot and a coroutine resume per request
+- *(qb)* placement is fixed before start: the list actor alone on VirtualCore 0, the master and every worker on core 1 (1 + w % (cores - 1) above two cores), so with cores=2 every request and every answer crosses a core and the list's core runs nothing but the list -- the pools place freely, and may move the list between their threads
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* each worker's request and answer travel in ONE mutable message, allocated when the window opens and redirected back and forth for the whole run (SObjectizer's own chameneos_prealloc_msgs idiom): no message is allocated per request, where qb writes each event into its ring and CAF allocates one message per send
+- *(sobjectizer)* the list, the master and the workers are placed by the thread_pool: which thread walks the list, and whether it changes thread between two requests, is the dispatcher's decision -- qb's cell pins the list alone on VirtualCore 0, see benchmarks/savina/concsll.md
+
+</details>
+
+### 1c-spin
+
+| framework | verified | median | per request | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `sobjectizer` | yes | 3,376.44 ms | 21.10 us | 7.78 ms | 3,397.77 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `qb` | yes | 3,379.26 ms | 21.12 us | 5.23 ms | 3,391.54 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 3,471.79 ms | 21.70 us | 4.70 ms | 3,546.31 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,159,996,386 [1,159,996,386–1,159,996,386] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 80,759 [80,759–80,759] over 9 repetitions (asserted ≥ 65); `write_walk` median 65,183,103 [65,183,103–65,183,103] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 3,361.91 ms | 21.01 us | 18.83 ms | 3,376.77 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+**`sobjectizer` and `qb` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
+
+The fastest framework costs **1.00x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. The list and the workers are slots with no mailbox; a request is one push into a ring two threads share and its answer one push back -- the walk is the same SortedList every framework's list actor holds, so the floor bounds the messaging around it
+- *(baseline)* the list lives on thread 0 alone and the master and the workers on thread 1 -- the same placement qb's cell fixes -- so with cores=2 every request and every answer crosses a core
+- *(baseline)* cores=1 is one thread with the list, the master and the workers in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle thread on a condition variable -- at cores=2 the workers' thread has nothing to do while the list walks, so it may park between answers and be woken by the next one
+- *(baseline, caf, qb, sobjectizer)* the list walk is the same source in every framework (qvospec SortedList: out of line, nodes from its own arena) and dominates the window by construction -- each request walks up to the whole list, thousands of nodes, against one message each way. What differs between the cells is the cost of workers x messages request/answer round trips, where the list actor runs (and whether it keeps its cache), and how far the interleaving lets the list grow before each walk: the walks are reported beside the cell as observations, each with an asserted lower bound
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the list actor is placed by the work-stealing pool like every other actor: which of the cores walks the list, and whether it changes thread between two requests (and so whether its list stays in one core's cache), is the scheduler's decision -- qb's cell pins the list alone on VirtualCore 0, see benchmarks/savina/concsll.md
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* form=0 recycles ONE event per worker for all its requests: reply() swaps destination and source and hands the same bytes back (qb's documented reply idiom), so no request or answer is constructed after the first -- CAF builds a message per request and per answer; SObjectizer's form=0 resends one mutable message the same way. The run's `form` is in its params; form=1 is qb::ask, a pending-ask slot and a coroutine resume per request
+- *(qb)* placement is fixed before start: the list actor alone on VirtualCore 0, the master and every worker on core 1 (1 + w % (cores - 1) above two cores), so with cores=2 every request and every answer crosses a core and the list's core runs nothing but the list -- the pools place freely, and may move the list between their threads
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* each worker's request and answer travel in ONE mutable message, allocated when the window opens and redirected back and forth for the whole run (SObjectizer's own chameneos_prealloc_msgs idiom): no message is allocated per request, where qb writes each event into its ring and CAF allocates one message per send
+- *(sobjectizer)* the list, the master and the workers are placed by the thread_pool: which thread walks the list, and whether it changes thread between two requests, is the dispatcher's decision -- qb's cell pins the list alone on VirtualCore 0, see benchmarks/savina/concsll.md
+
+</details>
+
+### 2c-park
+
+| framework | verified | median | per request | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 3,392.72 ms | 21.20 us | 15.98 ms | 3,413.83 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 3,526.39 ms | 22.04 us | 26.83 ms | 3,645.51 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,157,881,063 [1,150,956,770–1,167,352,888] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,312 [1,224–41,887] over 9 repetitions (asserted ≥ 65); `write_walk` median 65,044,878 [64,581,791–65,399,514] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 3,644.56 ms | 22.78 us | 31.79 ms | 3,680.45 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,593 [1,155,676,259–1,155,678,644] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,235 [1,234–1,235] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,402 [64,958,228–64,958,445] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 3,580.75 ms | 22.38 us | 11.96 ms | 3,614.23 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **1.04x** faster than `caf` in this configuration.
+
+The fastest framework sits **below the floor** (0.95x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. The list and the workers are slots with no mailbox; a request is one push into a ring two threads share and its answer one push back -- the walk is the same SortedList every framework's list actor holds, so the floor bounds the messaging around it
+- *(baseline)* the list lives on thread 0 alone and the master and the workers on thread 1 -- the same placement qb's cell fixes -- so with cores=2 every request and every answer crosses a core
+- *(baseline)* cores=1 is one thread with the list, the master and the workers in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle thread on a condition variable -- at cores=2 the workers' thread has nothing to do while the list walks, so it may park between answers and be woken by the next one
+- *(baseline, caf, qb, sobjectizer)* the list walk is the same source in every framework (qvospec SortedList: out of line, nodes from its own arena) and dominates the window by construction -- each request walks up to the whole list, thousands of nodes, against one message each way. What differs between the cells is the cost of workers x messages request/answer round trips, where the list actor runs (and whether it keeps its cache), and how far the interleaving lets the list grow before each walk: the walks are reported beside the cell as observations, each with an asserted lower bound
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the list actor is placed by the work-stealing pool like every other actor: which of the cores walks the list, and whether it changes thread between two requests (and so whether its list stays in one core's cache), is the scheduler's decision -- qb's cell pins the list alone on VirtualCore 0, see benchmarks/savina/concsll.md
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* form=0 recycles ONE event per worker for all its requests: reply() swaps destination and source and hands the same bytes back (qb's documented reply idiom), so no request or answer is constructed after the first -- CAF builds a message per request and per answer; SObjectizer's form=0 resends one mutable message the same way. The run's `form` is in its params; form=1 is qb::ask, a pending-ask slot and a coroutine resume per request
+- *(qb)* placement is fixed before start: the list actor alone on VirtualCore 0, the master and every worker on core 1 (1 + w % (cores - 1) above two cores), so with cores=2 every request and every answer crosses a core and the list's core runs nothing but the list -- the pools place freely, and may move the list between their threads
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* each worker's request and answer travel in ONE mutable message, allocated when the window opens and redirected back and forth for the whole run (SObjectizer's own chameneos_prealloc_msgs idiom): no message is allocated per request, where qb writes each event into its ring and CAF allocates one message per send
+- *(sobjectizer)* the list, the master and the workers are placed by the thread_pool: which thread walks the list, and whether it changes thread between two requests, is the dispatcher's decision -- qb's cell pins the list alone on VirtualCore 0, see benchmarks/savina/concsll.md
+
+</details>
+
+### 2c-spin
+
+| framework | verified | median | per request | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `sobjectizer` | yes | 3,448.67 ms | 21.55 us | 7.21 ms | 3,454.36 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,842 [1,155,676,449–1,155,678,429] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,235 [1,234–1,236] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,369 [64,958,241–64,958,406] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `qb` | yes | 3,454.14 ms | 21.59 us | 56.41 ms | 3,526.66 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 3,502.43 ms | 21.89 us | 27.63 ms | 3,535.30 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,154,102,969 [1,149,605,022–1,164,949,833] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 17,431 [1,200–48,842] over 9 repetitions (asserted ≥ 65); `write_walk` median 65,126,898 [64,920,105–65,483,040] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 3,394.35 ms | 21.21 us | 15.27 ms | 3,427.65 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+**`sobjectizer` and `qb` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
+
+The fastest framework costs **1.02x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. The list and the workers are slots with no mailbox; a request is one push into a ring two threads share and its answer one push back -- the walk is the same SortedList every framework's list actor holds, so the floor bounds the messaging around it
+- *(baseline)* the list lives on thread 0 alone and the master and the workers on thread 1 -- the same placement qb's cell fixes -- so with cores=2 every request and every answer crosses a core
+- *(baseline)* cores=1 is one thread with the list, the master and the workers in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle thread on a condition variable -- at cores=2 the workers' thread has nothing to do while the list walks, so it may park between answers and be woken by the next one
+- *(baseline, caf, qb, sobjectizer)* the list walk is the same source in every framework (qvospec SortedList: out of line, nodes from its own arena) and dominates the window by construction -- each request walks up to the whole list, thousands of nodes, against one message each way. What differs between the cells is the cost of workers x messages request/answer round trips, where the list actor runs (and whether it keeps its cache), and how far the interleaving lets the list grow before each walk: the walks are reported beside the cell as observations, each with an asserted lower bound
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the list actor is placed by the work-stealing pool like every other actor: which of the cores walks the list, and whether it changes thread between two requests (and so whether its list stays in one core's cache), is the scheduler's decision -- qb's cell pins the list alone on VirtualCore 0, see benchmarks/savina/concsll.md
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* form=0 recycles ONE event per worker for all its requests: reply() swaps destination and source and hands the same bytes back (qb's documented reply idiom), so no request or answer is constructed after the first -- CAF builds a message per request and per answer; SObjectizer's form=0 resends one mutable message the same way. The run's `form` is in its params; form=1 is qb::ask, a pending-ask slot and a coroutine resume per request
+- *(qb)* placement is fixed before start: the list actor alone on VirtualCore 0, the master and every worker on core 1 (1 + w % (cores - 1) above two cores), so with cores=2 every request and every answer crosses a core and the list's core runs nothing but the list -- the pools place freely, and may move the list between their threads
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* each worker's request and answer travel in ONE mutable message, allocated when the window opens and redirected back and forth for the whole run (SObjectizer's own chameneos_prealloc_msgs idiom): no message is allocated per request, where qb writes each event into its ring and CAF allocates one message per send
+- *(sobjectizer)* the list, the master and the workers are placed by the thread_pool: which thread walks the list, and whether it changes thread between two requests, is the dispatcher's decision -- qb's cell pins the list alone on VirtualCore 0, see benchmarks/savina/concsll.md
 
 </details>
 
@@ -973,6 +2056,721 @@ The fastest framework sits **below the floor** (0.37x) — which means it is not
 - *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
 - *(sobjectizer)* the sixty workers are placed by the thread_pool: a free work thread takes the next agent with pending demands, the balancing qb's static placement does not do -- see benchmarks/savina/fork-join.md
+
+</details>
+
+## savina/fork-join-create
+
+### 1c-park
+
+| framework | verified | median | per actor | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 4.16 ms | 104 ns | 88.70 us | 4.67 ms |
+| `caf` | yes | 82.42 ms | 2.06 us | 1.52 ms | 85.09 ms |
+| `sobjectizer` | yes | 109.20 ms | 2.73 us | 11.88 ms | 113.15 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 3.26 ms | 82 ns | 179.40 us | 3.43 ms |
+
+`qb` is **19.80x** faster than `caf` in this configuration.
+
+The fastest framework costs **1.28x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A forked actor is one `new`, one slot and one `delete`, with no mailbox, no registry and no lifecycle beyond the slot: the floor for what creating and destroying an actor can cost
+- *(baseline)* a forked actor is allocated on its creator's worker (id = slot * cores + worker), the same static placement qb's addRefActor has: with cores=2 each worker forks and runs its own half, so this floor is a bound for the placing frameworks and NOT for the pools
+- *(baseline)* cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* forked actors use CAF's default spawn; caf::lazy_init (no scheduling until the first message) fits the spawn-then-send shape and was tried, and showed no gain over the default -- see benchmarks/savina/fork-join-create.md
+- *(caf)* a forked actor spawned from a worker is enqueued on THAT worker and stolen from there, so with cores=2 the forked actors are balanced dynamically; qb's cell keeps each creator's actors on its core because qb has no cross-core spawn -- see benchmarks/savina/fork-join-create.md
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb has no cross-core spawn: a forked actor lives on its creator's VirtualCore, so with cores=2 each core forks and runs exactly its own half and nothing balances the two
+- *(qb)* a creator's whole share is alive at once -- its actors run only once the forking loop returns -- and qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors): actors=40 000 fits on one core, a share above ~65 500 would abort the cell
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* SObjectizer creates agents only inside a cooperation registered with the environment, so every forked actor here pays one coop registration and one deregistration on top of the agent itself -- that is the framework's own dynamic-agent idiom for an agent that ends after one message, not an adapter choice (a coop holding a creator's whole share cannot end one agent without ending all of them)
+- *(sobjectizer)* forked agents bind to the same thread_pool as their creator and the pool places them, so with cores=2 the forked actors are balanced by the dispatcher; qb's cell keeps each creator's actors on its core because qb has no cross-core spawn -- see benchmarks/savina/fork-join-create.md
+- *(sobjectizer)* SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop (unbinding the agent from the dispatcher, releasing the coop and its agent) on a dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/mt_env_infrastructure.cpp), handed each finished coop by the work threads under a shared mutex: 40 000 coops per repetition here. That thread is OUTSIDE the `cores` work-thread budget, runs inside the pinned CPU set competing with the work threads, and the coops still in its chain when the window closes are released after it -- see benchmarks/savina/fork-join-create.md, "The measured window"
+
+</details>
+
+### 1c-spin
+
+| framework | verified | median | per actor | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 4.12 ms | 103 ns | 182.50 us | 4.39 ms |
+| `caf` | yes | 81.63 ms | 2.04 us | 651.20 us | 83.23 ms |
+| `sobjectizer` | yes | 107.80 ms | 2.69 us | 2.93 ms | 109.79 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 2.84 ms | 71 ns | 182.10 us | 3.29 ms |
+
+`qb` is **19.83x** faster than `caf` in this configuration.
+
+The fastest framework costs **1.45x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A forked actor is one `new`, one slot and one `delete`, with no mailbox, no registry and no lifecycle beyond the slot: the floor for what creating and destroying an actor can cost
+- *(baseline)* a forked actor is allocated on its creator's worker (id = slot * cores + worker), the same static placement qb's addRefActor has: with cores=2 each worker forks and runs its own half, so this floor is a bound for the placing frameworks and NOT for the pools
+- *(baseline)* cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* forked actors use CAF's default spawn; caf::lazy_init (no scheduling until the first message) fits the spawn-then-send shape and was tried, and showed no gain over the default -- see benchmarks/savina/fork-join-create.md
+- *(caf)* a forked actor spawned from a worker is enqueued on THAT worker and stolen from there, so with cores=2 the forked actors are balanced dynamically; qb's cell keeps each creator's actors on its core because qb has no cross-core spawn -- see benchmarks/savina/fork-join-create.md
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb has no cross-core spawn: a forked actor lives on its creator's VirtualCore, so with cores=2 each core forks and runs exactly its own half and nothing balances the two
+- *(qb)* a creator's whole share is alive at once -- its actors run only once the forking loop returns -- and qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors): actors=40 000 fits on one core, a share above ~65 500 would abort the cell
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* SObjectizer creates agents only inside a cooperation registered with the environment, so every forked actor here pays one coop registration and one deregistration on top of the agent itself -- that is the framework's own dynamic-agent idiom for an agent that ends after one message, not an adapter choice (a coop holding a creator's whole share cannot end one agent without ending all of them)
+- *(sobjectizer)* forked agents bind to the same thread_pool as their creator and the pool places them, so with cores=2 the forked actors are balanced by the dispatcher; qb's cell keeps each creator's actors on its core because qb has no cross-core spawn -- see benchmarks/savina/fork-join-create.md
+- *(sobjectizer)* SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop (unbinding the agent from the dispatcher, releasing the coop and its agent) on a dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/mt_env_infrastructure.cpp), handed each finished coop by the work threads under a shared mutex: 40 000 coops per repetition here. That thread is OUTSIDE the `cores` work-thread budget, runs inside the pinned CPU set competing with the work threads, and the coops still in its chain when the window closes are released after it -- see benchmarks/savina/fork-join-create.md, "The measured window"
+
+</details>
+
+### 2c-park
+
+| framework | verified | median | per actor | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 2.23 ms | 56 ns | 75.90 us | 2.37 ms |
+| `caf` | yes | 48.26 ms | 1.21 us | 1.01 ms | 48.65 ms |
+| `sobjectizer` | yes | 92.38 ms | 2.31 us | 11.05 ms | 100.53 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 3.69 ms | 92 ns | 151.10 us | 3.76 ms |
+
+`qb` is **21.61x** faster than `caf` in this configuration.
+
+The fastest framework sits **below the floor** (0.61x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A forked actor is one `new`, one slot and one `delete`, with no mailbox, no registry and no lifecycle beyond the slot: the floor for what creating and destroying an actor can cost
+- *(baseline)* a forked actor is allocated on its creator's worker (id = slot * cores + worker), the same static placement qb's addRefActor has: with cores=2 each worker forks and runs its own half, so this floor is a bound for the placing frameworks and NOT for the pools
+- *(baseline)* cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* forked actors use CAF's default spawn; caf::lazy_init (no scheduling until the first message) fits the spawn-then-send shape and was tried, and showed no gain over the default -- see benchmarks/savina/fork-join-create.md
+- *(caf)* a forked actor spawned from a worker is enqueued on THAT worker and stolen from there, so with cores=2 the forked actors are balanced dynamically; qb's cell keeps each creator's actors on its core because qb has no cross-core spawn -- see benchmarks/savina/fork-join-create.md
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb has no cross-core spawn: a forked actor lives on its creator's VirtualCore, so with cores=2 each core forks and runs exactly its own half and nothing balances the two
+- *(qb)* a creator's whole share is alive at once -- its actors run only once the forking loop returns -- and qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors): actors=40 000 fits on one core, a share above ~65 500 would abort the cell
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* SObjectizer creates agents only inside a cooperation registered with the environment, so every forked actor here pays one coop registration and one deregistration on top of the agent itself -- that is the framework's own dynamic-agent idiom for an agent that ends after one message, not an adapter choice (a coop holding a creator's whole share cannot end one agent without ending all of them)
+- *(sobjectizer)* forked agents bind to the same thread_pool as their creator and the pool places them, so with cores=2 the forked actors are balanced by the dispatcher; qb's cell keeps each creator's actors on its core because qb has no cross-core spawn -- see benchmarks/savina/fork-join-create.md
+- *(sobjectizer)* SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop (unbinding the agent from the dispatcher, releasing the coop and its agent) on a dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/mt_env_infrastructure.cpp), handed each finished coop by the work threads under a shared mutex: 40 000 coops per repetition here. That thread is OUTSIDE the `cores` work-thread budget, runs inside the pinned CPU set competing with the work threads, and the coops still in its chain when the window closes are released after it -- see benchmarks/savina/fork-join-create.md, "The measured window"
+
+</details>
+
+### 2c-spin
+
+| framework | verified | median | per actor | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 2.16 ms | 54 ns | 143.80 us | 2.55 ms |
+| `caf` | yes | 47.78 ms | 1.19 us | 254.40 us | 48.18 ms |
+| `sobjectizer` | yes | 100.24 ms | 2.51 us | 14.29 ms | 103.39 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 15.42 ms | 385 ns | 7.84 ms | 63.01 ms |
+| | <sub>**bimodal**: 2 of 9 repetitions at ~78 ns per actor, 7 at ~430 ns. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
+
+`qb` is **22.10x** faster than `caf` in this configuration.
+
+The fastest framework sits **below the floor** (0.14x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A forked actor is one `new`, one slot and one `delete`, with no mailbox, no registry and no lifecycle beyond the slot: the floor for what creating and destroying an actor can cost
+- *(baseline)* a forked actor is allocated on its creator's worker (id = slot * cores + worker), the same static placement qb's addRefActor has: with cores=2 each worker forks and runs its own half, so this floor is a bound for the placing frameworks and NOT for the pools
+- *(baseline)* cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* forked actors use CAF's default spawn; caf::lazy_init (no scheduling until the first message) fits the spawn-then-send shape and was tried, and showed no gain over the default -- see benchmarks/savina/fork-join-create.md
+- *(caf)* a forked actor spawned from a worker is enqueued on THAT worker and stolen from there, so with cores=2 the forked actors are balanced dynamically; qb's cell keeps each creator's actors on its core because qb has no cross-core spawn -- see benchmarks/savina/fork-join-create.md
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* qb has no cross-core spawn: a forked actor lives on its creator's VirtualCore, so with cores=2 each core forks and runs exactly its own half and nothing balances the two
+- *(qb)* a creator's whole share is alive at once -- its actors run only once the forking loop returns -- and qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors): actors=40 000 fits on one core, a share above ~65 500 would abort the cell
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* SObjectizer creates agents only inside a cooperation registered with the environment, so every forked actor here pays one coop registration and one deregistration on top of the agent itself -- that is the framework's own dynamic-agent idiom for an agent that ends after one message, not an adapter choice (a coop holding a creator's whole share cannot end one agent without ending all of them)
+- *(sobjectizer)* forked agents bind to the same thread_pool as their creator and the pool places them, so with cores=2 the forked actors are balanced by the dispatcher; qb's cell keeps each creator's actors on its core because qb has no cross-core spawn -- see benchmarks/savina/fork-join-create.md
+- *(sobjectizer)* SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop (unbinding the agent from the dispatcher, releasing the coop and its agent) on a dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/mt_env_infrastructure.cpp), handed each finished coop by the work threads under a shared mutex: 40 000 coops per repetition here. That thread is OUTSIDE the `cores` work-thread budget, runs inside the pinned CPU set competing with the work threads, and the coops still in its chain when the window closes are released after it -- see benchmarks/savina/fork-join-create.md, "The measured window"
+
+</details>
+
+## savina/logmap
+
+### 1c-park
+
+| framework | verified | median | per term | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 6.78 ms | 27 ns | 634.90 us | 7.29 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 62.25 ms | 249 ns | 467.20 us | 63.17 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 181.90 ms | 728 ns | 4.85 ms | 184.44 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 7.38 ms | 30 ns | 183.30 us | 7.59 ms |
+| | <sub>**observed, not asserted**: `held` median 249,960 [249,960–249,960] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **9.18x** faster than `sobjectizer` in this configuration.
+
+The fastest framework sits **below the floor** (0.92x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A series is one slot of a vector holding its worker's and its computer's state, with no mailbox and no per-actor dispatch: the request and the answer are two pushes into the owner thread's own ring, the held requests a count
+- *(baseline)* the master lives on thread 0 and series i on thread (1 + i) % cores -- the placement qb's cell fixes -- so no round trip crosses a core; with cores=2 the burst to the even series (i = 0, 2, 4, ...: thread (1 + i) % 2 = 1) and their answers to the master do
+- *(baseline)* the terms x series NextTerm burst is pushed from the caller's thread, which IS worker 0: a full ring of its own is drained inline (Mesh::send), so at cores=1 the chains run in slices of a ring (65 536 messages) while the burst is still being sent, where a framework's master finishes its handler first; at cores=2 the ring to thread 1 holds 65 536 of its 125 000 NextTerm and the caller spins until thread 1 makes room
+- *(baseline)* cores=1 is one thread with the master and every series in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* a worker and its computer are placed by the work-stealing pool: a computer made ready by its worker's message is prepended to the worker's own queue, so a pair usually runs on one thread, but which pairs share a thread and whether a round trip crosses a core is the scheduler's decision; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
+- *(caf)* the computer's answer is a value RETURNED from its handler, which CAF sends to the sender of an asynchronous message as an ordinary message (response_promise::respond_to, no allocation beyond the message itself); every hop allocates its message, which is CAF's model -- qb's reply() re-sends the received event as a copy into its pipe, and SObjectizer redirects one message instance per chain
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* placement is fixed before start: the master on VirtualCore 0, series i's worker AND computer together on core (1 + i) % cores, so no round trip of a chain crosses a core -- qb.llm.md's rule for actors that talk only to each other; the pools place each worker and computer freely and may split a pair
+- *(qb)* the master's NextTerm burst (terms x series pushes from one handler) leaves for a remote core only in the flush that follows the handler, so at cores=2 no remote chain starts before the master has pushed the whole burst; CAF's and SObjectizer's pools can run a worker on the other thread from the first message the master enqueues for it, and the floor's thread 1 drains its ring while the burst is still being sent -- the `held` observation beside the cell says how much of the burst each found waiting
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the master, the workers and the computers are placed by the thread_pool: which thread runs a worker's or a computer's next demand is the dispatcher's decision, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
+- *(sobjectizer)* a chain redirects ONE mutable message (so_5::send(mbox, std::move(cmd)), SObjectizer's redirection of a mutable message): no message is allocated per hop, though the thread_pool's queue allocates one demand node per delivery (thread_pool/impl/basic_event_queue.hpp, push()); qb's reply() re-sends the received event as a copy into its pipe; NextTerm and GetTerm are signals, which carry no instance
+
+</details>
+
+### 1c-spin
+
+| framework | verified | median | per term | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 6.57 ms | 26 ns | 622.40 us | 6.91 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 56.98 ms | 228 ns | 889.60 us | 59.79 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 180.32 ms | 721 ns | 2.89 ms | 186.81 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 5.03 ms | 20 ns | 304.10 us | 5.76 ms |
+| | <sub>**observed, not asserted**: `held` median 249,960 [249,960–249,960] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **8.68x** faster than `sobjectizer` in this configuration.
+
+The fastest framework costs **1.31x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A series is one slot of a vector holding its worker's and its computer's state, with no mailbox and no per-actor dispatch: the request and the answer are two pushes into the owner thread's own ring, the held requests a count
+- *(baseline)* the master lives on thread 0 and series i on thread (1 + i) % cores -- the placement qb's cell fixes -- so no round trip crosses a core; with cores=2 the burst to the even series (i = 0, 2, 4, ...: thread (1 + i) % 2 = 1) and their answers to the master do
+- *(baseline)* the terms x series NextTerm burst is pushed from the caller's thread, which IS worker 0: a full ring of its own is drained inline (Mesh::send), so at cores=1 the chains run in slices of a ring (65 536 messages) while the burst is still being sent, where a framework's master finishes its handler first; at cores=2 the ring to thread 1 holds 65 536 of its 125 000 NextTerm and the caller spins until thread 1 makes room
+- *(baseline)* cores=1 is one thread with the master and every series in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* a worker and its computer are placed by the work-stealing pool: a computer made ready by its worker's message is prepended to the worker's own queue, so a pair usually runs on one thread, but which pairs share a thread and whether a round trip crosses a core is the scheduler's decision; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
+- *(caf)* the computer's answer is a value RETURNED from its handler, which CAF sends to the sender of an asynchronous message as an ordinary message (response_promise::respond_to, no allocation beyond the message itself); every hop allocates its message, which is CAF's model -- qb's reply() re-sends the received event as a copy into its pipe, and SObjectizer redirects one message instance per chain
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* placement is fixed before start: the master on VirtualCore 0, series i's worker AND computer together on core (1 + i) % cores, so no round trip of a chain crosses a core -- qb.llm.md's rule for actors that talk only to each other; the pools place each worker and computer freely and may split a pair
+- *(qb)* the master's NextTerm burst (terms x series pushes from one handler) leaves for a remote core only in the flush that follows the handler, so at cores=2 no remote chain starts before the master has pushed the whole burst; CAF's and SObjectizer's pools can run a worker on the other thread from the first message the master enqueues for it, and the floor's thread 1 drains its ring while the burst is still being sent -- the `held` observation beside the cell says how much of the burst each found waiting
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the master, the workers and the computers are placed by the thread_pool: which thread runs a worker's or a computer's next demand is the dispatcher's decision, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
+- *(sobjectizer)* a chain redirects ONE mutable message (so_5::send(mbox, std::move(cmd)), SObjectizer's redirection of a mutable message): no message is allocated per hop, though the thread_pool's queue allocates one demand node per delivery (thread_pool/impl/basic_event_queue.hpp, push()); qb's reply() re-sends the received event as a copy into its pipe; NextTerm and GetTerm are signals, which carry no instance
+
+</details>
+
+### 2c-park
+
+| framework | verified | median | per term | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 5.28 ms | 21 ns | 356.90 us | 6.28 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,980–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 100.85 ms | 403 ns | 2.57 ms | 103.87 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,985–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 158.31 ms | 633 ns | 1.69 ms | 161.64 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 14.05 ms | 56 ns | 1.25 ms | 15.13 ms |
+| | <sub>**observed, not asserted**: `held` median 216,829 [200,090–222,089] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **19.09x** faster than `caf` in this configuration.
+
+The fastest framework sits **below the floor** (0.38x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A series is one slot of a vector holding its worker's and its computer's state, with no mailbox and no per-actor dispatch: the request and the answer are two pushes into the owner thread's own ring, the held requests a count
+- *(baseline)* the master lives on thread 0 and series i on thread (1 + i) % cores -- the placement qb's cell fixes -- so no round trip crosses a core; with cores=2 the burst to the even series (i = 0, 2, 4, ...: thread (1 + i) % 2 = 1) and their answers to the master do
+- *(baseline)* the terms x series NextTerm burst is pushed from the caller's thread, which IS worker 0: a full ring of its own is drained inline (Mesh::send), so at cores=1 the chains run in slices of a ring (65 536 messages) while the burst is still being sent, where a framework's master finishes its handler first; at cores=2 the ring to thread 1 holds 65 536 of its 125 000 NextTerm and the caller spins until thread 1 makes room
+- *(baseline)* cores=1 is one thread with the master and every series in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* a worker and its computer are placed by the work-stealing pool: a computer made ready by its worker's message is prepended to the worker's own queue, so a pair usually runs on one thread, but which pairs share a thread and whether a round trip crosses a core is the scheduler's decision; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
+- *(caf)* the computer's answer is a value RETURNED from its handler, which CAF sends to the sender of an asynchronous message as an ordinary message (response_promise::respond_to, no allocation beyond the message itself); every hop allocates its message, which is CAF's model -- qb's reply() re-sends the received event as a copy into its pipe, and SObjectizer redirects one message instance per chain
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* placement is fixed before start: the master on VirtualCore 0, series i's worker AND computer together on core (1 + i) % cores, so no round trip of a chain crosses a core -- qb.llm.md's rule for actors that talk only to each other; the pools place each worker and computer freely and may split a pair
+- *(qb)* the master's NextTerm burst (terms x series pushes from one handler) leaves for a remote core only in the flush that follows the handler, so at cores=2 no remote chain starts before the master has pushed the whole burst; CAF's and SObjectizer's pools can run a worker on the other thread from the first message the master enqueues for it, and the floor's thread 1 drains its ring while the burst is still being sent -- the `held` observation beside the cell says how much of the burst each found waiting
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the master, the workers and the computers are placed by the thread_pool: which thread runs a worker's or a computer's next demand is the dispatcher's decision, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
+- *(sobjectizer)* a chain redirects ONE mutable message (so_5::send(mbox, std::move(cmd)), SObjectizer's redirection of a mutable message): no message is allocated per hop, though the thread_pool's queue allocates one demand node per delivery (thread_pool/impl/basic_event_queue.hpp, push()); qb's reply() re-sends the received event as a copy into its pipe; NextTerm and GetTerm are signals, which carry no instance
+
+</details>
+
+### 2c-spin
+
+| framework | verified | median | per term | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 4.96 ms | 20 ns | 473.70 us | 5.90 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 100.06 ms | 400 ns | 3.58 ms | 106.18 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,987–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 140.26 ms | 561 ns | 3.01 ms | 150.09 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 3.46 ms | 14 ns | 6.16 ms | 28.41 ms |
+| | <sub>**bimodal**: 6 of 9 repetitions at ~13 ns per term, 3 at ~62 ns. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
+| | <sub>**observed, not asserted**: `held` median 249,975 [249,955–249,980] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **20.19x** faster than `caf` in this configuration.
+
+The fastest framework costs **1.43x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A series is one slot of a vector holding its worker's and its computer's state, with no mailbox and no per-actor dispatch: the request and the answer are two pushes into the owner thread's own ring, the held requests a count
+- *(baseline)* the master lives on thread 0 and series i on thread (1 + i) % cores -- the placement qb's cell fixes -- so no round trip crosses a core; with cores=2 the burst to the even series (i = 0, 2, 4, ...: thread (1 + i) % 2 = 1) and their answers to the master do
+- *(baseline)* the terms x series NextTerm burst is pushed from the caller's thread, which IS worker 0: a full ring of its own is drained inline (Mesh::send), so at cores=1 the chains run in slices of a ring (65 536 messages) while the burst is still being sent, where a framework's master finishes its handler first; at cores=2 the ring to thread 1 holds 65 536 of its 125 000 NextTerm and the caller spins until thread 1 makes room
+- *(baseline)* cores=1 is one thread with the master and every series in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* a worker and its computer are placed by the work-stealing pool: a computer made ready by its worker's message is prepended to the worker's own queue, so a pair usually runs on one thread, but which pairs share a thread and whether a round trip crosses a core is the scheduler's decision; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
+- *(caf)* the computer's answer is a value RETURNED from its handler, which CAF sends to the sender of an asynchronous message as an ordinary message (response_promise::respond_to, no allocation beyond the message itself); every hop allocates its message, which is CAF's model -- qb's reply() re-sends the received event as a copy into its pipe, and SObjectizer redirects one message instance per chain
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* placement is fixed before start: the master on VirtualCore 0, series i's worker AND computer together on core (1 + i) % cores, so no round trip of a chain crosses a core -- qb.llm.md's rule for actors that talk only to each other; the pools place each worker and computer freely and may split a pair
+- *(qb)* the master's NextTerm burst (terms x series pushes from one handler) leaves for a remote core only in the flush that follows the handler, so at cores=2 no remote chain starts before the master has pushed the whole burst; CAF's and SObjectizer's pools can run a worker on the other thread from the first message the master enqueues for it, and the floor's thread 1 drains its ring while the burst is still being sent -- the `held` observation beside the cell says how much of the burst each found waiting
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the master, the workers and the computers are placed by the thread_pool: which thread runs a worker's or a computer's next demand is the dispatcher's decision, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
+- *(sobjectizer)* a chain redirects ONE mutable message (so_5::send(mbox, std::move(cmd)), SObjectizer's redirection of a mutable message): no message is allocated per hop, though the thread_pool's queue allocates one demand node per delivery (thread_pool/impl/basic_event_queue.hpp, push()); qb's reply() re-sends the received event as a copy into its pipe; NextTerm and GetTerm are signals, which carry no instance
+
+</details>
+
+## savina/nqueens
+
+### 1c-park
+
+| framework | verified | median | per solution | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 189.76 ms | 13.36 us | 1.09 ms | 193.56 ms |
+| `caf` | yes | 200.64 ms | 14.13 us | 985.80 us | 203.99 ms |
+| `sobjectizer` | yes | 203.44 ms | 14.33 us | 2.99 ms | 205.02 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 184.29 ms | 12.98 us | 1.14 ms | 188.19 ms |
+
+`qb` is **1.06x** faster than `caf` in this configuration.
+
+The fastest framework costs **1.03x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A work item is one ring message carrying the packed board, a result and a done one word each, and the search is the same shared kernel every framework runs: the floor for relaying a work-distribution search through one master
+- *(baseline)* worker w is owned by thread w % cores and the master by thread 0, fixed before the window -- qb's placement exactly: with cores=2 the search is split the way the rotation splits it and never rebalanced, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* cores=1 is one thread with every actor's messages in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the master hands items out round-robin like every other cell, but a CAF worker is not bound to a thread: an idle scheduler thread steals a runnable worker, so the search is balanced dynamically where qb's cell keeps worker w on core w % cores
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* worker w lives on VirtualCore w % cores, fixed before start, and the master hands items out round-robin: qb has no work stealing, so an item lands on the core the rotation names even when the other core is idle -- the balance of the search across cores is the rotation's, and this cell measures it
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the master hands items out round-robin like every other cell, but which pool thread runs a worker's next demand is the thread_pool's decision, so the search is balanced by the dispatcher where qb's cell keeps worker w on core w % cores
+
+</details>
+
+### 1c-spin
+
+| framework | verified | median | per solution | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 190.26 ms | 13.40 us | 1.62 ms | 191.68 ms |
+| `caf` | yes | 204.00 ms | 14.37 us | 6.33 ms | 211.43 ms |
+| `sobjectizer` | yes | 204.20 ms | 14.38 us | 3.48 ms | 211.41 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 186.25 ms | 13.12 us | 1.97 ms | 189.71 ms |
+
+`qb` is **1.07x** faster than `caf` in this configuration.
+
+The fastest framework costs **1.02x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A work item is one ring message carrying the packed board, a result and a done one word each, and the search is the same shared kernel every framework runs: the floor for relaying a work-distribution search through one master
+- *(baseline)* worker w is owned by thread w % cores and the master by thread 0, fixed before the window -- qb's placement exactly: with cores=2 the search is split the way the rotation splits it and never rebalanced, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* cores=1 is one thread with every actor's messages in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the master hands items out round-robin like every other cell, but a CAF worker is not bound to a thread: an idle scheduler thread steals a runnable worker, so the search is balanced dynamically where qb's cell keeps worker w on core w % cores
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* worker w lives on VirtualCore w % cores, fixed before start, and the master hands items out round-robin: qb has no work stealing, so an item lands on the core the rotation names even when the other core is idle -- the balance of the search across cores is the rotation's, and this cell measures it
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the master hands items out round-robin like every other cell, but which pool thread runs a worker's next demand is the thread_pool's decision, so the search is balanced by the dispatcher where qb's cell keeps worker w on core w % cores
+
+</details>
+
+### 2c-park
+
+| framework | verified | median | per solution | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 98.27 ms | 6.92 us | 2.49 ms | 101.95 ms |
+| `caf` | yes | 104.13 ms | 7.33 us | 1.02 ms | 133.56 ms |
+| `sobjectizer` | yes | 106.14 ms | 7.47 us | 1.15 ms | 107.97 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 96.45 ms | 6.79 us | 1.78 ms | 103.89 ms |
+
+`qb` is **1.06x** faster than `caf` in this configuration.
+
+The fastest framework costs **1.02x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A work item is one ring message carrying the packed board, a result and a done one word each, and the search is the same shared kernel every framework runs: the floor for relaying a work-distribution search through one master
+- *(baseline)* worker w is owned by thread w % cores and the master by thread 0, fixed before the window -- qb's placement exactly: with cores=2 the search is split the way the rotation splits it and never rebalanced, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* cores=1 is one thread with every actor's messages in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the master hands items out round-robin like every other cell, but a CAF worker is not bound to a thread: an idle scheduler thread steals a runnable worker, so the search is balanced dynamically where qb's cell keeps worker w on core w % cores
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* worker w lives on VirtualCore w % cores, fixed before start, and the master hands items out round-robin: qb has no work stealing, so an item lands on the core the rotation names even when the other core is idle -- the balance of the search across cores is the rotation's, and this cell measures it
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the master hands items out round-robin like every other cell, but which pool thread runs a worker's next demand is the thread_pool's decision, so the search is balanced by the dispatcher where qb's cell keeps worker w on core w % cores
+
+</details>
+
+### 2c-spin
+
+| framework | verified | median | per solution | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 98.07 ms | 6.91 us | 1.28 ms | 118.37 ms |
+| `caf` | yes | 103.95 ms | 7.32 us | 699.20 us | 105.49 ms |
+| `sobjectizer` | yes | 106.21 ms | 7.48 us | 537.10 us | 107.85 ms |
+| | | | | | |
+| `baseline` *(floor)* | yes | 97.49 ms | 6.87 us | 6.41 ms | 116.30 ms |
+
+**`qb` and `caf` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
+
+The fastest framework costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. A work item is one ring message carrying the packed board, a result and a done one word each, and the search is the same shared kernel every framework runs: the floor for relaying a work-distribution search through one master
+- *(baseline)* worker w is owned by thread w % cores and the master by thread 0, fixed before the window -- qb's placement exactly: with cores=2 the search is split the way the rotation splits it and never rebalanced, so this floor bounds the placing frameworks and NOT the pools
+- *(baseline)* cores=1 is one thread with every actor's messages in its own ring -- the floor for single-threaded dispatch, still a real queue
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the master hands items out round-robin like every other cell, but a CAF worker is not bound to a thread: an idle scheduler thread steals a runnable worker, so the search is balanced dynamically where qb's cell keeps worker w on core w % cores
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* worker w lives on VirtualCore w % cores, fixed before start, and the master hands items out round-robin: qb has no work stealing, so an item lands on the core the rotation names even when the other core is idle -- the balance of the search across cores is the rotation's, and this cell measures it
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the master hands items out round-robin like every other cell, but which pool thread runs a worker's next demand is the thread_pool's decision, so the search is balanced by the dispatcher where qb's cell keeps worker w on core w % cores
+
+</details>
+
+## savina/philosophers
+
+### 1c-park
+
+| framework | verified | median | per meal | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 13.46 ms | 67 ns | 900.60 us | 16.23 ms |
+| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 103.55 ms | 518 ns | 1.37 ms | 107.44 ms |
+| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 145.17 ms | 726 ns | 962.80 us | 149.86 ms |
+| | <sub>**observed, not asserted**: `refused` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 15.11 ms | 76 ns | 210.90 us | 15.66 ms |
+| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **7.70x** faster than `sobjectizer` in this configuration.
+
+The fastest framework sits **below the floor** (0.89x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Philosophers are slots of a vector and the arbitrator has no mailbox: the 20 philosophers share one SPSC ring into worker 0, so the 20-producer fan-in the frameworks pay for is engineered out here by placement
+- *(baseline)* the arbitrator lives on thread 0 and philosopher i on thread 1 + i % (cores - 1), so with cores=2 every request and every answer crosses a core -- the same placement qb's cell fixes
+- *(baseline)* cores=1 is one thread with the arbitrator and the philosophers in its own ring -- the floor for single-threaded dispatch, still a real queue, and the cell this floor bounds
+- *(baseline)* with cores=2 the floor is NOT a bound: every message is its own ring hand-off to the other thread, where qb publishes a pass's events in one batched flush and runs under this floor -- read it there as the per-message cost of a hand-off
+- *(baseline)* how many requests are refused depends on the interleaving: it is REPORTED beside the cell (observed `refused`, Savina's 'Num retries'), never asserted; every refused request and its retry are delivered and timed
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 20 philosophers retrying is rare
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the arbitrator and the 20 philosophers are placed by the work-stealing pool, so whether the arbitrator's mailbox is a cross-core queue is the scheduler's decision; qb's cell pins the arbitrator alone on core 0 and every philosopher on the far side -- see benchmarks/savina/philosophers.md
+- *(caf, sobjectizer)* how many requests the arbitrator refuses depends on the interleaving: it is REPORTED beside the cell (observed `refused`, Savina's 'Num retries'), never asserted; every refused request and its retry are delivered and timed
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* placement is fixed before start: the arbitrator alone on VirtualCore 0 and the philosophers on the remaining cores (all on core 0 when cores=1), so with cores=2 every request and every answer crosses a core -- the pools place the arbitrator and the philosophers wherever stealing puts them
+- *(qb)* how many requests the arbitrator REFUSES (Savina's 'Num retries') depends on the interleaving: it is REPORTED beside the cell (observed `refused`), never asserted; every refused request and its retry are delivered and timed, so a framework whose scheduling makes philosophers collide more often does more work in the same cell -- that is the benchmark, as Savina defines it, and the observation says how much more
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the arbitrator and the 20 philosophers are placed by the thread_pool, so whether the arbitrator's queue is written cross-core is the dispatcher's decision; qb's cell pins the arbitrator alone on core 0 and every philosopher on the far side -- see benchmarks/savina/philosophers.md
+
+</details>
+
+### 1c-spin
+
+| framework | verified | median | per meal | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 13.81 ms | 69 ns | 829.70 us | 14.67 ms |
+| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 94.12 ms | 471 ns | 1.23 ms | 95.07 ms |
+| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 146.66 ms | 733 ns | 1.92 ms | 152.02 ms |
+| | <sub>**observed, not asserted**: `refused` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 9.69 ms | 48 ns | 135.80 us | 10.09 ms |
+| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **6.82x** faster than `sobjectizer` in this configuration.
+
+The fastest framework costs **1.42x the floor** — that multiple is what being a framework costs on this workload.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Philosophers are slots of a vector and the arbitrator has no mailbox: the 20 philosophers share one SPSC ring into worker 0, so the 20-producer fan-in the frameworks pay for is engineered out here by placement
+- *(baseline)* the arbitrator lives on thread 0 and philosopher i on thread 1 + i % (cores - 1), so with cores=2 every request and every answer crosses a core -- the same placement qb's cell fixes
+- *(baseline)* cores=1 is one thread with the arbitrator and the philosophers in its own ring -- the floor for single-threaded dispatch, still a real queue, and the cell this floor bounds
+- *(baseline)* with cores=2 the floor is NOT a bound: every message is its own ring hand-off to the other thread, where qb publishes a pass's events in one batched flush and runs under this floor -- read it there as the per-message cost of a hand-off
+- *(baseline)* how many requests are refused depends on the interleaving: it is REPORTED beside the cell (observed `refused`, Savina's 'Num retries'), never asserted; every refused request and its retry are delivered and timed
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 20 philosophers retrying is rare
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the arbitrator and the 20 philosophers are placed by the work-stealing pool, so whether the arbitrator's mailbox is a cross-core queue is the scheduler's decision; qb's cell pins the arbitrator alone on core 0 and every philosopher on the far side -- see benchmarks/savina/philosophers.md
+- *(caf, sobjectizer)* how many requests the arbitrator refuses depends on the interleaving: it is REPORTED beside the cell (observed `refused`, Savina's 'Num retries'), never asserted; every refused request and its retry are delivered and timed
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* placement is fixed before start: the arbitrator alone on VirtualCore 0 and the philosophers on the remaining cores (all on core 0 when cores=1), so with cores=2 every request and every answer crosses a core -- the pools place the arbitrator and the philosophers wherever stealing puts them
+- *(qb)* how many requests the arbitrator REFUSES (Savina's 'Num retries') depends on the interleaving: it is REPORTED beside the cell (observed `refused`), never asserted; every refused request and its retry are delivered and timed, so a framework whose scheduling makes philosophers collide more often does more work in the same cell -- that is the benchmark, as Savina defines it, and the observation says how much more
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the arbitrator and the 20 philosophers are placed by the thread_pool, so whether the arbitrator's queue is written cross-core is the dispatcher's decision; qb's cell pins the arbitrator alone on core 0 and every philosopher on the far side -- see benchmarks/savina/philosophers.md
+
+</details>
+
+### 2c-park
+
+| framework | verified | median | per meal | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 24.54 ms | 123 ns | 619.40 us | 34.50 ms |
+| | <sub>**observed, not asserted**: `refused` median 308,190 [303,642–312,888] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 218.68 ms | 1.09 us | 10.21 ms | 235.44 ms |
+| | <sub>**observed, not asserted**: `refused` median 112,058 [101,800–132,819] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 814.55 ms | 4.07 us | 170.67 ms | 1,447.70 ms |
+| | <sub>**observed, not asserted**: `refused` median 1,290,886 [960,038–2,649,492] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 77.81 ms | 389 ns | 3.21 ms | 88.68 ms |
+| | <sub>**observed, not asserted**: `refused` median 134,436 [128,803–160,713] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **8.91x** faster than `sobjectizer` in this configuration.
+
+The fastest framework sits **below the floor** (0.32x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Philosophers are slots of a vector and the arbitrator has no mailbox: the 20 philosophers share one SPSC ring into worker 0, so the 20-producer fan-in the frameworks pay for is engineered out here by placement
+- *(baseline)* the arbitrator lives on thread 0 and philosopher i on thread 1 + i % (cores - 1), so with cores=2 every request and every answer crosses a core -- the same placement qb's cell fixes
+- *(baseline)* cores=1 is one thread with the arbitrator and the philosophers in its own ring -- the floor for single-threaded dispatch, still a real queue, and the cell this floor bounds
+- *(baseline)* with cores=2 the floor is NOT a bound: every message is its own ring hand-off to the other thread, where qb publishes a pass's events in one batched flush and runs under this floor -- read it there as the per-message cost of a hand-off
+- *(baseline)* how many requests are refused depends on the interleaving: it is REPORTED beside the cell (observed `refused`, Savina's 'Num retries'), never asserted; every refused request and its retry are delivered and timed
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 20 philosophers retrying is rare
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the arbitrator and the 20 philosophers are placed by the work-stealing pool, so whether the arbitrator's mailbox is a cross-core queue is the scheduler's decision; qb's cell pins the arbitrator alone on core 0 and every philosopher on the far side -- see benchmarks/savina/philosophers.md
+- *(caf, sobjectizer)* how many requests the arbitrator refuses depends on the interleaving: it is REPORTED beside the cell (observed `refused`, Savina's 'Num retries'), never asserted; every refused request and its retry are delivered and timed
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* placement is fixed before start: the arbitrator alone on VirtualCore 0 and the philosophers on the remaining cores (all on core 0 when cores=1), so with cores=2 every request and every answer crosses a core -- the pools place the arbitrator and the philosophers wherever stealing puts them
+- *(qb)* how many requests the arbitrator REFUSES (Savina's 'Num retries') depends on the interleaving: it is REPORTED beside the cell (observed `refused`), never asserted; every refused request and its retry are delivered and timed, so a framework whose scheduling makes philosophers collide more often does more work in the same cell -- that is the benchmark, as Savina defines it, and the observation says how much more
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the arbitrator and the 20 philosophers are placed by the thread_pool, so whether the arbitrator's queue is written cross-core is the dispatcher's decision; qb's cell pins the arbitrator alone on core 0 and every philosopher on the far side -- see benchmarks/savina/philosophers.md
+
+</details>
+
+### 2c-spin
+
+| framework | verified | median | per meal | IQR | p99 |
+|---|---|---:|---:|---:|---:|
+| `qb` | yes | 33.38 ms | 167 ns | 2.98 ms | 37.82 ms |
+| | <sub>**observed, not asserted**: `refused` median 302,797 [284,144–313,176] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `sobjectizer` | yes | 205.56 ms | 1.03 us | 12.80 ms | 221.69 ms |
+| | <sub>**observed, not asserted**: `refused` median 123,102 [102,266–142,594] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 776.43 ms | 3.88 us | 137.70 ms | 1,195.86 ms |
+| | <sub>**bimodal**: 1 of 9 repetitions at ~1.54 us per meal, 8 at ~3.98 us. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
+| | <sub>**observed, not asserted**: `refused` median 1,235,098 [324,033–2,004,064] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| | | | | | |
+| `baseline` *(floor)* | yes | 53.99 ms | 270 ns | 8.48 ms | 70.54 ms |
+| | <sub>**observed, not asserted**: `refused` median 108,664 [101,812–239,253] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+
+`qb` is **6.16x** faster than `sobjectizer` in this configuration.
+
+The fastest framework sits **below the floor** (0.62x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+
+<details><summary>Caveats recorded by the implementations themselves</summary>
+
+- *(baseline)* THIS IS NOT A FRAMEWORK. Philosophers are slots of a vector and the arbitrator has no mailbox: the 20 philosophers share one SPSC ring into worker 0, so the 20-producer fan-in the frameworks pay for is engineered out here by placement
+- *(baseline)* the arbitrator lives on thread 0 and philosopher i on thread 1 + i % (cores - 1), so with cores=2 every request and every answer crosses a core -- the same placement qb's cell fixes
+- *(baseline)* cores=1 is one thread with the arbitrator and the philosophers in its own ring -- the floor for single-threaded dispatch, still a real queue, and the cell this floor bounds
+- *(baseline)* with cores=2 the floor is NOT a bound: every message is its own ring hand-off to the other thread, where qb publishes a pass's events in one batched flush and runs under this floor -- read it there as the per-message cost of a hand-off
+- *(baseline)* how many requests are refused depends on the interleaving: it is REPORTED beside the cell (observed `refused`, Savina's 'Num retries'), never asserted; every refused request and its retry are delivered and timed
+- *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 20 philosophers retrying is rare
+- *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
+- *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
+- *(caf)* in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported
+- *(caf)* no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)
+- *(caf)* CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship
+- *(caf)* the arbitrator and the 20 philosophers are placed by the work-stealing pool, so whether the arbitrator's mailbox is a cross-core queue is the scheduler's decision; qb's cell pins the arbitrator alone on core 0 and every philosopher on the far side -- see benchmarks/savina/philosophers.md
+- *(caf, sobjectizer)* how many requests the arbitrator refuses depends on the interleaving: it is REPORTED beside the cell (observed `refused`, Savina's 'Num retries'), never asserted; every refused request and its retry are delivered and timed
+- *(qb)* qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off
+- *(qb)* wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue
+- *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
+- *(qb)* placement is fixed before start: the arbitrator alone on VirtualCore 0 and the philosophers on the remaining cores (all on core 0 when cores=1), so with cores=2 every request and every answer crosses a core -- the pools place the arbitrator and the philosophers wherever stealing puts them
+- *(qb)* how many requests the arbitrator REFUSES (Savina's 'Num retries') depends on the interleaving: it is REPORTED beside the cell (observed `refused`), never asserted; every refused request and its retry are delivered and timed, so a framework whose scheduling makes philosophers collide more often does more work in the same cell -- that is the benchmark, as Savina defines it, and the observation says how much more
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
+- *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
+- *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
+- *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
+- *(sobjectizer)* the arbitrator and the 20 philosophers are placed by the thread_pool, so whether the arbitrator's queue is written cross-core is the dispatcher's decision; qb's cell pins the arbitrator alone on core 0 and every philosopher on the far side -- see benchmarks/savina/philosophers.md
 
 </details>
 

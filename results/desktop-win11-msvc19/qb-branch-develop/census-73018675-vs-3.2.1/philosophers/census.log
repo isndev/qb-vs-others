@@ -1,0 +1,24 @@
+
+savina/philosophers: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2
+
+  1c-spin
+    cand         median-of-medians     65.2   min     64.4   max     68.0   n=12   [68 68 65 65 65 65 64 65 65 66 65 66]
+    shipped      median-of-medians     66.0   min     64.9   max     67.7   n=12   [67 66 66 66 67 66 65 68 67 65 68 65]
+    cand vs shipped: 65.2 vs 66.0 (-1.2%) -- distributions OVERLAP: no measurable difference
+
+  1c-park
+    cand         median-of-medians     65.6   min     64.1   max     66.1   n=12   [65 66 65 64 66 66 66 65 66 66 66 65]
+    shipped      median-of-medians     66.2   min     65.1   max     67.6   n=12   [67 67 66 66 66 65 66 66 68 66 66 66]
+    cand vs shipped: 65.6 vs 66.2 (-0.9%) -- distributions OVERLAP: no measurable difference
+
+  2c-spin
+    cand         median-of-medians    187.5   min    121.7   max    202.3   n=12   [184 201 187 202 122 201 185 191 192 188 144 143]
+    shipped      median-of-medians    154.8   min    122.4   max    194.8   n=12   [185 157 159 195 132 194 152 137 144 134 122 188]
+    cand vs shipped: 187.5 vs 154.8 (+21.2%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians    181.6   min    134.7   max    195.7   n=12   [173 189 178 196 185 172 135 194 188 172 192 166]
+    shipped      median-of-medians    186.9   min    141.5   max    203.2   n=12   [203 187 142 189 171 192 182 189 179 189 187 174]
+    cand vs shipped: 181.6 vs 186.9 (-2.8%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 96 launches, 0 not verified -> D:\repo\qvo-wave-a\build\wa-out\census\philosophers

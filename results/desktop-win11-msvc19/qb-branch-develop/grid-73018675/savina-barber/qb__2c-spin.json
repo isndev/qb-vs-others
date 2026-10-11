@@ -1,0 +1,47 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/barber",
+  "framework": "qb",
+  "framework_version": "3.2.1",
+  "verified": true,
+  "expected_checksum": 1788098052791974171,
+  "expected_messages": 0,
+  "work_unit": "haircut",
+  "work_units": 5000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"ahr": 1000, "apr": 1000, "cores": 2, "haircuts": 5000, "pace": 0, "room": 5000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:03:01Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md: send<T>() (into the peer's ring at once, not at the pass's flush) + addRefActor<T>() (same-core child, onInit run synchronously) + kill()",
+    "note": "pace=0: every customer from one Start handler, as the reference; pace=1: one per self-addressed Start; the customer handed to the room with send<Enter> in both; customers are addRefActor children of the factory, killed after reporting; room and barber share a core"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "the factory hands each customer to the room with send<Enter>, which publishes it into the room's core at once; a push would be published by the pass's flush after the handler, and with pace=0 -- the reference's factory, every customer from one handler -- would hold every customer until production ended. The run's `pace` is in its params; pace=1 adds n-1 self-addressed Starts to the reported count", "with cores=2 the factory and every customer live on core 0 (a customer is created on its creator's core) and the room and the barber on core 1, so the barber's Next -> Enter turn stays on his core and production overlaps haircuts -- the static placement the floor has; the pools place by themselves"],
+  "failures": [],
+  "work_ns": [14185500.0, 14047000.0, 14531000.0, 14010200.0, 14132600.0, 14060500.0, 14591500.0, 14147700.0, 14059900.0],
+  "total_ns": [15319000.0, 16576300.0, 15698100.0, 16388900.0, 15205400.0, 16455800.0, 15658100.0, 16392400.0, 16960500.0],
+  "outside_window_ns": [1133500.0, 2529300.0, 1167100.0, 2378700.0, 1072800.0, 2395300.0, 1066600.0, 2244700.0, 2900600.0],
+  "observed": {
+    "rejections": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0},
+    "wakeups": {"samples": [46, 32, 66, 47, 43, 58, 62, 51, 54], "min": 32, "p50": 51.0, "max": 66}
+  },
+  "observed_at_least": {"wakeups": 1},
+  "summary": {
+    "work_min": 14010200.0,
+    "work_p50": 14132600.0,
+    "work_p99": 14586660.0,
+    "work_iqr": 125600.0
+  }
+}

@@ -1,0 +1,10 @@
+   cpu% (census start): 0.5 0.8 1.6
+== E-census-quiet-30s 2026-10-11T01:32:00Z
+== E-census-start 2026-10-11T01:32:30Z
+fork-join-create: launch-census.py: 96 launches, 0 not verified -> D:\repo\qvo-wave-a\build\wa-out\census\fork-join-create
+fib: launch-census.py: 96 launches, 0 not verified -> D:\repo\qvo-wave-a\build\wa-out\census\fib
+philosophers: launch-census.py: 96 launches, 0 not verified -> D:\repo\qvo-wave-a\build\wa-out\census\philosophers
+concdict: launch-census.py: 96 launches, 0 not verified -> D:\repo\qvo-wave-a\build\wa-out\census\concdict
+nqueens: launch-census.py: 48 launches, 0 not verified -> D:\repo\qvo-wave-a\build\wa-out\census\nqueens
+logmap: launch-census.py: 96 launches, 0 not verified -> D:\repo\qvo-wave-a\build\wa-out\census\logmap
+== E-census-end 2026-10-11T01:33:44Z

@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/concdict",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 15850935008049653307,
+  "expected_messages": 400042,
+  "work_unit": "operation",
+  "work_units": 200000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "form": 0, "keys": 524287, "messages": 10000, "wait": 0, "workers": 20, "write": 10},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:06:35Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (thread, thread) pair; master and dictionary on thread 0, worker w on thread (1 + w) % cores; a request is a push carrying the worker's index, the answer a push back; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Workers are slots of a vector with no mailbox, and the dictionary's twenty-writer fan-in is a scan of one SPSC ring per thread, not a shared mailbox: the per-actor queue every framework keeps is engineered out", "the master and the dictionary live on thread 0 and worker w on thread (1 + w) % cores -- the same placement qb's cell fixes -- so with cores=2 half the round trips cross a core", "no request/response primitive: the form=1 documents are not applicable here, by the harness's third verdict, and this form=0 cell is the floor for both forms", "the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the threads by the thread that runs the repetition; its lookups are part of the floor's figure as of every framework's", "cores=1 is one thread with every role in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle thread on a condition variable"],
+  "failures": [],
+  "work_ns": [23601700.0, 23318600.0, 21231500.0, 23469200.0, 23606700.0, 22530200.0, 22507000.0, 25428300.0, 22997400.0],
+  "total_ns": [71030200.0, 62785800.0, 58746300.0, 60479500.0, 63189100.0, 60131400.0, 60295400.0, 67651500.0, 64155700.0],
+  "outside_window_ns": [47428500.0, 39467200.0, 37514800.0, 37010300.0, 39582400.0, 37601200.0, 37788400.0, 42223200.0, 41158300.0],
+  "summary": {
+    "work_min": 21231500.0,
+    "work_p50": 23318600.0,
+    "work_p99": 25282572.0,
+    "work_iqr": 1071500.0
+  }
+}

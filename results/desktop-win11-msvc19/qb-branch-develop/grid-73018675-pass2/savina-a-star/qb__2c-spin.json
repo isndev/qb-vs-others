@@ -1,0 +1,46 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/a-star",
+  "framework": "qb",
+  "framework_version": "3.2.1",
+  "verified": true,
+  "expected_checksum": 4796879656839427763,
+  "expected_messages": 0,
+  "work_unit": "node",
+  "work_units": 20515,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "grid": 30, "threshold": 1024, "wait": 1, "work": 100, "workers": 20},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:19:38Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md: forward(dest, e) from a non-const on(Event &) + the big adapter's statically placed field",
+    "note": "the master relays each handed-back Work with forward() to the next worker round-robin; a worker pushes its frontier back as Work events then one Ack on the same pipe; actor a on VirtualCore a % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "actor a lives on VirtualCore a % cores (master = 0, search worker w = w + 1), fixed before start: the only redistribution is the master's round-robin, Savina's own, so with cores=2 a node handed back crosses a core whenever its next worker lives on the other one", "the claim slots are shared memory every worker CASes, as in Savina's own implementation -- the one input not passed by message, identical for every framework (a-star.h, Claims)"],
+  "failures": [],
+  "work_ns": [3160500.0, 3164100.0, 3141800.0, 3409000.0, 3102400.0, 3206100.0, 3129600.0, 3523700.0, 3143800.0],
+  "total_ns": [6988100.0, 5390600.0, 7180800.0, 5746700.0, 7084800.0, 7188200.0, 7499000.0, 7367700.0, 6648600.0],
+  "outside_window_ns": [3827600.0, 2226500.0, 4039000.0, 2337700.0, 3982400.0, 3982100.0, 4369400.0, 3844000.0, 3504800.0],
+  "observed": {
+    "work_messages": {"samples": [1322, 1371, 1338, 1442, 1320, 1351, 1478, 1448, 1364], "min": 1320, "p50": 1364.0, "max": 1478}
+  },
+  "observed_at_least": {"work_messages": 21},
+  "summary": {
+    "work_min": 3102400.0,
+    "work_p50": 3160500.0,
+    "work_p99": 3514524.0,
+    "work_iqr": 64300.0
+  }
+}

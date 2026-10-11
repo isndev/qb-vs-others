@@ -1,0 +1,47 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bndbuffer",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 13580315395847872333,
+  "expected_messages": 160080,
+  "work_unit": "item",
+  "work_units": 40000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"buffer": 50, "cons_cost": 25, "consumers": 40, "cores": 1, "items": 1000, "prod_cost": 25, "producers": 40, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:06:30Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; Savina's protocol with the manager's lists as rings; actor a on worker a % cores (manager 0, producers 1.., consumers after); not an actor framework"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Every actor is a fixed id with a cache-line slot, every message one ring push: the floor for what this coordination costs", "the manager is on worker 0, producer i on worker (1 + i) % cores and consumer j on worker (1 + producers + j) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [529544000.0, 530520900.0, 525580800.0, 531884900.0, 525405500.0, 527809000.0, 525082400.0, 526334900.0, 532288700.0],
+  "total_ns": [529907500.0, 530865500.0, 525930000.0, 532243000.0, 525761800.0, 528160400.0, 525440400.0, 526683800.0, 532642000.0],
+  "outside_window_ns": [363500.0, 344600.0, 349200.0, 358100.0, 356300.0, 351400.0, 358000.0, 348900.0, 353300.0],
+  "observed": {
+    "buffer_peak": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0},
+    "consumer_waits": {"samples": [40000, 40000, 40000, 40000, 40000, 40000, 40000, 40000, 40000], "min": 40000, "p50": 40000.0, "max": 40000},
+    "producer_waits": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0}
+  },
+  "summary": {
+    "work_min": 525082400.0,
+    "work_p50": 527809000.0,
+    "work_p99": 532256396.0,
+    "work_iqr": 4940100.0
+  }
+}

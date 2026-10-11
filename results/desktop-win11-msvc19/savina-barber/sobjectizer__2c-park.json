@@ -1,0 +1,47 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/barber",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 1788098052791974171,
+  "expected_messages": 0,
+  "work_unit": "haircut",
+  "work_units": 5000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"ahr": 1000, "apr": 1000, "cores": 2, "haircuts": 5000, "pace": 0, "room": 5000, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:16:11Z"
+  },
+  "idiom": {
+    "source": "the fib adapter + so_5::introduce_child_coop (environment.hpp) + so_deregister_agent_coop_normally",
+    "note": "the reference's actors one for one on direct mboxes, payload-free messages as signals; pace=0: the Start handler loops over every customer (child coop, Enter, busy-work) as the reference does, pace=1: one per self-sent Start; thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "SObjectizer creates agents only inside a cooperation registered with the environment, so every customer pays one child-coop registration and one deregistration on top of the agent itself -- the framework's own dynamic-agent idiom, as in savina/fib", "the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler; 1 adds n-1 self-sent Starts to the reported count (benchmarks/savina/barber.md)", "SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop (unbinding the agent from the dispatcher, releasing the coop and its agent) on a dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/mt_env_infrastructure.cpp), handed each finished coop by the work threads under a shared mutex: 5 000 customer coops per repetition here. That thread is OUTSIDE the `cores` work-thread budget, runs inside the pinned CPU set competing with the work threads, and the coops still in its chain when the window closes are released after it -- see benchmarks/savina/barber.md, \"The measured window\""],
+  "failures": [],
+  "work_ns": [23157700.0, 42391900.0, 25580100.0, 25137900.0, 24318400.0, 32800500.0, 25021600.0, 24269000.0, 34385900.0],
+  "total_ns": [24071700.0, 43211300.0, 26262200.0, 26119100.0, 27821500.0, 34920900.0, 25567900.0, 27844800.0, 34952800.0],
+  "outside_window_ns": [914000.0, 819400.0, 682100.0, 981200.0, 3503100.0, 2120400.0, 546300.0, 3575800.0, 566900.0],
+  "observed": {
+    "rejections": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0},
+    "wakeups": {"samples": [479, 744, 1924, 1357, 3382, 52, 840, 2937, 2756], "min": 52, "p50": 1357.0, "max": 3382}
+  },
+  "observed_at_least": {"wakeups": 1},
+  "summary": {
+    "work_min": 23157700.0,
+    "work_p50": 25137900.0,
+    "work_p99": 41751420.0,
+    "work_iqr": 8482100.0
+  }
+}

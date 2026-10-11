@@ -1,0 +1,14 @@
+
+savina/nqueens: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2
+
+  2c-spin
+    cand         median-of-medians   6981.6   min   6903.0   max   7399.4   n=12   [6955 7020 7399 6903 6935 6952 6996 6969 6998 6994 6926 7000]
+    shipped      median-of-medians   6901.4   min   6838.0   max   8170.7   n=12   [6857 6838 6862 8171 6899 7320 6907 6904 6876 6922 6917 6841]
+    cand vs shipped: 6981.6 vs 6901.4 (+1.2%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians   7025.0   min   6915.6   max   8235.2   n=12   [7060 6994 8235 6957 7018 6952 7585 6997 6916 7036 7032 7093]
+    shipped      median-of-medians   6892.2   min   6804.9   max   7034.4   n=12   [6947 6887 6870 6850 6882 6875 6897 7034 6805 6935 6997 6934]
+    cand vs shipped: 7025.0 vs 6892.2 (+1.9%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> D:\repo\qvo-wave-a\build\wa-out\census\nqueens

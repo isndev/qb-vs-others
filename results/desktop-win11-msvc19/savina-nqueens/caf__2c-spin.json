@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/nqueens",
+  "framework": "caf",
+  "framework_version": "1.1.0",
+  "verified": true,
+  "expected_checksum": 77555313403798665,
+  "expected_messages": 29076,
+  "work_unit": "solution",
+  "work_units": 14200,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "size": 12, "threshold": 4, "wait": 1, "workers": 20},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:12:35Z"
+  },
+  "idiom": {
+    "source": "the fib / big adapters (function-based behaviors, stateful_actor, self->spawn from init, tick/ok handshake)",
+    "note": "(put_atom, w0, w1) items both ways, (add_atom, hash) results, (ok_atom, chk) dones; the master relays round-robin and the work-stealing pool decides where each worker runs"
+  },
+  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship", "the master hands items out round-robin like every other cell, but a CAF worker is not bound to a thread: an idle scheduler thread steals a runnable worker, so the search is balanced dynamically where qb's cell keeps worker w on core w % cores"],
+  "failures": [],
+  "work_ns": [103952100.0, 105585200.0, 103169100.0, 103659400.0, 104444500.0, 104358600.0, 102828900.0, 103682100.0, 104281000.0],
+  "total_ns": [104386900.0, 106319300.0, 103635000.0, 104079100.0, 104863200.0, 104886600.0, 103305400.0, 104157100.0, 104860900.0],
+  "outside_window_ns": [434800.0, 734100.0, 465900.0, 419700.0, 418700.0, 528000.0, 476500.0, 475000.0, 579900.0],
+  "summary": {
+    "work_min": 102828900.0,
+    "work_p50": 103952100.0,
+    "work_p99": 105493944.0,
+    "work_iqr": 699200.0
+  }
+}

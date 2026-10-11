@@ -799,6 +799,967 @@
       "framework": "sobjectizer",
       "config": "1c-park",
       "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "baseline",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "caf",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "caf",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "caf",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "caf",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "qb",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "qb",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "qb",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "qb",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/a-star",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/barber",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/bndbuffer",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/cigsmok",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concdict",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/concsll",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/fork-join-create",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/logmap",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/nqueens",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "sobjectizer",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "sobjectizer",
+      "config": "2c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "sobjectizer",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/philosophers",
+      "framework": "sobjectizer",
+      "config": "1c-park",
+      "status": "ok"
     }
-  ]
+  ],
+  "merged_partial_runs": 1
 }

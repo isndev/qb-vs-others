@@ -18,6 +18,11 @@ every `savina-*/` directory's `qb` row comes from.
 
 | directory | qb at | what |
 |---|---|---|
+| `grid-73018675/` | `develop` **`73018675`** — the 3.3.0 candidate, 92 commits over v3.2.1 (`build/wa-cnd`, a qb-only build of a `git archive` of that commit through the adapters of qb-vs-others `ffee4111`, MSVC 19.51.36256, 0 warnings), measured on 2026-10-11, **01:03:00–01:06:04 UTC** after 60 s of quiet (the WSL2 half ran first, 00:35–01:01 UTC, this side idle) | **40 cells** — the ten Savina wave-A shapes × four configurations — qb only, all verified: leg A of the wave-A session; `session.log` (the legs, `\Processor(_Total)` at both ends) and the three `run-leg-*.log` beside the documents. Their `framework_version` reads 3.2.1: `develop` reports the last tag until the train bumps it. The section at the end of this file reads it |
+| `../savina-<shape>/` for the ten wave-A shapes | shipped **v3.2.1** `82ac0531` (`build/wa-shp`, the same harness tree), 01:06:04–01:19:37 | leg C: **the field**, 160 cells (qb, CAF 1.1.0, SObjectizer 5.8.5.1, the floor), 9 + 2, 0 unverified, merged into `../run.json` (`merged_partial_runs` 1) — the candidate's same-session control |
+| `grid-73018675-pass2/` | `73018675`, 01:19:37–01:22:42 | leg A2: the candidate again, 40 / 40 verified |
+| `../wave-a-form-sweep/` | 3.2.1 / CAF / SObjectizer, 01:22:42–01:27:56 | leg D: the forms the wave-A adapters declare pending a quiet-host measurement (FAIRNESS.md §1.1) — `concdict` and `concsll` at `form=1` for qb and CAF, `logmap`'s SObjectizer under `QVO_SO_GROUP_COOPS=1` at two cores — 18 side documents, all verified, never table cells |
+| `census-73018675-vs-3.2.1/` | `73018675` against 3.2.1, 01:32:30–01:33:44 | leg E, a second quiet window (the WSL2 census ran 01:30:47–01:31:34, this side idle): 12 interleaved launches of 3 + 1 in AB/BA order on fork-join-create, `fib`, philosophers, concdict and logmap at four configurations and nqueens at two cores — 528 launches, 0 unverified, `census.log` per shape |
 | `grid-f2779605/` | `develop` **`f2779605`** — **the RELEASE CANDIDATE** as it ships (`77b358d8` + the train's doc commits + QB-211's CMake; `src/` differs by comments only), measured on 2026-09-13, **03:20:04–03:20:18 UTC+2** (`build/final` rebuilt at it, 60 s of quiet; WSL2 idle, its own session ran afterwards) | **32 cells**, qb only, all verified — leg A of the 2026-09-13 session, README.md's Windows `framework=qb` grid since; every cell inside the launch spread of `grid-77b358d8/` (`docs/TUNING.md` §13.5) |
 | `grid-shipped-3.1.0-20260913/` | v3.1.0 (`build/shipped-win`), 03:20:18–03:23:03 | **32 cells**, the same-session control of leg A — no candidate cell is slower; agrees with `grid-shipped-3.1.0-final/` within the launch spread |
 | `../savina-*/` (the field itself) | the same `f2779605`, 03:23:03–03:30:22 | **132 cells, every framework** (qb, CAF, CAF-detached, SObjectizer, floor), 9 + 2, 0 unverified, 2 `n/a` — leg C: the published field re-measured in the candidate's session, `results/desktop-win11-msvc19/run.json` fresh, README.md's five Windows tables re-transcribed from it |
@@ -131,3 +136,73 @@ At `43f62afe` all nine of qb's own GitHub lanes are green (`cmake`, `sanitize`,
 `format-check`, `scaffold`); the Windows/MSVC suite at the chain's last core commit `a61bded8`
 is in `../qb-branch-perf-ask-slot-table/README.md` (Release 188 / 188 / 0, standalone SSL-off
 qb). `docs/TUNING.md` §13 carries the two-host reading and the deltas against the WSL2 half.
+
+## Wave A: shipped 3.2.1 against the 3.3.0 candidate on the ten new shapes (2026-10-11)
+
+The Windows half of the wave-A session (the WSL2 half, and the same layout, is
+`../../wsl-debian-g++14/qb-branch-develop/`): the candidate (leg A, `grid-73018675/`), the whole
+field with **shipped qb v3.2.1** as its qb column (leg C, `../savina-<shape>/`), the candidate again
+(leg A2, `grid-73018675-pass2/`), 9 + 2, CPUs 0 and 2, then the interleaved census in a second
+quiet window (leg E, `census-73018675-vs-3.2.1/`). qb only, ns per unit, p50; "sep" marks a
+candidate pass whose [min, p99] does not overlap the control's; the census column is the median
+of the twelve launch medians, shipped → candidate. The field beside these cells is in
+`../REPORT.md` and `docs/TUNING.md` §21.
+
+| shape (per unit) | config | shipped 3.2.1 | **`73018675`** | pass 2 | Δ (p50), pass 1 / pass 2 | min: 3.2.1 / cand / pass 2 | census, shipped → candidate |
+|---|---|---|---|---|---|---|---|
+| `fork-join-create` (actor) | 1c-spin | 102.9 | **101.5** | 98.5 | -1.4 % / -4.3 % | 102.0 / 98.8 / 98.2 | 105.2 → 104.2 (-0.9 %, overlap) |
+|  | 1c-park | 104.0 | **101.9** | 99.4 | -2.1 % / -4.5 % | 97.5 / 97.4 / 96.9 | 103.3 → 104.6 (+1.3 %, overlap) |
+|  | 2c-spin | 54.1 | **57.3** | 58.1 | +6.0 % / +7.4 % | 52.3 / 55.7 / 53.9 | 56.6 → 58.0 (+2.6 %, overlap) |
+|  | 2c-park | 55.8 | **55.6** | 57.9 | -0.4 % / +3.7 % | 54.4 / 53.2 / 56.2 | 56.1 → 57.0 (+1.8 %, overlap) |
+| `nqueens` (solution) | 1c-spin | 13,398.6 | **13,526.6** | 13,774.6 | +1.0 % / +2.8 % sep | 13,225.6 / 13,422.4 / 13,565.0 | — |
+|  | 1c-park | 13,363.7 | **13,723.6** | 13,643.1 | +2.7 % / +2.1 % | 13,303.8 / 13,472.9 / 13,550.7 | — |
+|  | 2c-spin | 6,906.5 | **7,024.5** | 7,001.3 | +1.7 % / +1.4 % | 6,831.7 / 6,947.9 / 6,923.6 | 6,901.4 → 6,981.6 (+1.2 %, overlap) |
+|  | 2c-park | 6,920.2 | **7,054.6** | 6,983.4 | +1.9 % / +0.9 % | 6,855.2 / 7,000.5 / 6,925.6 | 6,892.2 → 7,025.0 (+1.9 %, overlap) |
+| `a-star` (node) | 1c-spin | 280.3 | **285.6** | 285.7 | +1.9 % / +1.9 % | 277.7 / 281.0 / 281.4 | — |
+|  | 1c-park | 283.7 | **285.1** | 282.2 | +0.5 % / -0.5 % | 281.5 / 279.1 / 280.2 | — |
+|  | 2c-spin | 151.8 | **152.9** | 154.1 | +0.7 % / +1.5 % | 150.6 / 150.6 / 151.2 | — |
+|  | 2c-park | 153.6 | **161.6** | 154.0 | +5.2 % / +0.2 % | 151.8 / 156.8 / 151.3 | — |
+| `philosophers` (meal) | 1c-spin | 69.0 | **67.7** | 64.1 | -1.9 % / -7.1 % sep | 65.8 / 65.4 / 63.4 | 66.0 → 65.2 (-1.2 %, overlap) |
+|  | 1c-park | 67.3 | **66.3** | 64.7 | -1.4 % / -3.8 % | 65.5 / 64.9 / 63.4 | 66.2 → 65.6 (-0.9 %, overlap) |
+|  | 2c-spin | 166.9 | **154.1** | 187.7 | -7.7 % / +12.5 % | 131.6 / 118.1 / 140.2 | 154.8 → 187.5 (+21.2 %, overlap) |
+|  | 2c-park | 122.7 | **181.8** | 172.4 | +48.2 % / +40.5 % | 117.3 / 122.8 / 129.7 | 186.9 → 181.6 (-2.8 %, overlap) |
+| `barber` (haircut) | 1c-spin | 2,872.2 | **2,912.5** | 3,010.6 | +1.4 % / +4.8 % | 2,845.2 / 2,845.9 / 2,901.7 | — |
+|  | 1c-park | 2,861.0 | **2,889.3** | 2,883.3 | +1.0 % / +0.8 % | 2,841.2 / 2,846.9 / 2,867.2 | — |
+|  | 2c-spin | 2,797.9 | **2,826.5** | 2,921.1 | +1.0 % / +4.4 % | 2,770.6 / 2,802.0 / 2,824.5 | — |
+|  | 2c-park | 2,800.5 | **2,825.3** | 2,845.2 | +0.9 % / +1.6 % | 2,793.5 / 2,787.5 / 2,804.2 | — |
+| `bndbuffer` (item) | 1c-spin | 13,110.0 | **12,982.5** | 13,064.1 | -1.0 % / -0.4 % | 12,996.2 / 12,958.5 / 13,020.7 | — |
+|  | 1c-park | 13,146.2 | **12,984.1** | 13,022.1 | -1.2 % sep / -0.9 % | 13,104.4 / 12,955.4 / 13,000.9 | — |
+|  | 2c-spin | 6,671.6 | **6,617.6** | 6,658.8 | -0.8 % / -0.2 % | 6,611.5 / 6,599.2 / 6,628.9 | — |
+|  | 2c-park | 6,707.5 | **6,658.4** | 6,678.3 | -0.7 % / -0.4 % | 6,634.2 / 6,622.1 / 6,629.8 | — |
+| `cigsmok` (round) | 1c-spin | 1,352.0 | **1,399.9** | 1,355.8 | +3.5 % / +0.3 % | 1,343.2 / 1,352.3 / 1,346.6 | — |
+|  | 1c-park | 1,350.1 | **1,362.1** | 1,365.6 | +0.9 % / +1.1 % | 1,337.0 / 1,342.4 / 1,349.4 | — |
+|  | 2c-spin | 1,174.1 | **1,168.5** | 1,173.0 | -0.5 % / -0.1 % | 1,159.7 / 1,155.8 / 1,161.4 | — |
+|  | 2c-park | 1,173.2 | **1,199.4** | 1,189.6 | +2.2 % / +1.4 % | 1,153.9 / 1,154.6 / 1,173.6 | — |
+| `concdict` (operation) | 1c-spin | 59.2 | **54.7** | 54.4 | -7.5 % / -8.1 % | 52.4 / 51.4 / 50.0 | 53.8 → 53.4 (-0.9 %, overlap) |
+|  | 1c-park | 57.8 | **53.5** | 53.3 | -7.4 % / -7.8 % | 51.0 / 51.4 / 51.2 | 53.8 → 53.1 (-1.3 %, overlap) |
+|  | 2c-spin | 63.3 | **69.3** | 68.4 | +9.5 % / +8.1 % | 56.3 / 59.2 / 57.4 | 64.6 → 70.3 (+8.9 %, overlap) |
+|  | 2c-park | 72.1 | **66.0** | 66.8 | -8.4 % / -7.3 % | 64.3 / 64.0 / 64.1 | 64.0 → 68.6 (+7.1 %, overlap) |
+| `concsll` (request) | 1c-spin | 21,120.4 | **21,046.3** | 20,898.7 | -0.4 % / -1.0 % | 20,927.7 / 20,775.2 / 20,796.5 | — |
+|  | 1c-park | 21,014.7 | **20,939.6** | 21,073.6 | -0.4 % / +0.3 % | 20,909.5 / 20,822.4 / 20,950.7 | — |
+|  | 2c-spin | 21,588.4 | **21,307.2** | 21,156.0 | -1.3 % / -2.0 % | 21,228.4 / 21,281.6 / 21,111.0 | — |
+|  | 2c-park | 21,204.5 | **21,201.9** | 21,240.7 | -0.0 % / +0.2 % | 21,155.5 / 21,152.9 / 21,159.8 | — |
+| `logmap` (term) | 1c-spin | 26.3 | **25.1** | 24.2 | -4.5 % / -7.9 % | 23.1 / 24.5 / 21.6 | 24.9 → 25.0 (+0.2 %, overlap) |
+|  | 1c-park | 27.1 | **24.4** | 25.5 | -10.1 % / -6.1 % | 23.0 / 22.3 / 24.8 | 26.6 → 25.6 (-3.5 %, overlap) |
+|  | 2c-spin | 19.8 | **20.5** | 19.9 | +3.6 % / +0.3 % | 17.7 / 18.9 / 19.4 | 21.1 → 21.0 (-0.8 %, overlap) |
+|  | 2c-park | 21.1 | **19.1** | 19.7 | -9.6 % / -6.9 % | 20.1 / 17.1 / 19.4 | 18.6 → 18.8 (+1.1 %, overlap) |
+
+**All forty cells level.** No census cell separates, and the grid's three single-pass "sep"
+flags (nqueens 1c-spin pass 2 +2.8 %, philosophers 1c-spin pass 2 −7.1 %, bndbuffer 1c-park
+pass 1 −1.2 %) are not repeated by the other pass.
+
+- **fork-join-create at one core is level here** (−1.4 / −4.3 % in the grids, census −0.9 /
+  +1.3 %, overlapping) — the cell the candidate loses by 19–25 % on WSL2 / g++ does not move
+  on MSVC; `fib` is level at all four configurations (census −3.6 to +1.4 %).
+- **philosophers at two cores spans 117–213 ns per meal across the three grids** and 122–203
+  per launch in the census, on both builds: the grid's +48 / +40 % at 2c-park and −8 / +12 % at
+  2c-spin are which launch mode each pass fell in, and the census reads −2.8 % and +21.2 %,
+  overlapping.
+- **concdict**: in the grids −7 to −8 % at one core and at 2c-park, +8 to +10 % at 2c-spin; the
+  census reads −0.9 / −1.3 % at one core and +8.9 / +7.1 % at two, all overlapping.
+- **nqueens at two cores** carries the two levels of the WSL2 half (here ~6.9 and ~8.3 µs per
+  solution); census +1.2 / +1.9 %, overlapping.

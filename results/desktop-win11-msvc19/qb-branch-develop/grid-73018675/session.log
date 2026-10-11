@@ -1,0 +1,42 @@
+# Savina wave A, Windows session of 2026-10-11 (UTC): leg A candidate 73018675 -> grid-73018675/,
+# leg C the field with shipped qb v3.2.1 -> ../../savina-<shape>/ (merged into ../../run.json),
+# leg A2 candidate again -> grid-73018675-pass2/, leg D the declared forms -> ../../wave-a-form-sweep/.
+# 9 repetitions + 2 warmup, CPUs 0,2. run.json's pseudonymised host was restored to the machine name
+# for run.py's same-host merge check and pseudonymised again afterwards. cpu% = \Processor(_Total)
+# sampled 3 x 2 s, the WSL2 guest idle (its session ended 01:00:52).
+   cpu% (session start): 0 1.9 1
+== quiet-60s-start 2026-10-11T01:02:00Z
+== A-candidate-start 2026-10-11T01:03:00Z
+A rc=0
+== A-candidate-end / C-field-start 2026-10-11T01:06:04Z
+C rc=0
+== C-field-end / A2-candidate-start 2026-10-11T01:19:37Z
+A2 rc=0
+== A2-candidate-end / D-sweep-start 2026-10-11T01:22:42Z
+  D concdict-qb-form1 2c-spin rc=0 verified=True
+  D concdict-qb-form1 2c-park rc=0 verified=True
+  D concdict-qb-form1 1c-spin rc=0 verified=True
+  D concdict-qb-form1 1c-park rc=0 verified=True
+  D concdict-caf-form1 2c-spin rc=0 verified=True
+  D concdict-caf-form1 2c-park rc=0 verified=True
+  D concdict-caf-form1 1c-spin rc=0 verified=True
+  D concdict-caf-form1 1c-park rc=0 verified=True
+  D concsll-qb-form1 2c-spin rc=0 verified=True
+  D concsll-qb-form1 2c-park rc=0 verified=True
+  D concsll-qb-form1 1c-spin rc=0 verified=True
+  D concsll-qb-form1 1c-park rc=0 verified=True
+  D concsll-caf-form1 2c-spin rc=0 verified=True
+  D concsll-caf-form1 2c-park rc=0 verified=True
+  D concsll-caf-form1 1c-spin rc=0 verified=True
+  D concsll-caf-form1 1c-park rc=0 verified=True
+  D logmap-sobjectizer-QVO_SO_GROUP_COOPS1 2c-spin rc=0 verified=True
+  D logmap-sobjectizer-QVO_SO_GROUP_COOPS1 2c-park rc=0 verified=True
+== D-sweep-end 2026-10-11T01:27:56Z
+   cpu% (session end): 0 2.5 1
+A: ok=40 unverified=0 failed=0 n/a=0 | run.py: 40 cells, 0 not verified, 0 not applicable -> D:\repo\qvo-wave-a\build\wa-out\cand1
+C: ok=160 unverified=0 failed=0 n/a=0 | run.py: 160 cells, 0 not verified, 0 not applicable -> D:\repo\qvo-wave-a\build\wa-out\field
+A2: ok=40 unverified=0 failed=0 n/a=0 | run.py: 40 cells, 0 not verified, 0 not applicable -> D:\repo\qvo-wave-a\build\wa-out\cand2
+cand1: 40 documents
+field: 160 documents
+cand2: 40 documents
+sweep: 18 documents

@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/concdict",
+  "framework": "qb",
+  "framework_version": "3.2.1",
+  "verified": true,
+  "expected_checksum": 15850935008049653307,
+  "expected_messages": 400042,
+  "work_unit": "operation",
+  "work_units": 200000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "form": 0, "keys": 524287, "messages": 10000, "wait": 1, "workers": 20, "write": 10},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:03:26Z"
+  },
+  "idiom": {
+    "source": "form=0: qb.llm.md reply(e) (reuses the received event) + the ping-pong adapter; form=1: qb/src/qb/core/patterns/request.h qb::ask + the bank-transaction adapter",
+    "note": "form=0: one Op event per worker bounces worker <-> dictionary through reply() for the whole run; form=1: one coroutine per worker awaits qb::ask per request; master and dictionary on VirtualCore 0, worker w on core (1 + w) % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "form=0 recycles ONE event per worker for all its requests: reply() swaps destination and source and hands the same bytes back (qb's documented reply idiom), so no request or answer is constructed after the first -- CAF builds a message per request and per answer; SObjectizer's form=0 resends one mutable message the same way. The run's `form` is in its params; form=1 is qb::ask, a pending-ask slot and a coroutine resume per request", "placement is fixed before start: the master and the dictionary on VirtualCore 0, worker w on core (1 + w) % cores, so with cores=2 half the round trips cross a core and the dictionary's core also runs half the workers -- the pools place freely", "the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the engine by the thread that runs the repetition; its lookups are part of every framework's figure"],
+  "failures": [],
+  "work_ns": [10537000.0, 10632000.0, 14416400.0, 12961100.0, 10949500.0, 11787900.0, 10563200.0, 11302100.0, 10282500.0],
+  "total_ns": [45227700.0, 45131000.0, 52894100.0, 50702100.0, 45638000.0, 46424300.0, 44861600.0, 47475500.0, 44804000.0],
+  "outside_window_ns": [34690700.0, 34499000.0, 38477700.0, 37741000.0, 34688500.0, 34636400.0, 34298400.0, 36173400.0, 34521500.0],
+  "summary": {
+    "work_min": 10282500.0,
+    "work_p50": 10949500.0,
+    "work_p99": 14299976.0,
+    "work_iqr": 1224700.0
+  }
+}

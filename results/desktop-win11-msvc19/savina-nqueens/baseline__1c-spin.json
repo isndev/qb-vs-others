@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/nqueens",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 77555313403798665,
+  "expected_messages": 29076,
+  "work_unit": "solution",
+  "work_units": 14200,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "size": 12, "threshold": 4, "wait": 1, "workers": 20},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:09:12Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the master (actor 0) relays every child item round-robin to worker actor w (id cores + w) on thread w % cores, the master on thread 0 -- qb's placement; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A work item is one ring message carrying the packed board, a result and a done one word each, and the search is the same shared kernel every framework runs: the floor for relaying a work-distribution search through one master", "worker w is owned by thread w % cores and the master by thread 0, fixed before the window -- qb's placement exactly: with cores=2 the search is split the way the rotation splits it and never rebalanced, so this floor bounds the placing frameworks and NOT the pools", "cores=1 is one thread with every actor's messages in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [188481400.0, 189819200.0, 185290300.0, 186952900.0, 185469700.0, 186245200.0, 186128200.0, 185070300.0, 187438200.0],
+  "total_ns": [188832600.0, 190159800.0, 185661800.0, 187302300.0, 185821800.0, 186602300.0, 186486000.0, 185457500.0, 187776300.0],
+  "outside_window_ns": [351200.0, 340600.0, 371500.0, 349400.0, 352100.0, 357100.0, 357800.0, 387200.0, 338100.0],
+  "summary": {
+    "work_min": 185070300.0,
+    "work_p50": 186245200.0,
+    "work_p99": 189712176.0,
+    "work_iqr": 1968500.0
+  }
+}

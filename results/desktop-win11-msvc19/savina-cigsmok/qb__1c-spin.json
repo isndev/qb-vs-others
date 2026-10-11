@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/cigsmok",
+  "framework": "qb",
+  "framework_version": "3.2.1",
+  "verified": true,
+  "expected_checksum": 17266270140101833701,
+  "expected_messages": 100401,
+  "work_unit": "round",
+  "work_units": 50000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "rounds": 50000, "smoke": 1000, "smokers": 200, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "desktop-x86",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-11T01:13:27Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md: reply(e) (the received event sent back) + send<T>() (into the peer's ring at once, not at the pass's flush) + the chameneos adapter",
+    "note": "StartSmoking is a send<Smoke> per decision; the smoker reply()s the same event, naming itself, as StartedSmoking BEFORE it smokes, so the acknowledgement is published while the smoke runs; Exit and Report are push<>; arbiter on VirtualCore 0, smoker j on core (j + 1) % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "placement is fixed before start: the arbiter on VirtualCore 0 and smoker j on core (j + 1) % cores, so with cores=2 half the smokers share the arbiter's core. A smoke on the far core overlaps the arbiter's next decision; a smoke on the arbiter's core holds the arbiter until it ends (its acknowledgement waits on the same thread). The pools place the arbiter and the smokers wherever stealing puts them", "the acknowledgement is the received StartSmoking reply()ed, which goes through send<>: published into the arbiter's core at once, before the smoke, where a push<> would be published by the pass's flush after it -- benchmarks/savina/cigsmok.md"],
+  "failures": [],
+  "work_ns": [67262000.0, 67220900.0, 67158700.0, 68099000.0, 68594100.0, 67701700.0, 67599300.0, 67368200.0, 67938600.0],
+  "total_ns": [68034900.0, 67844600.0, 67748200.0, 68873900.0, 69759800.0, 68412800.0, 68276400.0, 67974300.0, 68763500.0],
+  "outside_window_ns": [772900.0, 623700.0, 589500.0, 774900.0, 1165700.0, 711100.0, 677100.0, 606100.0, 824900.0],
+  "summary": {
+    "work_min": 67158700.0,
+    "work_p50": 67599300.0,
+    "work_p99": 68554492.0,
+    "work_iqr": 676600.0
+  }
+}
