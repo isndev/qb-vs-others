@@ -19,11 +19,15 @@
 //                one_thread a slot of its deque. SObjectizer messages carry no sender, so
 //                the term carries the worker's index, as Savina's ComputeMessage carries its
 //                sender. NextTerm, GetTerm, the readiness and the stop are signals. The held
-//                NextTerm requests are a count. Master, workers and computers on a thread_pool of
-//                `cores` pinned work threads with fifo_t::individual, placed by the dispatcher.
-//                QVO_SO_GROUP_COOPS=1 binds each series as its own coop with fifo_t::cooperation
-//                on the same pool instead (so_support.h, the group sweep): a SWEEP document, not
-//                a table cell, until a quiet host says it is the faster form (FAIRNESS.md 1.1).
+//                NextTerm requests are a count. At cores >= 2 master, workers and computers share
+//                ONE thread_pool of `cores` pinned work threads, and each series -- its worker and
+//                its computer -- is its own coop bound with fifo_t::cooperation (one demand queue
+//                per series, run by one work thread at a time; the master on fifo_t::individual):
+//                SObjectizer's spelling of qb placing a series on one core, and the faster of the
+//                two bindings by the quiet-host sweep of 2026-10-11 (2.0-2.5x on both x86 hosts,
+//                docs/TUNING.md 21.4; FAIRNESS.md 1.1). QVO_SO_GROUP_COOPS=0 binds every agent
+//                with fifo_t::individual instead (so_support.h, the group binding): a SWEEP
+//                document, not a table cell.
 
 #include <qvospec/savina/logmap.h>
 
@@ -215,6 +219,10 @@ public:
     }
 };
 
+// The binding of the table cell at cores >= 2: the grouped one since the quiet-host sweep of
+// 2026-10-11 (docs/TUNING.md 21.4). QVO_SO_GROUP_COOPS=0 measures the individual one.
+inline constexpr bool kGroupedByDefault = true;
+
 qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const auto terms  = static_cast<std::uint64_t>(p.get("terms"));
     const auto series = static_cast<std::uint32_t>(p.get("series"));
@@ -226,11 +234,12 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     field.workers.reserve(series);
     field.computers.reserve(series);
     so_5::launch([&](so_5::environment_t &env) {
-        if (cores >= 2 && qvoso::group_coops()) {
-            // The group sweep (so_support.h): series i -- its worker and its computer -- is one
-            // coop bound with fifo_t::cooperation, the master one bound with fifo_t::individual,
-            // all on ONE pool. Every coop is built and the field filled BEFORE the first is
-            // registered: an agent reads the field from its first handler on.
+        if (cores >= 2 && qvoso::group_coops(kGroupedByDefault)) {
+            // The table cell's binding (so_support.h, the group binding): series i -- its worker
+            // and its computer -- is one coop bound with fifo_t::cooperation, the master one
+            // bound with fifo_t::individual, all on ONE pool. Every coop is built and the field
+            // filled BEFORE the first is registered: an agent reads the field from its first
+            // handler on.
             using so_5::disp::thread_pool::bind_params_t;
             using so_5::disp::thread_pool::fifo_t;
             const auto pool  = qvoso::make_pool_dispatcher(env, cores, spin);
@@ -253,6 +262,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
             for (auto &pair : pairs) env.register_coop(std::move(pair));
             return;
         }
+        // cores=1 (one_thread), or the individual binding QVO_SO_GROUP_COOPS=0 asks for.
         env.introduce_coop(qvoso::make_pool_binder(env, cores, spin), [&](so_5::coop_t &coop) {
             field.master = coop.make_agent<master_t>(std::cref(field), terms, std::ref(watch),
                                                      std::ref(sink))
@@ -287,18 +297,38 @@ int main(int argc, char **argv) {
     spec.idiom_note        = "one mutable_msg<msg_term> per round trip, redirected computer -> "
                              "worker -> computer with so_5::send(mbox, std::move(cmd)); the term "
                              "carries its sender's index; held NextTerms are a count; "
-                             "thread_pool(cores) with fifo_t::individual for cores>=2";
-    spec.caveats           = qvoso::pool_caveats();
-    if (qvoso::group_coops())
-        spec.caveats.insert(spec.caveats.begin(),
-                            qvoso::group_coops_caveat(
-                                "series i: its worker and its rate computer, at cores >= 2; "
-                                "cores=1 is one_thread either way"));
-    spec.caveats.emplace_back(
-        "the master, the workers and the computers are placed by the thread_pool: which thread "
-        "runs a worker's or a computer's next demand is the dispatcher's decision, so a round "
-        "trip may cross a core; qb's cell pins series i (worker + computer) on core "
-        "(1 + i) % cores -- see benchmarks/savina/logmap.md");
+                             "thread_pool(cores) for cores>=2, each series (worker + computer) its "
+                             "own coop on fifo_t::cooperation, the master on fifo_t::individual "
+                             "(QVO_SO_GROUP_COOPS=0: every agent on fifo_t::individual, a sweep "
+                             "document)";
+    const bool grouped = qvoso::group_coops(savina_logmap_sobjectizer::kGroupedByDefault);
+    const std::string group =
+        "series i: its worker and its rate computer, at cores >= 2; cores=1 is one_thread either "
+        "way";
+    if (grouped) {
+        spec.caveats = qvoso::pool_caveats(
+            "each series -- its worker and its rate computer -- its own coop on "
+            "fifo_t::cooperation (one demand queue per series, run by one work thread at a time) "
+            "and the master on fifo_t::individual");
+        spec.caveats.emplace_back(
+            "the grouped binding is the faster of the two by the quiet-host sweep of 2026-10-11 "
+            "(2.0-2.5x at cores=2 on both x86 hosts, results/<host>/wave-a-form-sweep/, "
+            "docs/TUNING.md 21.4; FAIRNESS.md 1.1); QVO_SO_GROUP_COOPS=0 measures the individual "
+            "binding as a sweep document");
+        spec.caveats.emplace_back(
+            "the thread_pool decides which work thread serves a series' queue and the master: a "
+            "series' worker and computer never run at the same time, but its queue may be served "
+            "by either thread, so a round trip may cross a core; qb's cell pins series i (worker "
+            "+ computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md");
+    } else {
+        spec.caveats = qvoso::pool_caveats();
+        spec.caveats.insert(spec.caveats.begin(), qvoso::individual_coops_caveat(group));
+        spec.caveats.emplace_back(
+            "the master, the workers and the computers are placed by the thread_pool: which "
+            "thread runs a worker's or a computer's next demand is the dispatcher's decision, so "
+            "a round trip may cross a core; qb's cell pins series i (worker + computer) on core "
+            "(1 + i) % cores -- see benchmarks/savina/logmap.md");
+    }
     spec.caveats.emplace_back(
         "a chain redirects ONE mutable message (so_5::send(mbox, std::move(cmd)), SObjectizer's "
         "redirection of a mutable message): no message is allocated per hop, though the "

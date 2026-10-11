@@ -189,21 +189,27 @@ inline so_5::disp_binder_shptr_t make_pool_binder(so_5::environment_t &env, int 
     return so_5::disp::one_thread::make_dispatcher(env, "qvo-ot", std::move(params)).binder();
 }
 
-// The group sweep -- FAIRNESS.md 1.1's "both are implemented" applied to SObjectizer's own
+// The group binding -- FAIRNESS.md 1.1's "both are implemented" applied to SObjectizer's own
 // placement. A shape whose agents form independent GROUPS that talk only to each other
 // (savina/logmap: a series' worker and its rate computer) may bind each group as its OWN coop
 // with fifo_t::cooperation on make_pool_dispatcher's pool: a group's demands then share one
 // queue and run on one thread at a time, SObjectizer's spelling of qb placing the group on one
-// VirtualCore, where the table cell's fifo_t::individual lets the pool split it.
-// QVO_SO_GROUP_COOPS=1 asks an adapter that HAS groups for that binding at cores >= 2 (one_thread
-// already runs everything on one thread); an adapter without groups ignores it. A document
-// measured under it carries group_coops_caveat() FIRST and is not a table cell until a quiet-host
-// sweep shows it faster.
-inline bool group_coops() {
+// VirtualCore, where make_pool_binder's fifo_t::individual lets the pool split it. Which of the
+// two bindings is an adapter's table cell is the adapter's to pass as `default_when_unset`, and
+// only a quiet-host sweep of both may move it: QVO_SO_GROUP_COOPS=1 asks for the grouped binding
+// at cores >= 2 and QVO_SO_GROUP_COOPS=0 for the individual one (one_thread already runs
+// everything on one thread); an adapter without groups never calls this. A document measured
+// under the binding that is NOT its adapter's default carries the matching sweep caveat FIRST --
+// group_coops_caveat() for the grouped one, individual_coops_caveat() for the individual one.
+// savina/logmap is the one adapter with groups, and it passes `true` since the sweep of
+// 2026-10-11 measured the grouped binding 2.0-2.5x faster on both x86 hosts (docs/TUNING.md 21.4).
+inline bool group_coops(bool default_when_unset = false) {
     const char *v = std::getenv("QVO_SO_GROUP_COOPS");
-    return v != nullptr && std::strtoll(v, nullptr, 10) != 0;
+    if (v == nullptr) return default_when_unset;
+    return std::strtoll(v, nullptr, 10) != 0;
 }
 
+// For an adapter whose default is the individual binding, measured grouped.
 inline std::string group_coops_caveat(const std::string &group) {
     return "SWEEP DOCUMENT, NOT A TABLE CELL: QVO_SO_GROUP_COOPS=1 -- each group (" + group +
            ") is its own coop bound with fifo_t::cooperation to the same thread_pool, one demand "
@@ -211,14 +217,28 @@ inline std::string group_coops_caveat(const std::string &group) {
            "agents outside a group keep it)";
 }
 
-inline std::vector<std::string> pool_caveats() {
+// For an adapter whose default is the grouped binding, measured individual.
+inline std::string individual_coops_caveat(const std::string &group) {
+    return "SWEEP DOCUMENT, NOT A TABLE CELL: QVO_SO_GROUP_COOPS=0 -- every agent bound with "
+           "fifo_t::individual to the thread_pool, one demand queue per agent, where the table "
+           "cell binds each group (" + group + ") as its own coop with fifo_t::cooperation, one "
+           "demand queue per group (the agents outside a group keep fifo_t::individual)";
+}
+
+// The binding pool_caveats() states for cores >= 2: make_pool_binder's, unless an adapter that
+// binds otherwise says what it does instead.
+inline const std::string kIndividualBinding =
+    "fifo_t::individual (one demand queue per agent, agents of one coop free to run on "
+    "different threads)";
+
+inline std::vector<std::string> pool_caveats(const std::string &binding = kIndividualBinding) {
     std::vector<std::string> c;
     push_sweep_caveat(c);
     c.insert(c.end(), {
-        "cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and "
-        "fifo_t::individual (one demand queue per agent, agents of one coop free to run on "
-        "different threads); cores=1 uses one_thread. The work threads are pinned one per CPU "
-        "from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t",
+        "cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and " +
+            binding +
+            "; cores=1 uses one_thread. The work threads are pinned one per CPU from the "
+            "harness's set through a custom so_5::disp::abstract_work_thread_factory_t",
         "the pool places agents dynamically: which thread runs a given agent's next demand is "
         "the dispatcher's decision, so how many hand-offs cross a core is not fixed and not "
         "reported, where qb's cell fixes actor a on core a % cores",
