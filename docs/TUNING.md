@@ -3217,8 +3217,27 @@ direct send are instruction-identical in the `/FAs` listings, so it is layout, M
 `dev/bench` (`ab.py`, the same protocol, nine cases of the four event-path binaries): every case inside its
 A/A on the pair built with `-falign-functions/-loops/-jumps=64` on both sides; on the plain pair two
 pipeline cases read +1.2 / +1.5 % and vanish with the alignment — layout, which is what the aligned pair
-exists to show; on Windows all nine are level (`BM_PINGPONG` at one core −0.7 %, the same layout). The codegen
-says where the rule can cost: `__workflow_loop__`, `__receive__` and `send` are
+exists to show; on Windows all nine are level (`BM_PINGPONG` at one core −0.7 %, the same layout).
+
+**big 2c, settled by census.** The cells table reads big 2c +1.1 % with the control's copies 0.6 % apart — at the
+edge of the letter, and the two refused forms' sessions had read the same control at +0.2 and −0.8 %. Forty
+interleaved launches of 3 + 1 per configuration (`tools/launch-census.py --alternate-order`, AB/BA balanced,
+`census-big/`) say it is real: the rule is slower by **+1.35 % at 2c-spin** (median of launch medians 17.63 →
+17.87 ns per round trip, bootstrap 95 % CI +0.17…+2.58 %, slower in 29 of 40 launch pairs, Mann-Whitney
+z = 3.1) and **+1.54 % at 2c-park** (17.57 → 17.84, CI +0.50…+2.63 %, 25 of 40, z = 3.5), and the same census on
+the pair built with `-falign-functions/-loops/-jumps=64` on both sides (`census-big-align/`) keeps it: +1.11 %
+(CI −0.08…+2.40 %, 26 of 40, z = 2.5) and +0.89 % (CI +0.06…+1.90 %, 29 of 40, z = 2.8). A shift that survives
+the alignment control is cost, not layout: ~0.2 ns per round trip. The gate itself never runs in this cell
+(the census of `sends_blocked` reads 0 on both cores), so the cost is the one the listings announce —
+`__flush_pipes__`'s run-gathering loop, which publishes big's 1.2 M events per core in runs of two, was
+re-register-allocated when the refused-event branch grew (550 → 613 instructions on g++, the loop's `%r14`
+working register moved to `%rax` and two spills moved on the frame). It is bounded to the run-heavy cells that
+never block (chameneos and counting read +0.1 / −0.1 % inside their spreads; Windows reads big +0.5 % inside
+0.6 %), and it has an obvious remedy for a follow-up: the refused-event branch — the stall test, the backoff and
+the exhausted bail — moved out of line into a cold helper, so the hot loop keeps the control's allocation. The
+cost is recorded in qb's CHANGELOG beside the gains.
+
+The codegen says where the rule can cost: `__workflow_loop__`, `__receive__` and `send` are
 instruction-identical on both compilers (two `__LINE__` immediates apart), `__flush_pipes__` grew from 550
 to 613 instructions on g++ and from 824 to 909 on MSVC and was re-register-allocated — the run-gathering
 loop's registers moved — which the big, chameneos and counting cells above bound.
