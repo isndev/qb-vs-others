@@ -20,6 +20,16 @@ ambition has already misled the reader.
   Every qb-side cost the four new shapes exposed is in `docs/TUNING.md` §9, and the one
   the candidate itself exposed — a dispatch made fast enough to flip the cross-core pipe
   into a per-event publish regime — is 9.10, fixed on the same branch.
+- **Savina wave A, ten more shapes** — `savina/fork-join-create`, `nqueens`, `a-star`,
+  `philosophers`, `barber`, `bndbuffer`, `cigsmok`, `concdict`, `concsll`, `logmap` — for qb,
+  CAF, SObjectizer and the floor (`caf-detached` declared omitted): **160 cells per host on
+  Windows and WSL2, all verified**, one quiet session per host on 2026-10-11 with **shipped qb
+  3.2.1** as the qb column and the 3.3.0 candidate (`develop` `73018675`) beside it in the same
+  session, plus a 528-launch interleaved census per host (`results/<host>/savina-<shape>/`,
+  `results/<host>/qb-branch-develop/grid-73018675/`, `docs/TUNING.md` §21) — 292 cells per host,
+  eighteen shapes. The first shapes whose cells carry OBSERVATIONS beside the number (FAIRNESS.md
+  §0: refused requests, wake-ups, producer waits, work messages). Not yet on macOS or the arm64
+  guest.
 - **The two CAF coherence defects, closed** (`docs/TUNING.md` §1.1 and §8). The spin-knob sweep
   was run on both axes — poll budget 100 → 10⁶ at fixed steal interval, steal interval 1 → 10⁶ at
   fixed budget; ten documents in `results/desktop-win11-msvc19/caf-spin-sweep/` — and no
@@ -146,9 +156,10 @@ is left of the pipeline is the train itself.
    g++'s 5.9–9.3 from 2 k to 4 M, so the clang-cl A/B has no premise left.
 
 
-### The other 17 Savina benchmarks
+### The other 12 Savina benchmarks
 
-Eight of the suite's twenty-five are written — the round trip, the fan-in, the ring, the fan-out,
+Eighteen of the suite's thirty are written (this page said "twenty-five" until 2026-10-11; the
+reference repository, `shamsimam/savina`, has thirty) — the round trip, the fan-in, the ring, the fan-out,
 the all-to-all, since 2026-09-06 the two that the first five could not show: `savina/fib`
 (dynamic actor creation and destruction — 57 312 actors born and dead inside the window) and
 `savina/chameneos` (rendezvous through a shared broker), and since 2026-09-07
@@ -162,19 +173,32 @@ tables with the 3.2.0 grid on 2026-09-07 (`qb-branch-develop/`, §13). fib alone
 run, and then found that shipped 3.1.0 logs nine INFO lines per actor lifetime inside the window
 — 159 / 459 ms against the branch's 7.6 / 10.5; bank-transaction put a `perf` profile on the
 coroutine request path for the first time and found five defects on it in one afternoon (qb
-`fa1c5ce3`) — the argument for writing the rest. None of the eight carries a pipeline. The ones
-that would change the picture most, roughly in order of what they would teach:
+`fa1c5ce3`) — the argument for writing the rest. Since 2026-10-11 the ten of **wave A** are
+published on Windows and WSL2 with shipped 3.2.1, the 3.3.0 candidate beside them in the same
+session (`docs/TUNING.md` §21): creation from a flat loop (`fork-join-create`), creation and a
+search arriving as messages with work per node (`nqueens`, `a-star`), arbitration with refusals
+(`philosophers`, `cigsmok`), a bounded room with dynamic customers and a bounded buffer
+(`barber`, `bndbuffer`), a shared actor under twenty request/reply chains (`concdict`,
+`concsll`) and chained round trips into deep mailboxes (`logmap`). None of the eighteen carries a
+pipeline. What remains, in two waves, roughly in order of what they would teach:
 
-| benchmark | what it adds that the eight cannot show |
-|---|---|
-| `nqueens` / `a-star` | creation with WORK per actor — fib's nodes compute nothing, so it isolates the registry; these two would show whether the registry still matters once a node does something |
-| `philosophers` / `barber` / `smokers` | blocking-shaped coordination |
-| `radixsort` / `sieve` / `trapezoid` | pipelines and data-parallel shapes |
+| wave | benchmarks | what they add that the eighteen cannot show |
+|---|---|---|
+| B | `radixsort`, `filterbank`, `sieve`, `trapezoid`, `piprecision`, `recmatmul`, `quicksort`, `bitonicsort` | pipelines and data-parallel shapes |
+| C | `apsp`, `sor`, `uct`, `facloc` | computation over graphs and grids, and a tree that grows while it is searched |
+
+Wave A left four things for the shapes that follow it (§21.5): a quiet-host form sweep is part of
+publishing a shape whose adapters declare more than one idiom — it found SObjectizer's logmap
+2.0–2.5 × faster with its coops grouped, a form the table does not carry yet; `concsll.md`
+promises a one-time measurement of the other placement (the list sharing a core with half the
+workers) that no adapter can switch to today; `tools/report.py` prints one version per framework
+for a host whose shapes were measured with two qb builds; and the first `perf` / ETW profile of
+each new shape, which QB-244 asks of every wave, was not part of the measurement session.
 
 Each needs one spec header in `benchmarks/specs/qvospec/savina/` and one implementation per
 framework — `check-roster.py` refuses a framework missing from one. The per-framework support
 headers (`frameworks/<fw>/*_support.h`) exist so that placement and spin/park do not have to be
-re-decided seventeen more times; fib, chameneos and bank-transaction cost one afternoon each on
+re-decided twelve more times; fib, chameneos and bank-transaction cost one afternoon each on
 that basis.
 
 ### Actor creation cost and memory footprint

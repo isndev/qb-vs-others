@@ -51,6 +51,12 @@ are all in this repository.
 - [18. The dispatch under a population: the actor's line, and what the core already hides](#18-the-dispatch-under-a-population-the-actors-line-and-what-the-core-already-hides)
 - [19. The park's wait, and how fine it is — QB-196](#19-the-parks-wait-and-how-fine-it-is--qb-196)
 - [20. The footprint — what N cores hold, and when they hold it (QB-63)](#20-the-footprint--what-n-cores-hold-and-when-they-hold-it-qb-63)
+- [21. What ten more shapes said — Savina wave A, shipped 3.2.1 and the 3.3.0 candidate (2026-10-11)](#21-what-ten-more-shapes-said--savina-wave-a-shipped-321-and-the-330-candidate-2026-10-11)
+  - [21.1 The sessions](#211-the-sessions)
+  - [21.2 The field, shape by shape](#212-the-field-shape-by-shape)
+  - [21.3 The 3.3.0 candidate against shipped 3.2.1](#213-the-330-candidate-against-shipped-321)
+  - [21.4 The forms the adapters declared, measured](#214-the-forms-the-adapters-declared-measured)
+  - [21.5 What the session leaves](#215-what-the-session-leaves)
 
 ---
 
@@ -2826,3 +2832,194 @@ value-initialising it would leave a ring's pages untouched until its producer wr
 (producer, consumer) pair, exactly the trade §9 refused for the segments because the faults landed
 inside a measured burst. It is a decision for the backpressure axis (QB-53), not a quick win: filed,
 with these figures, not done.
+
+## 21. What ten more shapes said — Savina wave A, shipped 3.2.1 and the 3.3.0 candidate (2026-10-11)
+
+Savina wave A (Huly QB-245: the ten shapes of the reference suite the first eight could not show)
+adds `savina/fork-join-create`, `nqueens`, `a-star`, `philosophers`, `barber`, `bndbuffer`,
+`cigsmok`, `concdict`, `concsll` and `logmap`, each with its page under `benchmarks/savina/` (what
+the cell measures, every deviation from Savina and its reason) and four adapters, `caf-detached`
+declared omitted. It is the first wave whose cells carry OBSERVATIONS — interleaving-dependent
+work reported beside the number, never compared silently (FAIRNESS.md §0) — and the first field
+whose qb column is a release that was not measured at its candidate: **shipped v3.2.1**
+(`82ac0531`), the qb a user installs on the day the shapes join, as fib, chameneos and
+bank-transaction joined with shipped 3.1.0 (§11, §12). The 3.3.0 candidate, qb `develop`
+`73018675` (92 commits over v3.2.1), is the same-session control.
+
+### 21.1 The sessions
+
+One quiet session per host, the other host idle, 9 repetitions + 2 warmup, CPUs 0 and 2 — the
+conditions both `run.json` record, so the 160 field cells merged into them (`merged_partial_runs`
+1, 292 cells per host). Two harness builds per host from one tree (qb-vs-others `savina/wave-a`
+`ffee4111`): the field build with qb from a `git archive` of `v3.2.1` (`~/wa/b-shp` on ext4 for
+WSL2, g++ 14.2.0 `-O3 -DNDEBUG`; `build/wa-shp` on Windows, MSVC 19.51.36256 `/O2 /Ob2 /DNDEBUG`),
+and a qb-only build from a `git archive` of `73018675` (`b-cnd`, `wa-cnd`), CAF 1.1.0 and
+SObjectizer 5.8.5.1 from the same source trees as every earlier field. No warning from an adapter
+or from qb on either compiler (g++ prints three `-Wmaybe-uninitialized` from libstdc++'s
+`stl_tree.h` inside CAF's own translation units). Five legs:
+
+| leg | what | WSL2 (UTC) | Windows (UTC) | documents |
+|---|---|---|---|---|
+| A | the candidate, `--only qb` → `qb-branch-develop/grid-73018675/` | 00:36:07–00:39:10 | 01:03:00–01:06:04 | 40 + 40 |
+| C | the field, shipped 3.2.1 as qb → `savina-<shape>/` | 00:39:10–00:52:40 | 01:06:04–01:19:37 | 160 + 160 |
+| A2 | the candidate again → `grid-73018675-pass2/` | 00:52:40–00:55:42 | 01:19:37–01:22:42 | 40 + 40 |
+| D | the declared forms → `wave-a-form-sweep/` (§21.4) | 00:55:42–01:00:52 | 01:22:42–01:27:56 | 18 + 18 |
+| E | the interleaved census, candidate against 3.2.1 → `qb-branch-develop/census-73018675-vs-3.2.1/` | 01:30:47–01:31:34 | 01:32:30–01:33:44 | 528 + 528 launches |
+
+Each session opened with 60 s of quiet (30 s before the census, which ran in a second window once
+the two `fib` binaries it adds were built). The idle state is in each grid's `session.log`: the
+WSL2 guest 99.2 % idle and at load 0.18 when leg A began, nothing in `top` but idle services;
+Windows `\Processor(_Total)` at 0–1.9 % before the session and 0–2.5 % after it. Every document
+verified — 0 unverified, 0 `n/a`, 0 failed over 1 036 documents and 1 056 census launches — and
+every `run.py` invocation's cell count was read from its own log (40 / 160 / 40), because a
+`--benchmark` filter without the `savina/` prefix selects nothing and still exits 0 (Huly
+QB-995). `run.json`'s pseudonymised host was restored to the machine's name for `run.py`'s
+same-host merge check and pseudonymised again afterwards.
+
+### 21.2 The field, shape by shape
+
+Per unit of work, p50, WSL2 / Windows, spin unless said (`results/<host>/savina-<shape>/`;
+`REPORT.md` has every cell and every observation sub-row, README.md's four wave-A tables the
+1c-spin and 2c-spin columns). Over the 40 cells per host qb leads with separate distributions in
+32 (WSL2) and 34 (Windows), is level in 7 / 5 and behind in one; the geometric mean of the best
+other framework over qb is 2.70 / 2.77.
+
+- **fork-join-create** (an actor: forked, one Job, one Done, killed) — qb **62 / 103 ns** at one
+  core against CAF's 929 ns / 2.04 µs and SObjectizer's 1.34 / 2.69 µs, 15 / 20 ×; the floor's
+  heap node is 38 / 71. At two cores 31 / 54 ns, below the floor (56 ns on WSL2; on Windows the
+  floor's 2c-spin is bimodal, ~78 or ~430 ns). The census of the same session reads `fib`'s
+  lifetime at 99 / 127 ns at one core with 3.2.1: a flat burst — 40 000 actors alive at once on
+  one core before the first of them runs — costs qb less per actor than a recursive lifetime.
+- **nqueens** (a solution) — the search is the cell: qb 13.52 / 13.40 µs, level with SObjectizer
+  on WSL2 at every configuration and 1.06–1.07 × CAF on Windows. The floor, which shares qb's
+  static placement, reads 15.10 µs on WSL2 (above qb; not explained here) and 13.12 on Windows.
+  At two cores every framework's repetitions move between ~7.0 and ~8.3 µs per solution; a
+  nine-repetition median there is a coin toss, which is why the census (§21.3) is the instrument.
+- **a-star** (a node) — 282 / 280 ns at one core, on the floor (279 / 279), 1.07 / 1.11 × the next
+  framework; at two cores 149 / 152 ns against SObjectizer's 182 / 183 (1.22 / 1.20 ×). The
+  `work_messages` sub-row is 1 790 at one core for qb, SObjectizer and the floor and 1 602 for
+  CAF, the page's figures; at two cores qb's median is 1 349–1 399. CAF's two-core cells on
+  Windows read 1 602 by median, its one-thread count, within a range of 1 523–1 727: the page
+  records 1 602 on every repetition, and this session saw the second thread take a share in a few.
+- **philosophers** (a meal) — 51 / 69 ns at one core against SObjectizer's 382 / 471 (7.5 / 6.8 ×);
+  `refused` is 285 670 on one thread for qb, SObjectizer and the floor, and 0 for CAF, whose one
+  thread runs the philosophers in an order that never conflicts. At two cores qb reads 119 / 167 ns
+  in the field — one launch each; the census of the same session puts qb's 2c-spin at 97.5 ns by
+  median of twelve launches on WSL2 and 122–195 per launch on Windows — and CAF's Windows
+  two-core cell is bimodal (~1.54 or ~3.98 µs) with 1.24–1.29 M refused requests against qb's
+  0.30–0.31 M: not the same work, which is what the sub-row is for.
+- **barber** (a haircut) — the busy work dominates: 2.91 / 2.87 µs at one core over a floor of
+  2.70 / 2.74, 1.61 × CAF on WSL2 and 1.93 × SObjectizer on Windows. A second core buys qb 5 / 3 %
+  (2.75 / 2.80 µs) at the default `pace=0`, the form whose full peer ring `barber.md` measured
+  (94 285 blocked sends at two cores; Huly QB-979); the floor, with the same placement, gains 13 %
+  on WSL2. `wakeups` at two cores: qb 5 / 46–49, CAF 1, SObjectizer 549–1 750 / 1 357–3 054.
+  SObjectizer's Windows 2c-spin cell is bimodal: 2 of 9 repetitions at ~129 µs per haircut.
+- **bndbuffer** (an item) — the producers' and consumers' 2 500-step work is the cell: 13.07 /
+  13.11 µs at one core on a floor of 12.98 / 13.09, 1.02–1.03 × SObjectizer; at two cores 6.69 /
+  6.67 µs, every framework near half its one-core time and the floor at 11.17 / 11.23. The
+  sub-rows say how often the bound engaged: CAF parks a producer on 38 040 of the 40 000 items at
+  one core and on ~25–34 k at two, qb on a median of 6–372 at two cores, SObjectizer on none by
+  median (37 at most) and the floor on none.
+- **cigsmok** (a round) — **the one cell qb loses on both hosts**: at 2c-spin SObjectizer reads
+  918 ns / 1.13 µs against qb's 1.15 / 1.17 µs (1.26 / 1.04 ×). qb sits on the floor that shares
+  its fixed placement (1.18 / 1.17 µs: half the smokers on the arbiter's core, holding it while
+  they smoke), and SObjectizer's pool, which places each demand, runs the round faster than that
+  placement allows — its own one-core cell is 1.46 / 1.50 µs. At one core qb is on the floor
+  (1.35 µs both hosts), 1.08 / 1.11 × SObjectizer; at 2c-park it leads on WSL2 (1.15 µs against
+  CAF's 1.64 and SObjectizer's 1.74) and is level with SObjectizer on Windows.
+- **concdict** (an operation) — the round trip to one shared actor: 41 / 59 ns at one core
+  against SObjectizer's 172 / 209 and CAF's 366 / 580 (4.2 / 3.5 ×), on a floor of 26 / 45; at
+  two cores 51 / 63 ns, at or under the floor (53 / 97), 6.8 / 7.7 × SObjectizer. The cell's
+  reply path is qb's `reply()` of the received event (`form=0`); §21.4 measured `qb::ask`.
+- **concsll** (a request) — the list walk is the cell (1.16 G nodes per repetition walked by the
+  membership tests alone): 21–22 µs for every framework in every cell but SObjectizer parked at
+  two cores (28.4 / 22.8 µs). qb is level with SObjectizer at one core, at 2c-spin on Windows
+  level and on WSL2 1.02 × ahead, and 1.02 / 1.04 × CAF at 2c-park. A second core buys nobody anything: the list is
+  serial. CAF's one-thread order makes its size queries walk 80 759 nodes against everyone
+  else's 1 234 — the sub-row shows it, the time does not.
+- **logmap** (a term) — chained round trips into deep mailboxes: 21 / 26 ns at one core against
+  SObjectizer's 190 / 228 (9.2 / 8.7 ×), floor 12 / 20; at two cores 15 / 20 ns, every round trip
+  on its own core by qb's placement, 21 / 20 × CAF's 327 / 400 — and 14 / 12 × SObjectizer's
+  FASTER form, which is not the cell yet (§21.4). `held` is 249 990 requests per run for the
+  three frameworks; the floor, which drains its burst inline when a ring fills (the page), holds
+  fewer.
+
+### 21.3 The 3.3.0 candidate against shipped 3.2.1
+
+Legs A and A2 against the field's qb cells, then the census on every cell the grids left in doubt
+(the full tables, 40 rows per host, are at the end of `results/<host>/qb-branch-develop/README.md`):
+
+| cell (census: median of 12 launch medians, ns per unit) | WSL2 g++-14: 3.2.1 → `73018675` | Windows MSVC: 3.2.1 → `73018675` |
+|---|---:|---:|
+| fork-join-create 1c-spin | **61.2 → 74.4 (+21.5 %, separate)** | 105.2 → 104.2 (−0.9 %) |
+| fork-join-create 1c-park | **62.9 → 74.8 (+19.0 %, separate)** | 103.3 → 104.6 (+1.3 %) |
+| fork-join-create 2c-spin / 2c-park | 32.6 → 31.9 / 31.0 → 32.8 | 56.6 → 58.0 / 56.1 → 57.0 |
+| fib 1c-spin / 1c-park | 98.9 → 100.9 / 99.7 → 100.7 | 126.8 → 122.2 / 125.4 → 123.0 |
+| fib 2c-spin / 2c-park | 58.5 → 62.4 / 58.0 → 63.0 | 86.2 → 85.8 / 84.2 → 85.4 |
+| philosophers 2c-spin / 2c-park | 97.5 → 96.2 / 97.0 → 95.1 | 154.8 → 187.5 / 186.9 → 181.6 |
+| concdict 2c-spin / 2c-park | 46.3 → 45.4 / 47.5 → 46.5 | 64.6 → 70.3 / 64.0 → 68.6 |
+| nqueens 2c-spin / 2c-park | 7 103.8 → 7 315.1 / 7 719.9 → 7 322.7 | 6 901.4 → 6 981.6 / 6 892.2 → 7 025.0 |
+| logmap 2c-spin | **15.2 → 14.6 (−4.1 %, separate)** | 21.1 → 21.0 |
+
+Every row not marked separate overlaps. **Windows: all forty cells level. WSL2: level but for two
+cells of one shape, and one cell faster.** fork-join-create at one core is 19–25 % slower with
+the candidate in both grid passes (61.6 → 76.9 / 75.2 ns at 1c-spin) and in the census, every
+distribution separate; its two-core cells are level, `fib` — the other creation shape — is level
+at one core and overlapping at two, and MSVC shows nothing. It is a g++ / glibc, one-core cost of
+the flat burst that 3.3.0 added and a recursive lifetime does not pay. It is not attributed: no
+profile and no bisect are in this protocol, and `v3.2.1..73018675` is 92 commits. Under the merge
+rule of the 3.3.0 performance programme (Huly QB-244: a hot-path change slower beyond its spread
+is refused unless the loss is documented and agreed), it is a finding for the train, not for this
+repository.
+
+The grids alone would have said three things the census does not: philosophers 4.6–25 % faster on
+WSL2 with separate distributions (the control's two-core cells sat in a slower launch mode the
+census's shipped side visits too, 94–122 ns), philosophers 2c-park +48 / +40 % on Windows (122–203
+ns per launch on both builds) and concdict 2c −12 / −13 % on WSL2. A grid cell is one launch; the
+census is the instrument for a cell whose launches disagree (§9.11, FAIRNESS.md §1.5).
+
+### 21.4 The forms the adapters declared, measured
+
+Three adapters declare a faster-form question that only a quiet host can answer (FAIRNESS.md
+§1.1: where a framework has two idioms, the faster enters the table). Leg D measured the other
+form in the same session as the field (`results/<host>/wave-a-form-sweep/`, 9 + 2, side documents
+`report.py` never renders); ns per unit, p50, the field cell → the other form:
+
+| cell | WSL2 | Windows | verdict |
+|---|---:|---:|---|
+| concdict, qb `form=1` (`qb::ask` from a coroutine per worker) against `reply()` of the event, 1c-spin / 2c-spin | 41.0 → 54.0 / 51.4 → 56.6 | 59.2 → 83.5 / 63.3 → 87.7 | `form=0` faster: +30 to +41 % at one core, separate; +10 % (overlapping) / +39 % at 2c-spin |
+| concdict, CAF `form=1` (`request().then()`), 1c-spin / 2c-spin | 366 → 371 / 372 → 384 | 580 → 610 / 582 → 606 | level (overlapping, −1 to +5 % over the four configurations) — `form=0` stays |
+| concsll, qb and CAF `form=1`, every configuration | −0.7 to +1.1 % | −1.7 to +0.6 % | level — the walk is the cell |
+| logmap, SObjectizer with each series' coop on `fifo_t::cooperation` (`QVO_SO_GROUP_COOPS=1`), 2c-spin / 2c-park | **441 → 217 / 540 → 216** | **561 → 245 / 633 → 270** | **the grouped form is 2.0–2.5 × faster**, separate |
+
+The first three keep the cell's form. The fourth does not: **the published logmap SObjectizer
+two-core cells are not SObjectizer's faster form.** The adapter's default (every agent on
+`fifo_t::individual`) has to become the grouped coops at two cores and the four cells be
+re-measured (`run.py --only sobjectizer --benchmark savina/logmap --config 2c-spin,2c-park` per
+host) — an adapter change, which this measurement campaign did not make. Until then README.md
+leaves logmap out of its two-core tables and quotes qb's margin there against the grouped form
+(14 × WSL2, 12 × Windows), not the cell's 21 × / 20 ×; and `REPORT.md` ranks SObjectizer third
+behind CAF at two cores where the grouped form would place it second.
+
+### 21.5 What the session leaves
+
+- **The fork-join-create regression on WSL2 (§21.3)**, for the 3.3.0 train: a profile of the
+  candidate's one-core burst against 3.2.1's, then a bisect over the 92 commits.
+- **logmap's SObjectizer form (§21.4)**: the adapter default, and four cells.
+- **concsll's other placement**: `benchmarks/savina/concsll.md` promises one measurement of the
+  list sharing its core with half the workers (concdict's placement), for qb and the floor
+  together, before the cell is final. No adapter can switch to it today; it was not measured.
+- **The first profile of each new shape** (`perf` on WSL2, ETW on Windows), which the wave's plan
+  asks of every shape, was not part of this session: §21.2 reads distributions and observations,
+  not profiles.
+- **`tools/report.py` prints one version per framework**: a host whose shapes were measured with
+  two qb builds renders "qb 3.1.0" — the last document read, one of the eight older shapes'
+  3.2.0-candidate documents — over ten shapes whose documents say 3.2.1. The host READMEs say
+  which build each directory holds; the renderer does not yet.
+- **WSL2's 2c-park floor is the hypervisor's** on the new shapes as on the old (§6): 13.37 µs per
+  cigsmok round against 1.18 spinning, 2.84 µs per philosophers meal against 204 ns, 1.31 µs per
+  concdict operation against 53 ns, 27.6 µs per concsll request against 21.0 — and SObjectizer's
+  parked cells follow it where the shape crosses a core per message (concsll 28.4 µs, cigsmok
+  1.74 µs). Windows' raw spin floor is bimodal at two cores on three shapes (fork-join-create,
+  a-star, logmap), so qb's ratio to it there is a ratio to whichever mode a run fell in.
+- **macOS and the arm64 guest** have not run wave A.
