@@ -2899,8 +2899,10 @@ other framework over qb is 2.70 / 2.77.
   framework; at two cores 149 / 152 ns against SObjectizer's 182 / 183 (1.22 / 1.20 ×). The
   `work_messages` sub-row is 1 790 at one core for qb, SObjectizer and the floor and 1 602 for
   CAF, the page's figures; at two cores qb's median is 1 349–1 399. CAF's two-core cells on
-  Windows read 1 602 by median, its one-thread count, within a range of 1 523–1 727: the page
-  records 1 602 on every repetition, and this session saw the second thread take a share in a few.
+  Windows read 1 602 by median, its one-thread count, within a range of 1 523–1 727 — 9 of the 18
+  repetitions at 1 602 and no repetition of any other two-core cell, so the second thread took a
+  share in about half (the page said "every repetition" from its correctness runs, and says this
+  now).
 - **philosophers** (a meal) — 51 / 69 ns at one core against SObjectizer's 382 / 471 (7.5 / 6.8 ×);
   `refused` is 285 670 on one thread for qb, SObjectizer and the floor, and 0 for CAF, whose one
   thread runs the philosophers in an order that never conflicts. At two cores qb reads 119 / 167 ns

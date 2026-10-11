@@ -112,7 +112,8 @@ and SObjectizer's pools have no such constraint — the master is just another r
 either thread may pick up next — so on this shape the placing rows pay for the master's placement
 and the pool rows do not. The cell records that asymmetry; it is the same one `big.md` names from
 the other side, where static placement is what pays. One pool row is not that pool on every host:
-on Windows, CAF's pool runs this shape on one of its two threads (*What is observed*, below).
+on Windows, CAF's pool runs this shape on one of its two threads in about half its repetitions
+(*What is observed*, below).
 
 ## The verified answer
 
@@ -161,13 +162,20 @@ for qb, SObjectizer and the floor, 1 602 for CAF — and on two it varies from o
 next: 1 319 to 1 824 over the correctness runs of the commit that added this section (every cell,
 two repetitions each, MSVC, g++-14 and clang-19), with one exception.
 
-The exception is CAF at `cores=2` on Windows: 1 602 on every repetition — its one-thread count —
-spin and park, pinned and not. Counting the threads that ran a search (an instrumented build, never
-committed) says why: all 1 602 searches ran on one of CAF's two scheduler threads and never two at
-once, where on Linux (g++-14) the second thread ran about one search in seven and two ran
-together. That Windows row measures CAF's pool running the shape on one thread, not the pool
-freedom from placement described above, and its sub-row shows it: a two-core CAF cell reading
-1 602 on every repetition is that run.
+The exception is CAF at `cores=2` on Windows, which reads its one-thread count, 1 602. In those
+correctness runs it read 1 602 on every repetition, spin and park, pinned and not, and counting the threads that ran a search (an
+instrumented build, never committed) said why: all 1 602 searches ran on one of CAF's two
+scheduler threads and never two at once, where on Linux (g++-14) the second thread ran about one
+search in seven and two ran together. The quiet-host field of 2026-10-11 reads it less absolutely,
+nine repetitions per cell: a **median of 1 602 with a range of 1 587–1 727** at 2c-spin, 4 of the 9
+repetitions at 1 602 (`results/desktop-win11-msvc19/savina-a-star/caf__2c-spin.json`), and **1 602
+with 1 523–1 725** at 2c-park, 5 of 9 (`caf__2c-park.json` beside it); no repetition of any other
+two-core cell reads 1 602 on either host, and WSL2's two CAF cells read a median of 1 757
+(`results/wsl-debian-g++14/savina-a-star/`). So that Windows row measures CAF's pool running the
+shape on one thread in about half its repetitions and with the second thread taking a share in
+the others — not the pool freedom from placement described above, and not always its absence
+either; the sub-row shows the mix, and a repetition reading 1 602 is consistent with a one-thread
+run.
 
 Every adapter's `main()` also declares `min_work_messages` as the name's lower bound
 (`qvo::Spec::observed_at_least`), and the document records it (`"observed_at_least":
