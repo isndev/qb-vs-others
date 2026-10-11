@@ -1,0 +1,3 @@
+ctl=/home/mbelhadi/p1/b-qvo-ctl/bin cand=/home/mbelhadi/p1/b-qvo-cand3/bin rounds=8 seed=9794 copies=3
+=== start 10:27:23 load=0.78 0.48 0.18
+=== AB-QVO-CELLS-WSL-DONE 10:29:04 load=1.76 0.90 0.37

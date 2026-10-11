@@ -1,0 +1,11 @@
+  round 8/8 done 09:37:33
+case                                                                     ctl        cand    delta  A/A ctl  A/A cand  verdict
+BM_Mono_PingPong_Latency/real_time                                    55.223      55.362   +0.25%    0.35%     0.19%  no measurable difference
+BM_Mono_Producer_Consumer/real_time                                    8.384       8.409   +0.30%    0.78%     0.34%  no measurable difference
+BM_Multi_PingPong_Latency/real_time                                  187.095     188.853   +0.94%    1.27%     0.53%  no measurable difference
+BM_Multi_Producer_Consumer/real_time                                  10.157      10.167   +0.09%    0.55%     0.44%  no measurable difference
+BM_PINGPONG<TinyEvent>/NB_PING_ACTOR:64/NB_PING:32768/NB_CORE:1/      20.687      20.657   -0.14%    0.53%     0.40%  no measurable difference
+BM_PINGPONG<TinyEvent>/NB_PING_ACTOR:64/NB_PING:32768/NB_CORE:8/      18.285      18.399   +0.62%    0.33%     0.69%  no measurable difference
+BM_Pipeline_Chain_Latency<LightEvent>/NB_EVENTS:150000/NB_ACTORS      29.652      29.598   -0.18%    0.65%     0.50%  no measurable difference
+BM_Pipeline_Chain_Latency<LightEvent>/NB_EVENTS:187500/NB_ACTORS     239.976     241.716   +0.73%    0.94%     0.53%  no measurable difference
+BM_Reference_Multi_PingPong_Latency/real_time                        190.606     191.028   +0.22%    0.26%     0.90%  no measurable difference

@@ -1,0 +1,6 @@
+form 1: bail on inbound work                  ctl   n=72 slow-mode(>7900 ns)=21 (29 %) median=7417
+form 1: bail on inbound work                  cand  n=72 slow-mode(>7900 ns)=52 (72 %) median=8300
+form 2: stall on the 1st unmoved refusal      ctl   n=72 slow-mode(>7900 ns)=20 (28 %) median=7459
+form 2: stall on the 1st unmoved refusal      cand  n=72 slow-mode(>7900 ns)=33 (46 %) median=7619
+the rule: stall on the 2nd unmoved refusal    ctl   n=72 slow-mode(>7900 ns)=24 (33 %) median=7487
+the rule: stall on the 2nd unmoved refusal    cand  n=72 slow-mode(>7900 ns)=26 (36 %) median=7476

@@ -1,0 +1,37 @@
+=== census start 06:39:15
+a-star               1c  CORESTATS core=0 passes=8 received=5390 sent=0 sent_try=0 blocked=0 dropped=0 
+a-star               2c  CORESTATS core=1 passes=1749 received=674 sent=1478 sent_try=1478 blocked=0 dropped=0 CORESTATS core=0 passes=16072 received=3382 sent=674 sent_try=1 blocked=0 dropped=0 
+bank-transaction     1c  CORESTATS core=0 passes=186 received=203001 sent=0 sent_try=0 blocked=0 dropped=0 
+bank-transaction     2c  CORESTATS core=0 passes=4677 received=127183 sent=50563 sent_try=40419 blocked=1980 dropped=0 CORESTATS core=1 passes=89710 received=75819 sent=51062 sent_try=40305 blocked=821 dropped=0 
+barber               1c  CORESTATS core=0 passes=10008 received=35007 sent=0 sent_try=0 blocked=0 dropped=0 
+barber               2c  CORESTATS core=0 passes=44239 received=19967 sent=5001 sent_try=1 blocked=0 dropped=0 CORESTATS core=1 passes=26390 received=15077 sent=14966 sent_try=23543 blocked=8578 dropped=0 
+big                  1c  CORESTATS core=0 passes=40004 received=4800361 sent=0 sent_try=0 blocked=0 dropped=0 
+big                  2c  CORESTATS core=1 passes=2795020 received=2400071 sent=1208888 sent_try=604499 blocked=0 dropped=0 CORESTATS core=0 passes=117078 received=2400291 sent=1208829 sent_try=604449 blocked=0 dropped=0 
+bndbuffer            1c  CORESTATS core=0 passes=2004 received=160161 sent=0 sent_try=0 blocked=0 dropped=0 
+bndbuffer            2c  CORESTATS core=1 passes=5209070 received=41021 sent=41060 sent_try=40 blocked=0 dropped=0 CORESTATS core=0 passes=2004 received=119141 sent=41021 sent_try=0 blocked=0 dropped=0 
+chameneos            1c  CORESTATS core=0 passes=8006 received=800501 sent=0 sent_try=0 blocked=0 dropped=0 
+chameneos            2c  CORESTATS core=0 passes=28619 received=400301 sent=400201 sent_try=200100 blocked=0 dropped=0 CORESTATS core=1 passes=762502 received=400201 sent=400300 sent_try=400300 blocked=0 dropped=0 
+cigsmok              1c  CORESTATS core=0 passes=100004 received=100601 sent=0 sent_try=0 blocked=0 dropped=0 
+cigsmok              2c  CORESTATS core=0 passes=1100389 received=75414 sent=25187 sent_try=100 blocked=0 dropped=0 CORESTATS core=1 passes=2347528 received=25187 sent=25287 sent_try=200 blocked=0 dropped=0 
+concdict             1c  CORESTATS core=0 passes=20006 received=400064 sent=0 sent_try=0 blocked=0 dropped=0 
+concdict             2c  CORESTATS core=1 passes=1221207 received=100011 sent=100020 sent_try=30 blocked=0 dropped=0 CORESTATS core=0 passes=23084 received=300054 sent=100011 sent_try=10 blocked=0 dropped=0 
+concsll              1c  CORESTATS core=0 passes=16006 received=320064 sent=0 sent_try=0 blocked=0 dropped=0 
+concsll              2c  CORESTATS core=1 passes=315606867 received=160063 sent=160002 sent_try=1 blocked=0 dropped=0 CORESTATS core=0 passes=673472 received=160002 sent=160002 sent_try=2 blocked=0 dropped=0 
+counting             1c  CORESTATS core=0 passes=5 received=1000005 sent=0 sent_try=0 blocked=0 dropped=0 
+counting             2c  CORESTATS core=0 passes=10734 received=3 sent=1000003 sent_try=1001073 blocked=1071 dropped=0 CORESTATS core=1 passes=1041135 received=1000003 sent=2 sent_try=1 blocked=0 dropped=0 
+fib                  1c  CORESTATS core=0 passes=44 received=114627 sent=0 sent_try=0 blocked=0 dropped=0 
+fib                  2c  CORESTATS core=1 passes=51 received=43781 sent=2 sent_try=2 blocked=0 dropped=0 CORESTATS core=0 passes=1673 received=70846 sent=2 sent_try=1 blocked=0 dropped=0 
+fork-join            1c  CORESTATS core=0 passes=4 received=600121 sent=0 sent_try=0 blocked=0 dropped=0 
+fork-join            2c  CORESTATS core=1 passes=523085 received=300001 sent=60 sent_try=60 blocked=0 dropped=0 CORESTATS core=0 passes=1362 received=300121 sent=300001 sent_try=301118 blocked=1118 dropped=0 
+fork-join-create     1c  CORESTATS core=0 passes=6 received=80004 sent=0 sent_try=0 blocked=0 dropped=0 
+fork-join-create     2c  CORESTATS core=0 passes=2408 received=40006 sent=2 sent_try=1 blocked=0 dropped=0 CORESTATS core=1 passes=9172 received=40002 sent=2 sent_try=2 blocked=0 dropped=0 
+logmap               1c  CORESTATS core=0 passes=50006 received=750061 sent=0 sent_try=0 blocked=0 dropped=0 
+logmap               2c  CORESTATS core=1 passes=364486 received=375011 sent=20 sent_try=20 blocked=0 dropped=0 CORESTATS core=0 passes=50440 received=375051 sent=125011 sent_try=125169 blocked=159 dropped=0 
+nqueens              1c  CORESTATS core=0 passes=12 received=29097 sent=0 sent_try=0 blocked=0 dropped=0 
+nqueens              2c  CORESTATS core=1 passes=1094 received=2480 sent=12062 sent_try=62482 blocked=50420 dropped=0 CORESTATS core=0 passes=320059 received=26618 sent=2480 sent_try=2480 blocked=1 dropped=0 
+philosophers         1c  CORESTATS core=0 passes=58587 received=1371381 sent=0 sent_try=0 blocked=0 dropped=0 
+philosophers         2c  CORESTATS core=1 passes=107497 received=722279 sent=722319 sent_try=200040 blocked=0 dropped=0 CORESTATS core=0 passes=123567 received=722320 sent=522300 sent_try=20 blocked=0 dropped=0 
+ping-pong            1c  CORESTATS core=0 passes=2000003 received=2000003 sent=0 sent_try=0 blocked=0 dropped=0 
+ping-pong            2c  CORESTATS core=1 passes=4531124 received=1000002 sent=1000002 sent_try=0 blocked=0 dropped=0 CORESTATS core=0 passes=4841287 received=1000002 sent=1000001 sent_try=0 blocked=0 dropped=0 
+thread-ring          1c  CORESTATS core=0 passes=1000003 received=1000102 sent=0 sent_try=0 blocked=0 dropped=0 
+thread-ring          2c  CORESTATS core=0 passes=2616524 received=500102 sent=500001 sent_try=0 blocked=0 dropped=0 CORESTATS core=1 passes=4635687 received=500001 sent=500050 sent_try=51 blocked=0 dropped=0 

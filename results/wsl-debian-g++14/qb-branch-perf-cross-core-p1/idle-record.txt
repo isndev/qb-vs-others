@@ -1,0 +1,29 @@
+=== idle assertion 2026-10-11T07:00:28Z
+--- WSL
+1.17 3.93 5.07 1/391 2876763
+procs: 2
+top - 09:00:28 up 6 days,  8:15,  5 users,  load average: 1.17, 3.93, 5.07
+Tasks:  51 total,   1 running,  50 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.0 us,  0.4 sy,  0.0 ni, 99.6 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+MiB Mem :  31966.1 total,   4512.6 free,   1074.3 used,  26754.7 buff/cache     
+MiB Swap:   8192.0 total,   7583.7 free,    608.3 used.  30891.9 avail Mem 
+your 131072x1 screen size is bogus. expect trouble
+%CPU COMMAND
+ 0.2 redis-server
+ 0.0 systemd-udevd
+ 0.0 systemd-journal
+ 0.0 systemd
+--- Windows
+vctip
+cpu% 1.5
+cpu% 2.8
+cpu% 2.6
+
+claude           21297.21875
+asus_framework  11203.828125
+WindowsTerminal   7421.84375
+dllhost          6294.671875
+OpenConsole      4586.953125
+
+
+

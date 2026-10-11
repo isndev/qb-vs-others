@@ -238,6 +238,11 @@ the one-core time at 200–300 customers, 73 % at 600, 86 % at 1 200 and 99 % at
 The backoff exists so that two cores with full rings for each other cannot deadlock (its comment
 says so), and a full ring of a peer that is merely busy is the case it was not shaped for: the
 sending core yields its time slice hundreds of times per pass while its own work waits. Whether
-the flush should give up sooner when the core has its own work pending is a question for qb, not
-for this benchmark; it is recorded here as the shape's finding, and `pace` keeps both forms
-measurable.
+the flush should give up sooner when the core has its own work pending was a question for qb, not
+for this benchmark; it was recorded here as the shape's finding, and qb answered it (Huly QB-979,
+`docs/TUNING.md` §21.8): a flush that finds the peer's ring full gives the pass back to the core's
+own inbound work when the peer is STALLED — its consumer index unmoved over two refusals in a row —
+and keeps the bounded retries for a peer that is draining. Measured in one reserved session against
+the tree before it, three copies a side and a seeded order, this cell reads **−28.6 % per haircut at
+2c-spin and −28.8 % at 2c-park on WSL2, −29.5 / −29.2 % on Windows** (the two-core cell at 69 % of the
+one-core time where it was at 96 %), `pace=1` and the one-core cell level; `pace` keeps both forms measurable.

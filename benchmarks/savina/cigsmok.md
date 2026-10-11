@@ -144,6 +144,21 @@ In each framework the acknowledgement leaves the smoker before its smoke:
   runs.
 - **The floor**: the smoker pushes the acknowledgement into the arbiter's ring before it smokes.
 
+## What the two-core cell measures in qb
+
+SObjectizer's two-core cell is faster than qb's on both hosts (`docs/TUNING.md` §21.2: 918 ns /
+1.13 µs per round against 1.15 / 1.17 µs), while qb's one-core round is cheaper (1.35 µs against
+1.46 / 1.50) and qb executes a third of the instructions per round (684 against 2 057 at one core,
+callgrind with `smoke=1`). The difference is the placement this page fixes above, not the round: qb
+sits on the floor that shares its placement (1.18 / 1.17 µs), and a schedule model replaying the
+draws (`tools/cigsmok-schedule-model.py`) puts the static schedule at 1.28 × the pool's where the
+cells read 1.26 ×. Half the rounds go to a smoker on the arbiter's core, where the smoke holds the
+arbiter until it ends; a round sent to the other core while it still smokes waits behind that
+smoke; the pool runs the arbiter on whichever thread is free. No static split of the smokers comes
+within 20 % of the pool, so the cell is kept as the spec places it: it measures what dynamic
+placement buys an arbiter, and qb's actors do not migrate (`FAIRNESS.md` §1.1). The reading, the
+instruments and their figures are `docs/TUNING.md` §21.7.
+
 ## The verified answer
 
 Every round `r` has one designated smoker `s(r)` and one period `p(r)`. The checksum names who

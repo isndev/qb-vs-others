@@ -1,0 +1,24 @@
+PROBE cigsmok arbiter wait per round (ns), [prev core][this core]:
+PROBE   [0][0] n=12375 mean=1383.1 min=61 max=101375
+PROBE   [0][1] n=12538 mean=495.9 min=165 max=289968
+PROBE   [1][0] n=12538 mean=1390.8 min=59 max=26160
+PROBE   [1][1] n=12549 mean=1398.8 min=163 max=297583
+PROBE   all n=50000 mean=1166.5  smoke iterations core0=12651648 core1=12804980
+PROBE cigsmok arbiter wait per round (ns), [prev core][this core]:
+PROBE   [0][0] n=12375 mean=1421.3 min=61 max=239324
+PROBE   [0][1] n=12538 mean=447.4 min=169 max=37513
+PROBE   [1][0] n=12538 mean=1386.1 min=61 max=45150
+PROBE   [1][1] n=12549 mean=1374.2 min=162 max=39532
+PROBE   all n=50000 mean=1156.4  smoke iterations core0=12651648 core1=12804980
+PROBE cigsmok arbiter wait per round (ns), [prev core][this core]:
+PROBE   [0][0] n=12375 mean=1376.8 min=61 max=28048
+PROBE   [0][1] n=12538 mean=474.9 min=164 max=107390
+PROBE   [1][0] n=12538 mean=1431.2 min=60 max=305520
+PROBE   [1][1] n=12549 mean=1402.0 min=166 max=143718
+PROBE   all n=50000 mean=1170.6  smoke iterations core0=12651648 core1=12804980
+PROBE cigsmok arbiter wait per round (ns), [prev core][this core]:
+PROBE   [0][0] n=12375 mean=1381.5 min=61 max=41173
+PROBE   [0][1] n=12538 mean=476.5 min=169 max=98533
+PROBE   [1][0] n=12538 mean=1400.4 min=60 max=129176
+PROBE   [1][1] n=12549 mean=1422.8 min=168 max=85669
+PROBE   all n=50000 mean=1169.7  smoke iterations core0=12651648 core1=12804980

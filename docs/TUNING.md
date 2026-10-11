@@ -58,6 +58,8 @@ are all in this repository.
   - [21.4 The forms the adapters declared, measured](#214-the-forms-the-adapters-declared-measured)
   - [21.5 What the sessions leave](#215-what-the-sessions-leave)
   - [21.6 The fork-join-create regression: cause, fix, and the same-session A/B](#216-the-fork-join-create-regression-cause-fix-and-the-same-session-ab)
+  - [21.7 The cigsmok two-core cell: placement, not cost (QB-1010)](#217-the-cigsmok-two-core-cell-placement-not-cost-qb-1010)
+  - [21.8 The barber's blocked flush (QB-979): the stall rule, measured](#218-the-barbers-blocked-flush-qb-979-the-stall-rule-measured)
 
 ---
 
@@ -2918,7 +2920,7 @@ other framework over qb is 2.65 / 2.73 (with the re-measured logmap row of §21.
 - **barber** (a haircut) — the busy work dominates: 2.91 / 2.87 µs at one core over a floor of
   2.70 / 2.74, 1.61 × CAF on WSL2 and 1.93 × SObjectizer on Windows. A second core buys qb 5 / 3 %
   (2.75 / 2.80 µs) at the default `pace=0`, the form whose full peer ring `barber.md` measured
-  (94 285 blocked sends at two cores; Huly QB-979); the floor, with the same placement, gains 13 %
+  (94 285 blocked sends at two cores; Huly QB-979, answered in §21.8: −29 % on the two-core cells); the floor, with the same placement, gains 13 %
   on WSL2. `wakeups` at two cores: qb 5 / 46–49, CAF 1, SObjectizer 549–1 750 / 1 357–3 054.
   SObjectizer's Windows 2c-spin cell is bimodal: 2 of 9 repetitions at ~129 µs per haircut.
 - **bndbuffer** (an item) — the producers' and consumers' 2 500-step work is the cell: 13.07 /
@@ -2933,7 +2935,8 @@ other framework over qb is 2.65 / 2.73 (with the re-measured logmap row of §21.
   they smoke), and SObjectizer's pool, which places each demand, runs the round faster than that
   placement allows — its own one-core cell is 1.46 / 1.50 µs. At one core qb is on the floor
   (1.35 µs both hosts), 1.08 / 1.11 × SObjectizer; at 2c-park it leads on WSL2 (1.15 µs against
-  CAF's 1.64 and SObjectizer's 1.74) and is level with SObjectizer on Windows.
+  CAF's 1.64 and SObjectizer's 1.74) and is level with SObjectizer on Windows. §21.7 shows, without
+  a timing, that the two-core loss is the placement and not the cost of a round.
 - **concdict** (an operation) — the round trip to one shared actor: 41 / 59 ns at one core
   against SObjectizer's 172 / 209 and CAF's 366 / 580 (4.2 / 3.5 ×), on a floor of 26 / 45; at
   two cores 51 / 63 ns, at or under the floor (53 / 97), 6.8 / 7.7 × SObjectizer. The cell's
@@ -3082,3 +3085,147 @@ A/B read 61.1 / 76.7 / 62.8 at 1c-park; this session reads 61.0 / 75.9 and 74.9 
 Every two-core cell overlaps. On Windows all three builds are level, as the wave-A census already
 read the candidate there. The wave-A field keeps shipped 3.2.1 as its qb column, and
 `qb-branch-develop/grid-73018675/` stays as measured at `73018675`, with this section as its note.
+
+### 21.7 The cigsmok two-core cell: placement, not cost (QB-1010)
+
+§21.2's one loss went to the 3.3.0 train as Huly QB-1010: at 2c-spin SObjectizer reads 918 ns per
+round on WSL2 and 1 129 on Windows against qb's 1 154 / 1 174, distributions separate, while qb leads
+the same shape at one core (1 353 against 1 455 / 1 352 against 1 503) and at 2c-park on WSL2. The
+question the ticket asked — what a pool does per round that qb pays more for — was answered by
+reading the engine and by three instruments that count instead of timing, so they are valid on a
+loaded host (on this one they ran beside builds).
+
+**The round, read in the engine** (qb `9aebf2fc`, `src/qb/core/VirtualCore.cpp`). The arbiter's
+`send<Smoke>` to a smoker on core 1 is one `try_send` straight into core 1's ring plus the notify
+fence; the smoker's `reply()` is the same path back, published BEFORE the smoke, and the arbiter's
+core polls its rings on every idle pass. A smoker on core 0 — half of the 200, by the spec's
+`(j + 1) % 2` — receives its `StartSmoking` from the self pipe on the next pass, acknowledges into the
+same pipe and then smokes INSIDE its handler: the arbiter's core is held until the smoke ends, and the
+acknowledgement is routed the pass after. A round sent to core 1 while core 1 still smokes the
+previous one waits in core 1's ring. Nothing in this is a cost qb could shave: the hop is one ring
+write (§16), the same-core turnaround is one pass (§15), and the smoke is the work.
+
+**1. The floor.** The raw-thread floor shares qb's static placement (the arbiter on worker 0,
+smoker `j` on worker `(j + 1) % 2`) and nothing else, and reads 1 175 / 1 171 ns per round at
+2c-spin: qb is ON the floor of its own placement on both hosts (1 154 / 1 174). SObjectizer is
+UNDER that floor (918 / 1 129): no messaging cost explains a figure the floor's two ring writes
+cannot reach.
+
+**2. Instructions per round** (callgrind 3.24 on WSL2, `--param cores=1 --param smoke=1 --cpus 0`,
+one repetition of 50 000 rounds, every checksum verified; `smoke=1` is the spec's fixed 10-iteration
+smoke, so the count is the coordination; the harness's `expected()` runs the same 50 000 smokes on
+the main thread, and its 8.10 M Ir of `spin_work` are subtracted from each framework's worker
+thread). qb `73018675` (its core code is `9aebf2fc`'s): 42.29 M Ir in the core's loop, **684 per
+round**; shipped 3.2.1: 43.89 M, 716; SObjectizer 5.8.5.1: 110.93 M in its work thread, **2 057 per
+round** — `do_deliver_message` alone 728 of them, the subscription `_Rb_tree` lookup 316,
+`push_event` 312; the floor's `Mesh` body 258 (its ring, its handlers and the checksum arithmetic
+every adapter pays). The pool executes 3.0 × qb's instructions per round and wins the two-core cell
+anyway: its gain is not in the round.
+
+**3. The schedule, replayed.** `tools/cigsmok-schedule-model.py` replays the spec's draws exactly
+(`qvo::mix` over the round: which smoker, which period) and simulates two schedules with measured
+inputs — the static one (a core-0 smoke holds the arbiter; a core-1 round queues behind the previous
+core-1 smoke) and a two-thread pool (the smoker's demand to the first free thread, the arbiter's to
+the other while the smoke runs). Inputs on WSL2: 2.50 ns per `spin_work` iteration (the value at
+which the serial schedule reads 1 352.8, qb's one-core cell being 1 353), 82 ns per qb hop (half the
+ping-pong 2c-spin round trip), 20 ns for a same-core turnaround and for a handler. Outputs, ns per
+round: **the static schedule 1 092, the pool 853** (a 130 ns hand-off; 160 reproduces the measured
+918), the serial 1 353. The static/pool ratio is 1.28 against the measured 1.26; both absolute
+figures sit ~6 % under the cells, which is what the model leaves out (the smokers' lines, cold in
+whichever cache after 199 others, and the notify fence). Over the exact draws the arbiter waits for
+the previous core-1 smoke on 14 627 of the 25 087 rounds sent to core 1. The fraction placed on
+core 1 is not a lever either: 0.4 → 1 091, 0.6 → 1 084, 0.7 → 1 111, 1.0 → 1 298 — no static
+placement comes within 20 % of the pool, and the spec's half/half is within 1 % of the best static
+one.
+
+**4. The arbiter's own wait, stamped.** A probe build of the adapter (`frameworks/qb/savina/cigsmok.cpp`
+with two `mono_now()` reads per round, one launch of 3 + 1 per host on the reserved host, never a cell: the
+stamps cost ~40 ns per round, 1 196 ns per round against the cell's 1 154 on WSL2) buckets the arbiter's wait
+— from its `send<Smoke>` to the `StartedSmoking` it receives — by the core of the previous round's smoker
+and of this one's. WSL2, means over four repetitions of 50 000 rounds: a round sent to a core-0 smoker waits
+**1 380–1 420 ns** whatever preceded it (the smoke, which holds the arbiter's core until it ends); a round
+sent to core 1 after a core-0 round **450–500 ns** (the hop pair and the dispatch, the smoke running beside
+the next decision); a round sent to core 1 after a core-1 round **1 375–1 425 ns** (queued behind the previous
+smoke). Half the rounds pay the smoke (12 375 + 12 538 of 50 000), a quarter a hop pair, a quarter the
+previous smoke's remainder — the three regimes instrument 3 simulates, in the proportions the draws give
+them. Windows reads the same three: 1 378–1 438, 448–496 and 1 385–1 406 ns, mean 1 156–1 174 (p50 1 191
+against the cell's 1 174).
+
+**What the cell measures.** Dynamic placement: the pool runs the arbiter on whichever thread is
+free while a smoke runs and never lets a smoke hold the arbiter, so its per-round work overlaps
+where qb's static placement serialises it half of the time. qb's actors do not migrate — static
+per-core placement is its idiomatic form (FAIRNESS §1.1), the one the floor bounds — so the cell
+stays as measured, and `benchmarks/savina/cigsmok.md` says what it measures. The engine's own share
+of the gap is bounded by instrument 3: the cross-core round trip (~165 ns against the raw ring's
+~120, §16.4), the same-core turnaround and the idle pass's latency to notice an acknowledgement
+together move the static schedule by under 3 %, on half the rounds, and would not flip either host.
+
+### 21.8 The barber's blocked flush (QB-979): the stall rule, measured
+
+`benchmarks/savina/barber.md` had recorded the finding (§21.2): with the reference's one-handler factory at
+two cores, the factory's core drains nothing for the whole production, its ring from the barber's core fills
+after ~340 customers, and the barber's core then spent every pass in the flush's bounded backoff — 64 pauses
+and 448 `yield()`s per blocked event per pass, 94 285 blocked attempts per run — with its own customers
+waiting; the second core bought 5 %. Huly QB-979 asked qb whether the flush should give the pass back
+sooner when the core has work of its own.
+
+**The rule, and its two wrong first forms.** The flush now gives the pass back at once — the same partial
+bail the exhausted budget took, taken earlier — when the peer is STALLED (its consumer index, as this core's
+producer ring last saw it, unmoved over two refusals in a row: a peer held in one long handler, or itself
+blocked on this core's ring) and this core has inbound work (a peer's ring into it holds events, its self
+pipe holds the last pass's same-core pushes, or its io loop has something to deliver); a peer that is
+draining, however slowly, and a core with nothing else to do keep the whole budget. Its first form bailed on
+inbound work alone, and `savina/nqueens` refused it: the master drains its ring every pass and relays the
+workers' children, a worker that ran its own kernels instead of waiting out the budget hoarded them, and the
+search fell into the slower of its two schedules (§21.2: the cell moves between ~7.0 and ~8.3 µs per
+solution) in 72 % of 72 repetitions against 28 % — **+12.1 %** on the cell with the control's copies at
+1.4 % spread. A stall called on the first unmoved refusal left 46 %; called on the second, the cell is level
+(33 % against 36 %, −0.6 %). The witness that pins the rule counts, not times: a flooding core with a
+self-addressed chain tries the head event once per pass after the first two refusals
+(`tests/core/system/concurrency/flush-yields-to-inbound.cpp`, red on `9aebf2fc`: 819 360 blocked attempts
+over 33 125 passes on g++, 1 744 399 over 274 855 on MSVC).
+
+**The A/B** (`results/<host>/qb-branch-perf-cross-core-p1/`, the session's `ab-cells-*` summaries): the
+622ad51f harness built against `9aebf2fc` and against the rule, three physical copies a side, a seeded
+random order over every (side, copy, cell), eight rounds of 3 + 1, 60 s of quiet first, the host reserved;
+the figure is the median of the copy medians and the yardstick the control's copy spread. The cells are the
+ones a census of `sends_blocked` on every qb Savina cell (candidate build, one launch each, counters only)
+showed the rule can reach — blocked > 0 at two cores: barber, bank-transaction, counting, fork-join, logmap,
+nqueens — plus the run-path cells `__flush_pipes__`'s re-register-allocation could touch (big, chameneos) and
+the layout sentinels. ns per unit, WSL2 g++-14:
+
+| cell | control | the rule | delta | control copy spread |
+|---|---:|---:|---:|---:|
+| barber 2c-spin, pace=0 (haircut) | 2 764 | **1 974** | **−28.6 %** | 0.3 % |
+| barber 2c-park, pace=0 | 2 765 | **1 970** | **−28.8 %** | 0.3 % |
+| barber 1c-spin / 2c-spin pace=1 | 2 865 / 1 506 | 2 855 / 1 503 | −0.3 / −0.2 % | 1.1 / 1.2 % |
+| bank-transaction 2c-spin (transfer) | 75.0 | 71.3 | **−4.9 %** | 2.4 % |
+| nqueens 2c-spin (solution) | 7 526 | 7 479 | −0.6 % | 5.3 % (bimodal) |
+| big / chameneos / counting 2c | 17.6 / 42.4 / 9.2 | 17.8 / 42.5 / 9.2 | +1.1 / +0.1 / −0.1 % | 0.6 / 1.5 / 2.3 % |
+| fork-join / logmap 2c | 8.1 / 14.6 | 8.2 / 14.5 | +1.1 / −1.0 % | 2.0 / 1.5 % |
+| ping-pong 1c / 2c, thread-ring 2c | 21.5 / 151.6 / 74.7 | 21.5 / 151.0 / 74.9 | −0.0 / −0.4 / +0.2 % | 0.8 / 2.7 / 1.4 % |
+
+Windows MSVC 19.51, the same protocol on the same session (ns per unit, control → the rule, delta, control
+copy spread): barber 2c-spin 2 824 → **1 992, −29.5 %** (1.1 %), 2c-park 2 825 → **1 999, −29.2 %** (0.7 %),
+1c +0.0 % (0.8 %), pace=1 −0.5 % (0.9 %); bank-transaction 2c +0.4 % (1.3 %); nqueens 2c −0.1 % (0.3 %, the
+Windows cell sits in one mode at ~6 990); big +0.5 % (0.6 %), counting +2.4 % (4.5 %), fork-join −0.4 % (2.5 %),
+logmap +1.5 % (9.3 %), thread-ring 2c −1.2 % (2.0 %), ping-pong 2c −2.7 % (4.0 %) — every one inside its spread;
+chameneos 2c −9.8 % with a 35 % candidate copy spread (the Windows bimodality §21.2 records: no reading);
+ping-pong 1c −4.6 % (0.4 %), a one-core cell where no changed instruction runs — the pass, the receive and the
+direct send are instruction-identical in the `/FAs` listings, so it is layout, MSVC's lottery (§9).
+
+`dev/bench` (`ab.py`, the same protocol, nine cases of the four event-path binaries): every case inside its
+A/A on the pair built with `-falign-functions/-loops/-jumps=64` on both sides; on the plain pair two
+pipeline cases read +1.2 / +1.5 % and vanish with the alignment — layout, which is what the aligned pair
+exists to show; on Windows all nine are level (`BM_PINGPONG` at one core −0.7 %, the same layout). The codegen
+says where the rule can cost: `__workflow_loop__`, `__receive__` and `send` are
+instruction-identical on both compilers (two `__LINE__` immediates apart), `__flush_pipes__` grew from 550
+to 613 instructions on g++ and from 824 to 909 on MSVC and was re-register-allocated — the run-gathering
+loop's registers moved — which the big, chameneos and counting cells above bound.
+
+**What the barber cell measures now.** With the rule the barber's core serves customers while the factory
+produces, and the two-core cell takes 69 % of the one-core time where it took 96 % (Windows: 69 % where it
+took 97 %); the floor, whose rings
+never fill at 5 000 customers, gains 13 % with the same placement — its missing overlap is the floor's own
+question, not qb's. `pace=1` was level before and is level after: the throttle only ever cost the
+reference's form.
