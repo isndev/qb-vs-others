@@ -1,0 +1,8 @@
+run.py: 1 binaries, frameworks: qb
+run.py: pinning to CPUs 0,2, 9 repetitions + 2 warmup
+  savina/fork-join-create  qb           2c-spin  ok  p50=2,355,500 ns
+  savina/fork-join-create  qb           2c-park  ok  p50=2,206,300 ns
+  savina/fork-join-create  qb           1c-spin  ok  p50=4,225,900 ns
+  savina/fork-join-create  qb           1c-park  ok  p50=3,993,600 ns
+
+run.py: 4 cells, 0 not verified, 0 not applicable -> D:\repo\qvo-wave-a\build\wa-rm\fjc\grid-4b6a4300

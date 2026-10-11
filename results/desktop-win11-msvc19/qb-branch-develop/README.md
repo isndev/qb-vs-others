@@ -197,7 +197,8 @@ pass 1 −1.2 %) are not repeated by the other pass.
 
 - **fork-join-create at one core is level here** (−1.4 / −4.3 % in the grids, census −0.9 /
   +1.3 %, overlapping) — the cell the candidate loses by 19–25 % on WSL2 / g++ does not move
-  on MSVC; `fib` is level at all four configurations (census −3.6 to +1.4 %).
+  on MSVC; `fib` is level at all four configurations (census −3.6 to +1.4 %). The fix that closes
+  it on WSL2 (`../qb-branch-perf-fjcreate-regression/`, Huly QB-1009) measures level here too.
 - **philosophers at two cores spans 117–213 ns per meal across the three grids** and 122–203
   per launch in the census, on both builds: the grid's +48 / +40 % at 2c-park and −8 / +12 % at
   2c-spin are which launch mode each pass fell in, and the census reads −2.8 % and +21.2 %,

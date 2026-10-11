@@ -1,0 +1,20 @@
+   cpu% (session start): 1.4 0.2 1.7
+== quiet-60s 2026-10-11T03:43:51Z
+== F-start 2026-10-11T03:44:51Z
+F1 rc=0 ok=4 | run.py: 4 cells, 0 not verified, 0 not applicable -> D:\repo\qvo-wave-a\build\wa-rm\fjc\grid-73018675
+F2 rc=0 ok=4 | run.py: 4 cells, 0 not verified, 0 not applicable -> D:\repo\qvo-wave-a\build\wa-rm\fjc\grid-4b6a4300
+F3 rc=0 ok=4 | run.py: 4 cells, 0 not verified, 0 not applicable -> D:\repo\qvo-wave-a\build\wa-rm\fjc\grid-shipped-3.2.1
+F4 rc=0 ok=4 | run.py: 4 cells, 0 not verified, 0 not applicable -> D:\repo\qvo-wave-a\build\wa-rm\fjc\grid-4b6a4300-pass2
+F5 rc=0 ok=4 | run.py: 4 cells, 0 not verified, 0 not applicable -> D:\repo\qvo-wave-a\build\wa-rm\fjc\grid-73018675-pass2
+== F-end / E-start 2026-10-11T03:44:54Z
+E1 rc=0 | launch-census.py: 48 launches, 0 not verified -> D:\repo\qvo-wave-a\build\wa-rm\fjc\census-4b6a4300-vs-73018675
+E2 rc=0 | launch-census.py: 48 launches, 0 not verified -> D:\repo\qvo-wave-a\build\wa-rm\fjc\census-4b6a4300-vs-shipped-3.2.1
+== E-end / L-start 2026-10-11T03:44:58Z
+L rc=0 ok=16 | run.py: 16 cells, 0 not verified, 0 not applicable -> D:\repo\qvo-wave-a\build\wa-rm\out-logmap
+== L-end / S-start 2026-10-11T03:45:09Z
+S 2c-spin rc=0
+S 2c-park rc=0
+== S-end 2026-10-11T03:45:13Z
+   cpu% (session end): 2.3 1.2 1.4
+ASSERTED: 5 x 4 fork-join-create qb cells, 16 logmap cells, 2 sweep documents -- all verified, 9 + 2, forms as declared
+== note: the one load window on the host that day (the maintainer's push of qb develop and the superproject root: pre-push clang-format censuses, python doc guards, git) ran 03:46:50-03:50:00 UTC by its owner's account, after this host's last leg had ended -- no cell overlaps it; the session-end CPU sample above is at the idle level of the session start

@@ -1,0 +1,14 @@
+
+savina/fork-join-create: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2
+
+  1c-spin
+    fix          median-of-medians    103.4   min     99.2   max    112.6   n=12   [102 113 99 100 104 101 104 104 106 103 105 100]
+    shipped      median-of-medians    103.9   min     98.2   max    111.7   n=12   [104 100 102 100 104 107 112 107 109 98 104 110]
+    fix vs shipped: 103.4 vs 103.9 (-0.5%) -- distributions OVERLAP: no measurable difference
+
+  1c-park
+    fix          median-of-medians    103.7   min     99.0   max    107.4   n=12   [104 101 103 104 107 105 106 105 102 107 103 99]
+    shipped      median-of-medians    103.9   min     99.3   max    109.0   n=12   [104 106 104 102 109 105 99 106 101 99 104 100]
+    fix vs shipped: 103.7 vs 103.9 (-0.3%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> D:\repo\qvo-wave-a\build\wa-rm\fjc\census-4b6a4300-vs-shipped-3.2.1

@@ -2240,19 +2240,19 @@ The fastest framework sits **below the floor** (0.14x) — which means it is not
 
 | framework | verified | median | per term | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 6.78 ms | 27 ns | 634.90 us | 7.29 ms |
+| `qb` | yes | 6.25 ms | 25 ns | 361.70 us | 6.80 ms |
 | | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` | yes | 62.25 ms | 249 ns | 467.20 us | 63.17 ms |
+| `sobjectizer` | yes | 64.32 ms | 257 ns | 3.71 ms | 67.98 ms |
 | | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` | yes | 181.90 ms | 728 ns | 4.85 ms | 184.44 ms |
+| `caf` | yes | 184.58 ms | 738 ns | 4.58 ms | 204.61 ms |
 | | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
 | | | | | | |
-| `baseline` *(floor)* | yes | 7.38 ms | 30 ns | 183.30 us | 7.59 ms |
+| `baseline` *(floor)* | yes | 7.35 ms | 29 ns | 179.20 us | 8.19 ms |
 | | <sub>**observed, not asserted**: `held` median 249,960 [249,960–249,960] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
 
-`qb` is **9.18x** faster than `sobjectizer` in this configuration.
+`qb` is **10.30x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.92x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+The fastest framework sits **below the floor** (0.85x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2273,12 +2273,13 @@ The fastest framework sits **below the floor** (0.92x) — which means it is not
 - *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* placement is fixed before start: the master on VirtualCore 0, series i's worker AND computer together on core (1 + i) % cores, so no round trip of a chain crosses a core -- qb.llm.md's rule for actors that talk only to each other; the pools place each worker and computer freely and may split a pair
 - *(qb)* the master's NextTerm burst (terms x series pushes from one handler) leaves for a remote core only in the flush that follows the handler, so at cores=2 no remote chain starts before the master has pushed the whole burst; CAF's and SObjectizer's pools can run a worker on the other thread from the first message the master enqueues for it, and the floor's thread 1 drains its ring while the burst is still being sent -- the `held` observation beside the cell says how much of the burst each found waiting
-- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and each series -- its worker and its rate computer -- its own coop on fifo_t::cooperation (one demand queue per series, run by one work thread at a time) and the master on fifo_t::individual; cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
 - *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
 - *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
-- *(sobjectizer)* the master, the workers and the computers are placed by the thread_pool: which thread runs a worker's or a computer's next demand is the dispatcher's decision, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
+- *(sobjectizer)* the grouped binding is the faster of the two by the quiet-host sweep of 2026-10-11 (2.0-2.5x at cores=2 on both x86 hosts, results/<host>/wave-a-form-sweep/, docs/TUNING.md 21.4; FAIRNESS.md 1.1); QVO_SO_GROUP_COOPS=0 measures the individual binding as a sweep document
+- *(sobjectizer)* the thread_pool decides which work thread serves a series' queue and the master: a series' worker and computer never run at the same time, but its queue may be served by either thread, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
 - *(sobjectizer)* a chain redirects ONE mutable message (so_5::send(mbox, std::move(cmd)), SObjectizer's redirection of a mutable message): no message is allocated per hop, though the thread_pool's queue allocates one demand node per delivery (thread_pool/impl/basic_event_queue.hpp, push()); qb's reply() re-sends the received event as a copy into its pipe; NextTerm and GetTerm are signals, which carry no instance
 
 </details>
@@ -2287,19 +2288,19 @@ The fastest framework sits **below the floor** (0.92x) — which means it is not
 
 | framework | verified | median | per term | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 6.57 ms | 26 ns | 622.40 us | 6.91 ms |
+| `qb` | yes | 6.57 ms | 26 ns | 527.60 us | 7.50 ms |
 | | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` | yes | 56.98 ms | 228 ns | 889.60 us | 59.79 ms |
+| `sobjectizer` | yes | 58.12 ms | 232 ns | 3.29 ms | 62.00 ms |
 | | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` | yes | 180.32 ms | 721 ns | 2.89 ms | 186.81 ms |
+| `caf` | yes | 181.61 ms | 726 ns | 1.45 ms | 188.12 ms |
 | | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
 | | | | | | |
-| `baseline` *(floor)* | yes | 5.03 ms | 20 ns | 304.10 us | 5.76 ms |
+| `baseline` *(floor)* | yes | 4.80 ms | 19 ns | 113.80 us | 4.96 ms |
 | | <sub>**observed, not asserted**: `held` median 249,960 [249,960–249,960] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
 
-`qb` is **8.68x** faster than `sobjectizer` in this configuration.
+`qb` is **8.85x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.31x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework costs **1.37x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2320,12 +2321,13 @@ The fastest framework costs **1.31x the floor** — that multiple is what being 
 - *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* placement is fixed before start: the master on VirtualCore 0, series i's worker AND computer together on core (1 + i) % cores, so no round trip of a chain crosses a core -- qb.llm.md's rule for actors that talk only to each other; the pools place each worker and computer freely and may split a pair
 - *(qb)* the master's NextTerm burst (terms x series pushes from one handler) leaves for a remote core only in the flush that follows the handler, so at cores=2 no remote chain starts before the master has pushed the whole burst; CAF's and SObjectizer's pools can run a worker on the other thread from the first message the master enqueues for it, and the floor's thread 1 drains its ring while the burst is still being sent -- the `held` observation beside the cell says how much of the burst each found waiting
-- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and each series -- its worker and its rate computer -- its own coop on fifo_t::cooperation (one demand queue per series, run by one work thread at a time) and the master on fifo_t::individual; cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
 - *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
 - *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
-- *(sobjectizer)* the master, the workers and the computers are placed by the thread_pool: which thread runs a worker's or a computer's next demand is the dispatcher's decision, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
+- *(sobjectizer)* the grouped binding is the faster of the two by the quiet-host sweep of 2026-10-11 (2.0-2.5x at cores=2 on both x86 hosts, results/<host>/wave-a-form-sweep/, docs/TUNING.md 21.4; FAIRNESS.md 1.1); QVO_SO_GROUP_COOPS=0 measures the individual binding as a sweep document
+- *(sobjectizer)* the thread_pool decides which work thread serves a series' queue and the master: a series' worker and computer never run at the same time, but its queue may be served by either thread, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
 - *(sobjectizer)* a chain redirects ONE mutable message (so_5::send(mbox, std::move(cmd)), SObjectizer's redirection of a mutable message): no message is allocated per hop, though the thread_pool's queue allocates one demand node per delivery (thread_pool/impl/basic_event_queue.hpp, push()); qb's reply() re-sends the received event as a copy into its pipe; NextTerm and GetTerm are signals, which carry no instance
 
 </details>
@@ -2334,19 +2336,19 @@ The fastest framework costs **1.31x the floor** — that multiple is what being 
 
 | framework | verified | median | per term | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 5.28 ms | 21 ns | 356.90 us | 6.28 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,980–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` | yes | 100.85 ms | 403 ns | 2.57 ms | 103.87 ms |
+| `qb` | yes | 5.23 ms | 21 ns | 376.50 us | 6.15 ms |
 | | <sub>**observed, not asserted**: `held` median 249,990 [249,985–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` | yes | 158.31 ms | 633 ns | 1.69 ms | 161.64 ms |
+| `sobjectizer` | yes | 67.13 ms | 269 ns | 8.02 ms | 73.92 ms |
 | | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 99.74 ms | 399 ns | 4.23 ms | 108.46 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,987–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
 | | | | | | |
-| `baseline` *(floor)* | yes | 14.05 ms | 56 ns | 1.25 ms | 15.13 ms |
-| | <sub>**observed, not asserted**: `held` median 216,829 [200,090–222,089] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `baseline` *(floor)* | yes | 18.03 ms | 72 ns | 1.42 ms | 27.50 ms |
+| | <sub>**observed, not asserted**: `held` median 189,938 [175,842–223,478] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
 
-`qb` is **19.09x** faster than `caf` in this configuration.
+`qb` is **12.84x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.38x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+The fastest framework sits **below the floor** (0.29x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2367,12 +2369,13 @@ The fastest framework sits **below the floor** (0.38x) — which means it is not
 - *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* placement is fixed before start: the master on VirtualCore 0, series i's worker AND computer together on core (1 + i) % cores, so no round trip of a chain crosses a core -- qb.llm.md's rule for actors that talk only to each other; the pools place each worker and computer freely and may split a pair
 - *(qb)* the master's NextTerm burst (terms x series pushes from one handler) leaves for a remote core only in the flush that follows the handler, so at cores=2 no remote chain starts before the master has pushed the whole burst; CAF's and SObjectizer's pools can run a worker on the other thread from the first message the master enqueues for it, and the floor's thread 1 drains its ring while the burst is still being sent -- the `held` observation beside the cell says how much of the burst each found waiting
-- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and each series -- its worker and its rate computer -- its own coop on fifo_t::cooperation (one demand queue per series, run by one work thread at a time) and the master on fifo_t::individual; cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
 - *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
 - *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
-- *(sobjectizer)* the master, the workers and the computers are placed by the thread_pool: which thread runs a worker's or a computer's next demand is the dispatcher's decision, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
+- *(sobjectizer)* the grouped binding is the faster of the two by the quiet-host sweep of 2026-10-11 (2.0-2.5x at cores=2 on both x86 hosts, results/<host>/wave-a-form-sweep/, docs/TUNING.md 21.4; FAIRNESS.md 1.1); QVO_SO_GROUP_COOPS=0 measures the individual binding as a sweep document
+- *(sobjectizer)* the thread_pool decides which work thread serves a series' queue and the master: a series' worker and computer never run at the same time, but its queue may be served by either thread, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
 - *(sobjectizer)* a chain redirects ONE mutable message (so_5::send(mbox, std::move(cmd)), SObjectizer's redirection of a mutable message): no message is allocated per hop, though the thread_pool's queue allocates one demand node per delivery (thread_pool/impl/basic_event_queue.hpp, push()); qb's reply() re-sends the received event as a copy into its pipe; NextTerm and GetTerm are signals, which carry no instance
 
 </details>
@@ -2381,20 +2384,20 @@ The fastest framework sits **below the floor** (0.38x) — which means it is not
 
 | framework | verified | median | per term | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 4.96 ms | 20 ns | 473.70 us | 5.90 ms |
+| `qb` | yes | 4.68 ms | 19 ns | 213.40 us | 4.89 ms |
 | | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` | yes | 100.06 ms | 400 ns | 3.58 ms | 106.18 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,987–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` | yes | 140.26 ms | 561 ns | 3.01 ms | 150.09 ms |
+| `sobjectizer` | yes | 64.46 ms | 258 ns | 3.94 ms | 68.14 ms |
 | | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `caf` | yes | 101.50 ms | 406 ns | 2.68 ms | 115.45 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,989–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
 | | | | | | |
-| `baseline` *(floor)* | yes | 3.46 ms | 14 ns | 6.16 ms | 28.41 ms |
-| | <sub>**bimodal**: 6 of 9 repetitions at ~13 ns per term, 3 at ~62 ns. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
-| | <sub>**observed, not asserted**: `held` median 249,975 [249,955–249,980] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| `baseline` *(floor)* | yes | 31.33 ms | 125 ns | 23.92 ms | 62.51 ms |
+| | <sub>**bimodal**: 1 of 9 repetitions at ~12 ns per term, 8 at ~142 ns. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
+| | <sub>**observed, not asserted**: `held` median 249,980 [249,961–249,980] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
 
-`qb` is **20.19x** faster than `caf` in this configuration.
+`qb` is **13.77x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.43x the floor** — that multiple is what being a framework costs on this workload.
+The fastest framework sits **below the floor** (0.15x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2415,12 +2418,13 @@ The fastest framework costs **1.43x the floor** — that multiple is what being 
 - *(qb)* qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction
 - *(qb)* placement is fixed before start: the master on VirtualCore 0, series i's worker AND computer together on core (1 + i) % cores, so no round trip of a chain crosses a core -- qb.llm.md's rule for actors that talk only to each other; the pools place each worker and computer freely and may split a pair
 - *(qb)* the master's NextTerm burst (terms x series pushes from one handler) leaves for a remote core only in the flush that follows the handler, so at cores=2 no remote chain starts before the master has pushed the whole burst; CAF's and SObjectizer's pools can run a worker on the other thread from the first message the master enqueues for it, and the floor's thread 1 drains its ring while the burst is still being sent -- the `held` observation beside the cell says how much of the burst each found waiting
-- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
+- *(sobjectizer)* cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and each series -- its worker and its rate computer -- its own coop on fifo_t::cooperation (one demand queue per series, run by one work thread at a time) and the master on fifo_t::individual; cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t
 - *(sobjectizer)* the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores
 - *(sobjectizer)* wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)
 - *(sobjectizer)* max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned
 - *(sobjectizer)* Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path
-- *(sobjectizer)* the master, the workers and the computers are placed by the thread_pool: which thread runs a worker's or a computer's next demand is the dispatcher's decision, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
+- *(sobjectizer)* the grouped binding is the faster of the two by the quiet-host sweep of 2026-10-11 (2.0-2.5x at cores=2 on both x86 hosts, results/<host>/wave-a-form-sweep/, docs/TUNING.md 21.4; FAIRNESS.md 1.1); QVO_SO_GROUP_COOPS=0 measures the individual binding as a sweep document
+- *(sobjectizer)* the thread_pool decides which work thread serves a series' queue and the master: a series' worker and computer never run at the same time, but its queue may be served by either thread, so a round trip may cross a core; qb's cell pins series i (worker + computer) on core (1 + i) % cores -- see benchmarks/savina/logmap.md
 - *(sobjectizer)* a chain redirects ONE mutable message (so_5::send(mbox, std::move(cmd)), SObjectizer's redirection of a mutable message): no message is allocated per hop, though the thread_pool's queue allocates one demand node per delivery (thread_pool/impl/basic_event_queue.hpp, push()); qb's reply() re-sends the received event as a copy into its pipe; NextTerm and GetTerm are signals, which carry no instance
 
 </details>
