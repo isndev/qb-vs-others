@@ -47,7 +47,7 @@ the thing whose cost was measured; the sections say where the rest lives.
 handler is at the thread body, which logs and records `VirtualCore::Error::ExceptionThrown`
 (`core/Main.cpp:348`, `:369`, `:373`; the enum at `core/VirtualCore.h:130`). **One throwing
 handler terminates that VirtualCore thread and every actor pinned to it.** Two places do contain
-an exception: a throwing `onInit()` is an init failure the engine reports (`core/VirtualCore.cpp:521`),
+an exception: a throwing `onInit()` is an init failure the engine reports (`core/VirtualCore.cpp:529`),
 and an unhandled coroutine exception is logged by `report_unhandled_coroutine_exception`
 (`core/Actor.cpp:356`). Supervision exists as a pattern — `qb::Supervisor`
 (`core/patterns/supervisor.h:128`) with `restart_strategy::{one_for_one, one_for_all, rest_for_one}`
@@ -132,7 +132,7 @@ third-party packages.
 ## 5. Scheduling
 
 **qb.** One worker thread per `VirtualCore`; every actor is created on a core before `start()`
-(`core/Main.h:243`, `:679`) or on the calling core at runtime (`core/VirtualCore.h:1052`), and
+(`core/Main.h:243`, `:679`) or on the calling core at runtime (`core/VirtualCore.h:1053`), and
 "an actor never migrates between cores" (`core/Actor.h:215`). `setAffinity` (`core/Main.h:271`),
 `setLatency` (`:286`) and `setIdleSpin` (`:303`) are the only knobs. No work stealing — the word
 does not occur in `core/`.
@@ -196,7 +196,7 @@ detaching exit policies (`io/async/coroutine/scope.h:76`, `:631`–`:649`), `par
 `async_rw_lock`, `barrier`, `async_event`, `async_latch` (`io/async/coroutine/sync.h:65`, `:427`,
 `:670`, `:983`, `:1124`, `:1304`) — plus `with_retry` (`io/async/coroutine/retry.h:219`). An actor's
 `onInit()` is itself a `task<bool>` (`core/Actor.h:176`) and the engine stashes events while it
-is suspended (`core/VirtualCore.cpp:507`). `Actor::spawn` binds a coroutine to the actor's
+is suspended (`core/VirtualCore.cpp:516`). `Actor::spawn` binds a coroutine to the actor's
 cancellation scope (`core/Actor.h:1291`).
 
 **CAF.** None: no `co_await` anywhere under `libcaf_core/caf/`. The asynchronous vocabulary is
@@ -233,9 +233,9 @@ actors (`libcaf_core/caf/actor_registry.hpp:32`, `:77`). Groups were **removed i
 **qb.** Before `start()`: `CoreInitializer::addActor` / `builder()` (`core/Main.h:243`, `:257`),
 `Main::addActor(CoreId, ...)` (`:725`). At runtime: `Actor::addRefActor<T>` (`core/Actor.h:1174`)
 creates on the **calling core only** — `VirtualCore::_handler` is the thread-local current core
-(`core/VirtualCore.h:1052`) — and `Main::core(id)` is setup-phase only (`core/Main.h:679`).
+(`core/VirtualCore.h:1053`) — and `Main::core(id)` is setup-phase only (`core/Main.h:679`).
 Creating an actor on another core at runtime is done by messaging a factory actor already there;
-the framework has no call for it. Actor allocation is a customisation point (`core/VirtualCore.h:804`).
+the framework has no call for it. Actor allocation is a customisation point (`core/VirtualCore.h:797`).
 
 **CAF.** `spawn` from the system or from any actor, on any worker, at any time; the pool
 places it.
@@ -284,7 +284,7 @@ This row is the one that explains `REPORT.md`, so it is stated in full.
 
 **qb** has **no per-actor mailbox**. The inbound queue is one MPSC ring per **destination core**
 (`core/Main.h:380`, owned at `:495`), written through one staging pipe per (source core,
-destination core) pair (`core/Event.h:700`, `core/VirtualCore.h:474`, flushed at `:530`), and
+destination core) pair (`core/Event.h:700`, `core/VirtualCore.h:474`, flushed at `:529`), and
 the actor is resolved only after dequeue (`core/VirtualCore.cpp:202`). Every event occupies a
 whole number of 64-byte buckets (`utility/prefix.h:68`, `:138`). Consequences, all visible in the
 tables: the 120-writer contention of `savina/big` collapses to a 2-writer pipe; a same-core hop
@@ -313,7 +313,7 @@ where any of them would become a plan:
 5. **No message priorities** — `EventQOS1 == EventQOS2 == Event` (`core/Event.h:510`–`509`).
 6. **No migration, no rebalancing** — actors are pinned for life (`core/Actor.h:215`); a hot
    actor on a cold core stays there.
-7. **No cross-core dynamic spawn** (`core/VirtualCore.h:1052`, `core/Main.h:679`).
+7. **No cross-core dynamic spawn** (`core/VirtualCore.h:1053`, `core/Main.h:679`).
 8. **No configuration layer** in core.
 
 What qb has that the others do not — a coroutine-first asynchronous model, a real I/O loop with
