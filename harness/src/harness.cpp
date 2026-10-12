@@ -766,7 +766,7 @@ int run(int argc, char **argv, Spec spec, Body body) {
                 deadline_s *= static_cast<double>(requested) / static_cast<double>(at_defaults);
         }
     }
-    deadline_s = std::min(deadline_s, kMaxDeadlineSeconds);
+    deadline_s = (std::min)(deadline_s, kMaxDeadlineSeconds);  // parenthesised: <windows.h>'s min macro
 
     // Runs on the watchdog's thread while repetition `rep` is armed: the body is inside its call,
     // and this thread writes nothing the document reads until the body has returned.
