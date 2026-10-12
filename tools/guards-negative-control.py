@@ -43,7 +43,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 EXCLUDE = {"build", ".git", "vcpkg_installed", "__pycache__", "alt"}
 
-FLOOR_CAUGHT = 33
+FLOOR_CAUGHT = 34
 FLOOR_CONFIRMED = 3
 
 caught = confirmed = missed = 0
@@ -368,6 +368,26 @@ def report_controls(base: Path, results: str) -> None:
             else:
                 verdict("MISSED", "a JSON re-measured with stale documents",
                         f"exit {rc}:\n" + "\n".join(out.splitlines()[-5:]))
+
+    with Sandbox(base) as s:
+        # One document's framework_version changed, every figure left alone (Huly QB-1011). The
+        # render names each row's own version, so the report goes stale. A renderer that kept ONE
+        # version per framework printed whichever document it read last, and this one -- the
+        # first benchmark directory's first CAF cell -- is read first: it would change nothing.
+        docs = sorted((s / results).glob("savina-*/caf__*.json"))
+        if not docs:
+            botched("a document of another version", f"no CAF document under {results}")
+        else:
+            d = json.loads(docs[0].read_text(encoding="utf-8"))
+            d["framework_version"] = "0.0.0-planted"
+            docs[0].write_text(json.dumps(d, indent=2) + "\n", encoding="utf-8")
+            if json.loads(docs[0].read_text(encoding="utf-8")).get("framework_version") != "0.0.0-planted":
+                botched("a document of another version", f"{docs[0].name} was not rewritten")
+            else:
+                rc, out = run_guard(s, P)
+                expect("CAUGHT", rc, out, "one cell's document re-labelled with another framework "
+                       "version, the figures untouched: its row and the version table go stale",
+                       1, f"{results}/REPORT.md: differs from")
 
     readme = base / "README.md"
     row = first_marked_row(readme, results)

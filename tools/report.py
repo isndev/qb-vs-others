@@ -17,6 +17,11 @@ Two rules are enforced by this renderer rather than left to the reader's charity
   3. A cell the adapter declared NOT APPLICABLE (harness exit 3, `not_applicable` in the JSON) is
      shown as `n/a` with its reason, in the row where the number would have been. It is a third
      verdict: not a failure, and not a measurement of something else under this label.
+
+  4. Every row names the framework version ITS OWN document recorded (`framework_version`), and
+     the version table lists every version a directory holds. One directory can hold cells of two
+     builds -- a shape that joined later was measured with the qb then shipped -- and a header
+     that printed one version per framework labelled cells it did not describe (Huly QB-1011).
 """
 
 from __future__ import annotations
@@ -24,6 +29,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -191,6 +197,25 @@ def modes(d: dict) -> tuple | None:
     return ((len(lo), med(lo)), (len(hi), med(hi)))
 
 
+def version_of(d: dict) -> str | None:
+    """The framework version the document's binary reported, or None when no binary reported one:
+    a failure tools/run.py recorded itself (a crash, a timeout) carries no `framework_version`."""
+    v = d.get("framework_version")
+    return v if isinstance(v, str) and v else None
+
+
+def version_key(v: str) -> tuple:
+    """Orders versions numerically where they are numbers: 3.2.1 before 3.10.0."""
+    return tuple((0, int(t), "") if t.isdigit() else (1, 0, t)
+                 for t in re.split(r"(\d+)", v) if t)
+
+
+def row_label(fw: str, d: dict) -> str:
+    """A table row's first cell: the framework and the version its own document recorded."""
+    v = version_of(d)
+    return f"`{fw}` {v}" if v else f"`{fw}`"
+
+
 def fmt_count(v: float) -> str:
     return f"{int(v):,}" if float(v).is_integer() else f"{v:,.1f}"
 
@@ -301,17 +326,28 @@ def render(results: Path, out_path: Path | None = None) -> str:
         (comp, ver, flags), _ = next(iter(env_seen.items()))
         out.append(f"- toolchain: `{comp} {ver}`, flags `{flags}` — identical for every framework\n")
 
-    versions = {}
+    # Every version every document recorded, counted -- never one per framework: a directory can
+    # hold two builds of one framework, and the rows below name each cell's own.
+    versions: dict[str, dict[str, int]] = {}
     for bench in cells.values():
         for cfg in bench.values():
             for fw, d in cfg.items():
-                versions[fw] = d.get("framework_version", "?")
+                v = version_of(d) or "?"
+                versions.setdefault(fw, {})
+                versions[fw][v] = versions[fw].get(v, 0) + 1
     out.append("## Versions under test\n")
-    out.append("| framework | version |")
-    out.append("|---|---|")
+    mixed = sorted(fw for fw, vs in versions.items() if len([v for v in vs if v != "?"]) > 1)
+    if mixed:
+        out.append(f"> **More than one version of {', '.join(f'`{fw}`' for fw in mixed)} in this "
+                   "directory.** Every row of the tables below names the version its own document "
+                   "recorded; compare two rows only knowing which build each measured.\n")
+    out.append("| framework | version | documents |")
+    out.append("|---|---|---:|")
     for fw in sorted(versions):
         note = " *(not a framework — the floor)*" if fw == FLOOR else ""
-        out.append(f"| `{fw}` | {versions[fw]}{note} |")
+        for v in sorted(versions[fw], key=version_key):
+            shown = v if v != "?" else "? *(failures the runner recorded: no binary reported a version)*"
+            out.append(f"| `{fw}` | {shown}{note} | {versions[fw][v]} |")
     out.append("")
 
     for bench in sorted(cells):
@@ -337,17 +373,17 @@ def render(results: Path, out_path: Path | None = None) -> str:
                 d = fws[fw]
                 s = d.get("summary", {})
                 if d.get("not_applicable"):
-                    out.append(f"| `{fw}` | n/a | — | — | — | — |")
+                    out.append(f"| {row_label(fw, d)} | n/a | — | — | — | — |")
                     out.append(f"| | <sub>{d['not_applicable']}</sub> | | | | |")
                     continue
                 if not d.get("verified"):
                     why = "; ".join(d.get("failures", [])) or "did not verify"
-                    out.append(f"| `{fw}` | **FAILED** | — | — | — | — |")
+                    out.append(f"| {row_label(fw, d)} | **FAILED** | — | — | — | — |")
                     out.append(f"| | <sub>{why}</sub> | | | | |")
                     continue
                 if fw == FLOOR:
                     out.append("| | | | | | |")
-                out.append(f"| `{fw}`{' *(floor)*' if fw == FLOOR else ''} | yes | "
+                out.append(f"| {row_label(fw, d)}{' *(floor)*' if fw == FLOOR else ''} | yes | "
                            f"{fmt_ns(s.get('work_p50', 0))} | {fmt_ns(per_op(d))} | "
                            f"{fmt_ns(s.get('work_iqr', 0))} | {fmt_ns(s.get('work_p99', 0))} |")
                 m = modes(d)

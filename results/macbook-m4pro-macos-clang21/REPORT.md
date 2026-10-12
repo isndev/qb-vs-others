@@ -15,13 +15,13 @@ Read [FAIRNESS.md](../../FAIRNESS.md) before reading any table below. In particu
 
 ## Versions under test
 
-| framework | version |
-|---|---|
-| `baseline` | in-tree *(not a framework — the floor)* |
-| `caf` | 1.1.0 |
-| `caf-detached` | 1.1.0 |
-| `qb` | 3.1.0 |
-| `sobjectizer` | 5.8.5.1 |
+| framework | version | documents |
+|---|---|---:|
+| `baseline` | in-tree *(not a framework — the floor)* | 32 |
+| `caf` | 1.1.0 | 32 |
+| `caf-detached` | 1.1.0 | 4 |
+| `qb` | 3.1.0 | 32 |
+| `sobjectizer` | 5.8.5.1 | 32 |
 
 ## savina/bank-transaction
 
@@ -29,11 +29,11 @@ Read [FAIRNESS.md](../../FAIRNESS.md) before reading any table below. In particu
 
 | framework | verified | median | per transfer | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 4.22 ms | 84 ns | 79.33 us | 4.37 ms |
-| `sobjectizer` | yes | 22.09 ms | 442 ns | 167.96 us | 22.36 ms |
-| `caf` | yes | 28.36 ms | 567 ns | 1.13 ms | 29.53 ms |
+| `qb` 3.1.0 | yes | 4.22 ms | 84 ns | 79.33 us | 4.37 ms |
+| `sobjectizer` 5.8.5.1 | yes | 22.09 ms | 442 ns | 167.96 us | 22.36 ms |
+| `caf` 1.1.0 | yes | 28.36 ms | 567 ns | 1.13 ms | 29.53 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 2.07 ms | 41 ns | 622.04 us | 3.32 ms |
+| `baseline` in-tree *(floor)* | yes | 2.07 ms | 41 ns | 622.04 us | 3.32 ms |
 
 `qb` is **5.24x** faster than `sobjectizer` in this configuration.
 
@@ -73,11 +73,11 @@ The fastest framework costs **2.04x the floor** — that multiple is what being 
 
 | framework | verified | median | per transfer | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 4.17 ms | 83 ns | 84.58 us | 4.30 ms |
-| `sobjectizer` | yes | 21.82 ms | 436 ns | 384.96 us | 22.13 ms |
-| `caf` | yes | 28.34 ms | 567 ns | 1.10 ms | 31.00 ms |
+| `qb` 3.1.0 | yes | 4.17 ms | 83 ns | 84.58 us | 4.30 ms |
+| `sobjectizer` 5.8.5.1 | yes | 21.82 ms | 436 ns | 384.96 us | 22.13 ms |
+| `caf` 1.1.0 | yes | 28.34 ms | 567 ns | 1.10 ms | 31.00 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 2.19 ms | 44 ns | 791.21 us | 3.27 ms |
+| `baseline` in-tree *(floor)* | yes | 2.19 ms | 44 ns | 791.21 us | 3.27 ms |
 
 `qb` is **5.23x** faster than `sobjectizer` in this configuration.
 
@@ -117,11 +117,11 @@ The fastest framework costs **1.90x the floor** — that multiple is what being 
 
 | framework | verified | median | per transfer | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 3.25 ms | 65 ns | 208.04 us | 3.66 ms |
-| `sobjectizer` | yes | 32.47 ms | 649 ns | 442.33 us | 33.02 ms |
-| `caf` | yes | 33.29 ms | 666 ns | 725.75 us | 38.49 ms |
+| `qb` 3.1.0 | yes | 3.25 ms | 65 ns | 208.04 us | 3.66 ms |
+| `sobjectizer` 5.8.5.1 | yes | 32.47 ms | 649 ns | 442.33 us | 33.02 ms |
+| `caf` 1.1.0 | yes | 33.29 ms | 666 ns | 725.75 us | 38.49 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 4.81 ms | 96 ns | 1.23 ms | 5.86 ms |
+| `baseline` in-tree *(floor)* | yes | 4.81 ms | 96 ns | 1.23 ms | 5.86 ms |
 
 `qb` is **9.98x** faster than `sobjectizer` in this configuration.
 
@@ -161,11 +161,11 @@ The fastest framework sits **below the floor** (0.68x) — which means it is not
 
 | framework | verified | median | per transfer | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 3.17 ms | 63 ns | 271.00 us | 3.48 ms |
-| `caf` | yes | 35.66 ms | 713 ns | 2.69 ms | 43.06 ms |
-| `sobjectizer` | yes | 36.85 ms | 737 ns | 4.10 ms | 41.86 ms |
+| `qb` 3.1.0 | yes | 3.17 ms | 63 ns | 271.00 us | 3.48 ms |
+| `caf` 1.1.0 | yes | 35.66 ms | 713 ns | 2.69 ms | 43.06 ms |
+| `sobjectizer` 5.8.5.1 | yes | 36.85 ms | 737 ns | 4.10 ms | 41.86 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 7.25 ms | 145 ns | 4.12 ms | 10.27 ms |
+| `baseline` in-tree *(floor)* | yes | 7.25 ms | 145 ns | 4.12 ms | 10.27 ms |
 
 `qb` is **11.24x** faster than `caf` in this configuration.
 
@@ -207,11 +207,11 @@ The fastest framework sits **below the floor** (0.44x) — which means it is not
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 30.57 ms | 13 ns | 339.54 us | 30.88 ms |
-| `sobjectizer` | yes | 435.31 ms | 181 ns | 4.80 ms | 439.88 ms |
-| `caf` | yes | 612.71 ms | 255 ns | 5.93 ms | 620.93 ms |
+| `qb` 3.1.0 | yes | 30.57 ms | 13 ns | 339.54 us | 30.88 ms |
+| `sobjectizer` 5.8.5.1 | yes | 435.31 ms | 181 ns | 4.80 ms | 439.88 ms |
+| `caf` 1.1.0 | yes | 612.71 ms | 255 ns | 5.93 ms | 620.93 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 13.22 ms | 6 ns | 203.08 us | 13.46 ms |
+| `baseline` in-tree *(floor)* | yes | 13.22 ms | 6 ns | 203.08 us | 13.46 ms |
 
 `qb` is **14.24x** faster than `sobjectizer` in this configuration.
 
@@ -247,11 +247,11 @@ The fastest framework costs **2.31x the floor** — that multiple is what being 
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 30.80 ms | 13 ns | 386.88 us | 31.10 ms |
-| `sobjectizer` | yes | 430.20 ms | 179 ns | 2.06 ms | 432.07 ms |
-| `caf` | yes | 613.29 ms | 256 ns | 1.34 ms | 616.54 ms |
+| `qb` 3.1.0 | yes | 30.80 ms | 13 ns | 386.88 us | 31.10 ms |
+| `sobjectizer` 5.8.5.1 | yes | 430.20 ms | 179 ns | 2.06 ms | 432.07 ms |
+| `caf` 1.1.0 | yes | 613.29 ms | 256 ns | 1.34 ms | 616.54 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 12.97 ms | 5 ns | 135.00 us | 13.13 ms |
+| `baseline` in-tree *(floor)* | yes | 12.97 ms | 5 ns | 135.00 us | 13.13 ms |
 
 `qb` is **13.97x** faster than `sobjectizer` in this configuration.
 
@@ -287,11 +287,11 @@ The fastest framework costs **2.37x the floor** — that multiple is what being 
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 37.16 ms | 15 ns | 10.34 ms | 48.64 ms |
-| `sobjectizer` | yes | 901.40 ms | 376 ns | 30.21 ms | 926.62 ms |
-| `caf` | yes | 943.75 ms | 393 ns | 31.28 ms | 1,004.61 ms |
+| `qb` 3.1.0 | yes | 37.16 ms | 15 ns | 10.34 ms | 48.64 ms |
+| `sobjectizer` 5.8.5.1 | yes | 901.40 ms | 376 ns | 30.21 ms | 926.62 ms |
+| `caf` 1.1.0 | yes | 943.75 ms | 393 ns | 31.28 ms | 1,004.61 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 90.21 ms | 38 ns | 1.60 ms | 92.11 ms |
+| `baseline` in-tree *(floor)* | yes | 90.21 ms | 38 ns | 1.60 ms | 92.11 ms |
 
 `qb` is **24.26x** faster than `sobjectizer` in this configuration.
 
@@ -327,11 +327,11 @@ The fastest framework sits **below the floor** (0.41x) — which means it is not
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 39.00 ms | 16 ns | 3.95 ms | 43.88 ms |
-| `caf` | yes | 899.12 ms | 375 ns | 8.71 ms | 1,012.46 ms |
-| `sobjectizer` | yes | 1,206.30 ms | 503 ns | 34.72 ms | 1,249.40 ms |
+| `qb` 3.1.0 | yes | 39.00 ms | 16 ns | 3.95 ms | 43.88 ms |
+| `caf` 1.1.0 | yes | 899.12 ms | 375 ns | 8.71 ms | 1,012.46 ms |
+| `sobjectizer` 5.8.5.1 | yes | 1,206.30 ms | 503 ns | 34.72 ms | 1,249.40 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 116.03 ms | 48 ns | 22.78 ms | 132.25 ms |
+| `baseline` in-tree *(floor)* | yes | 116.03 ms | 48 ns | 22.78 ms | 132.25 ms |
 
 `qb` is **23.06x** faster than `caf` in this configuration.
 
@@ -369,11 +369,11 @@ The fastest framework sits **below the floor** (0.34x) — which means it is not
 
 | framework | verified | median | per meeting | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 4.87 ms | 24 ns | 72.96 us | 4.93 ms |
-| `sobjectizer` | yes | 60.99 ms | 305 ns | 486.17 us | 61.76 ms |
-| `caf` | yes | 106.55 ms | 533 ns | 450.38 us | 107.40 ms |
+| `qb` 3.1.0 | yes | 4.87 ms | 24 ns | 72.96 us | 4.93 ms |
+| `sobjectizer` 5.8.5.1 | yes | 60.99 ms | 305 ns | 486.17 us | 61.76 ms |
+| `caf` 1.1.0 | yes | 106.55 ms | 533 ns | 450.38 us | 107.40 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 3.17 ms | 16 ns | 54.96 us | 3.29 ms |
+| `baseline` in-tree *(floor)* | yes | 3.17 ms | 16 ns | 54.96 us | 3.29 ms |
 
 `qb` is **12.51x** faster than `sobjectizer` in this configuration.
 
@@ -409,11 +409,11 @@ The fastest framework costs **1.54x the floor** — that multiple is what being 
 
 | framework | verified | median | per meeting | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 4.90 ms | 24 ns | 53.38 us | 4.95 ms |
-| `sobjectizer` | yes | 59.94 ms | 300 ns | 749.54 us | 61.51 ms |
-| `caf` | yes | 106.26 ms | 531 ns | 793.54 us | 108.49 ms |
+| `qb` 3.1.0 | yes | 4.90 ms | 24 ns | 53.38 us | 4.95 ms |
+| `sobjectizer` 5.8.5.1 | yes | 59.94 ms | 300 ns | 749.54 us | 61.51 ms |
+| `caf` 1.1.0 | yes | 106.26 ms | 531 ns | 793.54 us | 108.49 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 2.93 ms | 15 ns | 30.13 us | 2.98 ms |
+| `baseline` in-tree *(floor)* | yes | 2.93 ms | 15 ns | 30.13 us | 2.98 ms |
 
 `qb` is **12.23x** faster than `sobjectizer` in this configuration.
 
@@ -449,11 +449,11 @@ The fastest framework costs **1.67x the floor** — that multiple is what being 
 
 | framework | verified | median | per meeting | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 8.12 ms | 41 ns | 3.70 ms | 18.70 ms |
-| `sobjectizer` | yes | 159.74 ms | 799 ns | 5.52 ms | 173.68 ms |
-| `caf` | yes | 186.88 ms | 934 ns | 4.98 ms | 193.62 ms |
+| `qb` 3.1.0 | yes | 8.12 ms | 41 ns | 3.70 ms | 18.70 ms |
+| `sobjectizer` 5.8.5.1 | yes | 159.74 ms | 799 ns | 5.52 ms | 173.68 ms |
+| `caf` 1.1.0 | yes | 186.88 ms | 934 ns | 4.98 ms | 193.62 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 23.90 ms | 120 ns | 681.29 us | 24.69 ms |
+| `baseline` in-tree *(floor)* | yes | 23.90 ms | 120 ns | 681.29 us | 24.69 ms |
 
 `qb` is **19.67x** faster than `sobjectizer` in this configuration.
 
@@ -489,11 +489,11 @@ The fastest framework sits **below the floor** (0.34x) — which means it is not
 
 | framework | verified | median | per meeting | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 9.10 ms | 45 ns | 4.30 ms | 16.75 ms |
-| `caf` | yes | 194.13 ms | 971 ns | 1.12 ms | 196.91 ms |
-| `sobjectizer` | yes | 231.08 ms | 1.16 us | 13.16 ms | 253.52 ms |
+| `qb` 3.1.0 | yes | 9.10 ms | 45 ns | 4.30 ms | 16.75 ms |
+| `caf` 1.1.0 | yes | 194.13 ms | 971 ns | 1.12 ms | 196.91 ms |
+| `sobjectizer` 5.8.5.1 | yes | 231.08 ms | 1.16 us | 13.16 ms | 253.52 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 40.66 ms | 203 ns | 10.09 ms | 49.01 ms |
+| `baseline` in-tree *(floor)* | yes | 40.66 ms | 203 ns | 10.09 ms | 49.01 ms |
 
 `qb` is **21.33x** faster than `caf` in this configuration.
 
@@ -531,11 +531,11 @@ The fastest framework sits **below the floor** (0.22x) — which means it is not
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 5.06 ms | 5 ns | 112.12 us | 5.69 ms |
-| `sobjectizer` | yes | 69.36 ms | 69 ns | 1.31 ms | 72.48 ms |
-| `caf` | yes | 74.68 ms | 75 ns | 1.30 ms | 79.31 ms |
+| `qb` 3.1.0 | yes | 5.06 ms | 5 ns | 112.12 us | 5.69 ms |
+| `sobjectizer` 5.8.5.1 | yes | 69.36 ms | 69 ns | 1.31 ms | 72.48 ms |
+| `caf` 1.1.0 | yes | 74.68 ms | 75 ns | 1.30 ms | 79.31 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 4.36 ms | 4 ns | 86.21 us | 4.47 ms |
+| `baseline` in-tree *(floor)* | yes | 4.36 ms | 4 ns | 86.21 us | 4.47 ms |
 
 `qb` is **13.70x** faster than `sobjectizer` in this configuration.
 
@@ -566,11 +566,11 @@ The fastest framework costs **1.16x the floor** — that multiple is what being 
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 5.13 ms | 5 ns | 166.96 us | 6.18 ms |
-| `sobjectizer` | yes | 64.51 ms | 65 ns | 874.67 us | 67.52 ms |
-| `caf` | yes | 75.36 ms | 75 ns | 783.67 us | 79.14 ms |
+| `qb` 3.1.0 | yes | 5.13 ms | 5 ns | 166.96 us | 6.18 ms |
+| `sobjectizer` 5.8.5.1 | yes | 64.51 ms | 65 ns | 874.67 us | 67.52 ms |
+| `caf` 1.1.0 | yes | 75.36 ms | 75 ns | 783.67 us | 79.14 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 4.24 ms | 4 ns | 111.62 us | 4.35 ms |
+| `baseline` in-tree *(floor)* | yes | 4.24 ms | 4 ns | 111.62 us | 4.35 ms |
 
 `qb` is **12.57x** faster than `sobjectizer` in this configuration.
 
@@ -601,11 +601,11 @@ The fastest framework costs **1.21x the floor** — that multiple is what being 
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 6.84 ms | 7 ns | 230.21 us | 7.55 ms |
-| `caf` | yes | 152.55 ms | 153 ns | 6.45 ms | 157.38 ms |
-| `sobjectizer` | yes | 172.43 ms | 172 ns | 12.65 ms | 184.06 ms |
+| `qb` 3.1.0 | yes | 6.84 ms | 7 ns | 230.21 us | 7.55 ms |
+| `caf` 1.1.0 | yes | 152.55 ms | 153 ns | 6.45 ms | 157.38 ms |
+| `sobjectizer` 5.8.5.1 | yes | 172.43 ms | 172 ns | 12.65 ms | 184.06 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 27.32 ms | 27 ns | 3.68 ms | 33.83 ms |
+| `baseline` in-tree *(floor)* | yes | 27.32 ms | 27 ns | 3.68 ms | 33.83 ms |
 
 `qb` is **22.30x** faster than `caf` in this configuration.
 
@@ -636,11 +636,11 @@ The fastest framework sits **below the floor** (0.25x) — which means it is not
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 6.86 ms | 7 ns | 356.04 us | 7.27 ms |
-| `caf` | yes | 148.02 ms | 148 ns | 14.08 ms | 164.10 ms |
-| `sobjectizer` | yes | 280.47 ms | 280 ns | 5.54 ms | 306.50 ms |
+| `qb` 3.1.0 | yes | 6.86 ms | 7 ns | 356.04 us | 7.27 ms |
+| `caf` 1.1.0 | yes | 148.02 ms | 148 ns | 14.08 ms | 164.10 ms |
+| `sobjectizer` 5.8.5.1 | yes | 280.47 ms | 280 ns | 5.54 ms | 306.50 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 61.38 ms | 61 ns | 10.96 ms | 70.59 ms |
+| `baseline` in-tree *(floor)* | yes | 61.38 ms | 61 ns | 10.96 ms | 70.59 ms |
 
 `qb` is **21.57x** faster than `caf` in this configuration.
 
@@ -673,11 +673,11 @@ The fastest framework sits **below the floor** (0.11x) — which means it is not
 
 | framework | verified | median | per actor | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 4.00 ms | 70 ns | 37.46 us | 4.02 ms |
-| `caf` | yes | 51.13 ms | 892 ns | 1.19 ms | 52.15 ms |
-| `sobjectizer` | yes | 56.29 ms | 982 ns | 2.25 ms | 57.94 ms |
+| `qb` 3.1.0 | yes | 4.00 ms | 70 ns | 37.46 us | 4.02 ms |
+| `caf` 1.1.0 | yes | 51.13 ms | 892 ns | 1.19 ms | 52.15 ms |
+| `sobjectizer` 5.8.5.1 | yes | 56.29 ms | 982 ns | 2.25 ms | 57.94 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 1.72 ms | 30 ns | 306.83 us | 1.97 ms |
+| `baseline` in-tree *(floor)* | yes | 1.72 ms | 30 ns | 306.83 us | 1.97 ms |
 
 `qb` is **12.78x** faster than `caf` in this configuration.
 
@@ -715,11 +715,11 @@ The fastest framework costs **2.33x the floor** — that multiple is what being 
 
 | framework | verified | median | per actor | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 4.04 ms | 70 ns | 125.62 us | 4.16 ms |
-| `caf` | yes | 50.13 ms | 875 ns | 561.46 us | 50.68 ms |
-| `sobjectizer` | yes | 56.34 ms | 983 ns | 608.79 us | 58.25 ms |
+| `qb` 3.1.0 | yes | 4.04 ms | 70 ns | 125.62 us | 4.16 ms |
+| `caf` 1.1.0 | yes | 50.13 ms | 875 ns | 561.46 us | 50.68 ms |
+| `sobjectizer` 5.8.5.1 | yes | 56.34 ms | 983 ns | 608.79 us | 58.25 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 1.93 ms | 34 ns | 273.25 us | 2.08 ms |
+| `baseline` in-tree *(floor)* | yes | 1.93 ms | 34 ns | 273.25 us | 2.08 ms |
 
 `qb` is **12.41x** faster than `caf` in this configuration.
 
@@ -757,11 +757,11 @@ The fastest framework costs **2.09x the floor** — that multiple is what being 
 
 | framework | verified | median | per actor | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 2.52 ms | 44 ns | 182.58 us | 2.93 ms |
-| `caf` | yes | 56.73 ms | 990 ns | 3.38 ms | 62.90 ms |
-| `sobjectizer` | yes | 142.24 ms | 2.48 us | 3.15 ms | 151.49 ms |
+| `qb` 3.1.0 | yes | 2.52 ms | 44 ns | 182.58 us | 2.93 ms |
+| `caf` 1.1.0 | yes | 56.73 ms | 990 ns | 3.38 ms | 62.90 ms |
+| `sobjectizer` 5.8.5.1 | yes | 142.24 ms | 2.48 us | 3.15 ms | 151.49 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 1.70 ms | 30 ns | 1.78 ms | 3.72 ms |
+| `baseline` in-tree *(floor)* | yes | 1.70 ms | 30 ns | 1.78 ms | 3.72 ms |
 
 `qb` is **22.54x** faster than `caf` in this configuration.
 
@@ -799,11 +799,11 @@ The fastest framework costs **1.48x the floor** — that multiple is what being 
 
 | framework | verified | median | per actor | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 2.70 ms | 47 ns | 206.54 us | 2.79 ms |
-| `caf` | yes | 54.78 ms | 956 ns | 3.13 ms | 65.28 ms |
-| `sobjectizer` | yes | 138.94 ms | 2.42 us | 2.83 ms | 142.45 ms |
+| `qb` 3.1.0 | yes | 2.70 ms | 47 ns | 206.54 us | 2.79 ms |
+| `caf` 1.1.0 | yes | 54.78 ms | 956 ns | 3.13 ms | 65.28 ms |
+| `sobjectizer` 5.8.5.1 | yes | 138.94 ms | 2.42 us | 2.83 ms | 142.45 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 1.83 ms | 32 ns | 1.01 ms | 3.73 ms |
+| `baseline` in-tree *(floor)* | yes | 1.83 ms | 32 ns | 1.01 ms | 3.73 ms |
 
 `qb` is **20.31x** faster than `caf` in this configuration.
 
@@ -843,11 +843,11 @@ The fastest framework costs **1.47x the floor** — that multiple is what being 
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 3.21 ms | 5 ns | 356.79 us | 3.51 ms |
-| `sobjectizer` | yes | 29.55 ms | 49 ns | 757.00 us | 30.65 ms |
-| `caf` | yes | 88.00 ms | 147 ns | 1.35 ms | 94.13 ms |
+| `qb` 3.1.0 | yes | 3.21 ms | 5 ns | 356.79 us | 3.51 ms |
+| `sobjectizer` 5.8.5.1 | yes | 29.55 ms | 49 ns | 757.00 us | 30.65 ms |
+| `caf` 1.1.0 | yes | 88.00 ms | 147 ns | 1.35 ms | 94.13 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 15.17 ms | 25 ns | 1.34 ms | 15.89 ms |
+| `baseline` in-tree *(floor)* | yes | 15.17 ms | 25 ns | 1.34 ms | 15.89 ms |
 
 `qb` is **9.22x** faster than `sobjectizer` in this configuration.
 
@@ -883,11 +883,11 @@ The fastest framework sits **below the floor** (0.21x) — which means it is not
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 3.44 ms | 6 ns | 303.67 us | 3.50 ms |
-| `sobjectizer` | yes | 28.03 ms | 47 ns | 1.80 ms | 29.85 ms |
-| `caf` | yes | 94.05 ms | 157 ns | 3.16 ms | 96.52 ms |
+| `qb` 3.1.0 | yes | 3.44 ms | 6 ns | 303.67 us | 3.50 ms |
+| `sobjectizer` 5.8.5.1 | yes | 28.03 ms | 47 ns | 1.80 ms | 29.85 ms |
+| `caf` 1.1.0 | yes | 94.05 ms | 157 ns | 3.16 ms | 96.52 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 16.46 ms | 27 ns | 3.85 ms | 21.80 ms |
+| `baseline` in-tree *(floor)* | yes | 16.46 ms | 27 ns | 3.85 ms | 21.80 ms |
 
 `qb` is **8.15x** faster than `sobjectizer` in this configuration.
 
@@ -923,11 +923,11 @@ The fastest framework sits **below the floor** (0.21x) — which means it is not
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 3.41 ms | 6 ns | 182.75 us | 3.51 ms |
-| `caf` | yes | 64.14 ms | 107 ns | 733.54 us | 72.21 ms |
-| `sobjectizer` | yes | 125.85 ms | 210 ns | 1.68 ms | 128.24 ms |
+| `qb` 3.1.0 | yes | 3.41 ms | 6 ns | 182.75 us | 3.51 ms |
+| `caf` 1.1.0 | yes | 64.14 ms | 107 ns | 733.54 us | 72.21 ms |
+| `sobjectizer` 5.8.5.1 | yes | 125.85 ms | 210 ns | 1.68 ms | 128.24 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 13.80 ms | 23 ns | 1.03 ms | 15.15 ms |
+| `baseline` in-tree *(floor)* | yes | 13.80 ms | 23 ns | 1.03 ms | 15.15 ms |
 
 `qb` is **18.84x** faster than `caf` in this configuration.
 
@@ -963,11 +963,11 @@ The fastest framework sits **below the floor** (0.25x) — which means it is not
 
 | framework | verified | median | per message | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 3.51 ms | 6 ns | 241.75 us | 3.64 ms |
-| `caf` | yes | 64.94 ms | 108 ns | 985.83 us | 65.98 ms |
-| `sobjectizer` | yes | 205.08 ms | 342 ns | 11.11 ms | 213.44 ms |
+| `qb` 3.1.0 | yes | 3.51 ms | 6 ns | 241.75 us | 3.64 ms |
+| `caf` 1.1.0 | yes | 64.94 ms | 108 ns | 985.83 us | 65.98 ms |
+| `sobjectizer` 5.8.5.1 | yes | 205.08 ms | 342 ns | 11.11 ms | 213.44 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 18.10 ms | 30 ns | 4.44 ms | 23.35 ms |
+| `baseline` in-tree *(floor)* | yes | 18.10 ms | 30 ns | 4.44 ms | 23.35 ms |
 
 `qb` is **18.50x** faster than `caf` in this configuration.
 
@@ -1005,12 +1005,12 @@ The fastest framework sits **below the floor** (0.19x) — which means it is not
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 25.21 ms | 25 ns | 241.75 us | 26.48 ms |
-| `sobjectizer` | yes | 152.82 ms | 153 ns | 2.60 ms | 157.65 ms |
-| `caf` | yes | 261.30 ms | 261 ns | 2.53 ms | 264.11 ms |
-| `caf-detached` | yes | 6,326.76 ms | 6.33 us | 39.17 ms | 6,356.33 ms |
+| `qb` 3.1.0 | yes | 25.21 ms | 25 ns | 241.75 us | 26.48 ms |
+| `sobjectizer` 5.8.5.1 | yes | 152.82 ms | 153 ns | 2.60 ms | 157.65 ms |
+| `caf` 1.1.0 | yes | 261.30 ms | 261 ns | 2.53 ms | 264.11 ms |
+| `caf-detached` 1.1.0 | yes | 6,326.76 ms | 6.33 us | 39.17 ms | 6,356.33 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 3.82 ms | 4 ns | 61.00 us | 3.91 ms |
+| `baseline` in-tree *(floor)* | yes | 3.82 ms | 4 ns | 61.00 us | 3.91 ms |
 
 `qb` is **6.06x** faster than `sobjectizer` in this configuration.
 
@@ -1042,13 +1042,13 @@ The fastest framework costs **6.59x the floor** — that multiple is what being 
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 25.10 ms | 25 ns | 312.00 us | 25.25 ms |
-| `sobjectizer` | yes | 138.05 ms | 138 ns | 384.04 us | 151.54 ms |
-| `caf` | yes | 264.37 ms | 264 ns | 2.73 ms | 266.38 ms |
-| `caf-detached` | n/a | — | — | — | — |
+| `qb` 3.1.0 | yes | 25.10 ms | 25 ns | 312.00 us | 25.25 ms |
+| `sobjectizer` 5.8.5.1 | yes | 138.05 ms | 138 ns | 384.04 us | 151.54 ms |
+| `caf` 1.1.0 | yes | 264.37 ms | 264 ns | 2.73 ms | 266.38 ms |
+| `caf-detached` 1.1.0 | n/a | — | — | — | — |
 | | <sub>caf::detached actors park on a condition variable between messages (caf/detail/private_thread.cpp); CAF has no spin mode for a private thread, so wait=1 has no honest counterpart here -- read the caf row for CAF's spin profile and this row for its cross-core park cost</sub> | | | | |
 | | | | | | |
-| `baseline` *(floor)* | yes | 3.79 ms | 4 ns | 82.25 us | 3.88 ms |
+| `baseline` in-tree *(floor)* | yes | 3.79 ms | 4 ns | 82.25 us | 3.88 ms |
 
 `qb` is **5.50x** faster than `sobjectizer` in this configuration.
 
@@ -1080,12 +1080,12 @@ The fastest framework costs **6.62x the floor** — that multiple is what being 
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 196.16 ms | 196 ns | 23.80 ms | 221.04 ms |
-| `caf` | yes | 386.13 ms | 386 ns | 8.21 ms | 398.77 ms |
-| `sobjectizer` | yes | 5,604.68 ms | 5.60 us | 89.78 ms | 5,677.33 ms |
-| `caf-detached` | yes | 6,343.63 ms | 6.34 us | 50.15 ms | 6,363.94 ms |
+| `qb` 3.1.0 | yes | 196.16 ms | 196 ns | 23.80 ms | 221.04 ms |
+| `caf` 1.1.0 | yes | 386.13 ms | 386 ns | 8.21 ms | 398.77 ms |
+| `sobjectizer` 5.8.5.1 | yes | 5,604.68 ms | 5.60 us | 89.78 ms | 5,677.33 ms |
+| `caf-detached` 1.1.0 | yes | 6,343.63 ms | 6.34 us | 50.15 ms | 6,363.94 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 4,416.41 ms | 4.42 us | 12.95 ms | 4,446.86 ms |
+| `baseline` in-tree *(floor)* | yes | 4,416.41 ms | 4.42 us | 12.95 ms | 4,446.86 ms |
 
 `qb` is **1.97x** faster than `caf` in this configuration.
 
@@ -1117,13 +1117,13 @@ The fastest framework sits **below the floor** (0.04x) — which means it is not
 
 | framework | verified | median | per round trip | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 206.62 ms | 207 ns | 6.63 ms | 222.98 ms |
-| `caf` | yes | 385.52 ms | 386 ns | 9.45 ms | 397.52 ms |
-| `sobjectizer` | yes | 703.78 ms | 704 ns | 22.60 ms | 727.38 ms |
-| `caf-detached` | n/a | — | — | — | — |
+| `qb` 3.1.0 | yes | 206.62 ms | 207 ns | 6.63 ms | 222.98 ms |
+| `caf` 1.1.0 | yes | 385.52 ms | 386 ns | 9.45 ms | 397.52 ms |
+| `sobjectizer` 5.8.5.1 | yes | 703.78 ms | 704 ns | 22.60 ms | 727.38 ms |
+| `caf-detached` 1.1.0 | n/a | — | — | — | — |
 | | <sub>caf::detached actors park on a condition variable between messages (caf/detail/private_thread.cpp); CAF has no spin mode for a private thread, so wait=1 has no honest counterpart here -- read the caf row for CAF's spin profile and this row for its cross-core park cost</sub> | | | | |
 | | | | | | |
-| `baseline` *(floor)* | yes | 228.85 ms | 229 ns | 33.60 ms | 245.84 ms |
+| `baseline` in-tree *(floor)* | yes | 228.85 ms | 229 ns | 33.60 ms | 245.84 ms |
 
 `qb` is **1.87x** faster than `caf` in this configuration.
 
@@ -1157,11 +1157,11 @@ The fastest framework sits **below the floor** (0.90x) — which means it is not
 
 | framework | verified | median | per hop | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 18.72 ms | 19 ns | 488.33 us | 19.02 ms |
-| `sobjectizer` | yes | 67.60 ms | 68 ns | 367.92 us | 67.92 ms |
-| `caf` | yes | 124.64 ms | 125 ns | 1.34 ms | 126.62 ms |
+| `qb` 3.1.0 | yes | 18.72 ms | 19 ns | 488.33 us | 19.02 ms |
+| `sobjectizer` 5.8.5.1 | yes | 67.60 ms | 68 ns | 367.92 us | 67.92 ms |
+| `caf` 1.1.0 | yes | 124.64 ms | 125 ns | 1.34 ms | 126.62 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 5.02 ms | 5 ns | 157.92 us | 5.25 ms |
+| `baseline` in-tree *(floor)* | yes | 5.02 ms | 5 ns | 157.92 us | 5.25 ms |
 
 `qb` is **3.61x** faster than `sobjectizer` in this configuration.
 
@@ -1197,11 +1197,11 @@ The fastest framework costs **3.73x the floor** — that multiple is what being 
 
 | framework | verified | median | per hop | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 18.48 ms | 18 ns | 341.83 us | 19.14 ms |
-| `sobjectizer` | yes | 60.13 ms | 60 ns | 661.92 us | 60.68 ms |
-| `caf` | yes | 122.64 ms | 123 ns | 1.37 ms | 123.96 ms |
+| `qb` 3.1.0 | yes | 18.48 ms | 18 ns | 341.83 us | 19.14 ms |
+| `sobjectizer` 5.8.5.1 | yes | 60.13 ms | 60 ns | 661.92 us | 60.68 ms |
+| `caf` 1.1.0 | yes | 122.64 ms | 123 ns | 1.37 ms | 123.96 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 4.91 ms | 5 ns | 201.54 us | 5.09 ms |
+| `baseline` in-tree *(floor)* | yes | 4.91 ms | 5 ns | 201.54 us | 5.09 ms |
 
 `qb` is **3.25x** faster than `sobjectizer` in this configuration.
 
@@ -1237,11 +1237,11 @@ The fastest framework costs **3.76x the floor** — that multiple is what being 
 
 | framework | verified | median | per hop | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 84.24 ms | 84 ns | 12.00 ms | 108.55 ms |
-| `caf` | yes | 184.44 ms | 184 ns | 4.11 ms | 192.44 ms |
-| `sobjectizer` | yes | 184.67 ms | 185 ns | 6.33 ms | 196.76 ms |
+| `qb` 3.1.0 | yes | 84.24 ms | 84 ns | 12.00 ms | 108.55 ms |
+| `caf` 1.1.0 | yes | 184.44 ms | 184 ns | 4.11 ms | 192.44 ms |
+| `sobjectizer` 5.8.5.1 | yes | 184.67 ms | 185 ns | 6.33 ms | 196.76 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 2,447.18 ms | 2.45 us | 12.48 ms | 2,481.18 ms |
+| `baseline` in-tree *(floor)* | yes | 2,447.18 ms | 2.45 us | 12.48 ms | 2,481.18 ms |
 
 `qb` is **2.19x** faster than `caf` in this configuration.
 
@@ -1277,11 +1277,11 @@ The fastest framework sits **below the floor** (0.03x) — which means it is not
 
 | framework | verified | median | per hop | IQR | p99 |
 |---|---|---:|---:|---:|---:|
-| `qb` | yes | 88.85 ms | 89 ns | 4.97 ms | 108.22 ms |
-| `caf` | yes | 183.18 ms | 183 ns | 3.08 ms | 191.47 ms |
-| `sobjectizer` | yes | 388.59 ms | 389 ns | 10.39 ms | 401.07 ms |
+| `qb` 3.1.0 | yes | 88.85 ms | 89 ns | 4.97 ms | 108.22 ms |
+| `caf` 1.1.0 | yes | 183.18 ms | 183 ns | 3.08 ms | 191.47 ms |
+| `sobjectizer` 5.8.5.1 | yes | 388.59 ms | 389 ns | 10.39 ms | 401.07 ms |
 | | | | | | |
-| `baseline` *(floor)* | yes | 114.58 ms | 115 ns | 18.01 ms | 126.50 ms |
+| `baseline` in-tree *(floor)* | yes | 114.58 ms | 115 ns | 18.01 ms | 126.50 ms |
 
 `qb` is **2.06x** faster than `caf` in this configuration.
 

@@ -34,10 +34,11 @@ again, then the forms the adapters declare pending this measurement — bringing
 re-measured whole at 03:45 UTC once its SObjectizer adapter's default had changed, row below). Their qb column is
 **shipped v3.2.1** (`82ac0531`, `git archive`d and built apart, `build/wa-shp`), the qb a user
 installs on the day a shape joins, as fib, chameneos and bank-transaction joined with shipped
-3.1.0; the candidate is the same-session control under `qb-branch-develop/`. `REPORT.md`'s
-"Versions under test" prints ONE version per framework, the last document it read, so it reads
-qb 3.1.0 (the eight older shapes' 3.2.0-candidate documents) over shapes whose documents say
-3.2.1 — the rows below say which build each directory holds.
+3.1.0; the candidate is the same-session control under `qb-branch-develop/`. `REPORT.md` names
+on every row the version that cell's own document recorded, and its "Versions under test" lists
+both of qb's — 3.1.0 on the eight older shapes (their 3.2.0-candidate documents, which report the
+last tag) and 3.2.1 on the ten new ones (Huly QB-1011; until then it printed one version per
+framework, the last document read). The rows below say which build each directory holds.
 
 `REPORT.md` beside this file is `tools/report.py`'s render of this directory and
 `tools/check-report.py` fails if it drifts from the JSON. `docs/TUNING.md` is the reading guide:

@@ -3043,10 +3043,13 @@ cells read 21 / 20 × against CAF.
 - **The first profile of each new shape** (`perf` on WSL2, ETW on Windows), which the wave's plan
   asks of every shape, was not part of this session: §21.2 reads distributions and observations,
   not profiles.
-- **`tools/report.py` prints one version per framework**: a host whose shapes were measured with
-  two qb builds renders "qb 3.1.0" — the last document read, one of the eight older shapes'
-  3.2.0-candidate documents — over ten shapes whose documents say 3.2.1. The host READMEs say
-  which build each directory holds; the renderer does not yet.
+- **`tools/report.py` printed one version per framework**: a host whose shapes were measured with
+  two qb builds rendered "qb 3.1.0" — the last document read, one of the eight older shapes'
+  3.2.0-candidate documents — over ten shapes whose documents say 3.2.1. Fixed by Huly QB-1011:
+  every row names the version its own document recorded, the version table lists every version a
+  directory holds with its document count, and a directory with two versions of one framework says
+  so above the table (`tools/test_run.py` and `tools/guards-negative-control.py` plant a document
+  of another version and watch it reach the render).
 - **WSL2's 2c-park floor is the hypervisor's** on the new shapes as on the old (§6): 13.37 µs per
   cigsmok round against 1.18 spinning, 2.84 µs per philosophers meal against 204 ns, 1.31 µs per
   concdict operation against 53 ns, 27.6 µs per concsll request against 21.0 — and SObjectizer's

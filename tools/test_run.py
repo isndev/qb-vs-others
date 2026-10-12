@@ -620,8 +620,8 @@ class RunnerProvenanceTest(unittest.TestCase):
                 self.seed(measured)
                 rendered = report.render(self.out)
                 self.assertIn(f"per {unit}", rendered)
-                self.assertIn("| `qb` | yes |", rendered)
-                self.assertIn("| `caf` | **FAILED** |", rendered)
+                self.assertIn("| `qb` test | yes |", rendered)
+                self.assertIn("| `caf` | **FAILED** |", rendered)  # a runner failure: no version
                 self.assertIn("current child aborted", rendered)
 
         # No surviving measurement means no unit can be inferred, but every failure stays visible.
@@ -630,6 +630,46 @@ class RunnerProvenanceTest(unittest.TestCase):
         rendered = report.render(self.out)
         self.assertIn("per repetition", rendered)
         self.assertEqual(rendered.count("**FAILED**"), 2)
+
+    def test_report_names_each_cells_own_version(self) -> None:
+        """QB-1011: a directory holding cells of two builds renders both versions, each on the rows
+        its own documents produced. The renderer used to keep ONE version per framework -- the last
+        document read -- so a planted document of another version vanished whenever it was not read
+        last; it is planted in both positions here, so either order is a witness."""
+        counting = self.out / "savina-counting" / "qb__1c-spin.json"
+        counting.parent.mkdir()
+        for planted_in in ("savina/counting", "savina/ping-pong"):  # read first, read last
+            with self.subTest(planted_in=planted_in):
+                for bench, path in (("savina/counting", counting), ("savina/ping-pong", self.dest)):
+                    d = self.doc(verified=True)
+                    d.update(benchmark=bench,
+                             framework_version="9.9.9-planted" if bench == planted_in else "3.2.1")
+                    path.write_text(json.dumps(d))
+                rendered = report.render(self.out)
+                # The defect itself, whatever the table's shape: both versions reach the render.
+                self.assertIn("9.9.9-planted", rendered)
+                self.assertIn("3.2.1", rendered)
+                head, rest = rendered.split("## savina/counting\n", 1)
+                first, second = rest.split("## savina/ping-pong\n", 1)
+                sections = {"savina/counting": first, "savina/ping-pong": second}
+                self.assertIn("| `qb` | 3.2.1 | 1 |", head)
+                self.assertIn("| `qb` | 9.9.9-planted | 1 |", head)
+                self.assertIn("More than one version of `qb`", head)
+                for bench, text in sections.items():
+                    mine, other = (("9.9.9-planted", "3.2.1") if bench == planted_in
+                                   else ("3.2.1", "9.9.9-planted"))
+                    self.assertIn(f"| `qb` {mine} | yes |", text)
+                    self.assertNotIn(other, text)
+
+    def test_report_with_one_version_per_framework_carries_no_mixed_warning(self) -> None:
+        self.seed(self.doc(verified=True))
+        caf = self.doc(verified=True)
+        caf.update(framework="caf", framework_version="1.1.0")
+        (self.dest.parent / "caf__1c-spin.json").write_text(json.dumps(caf))
+        rendered = report.render(self.out)
+        self.assertNotIn("More than one version", rendered)
+        self.assertIn("| `caf` | 1.1.0 | 1 |", rendered)
+        self.assertIn("| `qb` | test | 1 |", rendered)
 
 
 class LaunchCensusPlanTest(unittest.TestCase):

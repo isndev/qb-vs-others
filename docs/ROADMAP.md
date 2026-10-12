@@ -193,9 +193,10 @@ publishing a shape whose adapters declare more than one idiom — it found SObje
 2.0–2.5 × faster with its coops grouped, which became the adapter's default and the re-measured
 row's form; `concsll.md`
 promises a one-time measurement of the other placement (the list sharing a core with half the
-workers) that no adapter can switch to today; `tools/report.py` prints one version per framework
-for a host whose shapes were measured with two qb builds; and the first `perf` / ETW profile of
-each new shape, which QB-244 asks of every wave, was not part of the measurement session.
+workers) that no adapter can switch to today; `tools/report.py` printed one version per framework
+for a host whose shapes were measured with two qb builds — it names each row's own version since
+Huly QB-1011; and the first `perf` / ETW profile of each new shape, which QB-244 asks of every
+wave, was not part of the measurement session.
 
 Each needs one spec header in `benchmarks/specs/qvospec/savina/` and one implementation per
 framework — `check-roster.py` refuses a framework missing from one. The per-framework support
