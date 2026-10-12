@@ -48,11 +48,12 @@ argument it exists to win:
 | Cross-language references (Erlang, Pekko, Actix, Orleans) | not yet |
 
 **Floor layout correction (QB-990).** The `big` and `bank-transaction` raw-thread implementations
-now separate inline records owned by different workers at the cache-line boundary. Their published
-floor figures and framework-to-floor comparisons below were measured before that correction. They
-remain the recorded historical results; a quiet-host, same-session remeasurement is still needed
-before claiming any performance effect or replacing them. The `chameneos` layout is unchanged
-because all creatures are owned by one worker.
+keep compact records at one worker and separate inline records at the cache-line boundary with
+two or more workers. The layout is selected before the measured window. Their published floor
+figures and framework-to-floor comparisons below were measured before that correction. They remain
+the recorded historical results; a quiet-host, same-session remeasurement is still needed before
+claiming any performance effect or replacing them. The `chameneos` layout is unchanged because all
+creatures are owned by one worker.
 
 Five benchmarks are five shapes — a two-actor round trip, a many-to-one funnel, a ring, a
 scatter-gather and an all-to-all — and the results below should be read per shape, not as one

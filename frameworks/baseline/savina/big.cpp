@@ -24,9 +24,11 @@ using namespace qvospec::savina::big;
 // kStart: none.  kPing: a = pinger, b = k.  kPong: a = value.  kDone: a = acc, b = messages.
 enum Tag : std::uint32_t { kStart = 1, kPing = 2, kPong = 3, kDone = 4 };
 
-// Adjacent actor IDs belong to different workers when cores=2. Keep their mutable state off
-// each other's cache line; the ring is the only intended cross-worker hand-off.
-struct alignas(qvobase::kCacheLine) Actor {
+// One worker owns every slot, so it needs no padding. With multiple workers, adjacent actor
+// IDs have different owners: keep their slot writes from sharing cache lines.
+// Alignment=0 keeps the record's natural alignment.
+template <std::size_t Alignment>
+struct alignas(Alignment) Actor {
     TargetSequence seq;
     std::uint64_t  acc{0};
     std::uint32_t  sent{0};
@@ -39,10 +41,14 @@ struct alignas(qvobase::kCacheLine) Actor {
     Actor(std::uint32_t self, std::uint32_t n) : seq(self, n) {}
 };
 
-static_assert(alignof(Actor) >= qvobase::kCacheLine);
-static_assert(sizeof(Actor) % qvobase::kCacheLine == 0);
+static_assert(alignof(Actor<0>) < qvobase::kCacheLine);
+static_assert(alignof(Actor<qvobase::kCacheLine>) >= qvobase::kCacheLine);
+static_assert(sizeof(Actor<qvobase::kCacheLine>) % qvobase::kCacheLine == 0);
 
-qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
+// Keep this helper internal: an exported template made AppleClang outline handler/send
+// calls per message. Check hot-loop codegen before changing its linkage.
+template <typename Slot>
+static qvo::Answer body_with_layout(const qvo::Params &p, qvo::Watch &watch) {
     const auto     actors = static_cast<std::uint32_t>(p.get("actors"));
     const auto     pings  = static_cast<std::uint32_t>(p.get("pings"));
     const auto     cores  = static_cast<unsigned>(p.get("cores"));
@@ -51,7 +57,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
 
     const std::uint32_t sink = actors;
 
-    std::vector<Actor> state;
+    std::vector<Slot> state;
     state.reserve(actors);
     for (std::uint32_t a = 0; a < actors; ++a) state.emplace_back(a, actors);
 
@@ -59,7 +65,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     std::uint64_t delivered = 0;
     std::uint32_t dones     = 0;
 
-    auto ping = [&](auto &m, unsigned worker, std::uint32_t self, Actor &a) {
+    auto ping = [&](auto &m, unsigned worker, std::uint32_t self, Slot &a) {
         const std::uint32_t k = a.sent++;
         m.send(worker, qvobase::Msg{a.seq.next(), kPing, self, k});
     };
@@ -67,7 +73,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     qvobase::Mesh mesh(W, spin, [&](auto &m, unsigned worker, const qvobase::Msg &msg) {
         switch (msg.tag) {
         case kStart: {
-            Actor &a = state[msg.dst];
+            Slot &a = state[msg.dst];
             ++a.messages;
             ping(m, worker, msg.dst, a);
             break;
@@ -79,7 +85,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
             break;
         }
         case kPong: {
-            Actor &a = state[msg.dst];
+            Slot &a = state[msg.dst];
             a.messages += 2;
             a.acc += msg.a;
             if (a.sent < pings)
@@ -107,6 +113,13 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     return qvo::Answer{result, delivered};
 }
 
+qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
+    // Select once, before the measured window; each handler has a compile-time slot stride.
+    const auto cores = static_cast<unsigned>(p.get("cores"));
+    if (cores <= 1) return body_with_layout<Actor<0>>(p, watch);
+    return body_with_layout<Actor<qvobase::kCacheLine>>(p, watch);
+}
+
 }  // namespace savina_big_baseline
 
 int main(int argc, char **argv) {
@@ -129,7 +142,8 @@ int main(int argc, char **argv) {
         "mailbox contention the frameworks pay for is engineered out here by static placement",
         "actor a lives on thread a % cores, so with cores=2 roughly half the pings and half the "
         "pongs cross a core",
-        "adjacent actor slots owned by different workers occupy separate cache lines",
+        "cores=1 keeps naturally aligned actor slots; cores>=2 isolates each slot on a "
+        "cache-line boundary so different workers never write the same actor-state line",
         "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded "
         "dispatch, still a real queue",
         "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which "

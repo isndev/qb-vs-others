@@ -73,14 +73,15 @@ floor is 2× faster than qb". Without a floor, a table in which every framework 
 win for whoever is least slow. With a floor it reads as what it is: a measure of how much of the
 gap is inherent to *being a framework at all*.
 
-The `big` and `bank-transaction` floors keep adjacent actor or account slots owned by different
-workers on separate cache lines. Their earlier packed vectors could make two workers write the
-same line even though the workload gives each slot one owner. This source-layout correction has
-not yet been timed. It separates the inline vector slots; the bank's deque storage remains a
-separate system allocation. The published result JSON and generated reports still describe the
-earlier binaries; no old floor figure or framework-to-floor ratio is a measurement of the
-corrected layout. The `chameneos` floor needs no such separation: all creatures belong to one
-worker.
+The `big` and `bank-transaction` floors keep naturally aligned, compact slots with one worker;
+with two or more workers, each actor or account slot occupies separate cache lines. Their earlier
+packed vectors could make two workers write the same line even though the workload gives each
+slot one owner. The layout is selected before the runtime starts, with no per-message layout
+branch. It separates the inline vector slots; the bank's deque storage remains a separate system
+allocation. An accepted quiet-host comparison remains pending. The published result JSON and
+generated reports still describe the earlier binaries; no old floor figure or framework-to-floor
+ratio is a measurement of the corrected layout. The `chameneos` floor needs no such separation:
+all creatures belong to one worker.
 
 ### 1.3 Same everything, and the differences are enumerated
 
