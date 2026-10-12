@@ -33,7 +33,7 @@ import run as runner  # noqa: E402  (tools/run.py: its own acceptance rule judge
 
 # Floors. Raise them in the same commit that adds a control; a count that goes DOWN is a control
 # that stopped firing, which is indistinguishable from a guard that stopped guarding.
-FLOOR_CAUGHT = 16
+FLOOR_CAUGHT = 21
 FLOOR_CONFIRMED = 10
 
 # The deadline controls (section I): a planted hang must end inside DEADLINE_S plus this slack --
@@ -161,6 +161,33 @@ def expect_deadline(exe: Path, plant: str, what: str, repetitions: int, warmup: 
     elif any(doc.get(key) != [] for key in ("work_ns", "total_ns", "outside_window_ns")) \
             or doc.get("summary") != {}:
         verdict("MISSED", what, "a blocked run's document carries a timing")
+    elif accepted:
+        verdict("MISSED", what, f"tools/run.py would not publish the document: {accepted}")
+    else:
+        verdict("CAUGHT", what, f"{fails[-1][:100]} (exit 1 after {elapsed:.1f} s)")
+
+
+def expect_declared_failure(exe: Path, plant: str, what: str, repetitions: int, warmup: int,
+                            want_failures: list[str], deadline: str = "60") -> None:
+    """A failure the body declares through qvo::fail() (Huly QB-1018): exit 1 -- never the
+    not-applicable 3, nor std::abort's 0xC0000409 or SIGABRT -- a failure document whose reasons
+    START WITH `want_failures` in order, no timing and no n/a, and a document tools/run.py
+    publishes as an unverified cell. Under a 60 s deadline by default, so a fail() that returned
+    or blocked reads as the deadline's failure -- a MISSED -- never as a hang of the battery; with
+    `--deadline 0` the battery's own HANG_WAIT_S is the bound."""
+    rc, doc, err, elapsed, accepted = run_deadline(exe, plant, deadline, repetitions, warmup)
+    fails = (doc or {}).get("failures") or []
+    if rc is None:
+        verdict("MISSED", what, f"still running after {HANG_WAIT_S} s -- fail() never ended it")
+    elif rc != 1 or doc is None:
+        verdict("MISSED", what, f"rc={rc}, document={'none' if doc is None else 'present'}, "
+                                f"err={err.strip()[:100]}")
+    elif (doc.get("verified") is not False or len(fails) != len(want_failures)
+          or not all(f.startswith(w) for f, w in zip(fails, want_failures))):
+        verdict("MISSED", what, f"failures={fails}")
+    elif any(doc.get(key) != [] for key in ("work_ns", "total_ns", "outside_window_ns")) \
+            or doc.get("summary") != {} or doc.get("not_applicable") is not None:
+        verdict("MISSED", what, "a declared failure's document carries a timing or an n/a")
     elif accepted:
         verdict("MISSED", what, f"tools/run.py would not publish the document: {accepted}")
     else:
@@ -372,6 +399,32 @@ def main() -> int:
     else:
         verdict("MISSED", "the document of a correct run differs with the watchdog armed",
                 f"rc={rc_on}, err={err.strip()[:100]}")
+
+    print("\n== J. a failure the body declares -- exit 1 and a document, never std::abort ==")
+    # A protocol violation a spec or an adapter detects (concdict's answer after the last request,
+    # barber's (n+1)-th Next) cannot wait for a checksum. It used to std::abort(): no document,
+    # and on Windows 0xC0000409 -- or 3, the not-applicable code, under another abort behaviour
+    # (Huly QB-1018). qvo::fail() ends it like the deadline does, from whichever thread saw it.
+    declared = "planted protocol violation on "
+    expect_declared_failure(exe, "fail-body", "the body's own thread declares a failure inside its "
+                            "window", 1, 0, [f"repetition 0: {declared}the body's thread"])
+    expect_declared_failure(exe, "fail-thread", "another thread declares it while the body waits "
+                            "(an actor's handler, the body in its join)", 2, 1,
+                            [f"repetition 0: {declared}another thread"])
+    expect_declared_failure(exe, "fail-thread", "the same with the watchdog off (--deadline 0): "
+                            "the repetition is still named and documented", 1, 0,
+                            [f"repetition 0: {declared}another thread"], deadline="0")
+    expect_declared_failure(exe, "fail-after-failure", "a wrong checksum then a declared failure: "
+                            "the document keeps both, in order", 2, 0,
+                            ["repetition 0: checksum ", f"repetition 1: {declared}another thread"])
+    rc, doc, err, _, _ = run_deadline(exe, "refuse-thread", "60")
+    if rc == 2 and doc is None and "qvo: FATAL: planted refusal on another thread" in err:
+        verdict("CAUGHT", "a refusal from another thread exits 2 -- the fatal code, never 3 -- "
+                          "with no document")
+    else:
+        verdict("MISSED", "a refusal did not exit 2 without a document",
+                f"rc={rc}, document={'none' if doc is None else 'present'}, "
+                f"err={err.strip()[:100]}")
 
     print(f"\n== census ==\n  CAUGHT={caught} CONFIRMED={confirmed} MISSED={missed} "
           f"(floors: CAUGHT>={FLOOR_CAUGHT} CONFIRMED>={FLOOR_CONFIRMED})")

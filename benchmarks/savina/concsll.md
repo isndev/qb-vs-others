@@ -168,7 +168,8 @@ length the answer reports (below). An answer delivered twice (every later answer
 then one index off), an answer of the wrong kind, or a wrong result where the result is fixed, moves
 the worker's sum; an answer delivered to the wrong worker does not (below). In qb, SObjectizer and
 the floor, a copy that reaches a worker after its last request — its sum already reported — stops
-the run with an explicit protocol failure (`fail()`, as in `concdict`) rather than a number, and so
+the run with an explicit protocol failure (`fail()`, as in `concdict`: exit 1 and a failure
+document) rather than a number, and so
 does, with `form=1`, a qb answer that no ask of the worker waits for. A CAF worker has quit after
 sending its report (`quit()`, the reference's `exit()`), so a late copy is dropped with its mailbox
 and reaches no handler: it changes nothing the run reports.

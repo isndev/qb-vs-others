@@ -154,7 +154,8 @@ goes to the oldest of them instead — the last one passed the checksum of the f
 benchmark, which counted what each customer was told without saying which customer.
 
 The room leaves for `Exit` only once the barber's `n`-th `Next` is in, and a run in which it
-receives an `(n+1)`-th stops with an explicit protocol failure rather than a number: a duplicated
+receives an `(n+1)`-th stops with an explicit protocol failure (`qvo::fail()`: exit 1 and a
+failure document, the repetition named) rather than a number: a duplicated
 `Next` could otherwise let `Exit` leave one haircut early. Asserted too: a barber that sends the
 `Next` after his 100th haircut twice fails every qb and floor cell that way.
 

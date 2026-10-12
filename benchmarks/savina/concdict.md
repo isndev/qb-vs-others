@@ -124,7 +124,8 @@ count alone); `form=1` sends the same requests and answers, so the count is the 
 An answer duplicated mid-run shifts every later term of its worker's fold and leaves that worker
 two requests in flight: it reaches its last answer early, and the answer still in flight then
 reaches it — a worker that receives an answer after its last request stops the run loudly
-(`fail()`) when it is still there to receive it, and that is how the planted duplicate (qb and the
+(`fail()`, through `qvo::fail()`: exit 1 and a failure document naming the violation) when it is
+still there to receive it, and that is how the planted duplicate (qb and the
 floor, `cores=1` and `2`) ended every time; a worker already gone leaves the shifted fold to fail
 the sum. What neither can see is a duplicate of a worker's LAST answer, which lands after that
 worker's report: `fail()` catches it only when the worker is still there to receive it.

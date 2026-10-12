@@ -203,21 +203,17 @@ inline Tally reference(const qvo::Params &p) {
     const long long size      = p.get("size");
     const long long threshold = p.get("threshold");
     const long long workers   = p.get("workers");
-    if (size < 1 || size > kMaxSize || threshold < 1 || workers < 1) {
-        std::fprintf(stderr, "savina/nqueens: need 1 <= size <= %d, threshold >= 1, workers >= 1 "
-                             "(got size=%lld threshold=%lld workers=%lld)\n",
-                     kMaxSize, size, threshold, workers);
-        std::abort();
-    }
+    if (size < 1 || size > kMaxSize || threshold < 1 || workers < 1)
+        qvo::refuse("savina/nqueens: need 1 <= size <= " + std::to_string(kMaxSize)
+                    + ", threshold >= 1, workers >= 1 (got size=" + std::to_string(size)
+                    + " threshold=" + std::to_string(threshold) + " workers="
+                    + std::to_string(workers) + ")");
     Tally t;
     enumerate(0, static_cast<int>(size), static_cast<int>(threshold), 0, 0, 0, kHashSeed, t);
-    if (t.solutions != kSolutions[size - 1]) {
-        std::fprintf(stderr, "savina/nqueens: the reference counted %llu solutions for size %lld, "
-                             "Savina's table says %llu\n",
-                     static_cast<unsigned long long>(t.solutions), size,
-                     static_cast<unsigned long long>(kSolutions[size - 1]));
-        std::abort();
-    }
+    if (t.solutions != kSolutions[size - 1])
+        qvo::refuse("savina/nqueens: the reference counted " + std::to_string(t.solutions)
+                    + " solutions for size " + std::to_string(size) + ", Savina's table says "
+                    + std::to_string(kSolutions[size - 1]));
     return t;
 }
 

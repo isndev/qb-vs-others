@@ -76,19 +76,17 @@ inline std::map<std::string, long long> params() {
 
 // A run that breaks the protocol in a way no checksum could report in time -- a worker answered
 // after its last request (its sum has already left in its report), an ask answered that nobody
-// waits for -- stops here, loudly, instead of reporting a number. concdict's rule, word for word.
+// waits for -- stops here, loudly, instead of reporting a number. concdict's rule, word for word:
+// qvo::fail() writes the failure document and exits 1 (never std::abort, harness.h).
 [[noreturn]] inline void fail(const char *what) {
-    std::fprintf(stderr, "savina/concsll: protocol violated -- %s\n", what);
-    std::abort();
+    qvo::fail(std::string("savina/concsll: protocol violated -- ") + what);
 }
 
 // `form`, which is 0 or 1: true for the request/response primitive.
 inline bool asks(const qvo::Params &p) {
     const long long v = p.get("form");
-    if (v != 0 && v != 1) {
-        std::fprintf(stderr, "savina/concsll: form must be 0 or 1 (got %lld)\n", v);
-        std::abort();
-    }
+    if (v != 0 && v != 1)
+        qvo::refuse("savina/concsll: form must be 0 or 1 (got " + std::to_string(v) + ")");
     return v == 1;
 }
 

@@ -30,6 +30,17 @@
 //   fail-then-hang a wrong checksum on the first call, then the second never returns: the
 //                 deadline's document must keep the earlier failure beside its own.
 //
+// A failure the body DECLARES -- a protocol violation a spec or an adapter detects, which no
+// checksum can carry in time -- goes through qvo::fail(): exit 1 and a failure document, never
+// std::abort, whose code on Windows is 0xC0000409 or the not-applicable 3 (Huly QB-1018):
+//
+//   fail-body          the body's own thread calls qvo::fail() inside its window.
+//   fail-thread        another thread calls it while the body waits for the end of its protocol --
+//                      an actor's handler on a framework thread, the body blocked in its join.
+//   fail-after-failure a wrong checksum on the first call, then the second's thread calls it: the
+//                      document keeps the earlier failure before the declared one.
+//   refuse-thread      another thread calls qvo::refuse(): exit 2, never 3, from any thread.
+//
 // The subject also reports the rounds it actually played as an OBSERVATION and declares the
 // parameter as its asserted lower bound (Answer::observed, Spec::observed_at_least) -- the shape a
 // benchmark uses for a minimum amount of work its checksum alone cannot prove:
@@ -74,6 +85,15 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
 
     if (mode != "no-window") watch.start();
     if ((mode == "hang" && call == 0) || (mode == "fail-then-hang" && call == 1)) wait_forever();
+    if (mode == "fail-body") qvo::fail("planted protocol violation on the body's thread");
+    if (mode == "fail-thread" || (mode == "fail-after-failure" && call == 1)) {
+        std::thread([] { qvo::fail("planted protocol violation on another thread"); }).detach();
+        wait_forever();
+    }
+    if (mode == "refuse-thread") {
+        std::thread([] { qvo::refuse("planted refusal on another thread"); }).detach();
+        wait_forever();
+    }
 
     for (std::uint64_t seq = rounds; seq-- > 0;) {
         ++played;
@@ -96,7 +116,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     if (mode == "hang-teardown" && call == 2) wait_forever();
 
     if (mode == "wrong-answer" || (mode == "fail-second" && call == 1) ||
-        ((mode == "fail-first" || mode == "fail-then-hang") && call == 0))
+        ((mode == "fail-first" || mode == "fail-then-hang" || mode == "fail-after-failure") &&
+         call == 0))
         acc += 1;
     if (mode == "short-count") delivered -= 2;
 

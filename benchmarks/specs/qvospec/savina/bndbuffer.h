@@ -82,12 +82,11 @@ inline constexpr const char *kObservedConsumerWaits = "consumer_waits";  // cons
 inline constexpr const char *kObservedBufferPeak    = "buffer_peak";     // most items buffered
 
 // A parameter outside its domain stops the run before anything is built, with the harness's
-// "bad command line" exit code (2, qvo/harness.h). Not std::abort(): on Windows that exits 3 --
-// the code a not-applicable cell owns -- and the CRT may raise a dialog that never returns.
+// "bad command line" exit code (2, qvo::refuse in qvo/harness.h). Not std::abort(), which owns
+// none of the harness's codes: on Windows it ends through __fastfail, or exits 3 -- the code a
+// not-applicable cell owns -- under another abort behaviour (harness.h, Huly QB-1018).
 [[noreturn]] inline void refuse(const char *what, long long value) {
-    std::fprintf(stderr, "savina/bndbuffer: %s (got %lld)\n", what, value);
-    std::fflush(stderr);
-    std::exit(2);
+    qvo::refuse(std::string("savina/bndbuffer: ") + what + " (got " + std::to_string(value) + ")");
 }
 
 // processItem(cost): `cost x 100` iterations, one when cost <= 0 (Savina's else-branch).

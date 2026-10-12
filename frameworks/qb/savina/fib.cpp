@@ -67,12 +67,10 @@ class FibActor final : public qb::Actor {
         if (!child.valid()) {
             // The per-VirtualCore ServiceIdPool is 16-bit: 65 534 live actors. Exhausting it
             // is a qb limit this benchmark exists to expose, and a limit is a FAILED cell, not
-            // a checksum that happens to still add up.
-            std::fprintf(stderr,
-                         "savina/fib qb: addRefActor returned an invalid handle -- the "
-                         "VirtualCore's 16-bit actor id pool is exhausted (n too large for one "
-                         "core; see benchmarks/savina/fib.md)\n");
-            std::abort();
+            // a checksum that happens to still add up: qvo::fail(), exit 1 and a failure document.
+            qvo::fail("savina/fib qb: addRefActor returned an invalid handle -- the "
+                      "VirtualCore's 16-bit actor id pool is exhausted (n too large for one "
+                      "core; see benchmarks/savina/fib.md)");
         }
         return child.id();
     }

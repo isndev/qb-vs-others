@@ -114,12 +114,11 @@ public:
                 // The per-VirtualCore ServiceIdPool is 16-bit: 65 534 live actors. A creator's
                 // whole share is alive at once (its actors run only once this handler returns),
                 // so exhausting it is a qb limit this benchmark exposes, and a limit is a FAILED
-                // cell, not a checksum that happens to still add up.
-                std::fprintf(stderr,
-                             "savina/fork-join-create qb: addRefActor returned an invalid handle "
-                             "-- the VirtualCore's 16-bit actor id pool is exhausted (actors too "
-                             "large for one core; see benchmarks/savina/fork-join-create.md)\n");
-                std::abort();
+                // cell, not a checksum that happens to still add up: qvo::fail(), exit 1 and a
+                // failure document.
+                qvo::fail("savina/fork-join-create qb: addRefActor returned an invalid handle "
+                          "-- the VirtualCore's 16-bit actor id pool is exhausted (actors too "
+                          "large for one core; see benchmarks/savina/fork-join-create.md)");
             }
             push<Job>(child.id(), i);
         }

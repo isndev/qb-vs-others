@@ -136,5 +136,5 @@ hypothesis for the quiet host, not a measured attribution. The cell's caveats sa
 
 For qb, a creator's whole share is alive at once — its actors run only once the forking loop has
 returned — so 40 000 live actors sit on one core at `cores=1`. qb's actor id is a 16-bit slot per
-VirtualCore (65 534 live actors): the default fits, and a share above the cap aborts the cell
-with a message rather than reporting a checksum.
+VirtualCore (65 534 live actors): the default fits, and a share above the cap fails the cell —
+`qvo::fail()`, exit 1 and a document naming the limit — rather than reporting a checksum.

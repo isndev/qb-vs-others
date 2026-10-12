@@ -171,9 +171,14 @@ using Body = std::function<Answer(const Params &, Watch &)>;
 // Exit codes -- tools/run.py reads them, so they are a contract:
 //   0  every repetition verified
 //   1  ran, but at least one repetition FAILED verification (a wrong checksum is a defect), or
-//      one outlived its deadline (below)
-//   2  fatal: bad CLI, pin refused, no expected(), cannot write the output
+//      one outlived its deadline (below), or the body declared a failure (qvo::fail, below)
+//   2  fatal: bad CLI, pin refused, no expected(), cannot write the output, or a refusal
+//      (qvo::refuse, below: a parameter outside the spec's domain, a setting that did not take)
 //   3  NOT APPLICABLE: the body called qvo::not_applicable() -- see below
+// Nothing in this repository leaves through std::abort(), which owns none of these codes: the
+// Windows UCRT ends the process through __fastfail (0xC0000409) by default and with exit 3 --
+// the not-applicable code -- when the abort behaviour lacks _CALL_REPORTFAULT, POSIX by SIGABRT,
+// and none of them writes a document (Huly QB-1018).
 //
 // CLI:
 //   --repetitions N     measured repetitions (default 5)
@@ -194,7 +199,8 @@ using Body = std::function<Answer(const Params &, Watch &)>;
 // thread, started here and asleep on the deadline, then
 // writes the result document -- `verified:false`, the reason in `failures` ("repetition k:
 // deadline exceeded after S s ..."), no timing, any earlier failure kept -- and ends the process
-// with std::_Exit(1). Arming and disarming it happen outside every timed span and wake nobody.
+// with std::_Exit(1), exactly as qvo::fail() does (below). Arming and disarming it happen
+// outside every timed span and wake nobody.
 // The deadline is per repetition, so it does not grow with --repetitions. Its default is
 // Spec::deadline_s, else 300 s -- ten times the slowest repetition any result document records,
 // 30 s -- both stated for the spec's default parameters, and multiplied by work_units at the
@@ -217,6 +223,28 @@ int run(int argc, char **argv, Spec spec, Body body);
 // Call it from the body, before the workload window, when the Params name a configuration the
 // adapter has no honest counterpart for. It never returns.
 [[noreturn]] void not_applicable(const std::string &reason);
+
+// Declares that the running repetition FAILED for a reason no checksum can carry in time: a
+// protocol violation a spec or an adapter detected (an answer after the last request the protocol
+// allows, more Nexts than haircuts), or a framework limit that leaves the cell without an honest
+// answer (qb's per-core actor id pool exhausted). The harness writes the result document of a
+// failed run -- `verified:false`, "repetition k: <reason>" in `failures` after any earlier
+// repetition's failure, no timing -- and ends the process with exit 1, which tools/run.py reads
+// as an unverified cell, the reason beside it. The deadline's own exit, from the caller's thread.
+//
+// Callable from ANY thread while the body runs -- an actor's handler on a framework thread is the
+// usual caller, with the body blocked in its join. It never returns, and leaves through
+// std::_Exit: the body's threads are still running, and static destructors run under them are a
+// crash or a hang. It and the deadline are serialised: the first to fire writes the document.
+// Called while no repetition runs, it writes no document (the run's own may be in the writing),
+// says why on stderr and still exits 1.
+[[noreturn]] void fail(const std::string &reason);
+
+// Refuses to run: a parameter outside the spec's domain, a framework setting that did not take
+// (a thread budget, a pin), a spec whose own reference disagrees with its source. Prints the
+// reason and exits 2, the fatal code, with no document. Callable from any thread, through
+// std::_Exit for the same reason as fail(); before anything is built is the usual place.
+[[noreturn]] void refuse(const std::string &reason);
 
 // ---------------------------------------------------------------------------------------------
 // Small helpers usable from inside an implementation

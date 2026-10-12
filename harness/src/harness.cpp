@@ -333,6 +333,12 @@ double percentile(std::vector<double> v, double p) {
 // short against the deadline never wakes it, a long run wakes it once per deadline at most. When
 // a repetition outlives its deadline, `fire` -- called with the lock held, so the body's thread
 // cannot disarm underneath it -- writes the failure document and ends the process.
+//
+// qvo::fail() (Huly QB-1018) ends a repetition the same way, from whichever thread detected the
+// failure: `fail_now` takes the same lock and calls the same `fire`, so the document is written
+// once, by the first of the two, and a failure the body declared reads exactly like one the
+// deadline found. arm() records the repetition even with the watchdog off (--deadline 0), so a
+// declared failure is named and documented with or without a deadline.
 // -------------------------------------------------------------------------------------------
 
 // Ten times the slowest repetition any result document of this repository records: 30.0 s,
@@ -345,10 +351,12 @@ constexpr double kMaxDeadlineSeconds = 1e7;
 
 class Deadline {
 public:
-    // Called by the watchdog thread with the repetition index and the deadline; must not return.
-    using Fire = std::function<void(int rep, double seconds)>;
+    // Called with the lock held -- by the watchdog thread, or by fail_now()'s caller -- with the
+    // verdict ("DEADLINE", "FAILED") and the failure ("repetition k: ..."); must not return.
+    using Fire = std::function<void(const char *verdict, const std::string &failure)>;
 
-    // `seconds` <= 0 disables the watchdog: no thread is started and arm()/disarm() do nothing.
+    // `seconds` <= 0 disables the watchdog: no thread is started, and arm()/disarm() only record
+    // which repetition runs, for fail_now().
     Deadline(double seconds, Fire fire) : fire_(std::move(fire)), seconds_(seconds) {
         if (seconds_ <= 0) return;
         budget_ = std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(seconds_));
@@ -369,17 +377,26 @@ public:
     Deadline &operator=(const Deadline &) = delete;
 
     void arm(int rep) {
-        if (!thread_.joinable()) return;
         std::lock_guard<std::mutex> lock(m_);
         rep_   = rep;
-        start_ = clock::now();
+        start_ = thread_.joinable() ? clock::now() : clock::time_point{};
         armed_ = true;
     }
 
     void disarm() {
-        if (!thread_.joinable()) return;
         std::lock_guard<std::mutex> lock(m_);
         armed_ = false;
+    }
+
+    // qvo::fail(), from any thread. While a repetition is armed, `fire` ends the process; between
+    // two of them the run's own document may be in the writing, so none is written here.
+    [[noreturn]] void fail_now(const std::string &reason) {
+        std::lock_guard<std::mutex> lock(m_);
+        if (armed_) fire_("FAILED", "repetition " + std::to_string(rep_) + ": " + reason);
+        std::fprintf(stderr, "qvo: FAILED outside a repetition, no document written: %s\n",
+                     reason.c_str());
+        std::fflush(nullptr);
+        std::_Exit(1);
     }
 
 private:
@@ -396,7 +413,12 @@ private:
                 continue;
             }
             const auto due = start_ + budget_;
-            if (now >= due) fire_(rep_, seconds_);  // never returns
+            if (now >= due) {  // fire_ never returns
+                char s[32];
+                std::snprintf(s, sizeof s, "%g", seconds_);
+                fire_("DEADLINE", "repetition " + std::to_string(rep_) + ": deadline exceeded "
+                                      + "after " + s + " s -- the body did not return (--deadline)");
+            }
             wake = due;
         }
     }
@@ -411,6 +433,18 @@ private:
     int                     rep_{-1};
     clock::time_point       start_{};
     std::thread             thread_;  // last: started once every member above exists
+};
+
+// The run in progress, for qvo::fail(): published by run() once its Deadline exists, withdrawn
+// before the Deadline is destroyed. Every body joins its threads before it returns, so no caller
+// of fail() outlives the object it reaches through this.
+std::atomic<Deadline *> g_running{nullptr};
+
+struct PublishRun {
+    explicit PublishRun(Deadline &d) noexcept { g_running.store(&d, std::memory_order_release); }
+    ~PublishRun() { g_running.store(nullptr, std::memory_order_release); }
+    PublishRun(const PublishRun &)            = delete;
+    PublishRun &operator=(const PublishRun &) = delete;
 };
 
 }  // namespace
@@ -768,27 +802,26 @@ int run(int argc, char **argv, Spec spec, Body body) {
     }
     deadline_s = (std::min)(deadline_s, kMaxDeadlineSeconds);  // parenthesised: <windows.h>'s min macro
 
-    // Runs on the watchdog's thread while repetition `rep` is armed: the body is inside its call,
-    // and this thread writes nothing the document reads until the body has returned.
-    Deadline deadline(deadline_s, [&](int rep, double seconds) {
-        char s[32];
-        std::snprintf(s, sizeof s, "%g", seconds);
+    // Runs while a repetition is armed, on the watchdog's thread (the deadline) or on the thread
+    // that called qvo::fail(): the body is inside its call, and its thread writes nothing the
+    // document reads until the body has returned.
+    Deadline deadline(deadline_s, [&](const char *verdict, const std::string &failure) {
         std::vector<std::string> why = failures;
-        why.push_back("repetition " + std::to_string(rep) + ": deadline exceeded after " + s
-                      + " s -- the body did not return (--deadline)");
+        why.push_back(failure);
         std::string err;
         if (!try_write_document(out_path, document(false, why), err)) {
             std::fprintf(stderr, "qvo: FATAL: %s\n", err.c_str());
             std::fflush(stderr);
             std::_Exit(2);
         }
-        std::fprintf(stderr, "qvo: %s/%s DEADLINE: %s\n", spec.framework.c_str(),
-                     spec.benchmark.c_str(), why.back().c_str());
+        std::fprintf(stderr, "qvo: %s/%s %s: %s\n", spec.framework.c_str(), spec.benchmark.c_str(),
+                     verdict, failure.c_str());
         std::fflush(stderr);
         // Never exit(): the body's threads are still running, and static destructors run under
         // them are a crash or a hang. The document is written; nothing else needs flushing.
         std::_Exit(1);
     });
+    const PublishRun published(deadline);  // qvo::fail() reaches this run's document through it
 
     const int all_reps = warmup + repetitions;
     for (int rep = 0; rep < all_reps; ++rep) {
@@ -901,6 +934,19 @@ int run(int argc, char **argv, Spec spec, Body body) {
 
 void not_applicable(const std::string &reason) {
     throw NotApplicable{reason};
+}
+
+void fail(const std::string &reason) {
+    if (Deadline *const run = g_running.load(std::memory_order_acquire)) run->fail_now(reason);
+    std::fprintf(stderr, "qvo: FAILED outside a run, no document written: %s\n", reason.c_str());
+    std::fflush(nullptr);
+    std::_Exit(1);
+}
+
+void refuse(const std::string &reason) {
+    std::fprintf(stderr, "qvo: FATAL: %s\n", reason.c_str());
+    std::fflush(nullptr);
+    std::_Exit(2);
 }
 
 }  // namespace qvo

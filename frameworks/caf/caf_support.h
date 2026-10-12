@@ -160,14 +160,13 @@ inline void refuse_spin_if_detached(bool spin) {
 // one proves nothing on its own; this reads it back under the exact name the scheduler reads.
 inline void assert_budget(const caf::actor_system &sys, std::size_t cores) {
     const auto effective = caf::get_or(sys.config(), "caf.scheduler.max-threads", std::size_t{0});
-    if (effective != cores) {
-        std::fprintf(stderr,
-                     "qvo: CAF worker budget did not take effect (asked %zu, config reports %zu). "
-                     "Refusing to report a number measured under a thread budget that is not the "
-                     "one every other framework was given.\n",
-                     cores, effective);
-        std::exit(2);
-    }
+    // qvo::refuse, never std::exit: the system's workers are running here, and static destructors
+    // run under them are a crash or a hang -- an exit code nobody chose (harness.h).
+    if (effective != cores)
+        qvo::refuse("CAF worker budget did not take effect (asked " + std::to_string(cores)
+                    + ", config reports " + std::to_string(effective)
+                    + "). Refusing to report a number measured under a thread budget that is not "
+                      "the one every other framework was given.");
 }
 
 // Every pin the hook attempted must have taken. Threads start lazily (a detached actor's thread
@@ -175,11 +174,9 @@ inline void assert_budget(const caf::actor_system &sys, std::size_t cores) {
 // refused pin is a refused measurement -- the same rule the harness applies to the
 // process-level pin. Without it the hook's failure flag was set and read by nobody.
 inline void assert_pins_took() {
-    if (PinSchedulerThreads::failed_flag().load(std::memory_order_relaxed)) {
-        std::fprintf(stderr, "qvo: CAF could not pin one of its threads to the requested CPU. "
-                             "Refusing to report a number measured with a floating thread.\n");
-        std::exit(2);
-    }
+    if (PinSchedulerThreads::failed_flag().load(std::memory_order_relaxed))
+        qvo::refuse("CAF could not pin one of its threads to the requested CPU. Refusing to "
+                    "report a number measured with a floating thread.");
 }
 
 // Which caveat list a benchmark carries. Ping-pong has a caf-detached row to point at for its

@@ -168,11 +168,9 @@ public:
     void produce() {
         const std::uint64_t number   = _produced + 1;
         const auto          customer = addRefActor<Customer>(id(), number);
-        if (!customer.valid()) {
-            std::fprintf(stderr, "savina/barber qb: addRefActor returned an invalid handle -- the "
-                                 "VirtualCore's actor id pool is exhausted\n");
-            std::abort();
-        }
+        if (!customer.valid())
+            qvo::fail("savina/barber qb: addRefActor returned an invalid handle -- the "
+                      "VirtualCore's actor id pool is exhausted");
         send<Enter>(_field.room, customer.id(), number);
         _sum += production_work(_produced++, _apr);
     }

@@ -91,20 +91,17 @@ inline constexpr std::uint64_t kHaircutSeed    = 0x5ba4be4f00000004ULL;
 
 // Every parameter of this benchmark is a count or a rate that must be at least 1.
 inline std::uint64_t at_least_one(long long value, const char *name) {
-    if (value < 1) {
-        std::fprintf(stderr, "savina/barber: %s must be >= 1 (got %lld)\n", name, value);
-        std::abort();
-    }
+    if (value < 1)
+        qvo::refuse(std::string("savina/barber: ") + name + " must be >= 1 (got "
+                    + std::to_string(value) + ")");
     return static_cast<std::uint64_t>(value);
 }
 
 // `pace`, which is 0 or 1: true for the paced factory.
 inline bool paced(const qvo::Params &p) {
     const long long v = p.get("pace");
-    if (v != 0 && v != 1) {
-        std::fprintf(stderr, "savina/barber: pace must be 0 or 1 (got %lld)\n", v);
-        std::abort();
-    }
+    if (v != 0 && v != 1)
+        qvo::refuse("savina/barber: pace must be 0 or 1 (got " + std::to_string(v) + ")");
     return v == 1;
 }
 
@@ -145,10 +142,11 @@ inline std::uint64_t weight(Tag t) noexcept { return qvo::mix(0xba4be4000000ULL 
 
 // A run that breaks the protocol in a way the checksum cannot see in time -- the room receiving
 // more Nexts from the barber than there are haircuts, which could let its Exit leave on a matching
-// sum before the last real Next -- stops here, loudly, instead of reporting a number.
+// sum before the last real Next -- stops here, loudly, instead of reporting a number: qvo::fail()
+// writes the failure document and exits 1, from the thread that saw it (never std::abort --
+// harness.h).
 [[noreturn]] inline void fail(const char *what) {
-    std::fprintf(stderr, "savina/barber: protocol violated -- %s\n", what);
-    std::abort();
+    qvo::fail(std::string("savina/barber: protocol violated -- ") + what);
 }
 
 // The checksum. With id(i) = identity(i), customer i reports to the factory

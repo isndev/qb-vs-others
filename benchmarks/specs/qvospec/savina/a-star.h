@@ -100,11 +100,9 @@ public:
     static constexpr std::uint32_t kMaxSide = 248;  // Savina: (MessagePriority.values().length - 1) * 8
 
     explicit Grid(std::uint32_t side) : side_(side) {
-        if (side < 2 || side > kMaxSide) {
-            std::fprintf(stderr, "savina/a-star: grid=%u is outside Savina's [2, %u]\n", side,
-                         kMaxSide);
-            std::abort();
-        }
+        if (side < 2 || side > kMaxSide)
+            qvo::refuse("savina/a-star: grid=" + std::to_string(side) + " is outside Savina's [2, "
+                        + std::to_string(kMaxSide) + "]");
         const std::uint32_t g = side;
         const std::uint32_t n = g * g * g;
 
@@ -281,10 +279,7 @@ inline std::uint64_t work_units(const qvo::Params &p) {
 // says how far above it each framework's interleaving landed.
 inline std::uint64_t min_work_messages(const qvo::Params &p) {
     const auto threshold = static_cast<std::uint64_t>(p.get("threshold"));
-    if (threshold == 0) {
-        std::fprintf(stderr, "savina/a-star: threshold=0 searches nothing\n");
-        std::abort();
-    }
+    if (threshold == 0) qvo::refuse("savina/a-star: threshold=0 searches nothing");
     return (work_units(p) + threshold - 1) / threshold;
 }
 

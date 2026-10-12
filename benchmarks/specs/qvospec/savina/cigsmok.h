@@ -56,10 +56,9 @@ inline std::map<std::string, long long> params() {
 
 // Every parameter of this benchmark but the two axes is a count or a bound that must be >= 1.
 inline std::uint64_t at_least_one(long long value, const char *name) {
-    if (value < 1) {
-        std::fprintf(stderr, "savina/cigsmok: %s must be >= 1 (got %lld)\n", name, value);
-        std::abort();
-    }
+    if (value < 1)
+        qvo::refuse(std::string("savina/cigsmok: ") + name + " must be >= 1 (got "
+                    + std::to_string(value) + ")");
     return static_cast<std::uint64_t>(value);
 }
 

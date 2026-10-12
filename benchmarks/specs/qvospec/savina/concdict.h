@@ -59,10 +59,10 @@ inline std::map<std::string, long long> params() {
 
 // A run that breaks the protocol in a way no checksum could report in time -- a worker answered
 // after its last request, an ask answered that nobody waits for, a key outside the dictionary --
-// stops here, loudly, instead of reporting a number.
+// stops here, loudly, instead of reporting a number: qvo::fail() writes the failure document and
+// exits 1, from the thread that saw it (never std::abort, harness.h).
 [[noreturn]] inline void fail(const char *what) {
-    std::fprintf(stderr, "savina/concdict: protocol violated -- %s\n", what);
-    std::abort();
+    qvo::fail(std::string("savina/concdict: protocol violated -- ") + what);
 }
 
 // The parameters, read and checked once.
@@ -82,13 +82,11 @@ inline Shape shape(const qvo::Params &p) {
     // `messages` is bounded so that a request index and a worker's received count fit 32 bits in
     // every adapter's message encoding (the floor packs them beside a worker index).
     if (workers < 1 || messages < 1 || messages >= (1LL << 31) || write < 0 || write > 100 ||
-        keys < workers || keys > 0xffffffffLL) {
-        std::fprintf(stderr,
-                     "savina/concdict: need workers >= 1, 1 <= messages < 2^31, 0 <= write <= 100, "
-                     "workers <= keys < 2^32 (got workers=%lld messages=%lld write=%lld keys=%lld)\n",
-                     workers, messages, write, keys);
-        std::abort();
-    }
+        keys < workers || keys > 0xffffffffLL)
+        qvo::refuse("savina/concdict: need workers >= 1, 1 <= messages < 2^31, 0 <= write <= 100, "
+                    "workers <= keys < 2^32 (got workers=" + std::to_string(workers)
+                    + " messages=" + std::to_string(messages) + " write=" + std::to_string(write)
+                    + " keys=" + std::to_string(keys) + ")");
     Shape s;
     s.workers    = static_cast<std::uint32_t>(workers);
     s.messages   = static_cast<std::uint64_t>(messages);
@@ -101,10 +99,8 @@ inline Shape shape(const qvo::Params &p) {
 // `form`, which is 0 or 1: true for the request/response primitive.
 inline bool asks(const qvo::Params &p) {
     const long long v = p.get("form");
-    if (v != 0 && v != 1) {
-        std::fprintf(stderr, "savina/concdict: form must be 0 or 1 (got %lld)\n", v);
-        std::abort();
-    }
+    if (v != 0 && v != 1)
+        qvo::refuse("savina/concdict: form must be 0 or 1 (got " + std::to_string(v) + ")");
     return v == 1;
 }
 

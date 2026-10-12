@@ -646,8 +646,9 @@ harness **aborts** rather than report a number when a requested pin cannot be re
 Three things about a run worth knowing before reading its output:
 
 - **A cell has three verdicts, not two.** `ok` (every repetition verified), `FAILED` (a
-  checksum, a pin or the window was wrong, or a repetition outlived the harness's deadline —
-  harness exit 1 or 2), and **`n/a`** (harness exit 3):
+  checksum, a count, a pin or the window was wrong, a repetition outlived the harness's deadline,
+  or the run declared a protocol violation through `qvo::fail()` — harness exit 1 or 2, never
+  `std::abort()`), and **`n/a`** (harness exit 3):
   the adapter declared, with a reason, that this framework cannot express the configuration.
   The reason is written into the JSON and rendered in the cell. `caf-detached` reports its two
   spin cells this way, because a `caf::detached` actor has no spin mode; a number invented for
