@@ -226,10 +226,12 @@ For a launch census over physical binary copies and A/A controls, `tools/launch-
 that exact plan. The default fixed order and the two-binary `--alternate-order` mode remain
 available; these ordering modes cannot be combined.
 
-The harness has its own negative control, whose floors are CAUGHT ≥ 16 and CONFIRMED ≥ 10:
+The harness has its own negative control, and it has been run (2026-10-12, the same census on
+WSL2 g++-14 and on Windows MSVC 19.51; its floors are those counts):
 
 ```
 python3 tools/negative-control.py --build build/final
+    CAUGHT=16 CONFIRMED=10 MISSED=0
 ```
 
 It plants one defect at a time — a message lost 1 time in 10⁷, a single lost message, a duplicate
