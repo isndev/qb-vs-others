@@ -151,6 +151,12 @@ struct Spec {
     // The framework document/example this implementation is modelled on (FAIRNESS.md 1.1).
     std::string idiom_source;
     std::string idiom_note;
+
+    // Optional: how long ONE repetition (warmup included, setup and teardown included) may take at
+    // the spec's default parameters, in seconds, before the harness declares the run blocked --
+    // see `--deadline` under run(). 0 takes the harness's default. Only a shape whose repetition
+    // is legitimately long needs it; a spec never shortens the deadline to make a hang fail sooner.
+    double deadline_s{0};
 };
 
 using Body = std::function<Answer(const Params &, Watch &)>;
@@ -164,7 +170,8 @@ using Body = std::function<Answer(const Params &, Watch &)>;
 //
 // Exit codes -- tools/run.py reads them, so they are a contract:
 //   0  every repetition verified
-//   1  ran, but at least one repetition FAILED verification (a wrong checksum is a defect)
+//   1  ran, but at least one repetition FAILED verification (a wrong checksum is a defect), or
+//      one outlived its deadline (below)
 //   2  fatal: bad CLI, pin refused, no expected(), cannot write the output
 //   3  NOT APPLICABLE: the body called qvo::not_applicable() -- see below
 //
@@ -175,7 +182,23 @@ using Body = std::function<Answer(const Params &, Watch &)>;
 //   --cpus 0,2,4,6      affinity set; the harness ABORTS if the pin is refused
 //   --no-pin            run unpinned, and record `pinned:false` so the report can exclude it
 //   --out FILE          JSON destination, atomically replaced (default: stdout)
+//   --deadline S        seconds ONE repetition may take, warmup, setup and teardown included;
+//                       0 = no deadline (a debugger session). Default: below
 //   --describe          print the spec as JSON and exit without running
+//
+// The deadline. Every benchmark waits for the end of a protocol -- N "done" messages, a report,
+// the end of a chain -- so a message that is LOST, misrouted, or carries a corrupted control
+// field does not move the checksum: the body never returns. A repetition that outlives its
+// deadline is that defect. A watchdog thread, started here and asleep on the deadline, then
+// writes the result document -- `verified:false`, the reason in `failures` ("repetition k:
+// deadline exceeded after S s ..."), no timing, any earlier failure kept -- and ends the process
+// with std::_Exit(1). Arming and disarming it happen outside every timed span and wake nobody.
+// The deadline is per repetition, so it does not grow with --repetitions. Its default is
+// Spec::deadline_s, else 300 s -- ten times the slowest repetition any result document records,
+// 30 s -- both stated for the spec's default parameters, and multiplied by work_units at the
+// requested parameters over work_units at the defaults when that ratio is above 1: a bigger run
+// gets a longer deadline, a smaller one keeps the full default. tools/run.py --timeout stays the
+// outer bound of the whole process.
 int run(int argc, char **argv, Spec spec, Body body);
 
 // Declares that this framework cannot express the configuration it was asked to run, and says

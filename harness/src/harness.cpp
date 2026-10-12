@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cmath>
+#include <condition_variable>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -9,8 +11,10 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <sstream>
 #include <system_error>
+#include <thread>
 
 #if defined(_WIN32)
 #    define WIN32_LEAN_AND_MEAN
@@ -85,10 +89,15 @@ std::string json_escape(const std::string &s) {
 
 std::string quoted(const std::string &s) { return "\"" + json_escape(s) + "\""; }
 
-void write_document(const std::filesystem::path &out_path, const std::string &doc) {
+// Writes the document and says why not when it cannot. Flushes stdout itself: the deadline's
+// watchdog leaves through std::_Exit, which flushes nothing.
+bool try_write_document(const std::filesystem::path &out_path, const std::string &doc,
+                        std::string &why_not) {
     if (out_path.empty()) {
         std::cout << doc;
-        return;
+        std::cout.flush();
+        if (!std::cout) why_not = "cannot write the document to stdout";
+        return static_cast<bool>(std::cout);
     }
 
     // Keep the temporary file beside --out: the replacement is atomic on the same filesystem.
@@ -104,13 +113,17 @@ void write_document(const std::filesystem::path &out_path, const std::string &do
            + std::to_string(sequence.fetch_add(1, std::memory_order_relaxed));
     {
         std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
-        if (!f) fatal("cannot write output temporary file");
+        if (!f) {
+            why_not = "cannot write output temporary file";
+            return false;
+        }
         f.write(doc.data(), static_cast<std::streamsize>(doc.size()));
         f.close();
         if (!f) {
             std::error_code ignored;
             std::filesystem::remove(tmp, ignored);
-            fatal("cannot finish writing output temporary file");
+            why_not = "cannot finish writing output temporary file";
+            return false;
         }
     }
 #if defined(_WIN32)
@@ -122,8 +135,15 @@ void write_document(const std::filesystem::path &out_path, const std::string &do
     if (!replaced) {
         std::error_code ignored;
         std::filesystem::remove(tmp, ignored);
-        fatal("cannot replace output document");
+        why_not = "cannot replace output document";
+        return false;
     }
+    return true;
+}
+
+void write_document(const std::filesystem::path &out_path, const std::string &doc) {
+    std::string why;
+    if (!try_write_document(out_path, doc, why)) fatal(why);
 }
 
 // -------------------------------------------------------------------------------------------
@@ -296,6 +316,102 @@ double percentile(std::vector<double> v, double p) {
     return v[lo] * (1.0 - f) + v[hi] * f;
 }
 
+// -------------------------------------------------------------------------------------------
+// The deadline (Huly QB-991)
+//
+// A benchmark waits for the end of a protocol -- N "done" messages, a report, the end of a chain
+// -- so a message that is lost, misrouted, or carries a corrupted control field does not move
+// the checksum: the body never returns. tools/run.py's --timeout bounds the whole process from
+// outside; a binary run directly (a correctness matrix, a negative proof, a reproduction) had no
+// bound at all, and a planted defect that blocks read as "still running" instead of "failed".
+//
+// The watchdog bounds each repetition: armed before the repetition's first clock read, disarmed
+// after its last, so nothing of it is inside a timed span. Arming is a store under an uncontended
+// mutex and notifies nobody. The thread sleeps until the earliest instant a deadline could fall
+// due and, when it wakes, judges the repetition armed at that moment: a run whose repetitions are
+// short against the deadline never wakes it, a long run wakes it once per deadline at most. When
+// a repetition outlives its deadline, `fire` -- called with the lock held, so the body's thread
+// cannot disarm underneath it -- writes the failure document and ends the process.
+// -------------------------------------------------------------------------------------------
+
+// Ten times the slowest repetition any result document of this repository records: 30.0 s,
+// savina/ping-pong 2c-park at its default parameters, shipped qb 3.1.0's parked cross-core hop on
+// the arm64 Linux guest (results/utm-debian13-arm64-g++14/qb-branch-develop/). The slowest
+// published cell is 26.3 s (SObjectizer, the same cell on WSL2).
+constexpr double kDefaultDeadlineSeconds = 300.0;
+// Far beyond any run, and far inside steady_clock's range once added to its epoch.
+constexpr double kMaxDeadlineSeconds = 1e7;
+
+class Deadline {
+public:
+    // Called by the watchdog thread with the repetition index and the deadline; must not return.
+    using Fire = std::function<void(int rep, double seconds)>;
+
+    // `seconds` <= 0 disables the watchdog: no thread is started and arm()/disarm() do nothing.
+    Deadline(double seconds, Fire fire) : fire_(std::move(fire)), seconds_(seconds) {
+        if (seconds_ <= 0) return;
+        budget_ = std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(seconds_));
+        thread_ = std::thread([this] { watch(); });
+    }
+
+    ~Deadline() {
+        if (!thread_.joinable()) return;
+        {
+            std::lock_guard<std::mutex> lock(m_);
+            stop_ = true;
+        }
+        cv_.notify_one();
+        thread_.join();
+    }
+
+    Deadline(const Deadline &)            = delete;
+    Deadline &operator=(const Deadline &) = delete;
+
+    void arm(int rep) {
+        if (!thread_.joinable()) return;
+        std::lock_guard<std::mutex> lock(m_);
+        rep_   = rep;
+        start_ = clock::now();
+        armed_ = true;
+    }
+
+    void disarm() {
+        if (!thread_.joinable()) return;
+        std::lock_guard<std::mutex> lock(m_);
+        armed_ = false;
+    }
+
+private:
+    void watch() {
+        std::unique_lock<std::mutex> lock(m_);
+        // No repetition armed yet: none can fall due before a full budget from now.
+        auto wake = clock::now() + budget_;
+        for (;;) {
+            if (cv_.wait_until(lock, wake, [this] { return stop_; })) return;
+            const auto now = clock::now();
+            if (!armed_) {
+                // Between two repetitions: the next one starts no earlier than now.
+                wake = now + budget_;
+                continue;
+            }
+            const auto due = start_ + budget_;
+            if (now >= due) fire_(rep_, seconds_);  // never returns
+            wake = due;
+        }
+    }
+
+    Fire                    fire_;
+    double                  seconds_{0};
+    clock::duration         budget_{};
+    std::mutex              m_;
+    std::condition_variable cv_;
+    bool                    stop_{false};
+    bool                    armed_{false};
+    int                     rep_{-1};
+    clock::time_point       start_{};
+    std::thread             thread_;  // last: started once every member above exists
+};
+
 }  // namespace
 
 // -------------------------------------------------------------------------------------------
@@ -393,6 +509,7 @@ int run(int argc, char **argv, Spec spec, Body body) {
     std::filesystem::path out_path;
     bool        describe = false;
     bool        no_pin   = false;
+    double      deadline_arg = -1;  // --deadline; negative = not given, derive it from the spec
     Pin         pin;
     Params      params;
 
@@ -428,6 +545,14 @@ int run(int argc, char **argv, Spec spec, Body body) {
             pin.requested = true;
         } else if (a == "--no-pin") {
             no_pin = true;
+        } else if (a == "--deadline") {
+            // Parsed whole: 0 disables the watchdog, so a typo read as 0 would disable it silently.
+            const std::string v   = next();
+            char             *end = nullptr;
+            const double      s   = std::strtod(v.c_str(), &end);
+            if (v.empty() || end != v.c_str() + v.size() || !std::isfinite(s) || s < 0)
+                fatal("--deadline expects a number of seconds >= 0 (0: no deadline), got '" + v + "'");
+            deadline_arg = s;
         } else if (a == "--describe") {
             describe = true;
         } else if (a == "--param") {
@@ -503,14 +628,178 @@ int run(int argc, char **argv, Spec spec, Body body) {
     // Every measured repetition's observations, by name, in repetition order.
     std::map<std::string, std::vector<std::uint64_t>> observed;
 
+    // The result document: one builder for the end of the run and for the deadline's watchdog, so
+    // a blocked run's document has the shape of any other failed run. A run with a failed
+    // repetition has no publishable timing, even when earlier repetitions passed: the reasons are
+    // kept, and no partial sample or summary is written unless `ok`.
+    auto document = [&](bool ok, const std::vector<std::string> &why) -> std::string {
+        const std::vector<double>  none;
+        const std::vector<double> &work  = ok ? work_ns : none;
+        const std::vector<double> &total = ok ? total_ns : none;
+        const std::vector<double> &setup = ok ? setup_ns : none;
+
+        std::ostringstream j;
+        j << "{\n";
+        j << "  \"schema\": \"qvo/result/1\",\n";
+        j << "  \"benchmark\": " << quoted(spec.benchmark) << ",\n";
+        j << "  \"framework\": " << quoted(spec.framework) << ",\n";
+        j << "  \"framework_version\": " << quoted(spec.framework_version) << ",\n";
+        j << "  \"verified\": " << (ok ? "true" : "false") << ",\n";
+        j << "  \"expected_checksum\": " << want << ",\n";
+        j << "  \"expected_messages\": " << want_messages << ",\n";
+        if (spec.work_units) {
+            j << "  \"work_unit\": " << quoted(spec.work_unit) << ",\n";
+            j << "  \"work_units\": " << spec.work_units(params) << ",\n";
+        }
+        j << "  \"repetitions\": " << repetitions << ",\n";
+        j << "  \"warmup\": " << warmup << ",\n";
+
+        j << "  \"params\": {";
+        {
+            bool first = true;
+            for (const auto &kv : params.all()) {
+                j << (first ? "" : ", ") << quoted(kv.first) << ": " << kv.second;
+                first = false;
+            }
+        }
+        j << "},\n";
+
+        j << "  \"pinned\": " << (pin.applied ? "true" : "false") << ",\n";
+        j << "  \"cpus\": " << quoted(pin_repr) << ",\n";
+        j << "  \"thread_pinning_supported\": " << (thread_pinning_supported() ? "true" : "false")
+          << ",\n";
+
+        write_env(j);
+
+        j << "  \"idiom\": {\n";
+        j << "    \"source\": " << quoted(spec.idiom_source) << ",\n";
+        j << "    \"note\": " << quoted(spec.idiom_note) << "\n";
+        j << "  },\n";
+
+        j << "  \"caveats\": [";
+        for (std::size_t i = 0; i < spec.caveats.size(); ++i)
+            j << (i ? ", " : "") << quoted(spec.caveats[i]);
+        j << "],\n";
+
+        j << "  \"failures\": [";
+        for (std::size_t i = 0; i < why.size(); ++i) j << (i ? ", " : "") << quoted(why[i]);
+        j << "],\n";
+
+        auto array = [&](const char *name, const std::vector<double> &v, bool last) {
+            j << "  \"" << name << "\": [";
+            for (std::size_t i = 0; i < v.size(); ++i) {
+                char buf[64];
+                std::snprintf(buf, sizeof buf, "%.1f", v[i]);
+                j << (i ? ", " : "") << buf;
+            }
+            j << "]" << (last ? "\n" : ",\n");
+        };
+        array("work_ns", work, false);
+        array("total_ns", total, false);
+        array("outside_window_ns", setup, false);
+
+        // Written only when there is something to write, so the document of a benchmark that
+        // observes nothing is byte-for-byte the shape it always had.
+        if (!observed.empty()) {
+            j << "  \"observed\": {";
+            bool first = true;
+            for (const auto &kv : observed) {
+                const auto &s = kv.second;
+                j << (first ? "\n" : ",\n") << "    " << quoted(kv.first) << ": {\"samples\": [";
+                for (std::size_t i = 0; i < s.size(); ++i) j << (i ? ", " : "") << s[i];
+                std::vector<double> d;
+                d.reserve(s.size());
+                for (const std::uint64_t v : s) d.push_back(static_cast<double>(v));
+                char p50[64];
+                std::snprintf(p50, sizeof p50, "%.1f", percentile(d, 0.50));
+                j << "], \"min\": " << *std::min_element(s.begin(), s.end()) << ", \"p50\": " << p50
+                  << ", \"max\": " << *std::max_element(s.begin(), s.end()) << "}";
+                first = false;
+            }
+            j << "\n  },\n";
+        }
+        if (!at_least.empty()) {
+            j << "  \"observed_at_least\": {";
+            bool first = true;
+            for (const auto &kv : at_least) {
+                j << (first ? "" : ", ") << quoted(kv.first) << ": " << kv.second;
+                first = false;
+            }
+            j << "},\n";
+        }
+
+        auto stat = [&](const char *name, double v, bool last) {
+            char buf[64];
+            std::snprintf(buf, sizeof buf, "%.1f", v);
+            j << "    \"" << name << "\": " << buf << (last ? "\n" : ",\n");
+        };
+        if (ok) {
+            j << "  \"summary\": {\n";
+            stat("work_min", *std::min_element(work_ns.begin(), work_ns.end()), false);
+            stat("work_p50", percentile(work_ns, 0.50), false);
+            stat("work_p99", percentile(work_ns, 0.99), false);
+            stat("work_iqr", percentile(work_ns, 0.75) - percentile(work_ns, 0.25), true);
+            j << "  }\n";
+        } else {
+            j << "  \"summary\": {}\n";
+        }
+        j << "}\n";
+        return j.str();
+    };
+
+    // The deadline of one repetition (`Deadline` above; the contract is under run() in harness.h).
+    // --deadline is taken as given. Otherwise the spec's own, else the harness default -- both
+    // stated for the spec's DEFAULT parameters -- grows with the work the requested parameters
+    // declare, and never shrinks: a smaller run keeps the full deadline.
+    if (!std::isfinite(spec.deadline_s) || spec.deadline_s < 0)
+        fatal("benchmark " + spec.benchmark + " declares a negative or non-finite deadline_s");
+    double deadline_s = deadline_arg;
+    if (deadline_s < 0) {
+        deadline_s = spec.deadline_s > 0 ? spec.deadline_s : kDefaultDeadlineSeconds;
+        if (spec.work_units) {
+            Params defaults;
+            for (const auto &kv : spec.params) defaults.set(kv.first, kv.second);
+            const std::uint64_t at_defaults = spec.work_units(defaults);
+            const std::uint64_t requested   = spec.work_units(params);
+            if (at_defaults > 0 && requested > at_defaults)
+                deadline_s *= static_cast<double>(requested) / static_cast<double>(at_defaults);
+        }
+    }
+    deadline_s = std::min(deadline_s, kMaxDeadlineSeconds);
+
+    // Runs on the watchdog's thread while repetition `rep` is armed: the body is inside its call,
+    // and this thread writes nothing the document reads until the body has returned.
+    Deadline deadline(deadline_s, [&](int rep, double seconds) {
+        char s[32];
+        std::snprintf(s, sizeof s, "%g", seconds);
+        std::vector<std::string> why = failures;
+        why.push_back("repetition " + std::to_string(rep) + ": deadline exceeded after " + s
+                      + " s -- the body did not return (a lost or misrouted message blocks a run "
+                        "instead of moving its checksum)");
+        std::string err;
+        if (!try_write_document(out_path, document(false, why), err)) {
+            std::fprintf(stderr, "qvo: FATAL: %s\n", err.c_str());
+            std::fflush(stderr);
+            std::_Exit(2);
+        }
+        std::fprintf(stderr, "qvo: %s/%s DEADLINE: %s\n", spec.framework.c_str(),
+                     spec.benchmark.c_str(), why.back().c_str());
+        std::fflush(stderr);
+        // Never exit(): the body's threads are still running, and static destructors run under
+        // them are a crash or a hang. The document is written; nothing else needs flushing.
+        std::_Exit(1);
+    });
+
     const int all_reps = warmup + repetitions;
     for (int rep = 0; rep < all_reps; ++rep) {
         Watch w;
+        deadline.arm(rep);  // outside the repetition's timed span, like disarm() below
         auto  t_begin = clock::now();
         Answer got;
         try {
             got = body(params, w);
         } catch (const NotApplicable &na) {
+            deadline.disarm();
             // The body declined the configuration. Emit a document with the reason and no
             // timings, so the cell exists in the results and the report can say why it is
             // empty; exit 3 so run.py tells it apart from a defect (1) and a harness error (2).
@@ -545,6 +834,7 @@ int run(int argc, char **argv, Spec spec, Body body) {
             return 3;
         }
         auto  t_end   = clock::now();
+        deadline.disarm();
 
         if (got.checksum != want) {
             failures.push_back("repetition " + std::to_string(rep) + ": checksum "
@@ -598,122 +888,7 @@ int run(int argc, char **argv, Spec spec, Body body) {
     }
 
     const bool ok = failures.empty() && work_ns.size() == static_cast<std::size_t>(repetitions);
-    if (!ok) {
-        // A run with a failed repetition has no publishable timing, even when earlier repetitions
-        // passed. Keep the reasons, but remove every partial sample before emitting the document.
-        work_ns.clear();
-        total_ns.clear();
-        setup_ns.clear();
-    }
-
-    std::ostringstream j;
-    j << "{\n";
-    j << "  \"schema\": \"qvo/result/1\",\n";
-    j << "  \"benchmark\": " << quoted(spec.benchmark) << ",\n";
-    j << "  \"framework\": " << quoted(spec.framework) << ",\n";
-    j << "  \"framework_version\": " << quoted(spec.framework_version) << ",\n";
-    j << "  \"verified\": " << (ok ? "true" : "false") << ",\n";
-    j << "  \"expected_checksum\": " << want << ",\n";
-    j << "  \"expected_messages\": " << want_messages << ",\n";
-    if (spec.work_units) {
-        j << "  \"work_unit\": " << quoted(spec.work_unit) << ",\n";
-        j << "  \"work_units\": " << spec.work_units(params) << ",\n";
-    }
-    j << "  \"repetitions\": " << repetitions << ",\n";
-    j << "  \"warmup\": " << warmup << ",\n";
-
-    j << "  \"params\": {";
-    {
-        bool first = true;
-        for (const auto &kv : params.all()) {
-            j << (first ? "" : ", ") << quoted(kv.first) << ": " << kv.second;
-            first = false;
-        }
-    }
-    j << "},\n";
-
-    j << "  \"pinned\": " << (pin.applied ? "true" : "false") << ",\n";
-    j << "  \"cpus\": " << quoted(pin_repr) << ",\n";
-    j << "  \"thread_pinning_supported\": " << (thread_pinning_supported() ? "true" : "false")
-      << ",\n";
-
-    write_env(j);
-
-    j << "  \"idiom\": {\n";
-    j << "    \"source\": " << quoted(spec.idiom_source) << ",\n";
-    j << "    \"note\": " << quoted(spec.idiom_note) << "\n";
-    j << "  },\n";
-
-    j << "  \"caveats\": [";
-    for (std::size_t i = 0; i < spec.caveats.size(); ++i)
-        j << (i ? ", " : "") << quoted(spec.caveats[i]);
-    j << "],\n";
-
-    j << "  \"failures\": [";
-    for (std::size_t i = 0; i < failures.size(); ++i) j << (i ? ", " : "") << quoted(failures[i]);
-    j << "],\n";
-
-    auto array = [&](const char *name, const std::vector<double> &v, bool last) {
-        j << "  \"" << name << "\": [";
-        for (std::size_t i = 0; i < v.size(); ++i) {
-            char buf[64];
-            std::snprintf(buf, sizeof buf, "%.1f", v[i]);
-            j << (i ? ", " : "") << buf;
-        }
-        j << "]" << (last ? "\n" : ",\n");
-    };
-    array("work_ns", work_ns, false);
-    array("total_ns", total_ns, false);
-    array("outside_window_ns", setup_ns, false);
-
-    // Written only when there is something to write, so the document of a benchmark that observes
-    // nothing is byte-for-byte the shape it always had.
-    if (!observed.empty()) {
-        j << "  \"observed\": {";
-        bool first = true;
-        for (const auto &kv : observed) {
-            const auto &s = kv.second;
-            j << (first ? "\n" : ",\n") << "    " << quoted(kv.first) << ": {\"samples\": [";
-            for (std::size_t i = 0; i < s.size(); ++i) j << (i ? ", " : "") << s[i];
-            std::vector<double> d;
-            d.reserve(s.size());
-            for (const std::uint64_t v : s) d.push_back(static_cast<double>(v));
-            char p50[64];
-            std::snprintf(p50, sizeof p50, "%.1f", percentile(d, 0.50));
-            j << "], \"min\": " << *std::min_element(s.begin(), s.end()) << ", \"p50\": " << p50
-              << ", \"max\": " << *std::max_element(s.begin(), s.end()) << "}";
-            first = false;
-        }
-        j << "\n  },\n";
-    }
-    if (!at_least.empty()) {
-        j << "  \"observed_at_least\": {";
-        bool first = true;
-        for (const auto &kv : at_least) {
-            j << (first ? "" : ", ") << quoted(kv.first) << ": " << kv.second;
-            first = false;
-        }
-        j << "},\n";
-    }
-
-    auto stat = [&](const char *name, double v, bool last) {
-        char buf[64];
-        std::snprintf(buf, sizeof buf, "%.1f", v);
-        j << "    \"" << name << "\": " << buf << (last ? "\n" : ",\n");
-    };
-    if (ok) {
-        j << "  \"summary\": {\n";
-        stat("work_min", *std::min_element(work_ns.begin(), work_ns.end()), false);
-        stat("work_p50", percentile(work_ns, 0.50), false);
-        stat("work_p99", percentile(work_ns, 0.99), false);
-        stat("work_iqr", percentile(work_ns, 0.75) - percentile(work_ns, 0.25), true);
-        j << "  }\n";
-    } else {
-        j << "  \"summary\": {}\n";
-    }
-    j << "}\n";
-
-    write_document(out_path, j.str());
+    write_document(out_path, document(ok, failures));
 
     if (!ok) {
         std::fprintf(stderr, "qvo: %s/%s FAILED VERIFICATION\n", spec.framework.c_str(),

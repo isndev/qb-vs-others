@@ -25,12 +25,23 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import run as runner  # noqa: E402  (tools/run.py: its own acceptance rule judges the documents)
 
 # Floors. Raise them in the same commit that adds a control; a count that goes DOWN is a control
 # that stopped firing, which is indistinguishable from a guard that stopped guarding.
-FLOOR_CAUGHT = 12
-FLOOR_CONFIRMED = 7
+FLOOR_CAUGHT = 16
+FLOOR_CONFIRMED = 10
+
+# The deadline controls (section I): a planted hang must end inside DEADLINE_S plus this slack --
+# process start and the document write, generous for a loaded host -- and the battery gives up on
+# the child at HANG_WAIT_S, which is a MISSED, never a hang of the battery itself.
+DEADLINE_S = 2
+DEADLINE_SLACK_S = 30
+HANG_WAIT_S = 120
 
 caught = confirmed = missed = 0
 
@@ -91,6 +102,80 @@ def expect_rejected(exe: Path, plant: str, what: str, messages: int = 20000000) 
                 "failing framework produces no timing at all")
         return
     verdict("CAUGHT", what, doc["failures"][0][:110])
+
+
+def run_deadline(exe: Path, plant: str, deadline: str | None, repetitions: int = 1,
+                 warmup: int = 0) -> tuple[int | None, dict | None, str, float, str]:
+    """Run the subject, unpinned, with `--deadline <deadline>` (none when None).
+
+    Returns (rc -- None when the battery itself had to kill the child --, document, stderr,
+    elapsed seconds, tools/run.py's verdict on the document: "" when it would publish it)."""
+    env = dict(os.environ)
+    env["QVO_CONTROL_PLANT"] = plant
+    params = {"messages": 1000, "cores": 1, "wait": 1}
+    with tempfile.TemporaryDirectory() as td:
+        out = Path(td) / "r.json"
+        cmd = [str(exe), "--repetitions", str(repetitions), "--warmup", str(warmup), "--no-pin",
+               "--out", str(out)]
+        for k, v in params.items():
+            cmd += ["--param", f"{k}={v}"]
+        if deadline is not None:
+            cmd += ["--deadline", deadline]
+        t0 = time.monotonic()
+        try:
+            p = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=HANG_WAIT_S)
+        except subprocess.TimeoutExpired:
+            return None, None, "", time.monotonic() - t0, "the battery killed the child"
+        elapsed = time.monotonic() - t0
+        doc = None
+        if out.exists():
+            try:
+                doc = json.loads(out.read_text())
+            except json.JSONDecodeError:
+                doc = None
+        if p.returncode in (0, 1, 3):
+            _, accepted = runner.read_attempt(out, "control/ping-pong", "control", params,
+                                              p.returncode, repetitions, warmup)
+        else:
+            accepted = f"exit {p.returncode}"
+        return p.returncode, doc, p.stderr, elapsed, accepted
+
+
+def expect_deadline(exe: Path, plant: str, what: str, repetitions: int, warmup: int,
+                    want_failures: list[str]) -> None:
+    """A planted hang: exit 1 inside the deadline (plus slack), a failure document whose reasons
+    START WITH `want_failures` in order -- the deadline's own last -- no timing, and a document
+    tools/run.py publishes as an unverified cell."""
+    rc, doc, err, elapsed, accepted = run_deadline(exe, plant, str(DEADLINE_S), repetitions, warmup)
+    fails = (doc or {}).get("failures") or []
+    if rc is None:
+        verdict("MISSED", what, f"still running after {HANG_WAIT_S} s -- the deadline never fired")
+    elif rc != 1 or doc is None:
+        verdict("MISSED", what, f"rc={rc}, document={'none' if doc is None else 'present'}, "
+                                f"err={err.strip()[:100]}")
+    elif not (DEADLINE_S <= elapsed < DEADLINE_S + DEADLINE_SLACK_S):
+        verdict("MISSED", what, f"ended after {elapsed:.1f} s, deadline {DEADLINE_S} s")
+    elif (doc.get("verified") is not False or len(fails) != len(want_failures)
+          or not all(f.startswith(w) for f, w in zip(fails, want_failures))):
+        verdict("MISSED", what, f"failures={fails}")
+    elif any(doc.get(key) != [] for key in ("work_ns", "total_ns", "outside_window_ns")) \
+            or doc.get("summary") != {}:
+        verdict("MISSED", what, "a blocked run's document carries a timing")
+    elif accepted:
+        verdict("MISSED", what, f"tools/run.py would not publish the document: {accepted}")
+    else:
+        verdict("CAUGHT", what, f"{fails[-1][:100]} (exit 1 after {elapsed:.1f} s)")
+
+
+def comparable(doc: dict) -> dict:
+    """The document minus what legitimately differs between two launches: the clock (env.utc)
+    and the timings. Everything else must be byte-for-byte the same."""
+    d = json.loads(json.dumps(doc))
+    d.get("env", {}).pop("utc", None)
+    for key in ("work_ns", "total_ns", "outside_window_ns"):
+        d[key] = len(d.get(key, []))
+    d["summary"] = sorted(d.get("summary", {}))
+    return d
 
 
 def main() -> int:
@@ -238,6 +323,55 @@ def main() -> int:
     else:
         verdict("MISSED", "a correct multi-repetition run lost samples",
                 f"rc={rc}, doc={doc}, err={err.strip()[:100]}")
+
+    print(f"\n== I. the harness deadline -- a run that never ends FAILS, it does not run forever ==")
+    # A lost message in a shape that waits for the end of its protocol does not move the
+    # checksum: the body never returns (Huly QB-991). The harness's own deadline turns that into a
+    # failure document and exit 1; tools/run.py --timeout is only the outer bound.
+    expect_deadline(exe, "hang", "a repetition that never returns (a lost message) ends at its "
+                    "deadline with a failure document", 1, 0,
+                    [f"repetition 0: deadline exceeded after {DEADLINE_S} s"])
+    expect_deadline(exe, "hang-teardown", "a teardown that never returns, after a warmup and a "
+                    "verified repetition, publishes no partial timing", 2, 1,
+                    [f"repetition 2: deadline exceeded after {DEADLINE_S} s"])
+    expect_deadline(exe, "fail-then-hang", "a wrong checksum then a hang: the deadline's document "
+                    "keeps the earlier failure", 2, 0,
+                    ["repetition 0: checksum ", f"repetition 1: deadline exceeded after {DEADLINE_S} s"])
+
+    refused = []
+    for bad in ("-1", "abc", "nan", "2s"):
+        rc, _, err, _, _ = run_deadline(exe, "none", bad)
+        if rc != 2 or "--deadline expects" not in err:
+            refused.append(f"{bad!r}: rc={rc}")
+    if refused:
+        verdict("MISSED", "a --deadline that is not a number of seconds >= 0 was accepted",
+                "; ".join(refused))
+    else:
+        verdict("CAUGHT", "a --deadline that is not a number of seconds >= 0 is refused "
+                          "(-1, abc, nan, 2s: exit 2) -- 0 disables it, so a typo must not")
+
+    rc, doc, err, elapsed, accepted = run_deadline(exe, "none", "60", repetitions=2, warmup=1)
+    if rc == 0 and doc and doc.get("verified") is True and len(doc.get("work_ns", [])) == 2 \
+            and not accepted:
+        verdict("CONFIRMED", "a correct run inside its deadline verifies (no false positive)")
+    else:
+        verdict("MISSED", "a correct run inside its deadline was rejected",
+                f"rc={rc}, err={err.strip()[:100]}, run.py: {accepted or 'accepted'}")
+
+    rc, doc_off, err, _, _ = run_deadline(exe, "none", "0", repetitions=2, warmup=1)
+    if rc == 0 and doc_off and doc_off.get("verified") is True:
+        verdict("CONFIRMED", "--deadline 0 runs without a watchdog and verifies")
+    else:
+        verdict("MISSED", "--deadline 0 was rejected", f"rc={rc}, err={err.strip()[:100]}")
+
+    rc_on, doc_on, err, _, _ = run_deadline(exe, "none", None, repetitions=2, warmup=1)
+    if rc_on == 0 and doc_on and doc_off and comparable(doc_on) == comparable(doc_off):
+        verdict("CONFIRMED", "the watchdog changes nothing in a correct run's document: the "
+                             "default deadline and --deadline 0 agree outside the clock and the "
+                             "timings")
+    else:
+        verdict("MISSED", "the document of a correct run differs with the watchdog armed",
+                f"rc={rc_on}, err={err.strip()[:100]}")
 
     print(f"\n== census ==\n  CAUGHT={caught} CONFIRMED={confirmed} MISSED={missed} "
           f"(floors: CAUGHT>={FLOOR_CAUGHT} CONFIRMED>={FLOOR_CONFIRMED})")

@@ -21,6 +21,14 @@
 //   no-window     never marks the measured window, so a timing would be meaningless.
 //   fail-second   correct first call, wrong checksum on the second (partial measured run).
 //   fail-first    wrong first call, correct later calls (also a defective warmup).
+//   hang          the first call opens its window and never returns: a lost message, which in
+//                 a shape that waits for the end of its protocol blocks the run instead of
+//                 moving the checksum. Run with a short --deadline: must be REJECTED by the
+//                 harness's deadline, with a failure document, inside it.
+//   hang-teardown the first two calls are correct; the third closes its window and never
+//                 returns: a shutdown that never joins. The same verdict, naming repetition 2.
+//   fail-then-hang a wrong checksum on the first call, then the second never returns: the
+//                 deadline's document must keep the earlier failure beside its own.
 //
 // The subject also reports the rounds it actually played as an OBSERVATION and declares the
 // parameter as its asserted lower bound (Answer::observed, Spec::observed_at_least) -- the shape a
@@ -36,15 +44,22 @@
 
 #include <qvospec/savina/ping-pong.h>
 
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <thread>
 
 namespace {
 
 std::string plant() {
     if (const char *v = std::getenv("QVO_CONTROL_PLANT")) return v;
     return "none";
+}
+
+// What a benchmark does when the message that ends its protocol never comes: it waits.
+[[noreturn]] void wait_forever() {
+    for (;;) std::this_thread::sleep_for(std::chrono::hours(1));
 }
 
 qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
@@ -58,6 +73,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     std::uint64_t played    = 0;
 
     if (mode != "no-window") watch.start();
+    if ((mode == "hang" && call == 0) || (mode == "fail-then-hang" && call == 1)) wait_forever();
 
     for (std::uint64_t seq = rounds; seq-- > 0;) {
         ++played;
@@ -77,9 +93,10 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     }
 
     if (mode != "no-window") watch.stop();
+    if (mode == "hang-teardown" && call == 2) wait_forever();
 
     if (mode == "wrong-answer" || (mode == "fail-second" && call == 1) ||
-        (mode == "fail-first" && call == 0))
+        ((mode == "fail-first" || mode == "fail-then-hang") && call == 0))
         acc += 1;
     if (mode == "short-count") delivered -= 2;
 

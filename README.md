@@ -33,7 +33,7 @@ argument it exists to win:
 
 | | state |
 |---|---|
-| Harness, verification, pinning, reporting | **done**, and negative-controlled: 12 CAUGHT / 7 CONFIRMED / **0 MISSED**; includes observed bounds, mixed repetitions and defective warmup |
+| Harness, verification, pinning, reporting | **done**, and negative-controlled (`tools/negative-control.py`, floors 16 CAUGHT / 10 CONFIRMED, **0 MISSED**); includes observed bounds, mixed repetitions, defective warmup and the per-repetition deadline that turns a blocked run into a failure (`--deadline`) |
 | `savina/ping-pong`, `counting`, `thread-ring`, `fork-join`, `big` × qb, CAF, SObjectizer, floor (+ CAF-detached on ping-pong) | **done**, 84 cells per host: 82 verified + 2 declared `n/a` (a `caf::detached` actor has no spin mode) — first with shipped 3.1.0 (2026-09-04), **re-measured whole on 2026-09-13 with the 3.2.0 candidate `f2779605` in the candidate's own session** (every framework, 9 + 2, both hosts), which is what the tables below show |
 | The document guards (`tools/check-roster.py`, `tools/check-report.py`) | **done**, and negative-controlled (`tools/guards-negative-control.py`, floors 34 CAUGHT / 3 CONFIRMED, **0 MISSED**, run on every push by `guards.yml`) |
 | Feature comparison, cited to the three sources | [docs/FEATURES.md](docs/FEATURES.md) |
@@ -646,7 +646,8 @@ harness **aborts** rather than report a number when a requested pin cannot be re
 Three things about a run worth knowing before reading its output:
 
 - **A cell has three verdicts, not two.** `ok` (every repetition verified), `FAILED` (a
-  checksum, a pin or the window was wrong — harness exit 1 or 2), and **`n/a`** (harness exit 3):
+  checksum, a pin or the window was wrong, or a repetition outlived the harness's deadline —
+  harness exit 1 or 2), and **`n/a`** (harness exit 3):
   the adapter declared, with a reason, that this framework cannot express the configuration.
   The reason is written into the JSON and rendered in the cell. `caf-detached` reports its two
   spin cells this way, because a `caf::detached` actor has no spin mode; a number invented for

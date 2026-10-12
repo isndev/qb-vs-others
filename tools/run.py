@@ -242,9 +242,14 @@ def measure_cells(args: argparse.Namespace, cells: list[tuple[str, str, Path]],
                             status = "ok" if r.returncode == 0 else "unverified"
                             if status == "unverified":
                                 failed += 1
-                            p50 = doc.get("summary", {}).get("work_p50", 0)
-                            print(f"  {label} {'ok ' if status == 'ok' else 'UNVERIFIED'} "
-                                  f"p50={p50:,.0f} ns")
+                                # The reason, not a p50 of zero: a wrong checksum and a repetition
+                                # that outlived the harness deadline are different defects.
+                                why = doc["failures"]
+                                more = f" (+{len(why) - 1} more)" if len(why) > 1 else ""
+                                print(f"  {label} UNVERIFIED: {why[0][:100]}{more}")
+                            else:
+                                p50 = doc.get("summary", {}).get("work_p50", 0)
+                                print(f"  {label} ok  p50={p50:,.0f} ns")
                             manifest["cells"].append({"benchmark": benchmark, "framework": framework,
                                                       "config": cfg_name, "status": status})
                             continue
@@ -303,7 +308,10 @@ def main() -> int:
     ap.add_argument("--only", default=None, help="comma-separated framework subset")
     ap.add_argument("--benchmark", default=None, help="comma-separated benchmark subset")
     ap.add_argument("--config", default=None, help="comma-separated configuration subset")
-    ap.add_argument("--timeout", type=int, default=1800)
+    ap.add_argument("--timeout", type=int, default=1800,
+                    help="seconds one cell's process may run, recorded as `timeout` -- the outer "
+                         "bound; the harness bounds each repetition itself and reports a blocked "
+                         "one as unverified (--deadline, harness/include/qvo/harness.h)")
     args = ap.parse_args()
 
     if args.no_pin and args.cpus:

@@ -36,6 +36,17 @@ the semantics requires a minimum of that work, the spec declares it in
 `qvo::Spec::observed_at_least` and it is asserted like the checksum: a missing or short
 observation fails the run, with no timing.
 
+A wrong answer is one way a run fails; a run that never ends is the other. Every shape here waits
+for the end of a protocol — N "done" messages, a report, the end of a chain — so a message that is
+**lost**, delivered to the wrong actor, or carries a corrupted control field usually does not move
+the checksum at all: the run **blocks**. `qvo::run` therefore bounds every repetition with a
+deadline of its own (`--deadline`; by default 300 s, ten times the slowest repetition any document
+here records, scaled up with the work the parameters ask for — `harness/include/qvo/harness.h`). A
+repetition that outlives it ends the process with exit 1 and a result document that says so —
+`verified:false`, the repetition named, no timing — so a planted defect that blocks reads as
+failed, never as still running, and a binary run by hand cannot wait forever. `tools/run.py
+--timeout` stays the outer bound of a whole process.
+
 ## 1. The seven mechanisms
 
 ### 1.1 Idiomatic implementation, sourced from the framework's own documentation
@@ -211,20 +222,23 @@ For a launch census over physical binary copies and A/A controls, `tools/launch-
 that exact plan. The default fixed order and the two-binary `--alternate-order` mode remain
 available; these ordering modes cannot be combined.
 
-The harness has its own negative control, and it has been run:
+The harness has its own negative control, whose floors are CAUGHT ≥ 16 and CONFIRMED ≥ 10:
 
 ```
 python3 tools/negative-control.py --build build/final
-    CAUGHT=12 CONFIRMED=7 MISSED=0
 ```
 
 It plants one defect at a time — a message lost 1 time in 10⁷, a single lost message, a duplicate
 delivery, a wrong checksum, a right checksum reached by the wrong amount of work, a body that
 never marked its measurement window, an observation below its asserted lower bound, a bounded
-observation never reported, a CPU pin that cannot be applied, and a defective repetition before
-or after a success, including during warmup — and asserts each is **rejected**, with no partial
-samples or summary emitted. It also asserts seven legitimate shapes are **not** rejected, because
-a battery that fails everything is not a working battery.
+observation never reported, a CPU pin that cannot be applied, a defective repetition before
+or after a success, including during warmup, a repetition that never returns — inside its window,
+in its teardown, after an earlier failure — and a `--deadline` that is not a number of seconds —
+and asserts each is **rejected**, with no partial samples or summary emitted; a blocked repetition
+must end inside its deadline with a document `tools/run.py` publishes as an unverified cell. It
+also asserts ten legitimate shapes are **not** rejected — among them a run inside its deadline,
+`--deadline 0`, and a correct run whose document is the same, clock and timings aside, with the
+watchdog armed and without it — because a battery that fails everything is not a working battery.
 
 The two document guards have theirs, and it plants in a sandbox copy while hashing the real
 checkout before and after:
