@@ -118,19 +118,22 @@ foreach(_fw IN LISTS QVO_ENABLED_FRAMEWORKS)
 endforeach()
 
 # -------------------------------------------------------------------------------------------
-# The negative control's subject
+# The negative control's subjects
 # -------------------------------------------------------------------------------------------
 #
 # Named `qvoctl-` and NOT declared through qvo_add_benchmark, so tools/run.py -- which discovers
-# binaries whose name begins with `qvo-` -- cannot find it. A planted defect must never be able to
-# reach a published table.
-option(QVO_BUILD_CONTROLS "Build the negative-control subject" ON)
+# binaries whose name begins with `qvo-` -- cannot find them. A planted defect must never be able
+# to reach a published table. The ping-pong subject plants defects in the harness's verification,
+# the thread-ring one in savina/thread-ring's own (Huly QB-1017).
+option(QVO_BUILD_CONTROLS "Build the negative-control subjects" ON)
 if(QVO_BUILD_CONTROLS)
-    add_executable(qvoctl-control-subject tools/control/control-subject.cpp)
-    target_link_libraries(qvoctl-control-subject PRIVATE qvo-harness)
-    set_target_properties(qvoctl-control-subject PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-        FOLDER "controls")
+    foreach(_subject control-subject thread-ring-subject)
+        add_executable(qvoctl-${_subject} tools/control/${_subject}.cpp)
+        target_link_libraries(qvoctl-${_subject} PRIVATE qvo-harness)
+        set_target_properties(qvoctl-${_subject} PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+            FOLDER "controls")
+    endforeach()
 endif()
 
 # -------------------------------------------------------------------------------------------

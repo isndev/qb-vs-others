@@ -33,8 +33,8 @@ import run as runner  # noqa: E402  (tools/run.py: its own acceptance rule judge
 
 # Floors. Raise them in the same commit that adds a control; a count that goes DOWN is a control
 # that stopped firing, which is indistinguishable from a guard that stopped guarding.
-FLOOR_CAUGHT = 21
-FLOOR_CONFIRMED = 10
+FLOOR_CAUGHT = 27
+FLOOR_CONFIRMED = 11
 
 # The deadline controls (section I): a planted hang must end inside DEADLINE_S plus this slack --
 # process start and the document write, generous for a loaded host -- and the battery gives up on
@@ -62,15 +62,19 @@ def verdict(kind: str, what: str, detail: str = "") -> None:
 
 def run_subject(exe: Path, plant: str, extra: list[str] | None = None,
                 messages: int = 20000000, repetitions: int = 1,
-                warmup: int = 0) -> tuple[int, dict | None, str]:
-    """Run the control subject with one planted defect. Returns (rc, result_json_or_None, stderr)."""
+                warmup: int = 0, params: list[str] | None = None) -> tuple[int, dict | None, str]:
+    """Run a control subject with one planted defect. Returns (rc, result_json_or_None, stderr).
+    `params` replaces the ping-pong subject's (`messages`, cores=1, wait=1) for another subject."""
     env = dict(os.environ)
     env["QVO_CONTROL_PLANT"] = plant
+    if params is None:
+        params = [f"messages={messages}", "cores=1", "wait=1"]
     with tempfile.TemporaryDirectory() as td:
         out = Path(td) / "r.json"
         cmd = [str(exe), "--repetitions", str(repetitions), "--warmup", str(warmup),
-               "--out", str(out),
-               "--param", f"messages={messages}", "--param", "cores=1", "--param", "wait=1"]
+               "--out", str(out)]
+        for kv in params:
+            cmd += ["--param", kv]
         cmd += extra or []
         p = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=900)
         doc = None
@@ -82,8 +86,12 @@ def run_subject(exe: Path, plant: str, extra: list[str] | None = None,
         return p.returncode, doc, p.stderr
 
 
-def expect_rejected(exe: Path, plant: str, what: str, messages: int = 20000000) -> None:
-    rc, doc, _ = run_subject(exe, plant, messages=messages)
+def expect_rejected(exe: Path, plant: str, what: str, messages: int = 20000000,
+                    because: str | None = None, params: list[str] | None = None) -> None:
+    """A planted defect: exit non-zero, a failure document with a reason and no timing -- and,
+    when `because` is given, a first reason containing it: the check that is MEANT to see the
+    defect saw it, not another one by accident."""
+    rc, doc, _ = run_subject(exe, plant, messages=messages, params=params)
     if rc == 0:
         verdict("MISSED", what, "the harness exited 0 -- the defect was accepted")
         return
@@ -100,6 +108,10 @@ def expect_rejected(exe: Path, plant: str, what: str, messages: int = 20000000) 
         verdict("MISSED", what,
                 "REPORTED A TIMING for a run that failed verification -- FAIRNESS.md 0 says a "
                 "failing framework produces no timing at all")
+        return
+    if because is not None and because not in doc["failures"][0]:
+        verdict("MISSED", what, f"rejected, but not by the check meant to see it ({because!r}): "
+                                f"{doc['failures'][0][:100]}")
         return
     verdict("CAUGHT", what, doc["failures"][0][:110])
 
@@ -210,11 +222,17 @@ def main() -> int:
     ap.add_argument("--build", required=True, type=Path)
     args = ap.parse_args()
 
-    exe = args.build / "bin" / "qvoctl-control-subject"
-    if not exe.exists():
-        exe = exe.with_suffix(".exe")
-    if not exe.exists():
-        sys.exit(f"negative-control: {exe} not found -- build the QVO_BUILD_CONTROLS target first")
+    def subject(name: str) -> Path:
+        exe = args.build / "bin" / name
+        if not exe.exists():
+            exe = exe.with_suffix(".exe")
+        if not exe.exists():
+            sys.exit(f"negative-control: {exe} not found -- build the QVO_BUILD_CONTROLS targets "
+                     "first")
+        return exe
+
+    exe = subject("qvoctl-control-subject")
+    ring = subject("qvoctl-thread-ring-subject")
 
     print("== A. the positive control: an undefective subject must PASS ==")
     rc, doc, err = run_subject(exe, "none")
@@ -261,6 +279,10 @@ def main() -> int:
     print("\n== D. a wrong answer, and a right answer reached by the wrong amount of work ==")
     expect_rejected(exe, "wrong-answer", "checksum off by one", messages=1000000)
     expect_rejected(exe, "short-count", "correct checksum, wrong message count", messages=1000000)
+    # A count the body does not report asserts nothing; the harness used to skip the comparison
+    # when Answer::messages was 0 (Huly QB-1017).
+    expect_rejected(exe, "no-count", "correct checksum, no message count against a spec that "
+                    "declares one", messages=1000000, because="reported no message count")
 
     print("\n== E. an unmeasured window ==")
     expect_rejected(exe, "no-window", "the body never marked its workload window", messages=1000000)
@@ -423,6 +445,39 @@ def main() -> int:
                           "with no document")
     else:
         verdict("MISSED", "a refusal did not exit 2 without a document",
+                f"rc={rc}, document={'none' if doc is None else 'present'}, "
+                f"err={err.strip()[:100]}")
+
+    print("\n== K. savina/thread-ring -- every hop names the actor that folds it, every delivery "
+          "is counted ==")
+    # Until Huly QB-1017 a term depended on the hop count alone and the count was declared, so a
+    # token delivered twice, to the wrong ring actor, or forwarded untouched verified. The
+    # thread-ring subject folds through the spec's own term() and counts like every adapter.
+    ring_params = ["actors=100", "hops=100000", "cores=1", "wait=1"]
+    rc, doc, err = run_subject(ring, "none", params=ring_params, extra=["--no-pin"])
+    if rc == 0 and doc and doc.get("verified") is True and len(doc.get("work_ns", [])) == 1 \
+            and doc.get("expected_messages") == 100001:
+        verdict("CONFIRMED", "a correct ring verifies: every hop folded by the actor the spec "
+                             "names, 100 001 deliveries counted")
+    else:
+        verdict("MISSED", "a correct ring was REJECTED",
+                f"rc={rc}, failures={(doc or {}).get('failures')}, err={err.strip()[:100]}")
+    for plant, what, because in (
+        ("duplicate", "the last token delivered twice -- the copy's total is right, the count is "
+                      "one over", "delivered 100002 messages, expected 100001"),
+        ("misroute", "one hop to the wrong ring actor -- every count right", "checksum "),
+        ("untouched", "one actor forwards the token untouched -- the next folds that hop",
+         "checksum "),
+        ("never-touched", "the ring routes around one actor on every lap", "checksum "),
+    ):
+        expect_rejected(ring, plant, what, because=because, params=ring_params)
+    rc, doc, err = run_subject(ring, "none", params=["actors=100", "hops=0", "cores=1", "wait=1"],
+                               extra=["--no-pin"])
+    if rc == 2 and doc is None and "qvo: FATAL: savina/thread-ring: need" in err:
+        verdict("CAUGHT", "a ring of 0 hops is refused (exit 2) before anything runs -- its token "
+                          "would count down from 2^64")
+    else:
+        verdict("MISSED", "a ring of 0 hops was not refused",
                 f"rc={rc}, document={'none' if doc is None else 'present'}, "
                 f"err={err.strip()[:100]}")
 

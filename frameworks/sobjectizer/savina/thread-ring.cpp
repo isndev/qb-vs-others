@@ -23,7 +23,7 @@ using namespace qvospec::savina::thread_ring;
 
 struct Sink {
     std::uint64_t checksum{0};
-    std::uint64_t messages{0};
+    std::uint64_t results{0};  // the results the sink's handler ran
 };
 
 struct msg_token final : public so_5::message_t {
@@ -38,20 +38,26 @@ struct msg_result final : public so_5::message_t {
 };
 
 class ring_t final : public so_5::agent_t {
-    so_5::mbox_t m_next;
-    so_5::mbox_t m_sink;
+    so_5::mbox_t   m_next;
+    so_5::mbox_t   m_sink;
+    std::uint32_t  m_index{0};
+    std::uint64_t  m_received{0};     // the tokens this agent's handler ran
+    std::uint64_t *m_tally{nullptr};  // its slot in the body's count
 
 public:
     explicit ring_t(context_t ctx) : so_5::agent_t{std::move(ctx)} {}
 
-    void wire(so_5::mbox_t next, so_5::mbox_t sink) {
-        m_next = std::move(next);
-        m_sink = std::move(sink);
+    void wire(so_5::mbox_t next, so_5::mbox_t sink, std::uint32_t index, std::uint64_t *tally) {
+        m_next  = std::move(next);
+        m_sink  = std::move(sink);
+        m_index = index;
+        m_tally = tally;
     }
 
     void so_define_agent() override {
         so_subscribe_self().event([this](so_5::mhood_t<msg_token> t) {
-            const std::uint64_t acc       = t->acc + qvo::mix(t->remaining);
+            ++m_received;
+            const std::uint64_t acc       = t->acc + term(m_index, t->remaining);
             const std::uint64_t remaining = t->remaining - 1;
             if (remaining == 0)
                 so_5::send<msg_result>(m_sink, acc);
@@ -61,6 +67,10 @@ public:
     }
 
     void so_evt_start() override { so_5::send<msg_ready>(m_sink); }
+
+    // The agent's last event, on its work thread as its coop deregisters -- after the window; the
+    // body reads the slot once so_5::launch has returned.
+    void so_evt_finish() override { *m_tally = m_received; }
 };
 
 class sink_t final : public so_5::agent_t {
@@ -89,10 +99,11 @@ public:
             m_watch.start();
             so_5::send<msg_token>(m_first, m_hops, std::uint64_t{0});
         });
+        // The first result ends the run; one after it is counted, never measured.
         so_subscribe_self().event([this](so_5::mhood_t<msg_result> r) {
+            if (m_sink.results++ != 0) return;
             m_watch.stop();
             m_sink.checksum = r->acc;
-            m_sink.messages = m_hops + 1;
             so_environment().stop();
         });
     }
@@ -104,7 +115,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const auto cores  = static_cast<int>(p.get("cores"));
     const bool spin   = p.get("wait") != 0;
 
-    Sink sink;
+    Sink                       sink;
+    std::vector<std::uint64_t> received(actors, 0);  // slot i: agent i's count, at its finish
 
     so_5::launch([&](so_5::environment_t &env) {
         env.introduce_coop(qvoso::make_pool_binder(env, cores, spin), [&](so_5::coop_t &coop) {
@@ -114,13 +126,17 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
             for (std::size_t i = 0; i < actors; ++i) ring.push_back(coop.make_agent<ring_t>());
             for (std::size_t i = 0; i < actors; ++i) {
                 const std::size_t next = i + 1 == actors ? 0 : i + 1;
-                ring[i]->wire(ring[next]->so_direct_mbox(), sk->so_direct_mbox());
+                ring[i]->wire(ring[next]->so_direct_mbox(), sk->so_direct_mbox(),
+                              static_cast<std::uint32_t>(i), &received[i]);
             }
             sk->set_first(ring[0]->so_direct_mbox());
         });
     });
 
-    return qvo::Answer{sink.checksum, sink.messages};
+    // launch() returned: every work thread is joined and every so_evt_finish has run.
+    std::uint64_t messages = sink.results;
+    for (const std::uint64_t n : received) messages += n;
+    return qvo::Answer{sink.checksum, messages};
 }
 
 }  // namespace savina_thread_ring_sobjectizer

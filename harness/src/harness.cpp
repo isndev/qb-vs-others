@@ -875,10 +875,15 @@ int run(int argc, char **argv, Spec spec, Body body) {
                                + std::to_string(want));
             continue;
         }
-        if (want_messages != 0 && got.messages != 0 && got.messages != want_messages) {
-            failures.push_back("repetition " + std::to_string(rep) + ": delivered "
-                               + std::to_string(got.messages) + " messages, expected "
-                               + std::to_string(want_messages));
+        // A spec that declares a message count asserts it: a body that reports none fails like
+        // one that reports the wrong one -- an assertion an adapter can skip by reporting 0 asserts
+        // nothing (Huly QB-1017).
+        if (want_messages != 0 && got.messages != want_messages) {
+            failures.push_back(
+                "repetition " + std::to_string(rep) + ": "
+                + (got.messages == 0 ? std::string("reported no message count")
+                                     : "delivered " + std::to_string(got.messages) + " messages")
+                + ", expected " + std::to_string(want_messages));
             continue;
         }
         // A declared lower bound is asserted like the checksum: a missing or short observation is

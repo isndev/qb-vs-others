@@ -56,13 +56,26 @@ avoid in the other direction. The rule is that a framework's cell says what its 
 
 ## The verified answer
 
-The token carries a countdown and an accumulator. The actor that receives it with `remaining = k`
-adds `mix(k)` as a **wrapping sum** before passing it on, so hop k contributes `mix(k)` for
-k = hops down to 1. A term skipped or folded twice — an actor that decrements without adding
-`mix(k)`, or adds it without decrementing — changes the total. `expected_messages = hops + 1` (the
-token deliveries, the injection being the first, plus the result to the sink) is asserted
-alongside — but every adapter's sink REPORTS `hops + 1` rather than counting deliveries, so the
-assertion holds whatever the ring did (below).
+The token carries a countdown and an accumulator. The ring actor at index `i` that receives it
+with `remaining = k` adds `term(i, k) = mix((i << 40) ^ k)` as a **wrapping sum** before passing
+it on — one function in the spec, `thread_ring::term`, that every adapter folds through. The sink
+injects `k = hops` at actor 0 and actor `i` hands `k - 1` to actor `i + 1`, so the hop of rank `h`
+is folded by actor `h % actors` with `k = hops - h`: the expected sum, computed from the
+parameters alone, names **which actor folds every hop**. A term skipped or folded twice — an actor
+that decrements without adding, or adds without decrementing — changes the total, and so does
+any defect that puts a term under the wrong actor (below).
+
+`expected_messages = hops + 1` — the token deliveries, the injection being the first, plus the
+result to the sink — is asserted **exactly**, and it is **counted**: every ring actor counts the
+tokens its handler ran, the sink the results its handler ran, and the adapter reports their sum.
+Each ring actor hands its count over when the framework tears it down — qb from the actor's
+destructor, CAF from its state's (destroyed when the actor terminates), SObjectizer from
+`so_evt_finish`, the floor from a per-actor slot read once its workers are joined — so the
+collection is outside the window; inside it, each hop adds one increment of the receiving actor's
+own count and one XOR of its index into the term, the same two operations in every adapter. (Until
+Huly QB-1017 every term was `mix(k)` and every adapter's sink *declared* `hops + 1`: the four
+defects below verified. Result documents measured before that change carry the earlier
+`expected_checksum`.)
 
 In qb the token is **one event for its whole life** — each actor mutates it in place and
 `forward()`s it, the same recycling ping-pong's `reply()` does — which is qb's cheapest hand-off
@@ -74,13 +87,20 @@ the only message in flight, and the sink ends the run on the first result. A tok
 **lost** leaves nothing to end the run, and so does a token that reaches the sink (which has no
 handler for it) or one whose `remaining` arrives as 0 (the decrement wraps): the run **blocks**,
 the repetition outlives the harness's deadline and fails with exit 1 and no timing. An `acc`
-altered, or a `remaining` altered to another non-zero value, moves the sum. Three defects reach
-neither verdict. A token **delivered twice** gives two tokens, each carrying its own countdown
-and accumulator, each folding every remaining hop once: both reach the sink with the right total,
-and the run ends on the first. A token delivered to the wrong ring actor goes on from that actor's
-successor, and the terms depend on `remaining` alone. A token forwarded untouched is folded, for
-the same `k`, by the next actor. The message count cannot see them either, being reported, not
-counted.
+altered, or a `remaining` altered to another non-zero value, moves the sum. So do three defects
+the first version of this checksum could not see, because every term now carries the index of
+the actor that folds it. A token delivered to the **wrong ring actor** goes on from that actor's
+successor: its term and every later one sit under another index. An actor the ring **routes
+around** never folds its share, and its successors fold theirs one index off. A token
+**forwarded untouched** is folded, for the same `k`, by the next actor, under the next index. The
+fourth, a token **delivered twice**, gives two tokens, each carrying its own countdown and
+accumulator, each folding every remaining hop under the right index: both reach the sink with the
+right total and the run ends on the first — the count sees it, the duplicated delivery being one
+more than `hops + 1` even when it is the last one. A planted version of each is rejected by the
+harness's negative control (`tools/negative-control.py`, section K, on
+`tools/control/thread-ring-subject.cpp`), which also confirms that a correct ring verifies. What
+reaches neither verdict is a copy no handler ever runs — one still queued when the first result
+tears the run down: it changes nothing the run did, and nothing it reports.
 
 ## The measured window
 

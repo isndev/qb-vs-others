@@ -35,22 +35,28 @@ struct Result : qb::Event {
 
 struct Sink {
     std::uint64_t checksum{0};
-    std::uint64_t messages{0};
+    std::uint64_t results{0};  // the results the sink's handler ran
 };
 
 // The ring actors are created before start(), so every id is known to every actor from its
 // constructor -- no discovery protocol on the hot path.
 struct Ring {
-    std::vector<qb::ActorId> ids;
-    qb::ActorId              sink;
+    std::vector<qb::ActorId>   ids;
+    qb::ActorId                sink;
+    std::vector<std::uint64_t> received;  // slot i: the tokens actor i's handler ran, at teardown
 };
 
 class RingActor final : public qb::Actor {
-    const Ring         &_ring;
+    Ring               &_ring;
     const std::uint32_t _index;
+    std::uint64_t       _received{0};
 
 public:
-    RingActor(const Ring &ring, std::uint32_t index) noexcept : _ring(ring), _index(index) {}
+    RingActor(Ring &ring, std::uint32_t index) noexcept : _ring(ring), _index(index) {}
+
+    // Runs on this actor's VirtualCore when the engine tears it down, after the window; the body
+    // reads the slot once the engine is gone.
+    ~RingActor() noexcept override { _ring.received[_index] = _received; }
 
     qb::io::async::task<bool> onInit() final {
         registerEvent<Token>(*this);
@@ -59,7 +65,8 @@ public:
     }
 
     void on(Token &event) {
-        event.acc += qvo::mix(event.remaining);
+        ++_received;
+        event.acc += term(_index, event.remaining);
         if (--event.remaining == 0) {
             push<Result>(_ring.sink, event.acc);
         } else {
@@ -94,10 +101,11 @@ public:
         }
     }
 
+    // The first result ends the run; one after it is counted, never measured.
     void on(Result const &event) {
+        if (_sink.results++ != 0) return;
         _watch.stop();
         _sink.checksum = event.acc;
-        _sink.messages = _hops + 1;
         broadcast<qb::KillEvent>();
     }
 };
@@ -110,6 +118,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
 
     Sink sink;
     Ring ring;
+    ring.received.assign(actors, 0);
     {
         qb::Main engine;
 
@@ -121,13 +130,16 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         ring.ids.reserve(actors);
         for (std::uint32_t i = 0; i < actors; ++i)
             ring.ids.push_back(engine.addActor<RingActor>(
-                static_cast<qb::CoreId>(i % static_cast<std::uint32_t>(ncores)), std::cref(ring),
+                static_cast<qb::CoreId>(i % static_cast<std::uint32_t>(ncores)), std::ref(ring),
                 i));
 
         engine.start();
         engine.join();
     }
-    return qvo::Answer{sink.checksum, sink.messages};
+    // Every actor was destroyed with the engine: each count is in its slot.
+    std::uint64_t messages = sink.results;
+    for (const std::uint64_t n : ring.received) messages += n;
+    return qvo::Answer{sink.checksum, messages};
 }
 
 }  // namespace savina_thread_ring_qb

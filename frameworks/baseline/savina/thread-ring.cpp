@@ -13,6 +13,7 @@
 #include "../baseline_support.h"
 
 #include <thread>
+#include <vector>
 
 namespace savina_thread_ring_baseline {
 
@@ -31,22 +32,29 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     // The sink is actor `actors` (owned by worker actors % W); ring actors are 0..actors-1.
     const std::uint32_t sink = actors;
 
-    std::uint64_t result    = 0;
-    std::uint64_t delivered = 0;
+    // Each ring actor's state: the tokens its handler ran, written only by the worker that owns
+    // the actor. A line of its own, so no two workers write one line (actors i and i + 1 live on
+    // different workers at cores=2).
+    struct alignas(qvobase::kCacheLine) Slot {
+        std::uint64_t received{0};
+    };
+    std::vector<Slot> state(actors);
+    std::uint64_t     result  = 0;
+    std::uint64_t     results = 0;  // the results the sink's handler ran
 
     qvobase::Mesh mesh(W, spin, [&](auto &m, unsigned worker, const qvobase::Msg &msg) {
         if (msg.tag == kToken) {
+            ++state[msg.dst].received;
             const std::uint64_t remaining = msg.a;
-            const std::uint64_t acc       = msg.b + qvo::mix(remaining);
+            const std::uint64_t acc       = msg.b + term(msg.dst, remaining);
             if (remaining == 1) {
-                m.send(worker, qvobase::Msg{sink, kResult, acc, hops});
+                m.send(worker, qvobase::Msg{sink, kResult, acc, 0});
             } else {
                 const std::uint32_t next = msg.dst + 1 == actors ? 0 : msg.dst + 1;
                 m.send(worker, qvobase::Msg{next, kToken, remaining - 1, acc});
             }
-        } else {
-            result    = msg.a;
-            delivered = msg.b + 1;  // every hop plus this result
+        } else if (results++ == 0) {  // the first result ends the run; a later one is counted
+            result = msg.a;
             watch.stop();
             m.stop();
         }
@@ -57,6 +65,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     mesh.send(0, qvobase::Msg{0, kToken, hops, 0});
     mesh.run();
 
+    // run() joined every worker: each count is in its slot.
+    std::uint64_t delivered = results;
+    for (const Slot &s : state) delivered += s.received;
     return qvo::Answer{result, delivered};
 }
 

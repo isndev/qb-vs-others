@@ -94,9 +94,12 @@ private:
 struct Answer {
     std::uint64_t checksum{0};
 
-    // Optional: the number of messages the implementation believes it delivered. Reported, and
-    // cross-checked against Spec::expected_messages when that is non-zero. This catches the case
-    // where a framework reaches the right checksum by a different amount of work.
+    // The number of messages the implementation delivered, COUNTED where they were received --
+    // never computed from the parameters, which would assert nothing. Required when the spec
+    // declares Spec::expected_messages, and compared exactly: a body that reports none fails like
+    // one that reports another count (Huly QB-1017). This catches the case where a framework
+    // reaches the right checksum by a different amount of work -- a message delivered twice whose
+    // copy carries a right total, for one.
     std::uint64_t messages{0};
 
     // Optional: named counts the run OBSERVED but the spec cannot assert, because they depend on
@@ -124,7 +127,8 @@ struct Spec {
     // The framework-free expected checksum. Called once, before the body.
     std::function<std::uint64_t(const Params &)> expected;
 
-    // Optional: framework-free expected message count. 0 means "not asserted".
+    // Optional: framework-free expected message count, asserted EXACTLY against Answer::messages
+    // (none, or 0, means "not asserted").
     std::function<std::uint64_t(const Params &)> expected_messages;
 
     // Optional: a framework-free LOWER BOUND per observation name (Answer::observed). A repetition

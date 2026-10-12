@@ -30,12 +30,20 @@ using namespace qvospec::savina::thread_ring;
 
 struct Sink {
     std::uint64_t checksum{0};
-    std::uint64_t messages{0};
+    std::uint64_t results{0};  // the results the sink's handler ran
 };
 
 struct ring_state {
-    caf::actor next;
-    caf::actor sink;
+    caf::actor     next;
+    caf::actor     sink;
+    std::uint32_t  index{0};
+    std::uint64_t  received{0};     // the tokens this actor's handler ran
+    std::uint64_t *tally{nullptr};  // its slot in the body's count
+    // CAF destroys an actor's state when the actor terminates (stateful_actor::on_exit), after
+    // the window; the body reads the slot once the actor system is gone.
+    ~ring_state() {
+        if (tally) *tally = received;
+    }
 };
 
 struct sink_state {
@@ -46,7 +54,10 @@ struct sink_state {
     Sink                   *sink{nullptr};
 };
 
-caf::behavior ring_fun(caf::stateful_actor<ring_state> *self) {
+caf::behavior ring_fun(caf::stateful_actor<ring_state> *self, std::uint32_t index,
+                       std::uint64_t *tally) {
+    self->state().index = index;
+    self->state().tally = tally;
     return {
         // Wiring handshake, once per actor, outside the window.
         [self](caf::put_atom, caf::actor next, caf::actor sink) {
@@ -58,7 +69,8 @@ caf::behavior ring_fun(caf::stateful_actor<ring_state> *self) {
         // The hot path: one token, mutated and passed on.
         [self](std::uint64_t remaining, std::uint64_t acc) {
             auto &s = self->state();
-            acc += qvo::mix(remaining);
+            ++s.received;
+            acc += term(s.index, remaining);
             if (--remaining == 0)
                 self->mail(caf::ok_atom_v, acc).send(s.sink);
             else
@@ -90,11 +102,12 @@ caf::behavior sink_fun(caf::stateful_actor<sink_state> *self, std::vector<caf::a
             s.watch->start();
             self->mail(s.hops, std::uint64_t{0}).send(s.ring[0]);
         },
+        // The first result ends the run; one after it is counted, never measured.
         [self](caf::ok_atom, std::uint64_t acc) {
             auto &s = self->state();
+            if (s.sink->results++ != 0) return;
             s.watch->stop();
             s.sink->checksum = acc;
-            s.sink->messages = s.hops + 1;
             for (auto &a : s.ring) self->send_exit(a, caf::exit_reason::user_shutdown);
             self->quit();
         },
@@ -108,7 +121,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const bool spin   = p.get("wait") != 0;
     qvocaf::refuse_spin_if_detached(spin);
 
-    Sink sink;
+    Sink                       sink;
+    std::vector<std::uint64_t> received(actors, 0);  // slot i: actor i's count, at its termination
     {
         caf::actor_system_config cfg;
         qvocaf::configure(cfg, cores, spin);
@@ -119,12 +133,18 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         std::vector<caf::actor> ring;
         ring.reserve(actors);
         for (std::size_t i = 0; i < actors; ++i)
-            ring.push_back(sys.spawn<qvocaf::kSpawnOptions>(ring_fun));
+            ring.push_back(sys.spawn<qvocaf::kSpawnOptions>(
+                ring_fun, static_cast<std::uint32_t>(i), &received[i]));
         sys.spawn<qvocaf::kSpawnOptions>(sink_fun, ring, hops, &watch, &sink);
         sys.await_all_actors_done();
         qvocaf::assert_pins_took();
     }
-    return qvo::Answer{sink.checksum, sink.messages};
+    // The system's destructor joined its workers, so every state destructor has run -- including
+    // one still finishing when the running count reached zero (CAF unregisters an actor before it
+    // destroys its state): each count is in its slot.
+    std::uint64_t messages = sink.results;
+    for (const std::uint64_t n : received) messages += n;
+    return qvo::Answer{sink.checksum, messages};
 }
 
 }  // namespace savina_thread_ring_caf

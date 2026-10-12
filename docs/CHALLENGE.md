@@ -51,7 +51,9 @@ These are already conceded, in writing, in [FAIRNESS.md](../FAIRNESS.md):
 ## What will not be accepted
 
 - An implementation that reaches the right checksum by doing less work than the benchmark
-  specifies. `expected_messages` exists to catch this and is asserted.
+  specifies. `expected_messages` exists to catch this and is asserted exactly — against a count
+  the implementation keeps where its messages are received, never one computed from the
+  parameters, which would assert nothing; a body that reports no count fails.
 - An implementation that measures a different window. `Watch::start()` opens when the first
   workload message is injected into a warm system; `Watch::stop()` closes when the terminal
   condition is observed. Framework construction and teardown are reported separately, as

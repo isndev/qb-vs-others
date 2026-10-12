@@ -18,6 +18,8 @@
 //   wrong-answer  returns a plausible but incorrect checksum.
 //   short-count   right checksum, wrong message count. Catches a framework reaching the correct
 //                 answer by doing a different amount of work.
+//   no-count      right checksum, NO message count (Answer::messages = 0) against a spec that
+//                 declares one. Until Huly QB-1017 the harness skipped the comparison for 0.
 //   no-window     never marks the measured window, so a timing would be meaningless.
 //   fail-second   correct first call, wrong checksum on the second (partial measured run).
 //   fail-first    wrong first call, correct later calls (also a defective warmup).
@@ -120,6 +122,7 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
          call == 0))
         acc += 1;
     if (mode == "short-count") delivered -= 2;
+    if (mode == "no-count") delivered = 0;
 
     qvo::Answer answer{acc, delivered};
     if (mode == "observe-below") answer.observed["rounds"] = played - 1;
