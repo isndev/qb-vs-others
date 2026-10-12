@@ -81,7 +81,7 @@ calls `handler.on(event)` in a template (`system/event/router.h:84`, `:302`). Bu
 `Actor::push<E>(ActorId const&, ...)` (`core/Actor.h:929`) accepts any id for any `E`, and an
 event the destination never registered falls into the router's `else` branch
 (`system/event/router.h:904`) and is **logged and dropped** (`core/VirtualCore.cpp:209`).
-`ActorHandle<T>` (`core/Actor.h:1902`) is a same-core reference, not an interface type.
+`ActorHandle<T>` (`core/Actor.h:1932`) is a same-core reference, not an interface type.
 
 **CAF.** `typed_actor<TraitOrSignature>` (`libcaf_core/caf/typed_actor.hpp:31`): the message
 interface is the actor's type, `mail()` to a typed handle is checked at compile time, and the
@@ -132,7 +132,7 @@ third-party packages.
 ## 5. Scheduling
 
 **qb.** One worker thread per `VirtualCore`; every actor is created on a core before `start()`
-(`core/Main.h:243`, `:679`) or on the calling core at runtime (`core/VirtualCore.h:1048`), and
+(`core/Main.h:243`, `:679`) or on the calling core at runtime (`core/VirtualCore.h:1052`), and
 "an actor never migrates between cores" (`core/Actor.h:215`). `setAffinity` (`core/Main.h:271`),
 `setLatency` (`:286`) and `setIdleSpin` (`:303`) are the only knobs. No work stealing — the word
 does not occur in `core/`.
@@ -233,7 +233,7 @@ actors (`libcaf_core/caf/actor_registry.hpp:32`, `:77`). Groups were **removed i
 **qb.** Before `start()`: `CoreInitializer::addActor` / `builder()` (`core/Main.h:243`, `:257`),
 `Main::addActor(CoreId, ...)` (`:725`). At runtime: `Actor::addRefActor<T>` (`core/Actor.h:1174`)
 creates on the **calling core only** — `VirtualCore::_handler` is the thread-local current core
-(`core/VirtualCore.h:1048`) — and `Main::core(id)` is setup-phase only (`core/Main.h:679`).
+(`core/VirtualCore.h:1052`) — and `Main::core(id)` is setup-phase only (`core/Main.h:679`).
 Creating an actor on another core at runtime is done by messaging a factory actor already there;
 the framework has no call for it. Actor allocation is a customisation point (`core/VirtualCore.h:804`).
 
@@ -313,7 +313,7 @@ where any of them would become a plan:
 5. **No message priorities** — `EventQOS1 == EventQOS2 == Event` (`core/Event.h:510`–`509`).
 6. **No migration, no rebalancing** — actors are pinned for life (`core/Actor.h:215`); a hot
    actor on a cold core stays there.
-7. **No cross-core dynamic spawn** (`core/VirtualCore.h:1048`, `core/Main.h:679`).
+7. **No cross-core dynamic spawn** (`core/VirtualCore.h:1052`, `core/Main.h:679`).
 8. **No configuration layer** in core.
 
 What qb has that the others do not — a coroutine-first asynchronous model, a real I/O loop with
