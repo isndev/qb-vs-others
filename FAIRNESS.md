@@ -239,7 +239,7 @@ WSL2 g++-14 and on Windows MSVC 19.51; its floors are those counts):
 
 ```
 python3 tools/negative-control.py --build build/final
-    CAUGHT=16 CONFIRMED=10 MISSED=0
+    CAUGHT=27 CONFIRMED=11 MISSED=0
 ```
 
 It plants one defect at a time — a message lost 1 time in 10⁷, a single lost message, a duplicate
@@ -266,7 +266,7 @@ checkout before and after:
 
 ```
 python3 tools/guards-negative-control.py
-    CAUGHT=33 CONFIRMED=3 MISSED=0
+    CAUGHT=34 CONFIRMED=3 MISSED=0
 ```
 
 The counts are floors. A run below them fails: a battery that quietly stopped planting anything
