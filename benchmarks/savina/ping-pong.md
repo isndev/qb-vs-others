@@ -66,6 +66,18 @@ The expected value is computed by plain arithmetic in
 `expected_messages = 2 x messages` is asserted alongside it so that a framework cannot reach the
 right checksum by doing a different amount of work.
 
+**What blocks, and what moves the sum** (FAIRNESS.md section 0). One ball is in flight at a time,
+and the pinger ends the run on the ball whose `seq` is 0. A ball **lost** — ping or pong — is never
+answered, so nothing ends the run: it **blocks**, the repetition outlives the harness's deadline,
+and the run fails with exit 1 and no timing. Here a drop never reaches the sum; the sum's
+sensitivity to drops is for the fan-in shapes. A ball **delivered twice** starts a second countdown
+beside the first: both are folded and the run ends at the first `seq` of 0, so the sum and the
+message count are both wrong. A `seq` altered in flight moves the sum. A ball delivered to the
+wrong actor depends on the adapter: qb's actors answer whoever sent them the ball (`reply()`), so
+a ping that comes back to the pinger, or a pong to the ponger, never brings the teardown or the
+end — it blocks — where CAF's and SObjectizer's actors send to a fixed peer and the misroute is
+not seen.
+
 ## The measured window
 
 Opens when the ping actor injects the first ball into an already-running system, closes when it

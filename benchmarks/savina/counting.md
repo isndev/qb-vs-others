@@ -53,6 +53,13 @@ one, delivered one twice, or let the retrieve overtake an increment would return
 total. `expected_messages = messages + 2` (the increments, the retrieve, the result) is asserted
 alongside.
 
+**What blocks, and what moves the sum** (FAIRNESS.md section 0). Every increment is folded AND
+counted by the counter, so the increment defects above end the run with a wrong sum and a wrong
+count. The run ends when the producer receives the result: the retrieve or the result **lost**
+leaves nothing to end it, and the run **blocks** — the repetition outlives the harness's
+deadline and fails with exit 1 and no timing. A retrieve or a result delivered twice carries the
+same total twice, and the second arrives after the end: it is not seen.
+
 ## The measured window
 
 Opens when the producer emits its first increment into an already-running system, closes when it

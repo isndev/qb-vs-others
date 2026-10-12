@@ -60,11 +60,21 @@ The teller folds `mix(i)` for every acknowledgement it receives — an acknowled
 index of the transfer it completes — and `account_key(a, balance)` for every balance reported at
 exit, as wrapping sums. The final balance of every account is fixed by the transfer set alone,
 whatever order the transfers complete in, so the expected total is plain arithmetic in the spec
-header with no framework linked. A transfer acknowledged twice, never acknowledged, a deposit that
-landed on the wrong account, a reply routed to the wrong continuation, or an account that never
-reported changes the total. `expected_messages = 4n + 2a` — transfer, deposit, reply and
-acknowledgement per transfer, exit and report per account — is counted at the receivers and
-asserted alongside.
+header with no framework linked. A transfer acknowledged twice, or a deposit that landed on the
+wrong account, changes the total; a transfer never acknowledged, a reply routed to the wrong
+continuation, or an account that never reports blocks the run instead (below). `expected_messages =
+4n + 2a` — transfer, deposit, reply and acknowledgement per transfer, exit and report per account —
+is counted at the receivers and asserted alongside.
+
+**What blocks, and what moves the sum** (FAIRNESS.md section 0). The teller sends the accounts
+their exit on the last acknowledgement and ends the run on the last report, and a source account
+serves its next transfer only once its deposit has been answered. A transfer, a deposit, its
+answer, an acknowledgement, an exit or a report **lost** stops that chain: the run **blocks**, the
+repetition outlives the harness's deadline and fails with exit 1 and no timing. So does, in qb,
+an answer delivered to an account that did not ask (the two accounts bounce it between them for
+good), or an acknowledgement or a report delivered to an account. A transfer or an acknowledgement
+delivered twice moves the sum, and an exit or a report delivered twice ends the run one report
+early, on a wrong sum.
 
 ## The measured window
 

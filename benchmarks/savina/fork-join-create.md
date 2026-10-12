@@ -83,11 +83,22 @@ Actor `i` is created with its index `i` (a constructor argument) and is sent a j
 it answers its creator with `job_value(self, job, work) = mix((self << 32) | job)` — plus
 `spin_work` of the same key when `work > 0` — so an actor that received another actor's job folds
 a different key. Each creator folds its answers and the driver adds the summaries, as **wrapping
-sums**: a job dropped, delivered twice or delivered to the wrong actor, an answer lost or
-repeated, a skipped computation, or a summary lost or repeated all change the total.
+sums**: an answer repeated, a skipped computation, or a summary repeated changes the total; a
+job dropped or delivered to the wrong actor, or an answer or a summary lost, blocks the run
+instead (below).
 `expected_messages = 2 × actors + 2 × creators` — one job and one answer per actor, one fork order
 and one summary per creator — is asserted alongside: every answer carries the job it answers, and
 every summary the count of its share.
+
+**What blocks, and what moves the sum** (FAIRNESS.md section 0). A creator sends its summary on
+the last answer of its share, a forked actor answers its first job and ends, and the driver ends
+the run on the last summary. A fork order, a job, an answer or a summary **lost** — or a job
+delivered to another forked actor, which answers it and ends, so its own job is never answered —
+leaves a creator or the driver a message short: the run **blocks**, the repetition outlives the
+harness's deadline and fails with exit 1 and no timing. An answer or a summary delivered twice
+moves the sum (the creator summarises one answer early, or the driver adds a share twice) — except
+a duplicate of a creator's LAST answer, which comes after its summary and is not seen. A job
+delivered twice reaches, in qb and CAF, an actor that has already ended, and is not seen.
 
 What the checksum does **not** prove is that an actor was created: a creator that computed
 `job_value(i, i, work)` itself and sent the answers to itself would fold the same total. That each

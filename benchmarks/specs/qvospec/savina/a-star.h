@@ -239,9 +239,10 @@ inline std::vector<std::uint32_t> reachable(const Grid &grid) {
 }
 
 // The wrapping sum of node_value() over the reachable set. Each worker's acknowledgement carries
-// the sum over the nodes its message searched, and the master adds them up: a work message lost
-// or duplicated anywhere -- master to worker, or worker back to master -- drops a node from the
-// sum or counts one twice, and every node's term is distinct.
+// the sum over the nodes its message searched, and the master adds them up: a node handed back
+// and lost on its way to the master drops its node from the sum, a work message duplicated counts
+// one twice, and every node's term is distinct. A work message lost on its way FROM the master is
+// never acknowledged: the run blocks (benchmarks/savina/a-star.md).
 inline std::uint64_t expected(const qvo::Params &p) {
     const Grid    grid(static_cast<std::uint32_t>(p.get("grid")));
     const int     work = static_cast<int>(p.get("work"));

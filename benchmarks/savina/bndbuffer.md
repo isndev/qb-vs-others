@@ -163,12 +163,13 @@ weight).
 
 What the checksum cannot see, said plainly. A **lost** message — a `ProduceData`, a `DataItem` on
 either leg, a `ConsumerAvailable`, a `ProducerExit` — moves no sum: the protocol waits for it, so
-that run never reaches the manager's exit decision. It hangs, and the runner's timeout is its
-verdict (`tools/run.py --timeout`); the checksum catches a lost TERM or skipped work, never a lost
-message. A request delivered to the wrong producer starves the one it was meant for: a hang too.
-And a duplicate that arrives where nothing is counted any more changes nothing: a duplicate of a
-producer's LAST request reaches a producer that has already ended, and any duplicate that arrives
-after the manager's exit decision finds the sums already taken.
+that run never reaches the manager's exit decision. It **blocks**, and the harness's deadline fails
+it with exit 1 and no timing (FAIRNESS.md section 0); the checksum catches a lost TERM or skipped
+work, never a lost message. A request delivered to the wrong producer starves the one it was meant
+for, and so does a producer's `DataItem` delivered to a consumer, or naming another producer: they
+block too. And a duplicate that arrives where nothing is counted any more changes nothing: a
+duplicate of a producer's LAST request reaches a producer that has already ended, and any duplicate
+that arrives after the manager's exit decision finds the sums already taken.
 
 ## The measured window
 

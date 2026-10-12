@@ -39,12 +39,23 @@ says so. It does not measure the colour arithmetic either, which is two table lo
 
 ## The verified answer
 
-The mall numbers its meetings `k = 0, 1, …`; both creatures of meeting `k` fold `mix(k)` into
-their accumulator, as a **wrapping sum**, and report it in their exit; the mall adds `mix(total
-meetings reported)`. So `expected = Σ_{k<m} 2·mix(k) + mix(2m)`: a meeting announced to one
-creature only, announced twice, numbered twice or reported by a creature that did not exit changes
-the total. `expected_messages = 4m + 4c` — `c` starts, `2m + c` requests, `2m` announcements, `c`
-exits and `c` reports — is counted at the receivers and asserted alongside.
+The mall numbers its meetings `k = 0, 1, …`; both creatures of meeting `k` fold `mix(k)` into their
+accumulator, as a **wrapping sum**, and report it in their exit; the mall adds `mix(total meetings
+reported)`. So `expected = Σ_{k<m} 2·mix(k) + mix(2m)`: a meeting announced twice, numbered twice or
+reported by a creature that did not exit changes the total; a meeting announced to one creature only
+leaves the other waiting, and the run blocks instead (below). `expected_messages = 4m + 4c` — `c`
+starts, `2m + c` requests, `2m` announcements, `c` exits and `c` reports — is counted at the
+receivers and asserted alongside.
+
+**What blocks, and what moves the sum** (FAIRNESS.md section 0). Every creature has one request
+or announcement in flight, and the mall ends the run on the last creature's report. A `start`, a
+request, an announcement, an exit or a report **lost** stops a creature's only chain or leaves the
+mall a report short: the run **blocks**, the repetition outlives the harness's deadline and fails
+with exit 1 and no timing. A message delivered twice starts a second chain or a second report, and
+the run ends on a wrong sum and count (a CAF creature quits on its first exit, so a second exit is
+not seen there). A message delivered to the wrong actor moves the sum where the receiver can take
+it for one of its own — qb's creature reads a misrouted request as an announcement — and blocks
+where it cannot; which one depends on each adapter's handlers.
 
 ## The measured window
 

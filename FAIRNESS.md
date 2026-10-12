@@ -37,15 +37,19 @@ the semantics requires a minimum of that work, the spec declares it in
 observation fails the run, with no timing.
 
 A wrong answer is one way a run fails; a run that never ends is the other. Every shape here waits
-for the end of a protocol — N "done" messages, a report, the end of a chain — so a message that is
-**lost**, delivered to the wrong actor, or carries a corrupted control field usually does not move
-the checksum at all: the run **blocks**. `qvo::run` therefore bounds every repetition with a
-deadline of its own (`--deadline`; by default 300 s, ten times the slowest repetition any document
-here records, scaled up with the work the parameters ask for — `harness/include/qvo/harness.h`). A
-repetition that outlives it ends the process with exit 1 and a result document that says so —
+for the end of a protocol — N "done" messages, a report, the end of a chain — so a message the
+protocol waits for, when it is **lost** (and, in many shapes, when it is delivered to the wrong
+actor or carries a corrupted control field), does not move the checksum at all: the run
+**blocks**. `qvo::run` therefore bounds every repetition with a deadline of its own
+(`--deadline`; by default 300 s, ten times the slowest repetition any document here records,
+scaled up with the work the parameters ask for — `harness/include/qvo/harness.h`). A repetition
+that outlives it ends the process with exit 1 and a result document that says so —
 `verified:false`, the repetition named, no timing — so a planted defect that blocks reads as
 failed, never as still running, and a binary run by hand cannot wait forever. `tools/run.py
---timeout` stays the outer bound of a whole process.
+--timeout` stays the outer bound of a whole process. Which defects of a shape block and which move
+its sum is said on its page under `benchmarks/savina/` ("What blocks, and what moves the sum"),
+and so are the few that reach neither verdict — a duplicated `thread-ring` token, for one, ends
+with the right total.
 
 ## 1. The seven mechanisms
 

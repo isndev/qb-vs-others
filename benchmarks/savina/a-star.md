@@ -120,12 +120,13 @@ on Windows, CAF's pool runs this shape on one of its two threads in about half i
 Searching node n yields `node_value(n) = mix(spin_work(2n + 1, work))`; a work message's
 acknowledgement carries the **wrapping sum** of those over the nodes it searched, and the master
 adds the acknowledgements up. `expected()` is the same sum over the reachable set, computed by a
-breadth-first walk of the graph with no framework linked. `spin_work` is a chain of bijections
-from a distinct seed, so no two nodes yield the same term: a work message lost — master to worker
-or worker back to master — drops at least its node from the sum, a duplicated one counts a node
-twice, and both fail the run. Planted in the qb and floor adapters (the master losing the first
-node handed back; the master delivering its first relayed node twice), each exits 1 with a wrong
-checksum at `cores=1` and `cores=2`.
+breadth-first walk of the graph with no framework linked. `spin_work` is a chain of bijections from
+a distinct seed, so no two nodes yield the same term: a node handed back and lost on its way to the
+master drops at least that node from the sum, a duplicated work message counts a node twice, and
+both fail the run. (A work message lost on its way FROM the master is never acknowledged, and the
+run blocks instead: below.) Planted in the qb and floor adapters (the master losing the first node
+handed back; the master delivering its first relayed node twice), each exits 1 with a wrong checksum
+at `cores=1` and `cores=2`.
 
 There is **no `expected_messages`**. How many work messages a run sends is decided by which worker
 wins each claim — a node claimed late in a worker's chunk is handed back as a message, the same
@@ -145,6 +146,15 @@ The spec derives the floor that closes it, with no framework: one work message s
 wrong checksum. The harness checks the bound only after the checksum has verified — once every
 reachable node is known to have been searched exactly once — so a count below the bound can only
 mean that some work message searched more than `threshold` nodes.
+
+**What blocks, and what moves the sum** (FAIRNESS.md section 0). The master ends the run when it
+has received one acknowledgement per work message it SENT. A work message lost between the master
+and a worker, or an acknowledgement lost, is counted as sent and never acknowledged: the run
+**blocks**, the repetition outlives the harness's deadline and fails with exit 1 and no timing.
+A node handed back and lost on its way to the master was claimed and is searched by nobody: the
+sum moves. A work message delivered twice folds its node twice: the sum moves. A work message
+delivered to another worker than the one it was sent to is searched the same way by any worker,
+and is not seen.
 
 ## What is observed, not asserted — and the one bound that is
 

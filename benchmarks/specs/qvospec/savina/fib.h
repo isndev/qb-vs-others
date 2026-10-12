@@ -68,9 +68,10 @@ inline std::uint64_t nodes(long long n) { return 2 * fib(n) - 1; }
 //     chk(node n) = mix(fib(n)) + chk(n-1) + chk(n-2)
 //
 // The root's checksum is chk(n-1) + chk(n-2), computed here by the same recurrence with a memo.
-// A response dropped or duplicated anywhere in the tree changes the sum its ancestors carry; a
-// framework that answered a request without creating the actor would have to reproduce the
-// whole fold, which is the computation itself.
+// A response duplicated in the tree changes the sum its ancestors carry (a dropped one leaves its
+// parent waiting: the run blocks, benchmarks/savina/fib.md); a framework that answered a request
+// without creating the actor would have to reproduce the whole fold, which is the computation
+// itself.
 inline std::uint64_t chk(long long n, std::vector<std::uint64_t> &memo) {
     if (n <= 2) return qvo::mix(1);
     if (memo[static_cast<std::size_t>(n)]) return memo[static_cast<std::size_t>(n)];

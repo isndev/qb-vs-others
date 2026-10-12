@@ -223,7 +223,7 @@ inline std::uint64_t route(std::uint32_t consumer, std::uint32_t producer,
 // floor's `done`). So a duplicate of a producer's LAST request is invisible -- and so is any
 // duplicated message that arrives after the manager's exit decision, when the sums are already
 // taken. A request delivered to another producer moves both sums -- and starves the producer it
-// was meant for, so that run never ends: a hang, not a number.
+// was meant for, so that run never ends: it blocks, and fails at the harness's deadline.
 inline std::uint64_t receipt(std::uint32_t producer, std::uint32_t seq) noexcept {
     return producer_identity(producer) * qvo::mix(kProduceTag + seq);
 }
@@ -246,7 +246,7 @@ inline std::uint64_t overflow_weight() noexcept { return qvo::mix(kOverflowTag);
 // chain, a hand-over delivered to the wrong consumer, a doubled ProduceData or a broken bound
 // (bound_holds) moves it. A LOST message -- a ProduceData, a DataItem on either leg, a
 // ConsumerAvailable, a ProducerExit -- moves nothing: the protocol waits for it, so that run never
-// reaches the manager's exit decision. A hang, not a number; the runner's timeout is its verdict.
+// reaches the manager's exit decision. It blocks, and the harness's deadline is its verdict.
 inline std::uint64_t expected(const qvo::Params &p) {
     const Counts  c     = counts(p);
     const int     prod  = iterations_of(p.get("prod_cost"));

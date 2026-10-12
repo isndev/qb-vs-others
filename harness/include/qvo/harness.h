@@ -187,9 +187,11 @@ using Body = std::function<Answer(const Params &, Watch &)>;
 //   --describe          print the spec as JSON and exit without running
 //
 // The deadline. Every benchmark waits for the end of a protocol -- N "done" messages, a report,
-// the end of a chain -- so a message that is LOST, misrouted, or carries a corrupted control
-// field does not move the checksum: the body never returns. A repetition that outlives its
-// deadline is that defect. A watchdog thread, started here and asleep on the deadline, then
+// the end of a chain -- so a message the protocol waits for, LOST (or, in many shapes, misrouted
+// or carrying a corrupted control field), does not move the checksum: the body never returns.
+// Which defects block and which move the sum is each shape's own, said on its page under
+// benchmarks/savina/. A repetition that outlives its deadline is such a defect. A watchdog
+// thread, started here and asleep on the deadline, then
 // writes the result document -- `verified:false`, the reason in `failures` ("repetition k:
 // deadline exceeded after S s ..."), no timing, any earlier failure kept -- and ends the process
 // with std::_Exit(1). Arming and disarming it happen outside every timed span and wake nobody.

@@ -320,8 +320,9 @@ double percentile(std::vector<double> v, double p) {
 // The deadline (Huly QB-991)
 //
 // A benchmark waits for the end of a protocol -- N "done" messages, a report, the end of a chain
-// -- so a message that is lost, misrouted, or carries a corrupted control field does not move
-// the checksum: the body never returns. tools/run.py's --timeout bounds the whole process from
+// -- so a message the protocol waits for, lost (or, in many shapes, misrouted or carrying a
+// corrupted control field), does not move the checksum: the body never returns; each shape's page
+// says which of its defects block. tools/run.py's --timeout bounds the whole process from
 // outside; a binary run directly (a correctness matrix, a negative proof, a reproduction) had no
 // bound at all, and a planted defect that blocks read as "still running" instead of "failed".
 //
@@ -774,8 +775,7 @@ int run(int argc, char **argv, Spec spec, Body body) {
         std::snprintf(s, sizeof s, "%g", seconds);
         std::vector<std::string> why = failures;
         why.push_back("repetition " + std::to_string(rep) + ": deadline exceeded after " + s
-                      + " s -- the body did not return (a lost or misrouted message blocks a run "
-                        "instead of moving its checksum)");
+                      + " s -- the body did not return (--deadline)");
         std::string err;
         if (!try_write_document(out_path, document(false, why), err)) {
             std::fprintf(stderr, "qvo: FATAL: %s\n", err.c_str());

@@ -145,8 +145,9 @@ the barber adds a `Cut` weight for each one he serves. Each term is paired with 
 FOR THE SAME CUSTOMER — every customer let in is either told `Wait` or wakes the barber, every
 rejection of `i` is one `Full` at `i` and one `Returned` of `i`, the barber serves every customer
 once and names it in the `Next` that follows; the naps and the room's own wake-up `Next`s cancel
-by count — so the total is the same for every interleaving, and a delivery dropped, duplicated
-**or delivered to the wrong customer** moves it, the no-op `Wait` included. All three are asserted
+by count — so the total is the same for every interleaving, and a `Wait` or a barber's `Start`
+dropped, duplicated **or delivered to the wrong customer** moves it, the no-op `Wait` included
+(what a message the protocol waits for does when it goes astray is below). All three are asserted
 to fail on every qb and floor cell: a room that skips its 100th `Wait`, a barber that tells his
 100th customer `Start` twice, and a room whose 100th `Wait` sent while two or more customers wait
 goes to the oldest of them instead — the last one passed the checksum of the first version of this
@@ -156,6 +157,16 @@ The room leaves for `Exit` only once the barber's `n`-th `Next` is in, and a run
 receives an `(n+1)`-th stops with an explicit protocol failure rather than a number: a duplicated
 `Next` could otherwise let `Exit` leave one haircut early. Asserted too: a barber that sends the
 `Next` after his 100th haircut twice fails every qb and floor cell that way.
+
+**What blocks, and what moves the sum** (FAIRNESS.md section 0). Every customer reports to the
+factory, the factory sends `Exit` on the last report, and the room lets it through only with the
+barber's `n`-th `Next` in. An `Enter`, a `Full`, a `Returned`, a `Done`, a `Next` or an `Exit`
+**lost** — or a `Done` or a `Full` delivered to another customer, or a barber's `Next` whose number
+arrives as 0, which the room counts as its own wake-up — leaves a customer that never reports or a
+room a `Next` short: the run **blocks**, and the harness's deadline fails the repetition with exit 1
+and no timing (FAIRNESS.md section 0). A `Wait` or a barber's `Start` lost is waited for by nobody,
+and the run ends on a wrong sum. A message delivered twice moves the sum, or brings the `(n+1)`-th
+`Next` and its protocol failure.
 
 No message count is asserted, because it is not determined: it is `7n + 3r + a + 3` for `n`
 haircuts, `r` rejections and `a` wake-ups of the barber (`n − 1` more with `pace=1`), and

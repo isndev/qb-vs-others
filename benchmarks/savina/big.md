@@ -55,7 +55,8 @@ like-for-like dispatch comparison.
 The **ponger** computes `pong_value(pinger, ponger, k)` — `mix()` of the three packed together —
 and the pinger accumulates it as a **wrapping sum** over its `pings` pongs, then reports the
 sum in its `done`. A reply produced by the wrong actor, a ping delivered to a peer other than the
-one the sequence chose, a lost or duplicated round trip, all change the total.
+one the sequence chose, or a round trip delivered twice changes the total; a round trip LOST blocks
+the run instead (below).
 
 `expected_messages = 2 x actors x pings + 2 x actors` — the pings and pongs, plus one `start`
 and one `done` per actor. The **pinger** counts: two per pong it receives (the pong and the ping
@@ -64,6 +65,16 @@ pings it receives, because peers keep pinging an actor after it has reported don
 depends on a race — measured on the floor, 4 726 888 and 4 747 980 of 4 800 240 on two consecutive
 runs of the same binary. The spec header states the rule so that every framework counts the same
 way.
+
+**What blocks, and what moves the sum** (FAIRNESS.md section 0). Every pinger has one ping in
+flight and reports after its last pong; the sink ends the run on the `actors`-th `done`. A ping, a
+pong, a `start`, a `ready` or a `done` **lost** leaves the sink a `done` short: the run **blocks**,
+the repetition outlives the harness's deadline and fails with exit 1 and no timing. A ping or a pong
+delivered twice runs a second chain, and a `start` delivered twice or to another actor makes one
+actor report twice: the run ends on a wrong sum. A pong delivered to the wrong actor depends on the
+adapter: CAF, SObjectizer and the floor fold it and ping on, moving the sum; qb's actors answer
+whoever pinged them (`reply()`), and the two actors bounce it between them for good — a run that
+blocks while busy.
 
 ## The measured window
 

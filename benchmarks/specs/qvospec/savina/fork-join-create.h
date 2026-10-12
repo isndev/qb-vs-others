@@ -77,9 +77,10 @@ inline std::uint64_t job_value(std::uint64_t self, std::uint64_t job, int work) 
 }
 
 // Every actor answers its creator with job_value(i, i, work); a creator folds its answers, as a
-// wrapping sum, into one summary; the driver adds the summaries. A job dropped, delivered twice,
-// delivered to the wrong actor, an answer dropped or duplicated, an actor that skipped its work,
-// or a summary lost or repeated all change the total.
+// wrapping sum, into one summary; the driver adds the summaries. An answer duplicated, an actor
+// that skipped its work, or a summary repeated changes the total. A job, an answer or a summary
+// LOST, or a job delivered to the wrong actor, leaves a creator or the driver waiting: the run
+// blocks (benchmarks/savina/fork-join-create.md).
 inline std::uint64_t expected(const qvo::Params &p) {
     const auto    actors = static_cast<std::uint64_t>(p.get("actors"));
     const auto    work   = static_cast<int>(p.get("work"));

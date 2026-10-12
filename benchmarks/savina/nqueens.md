@@ -75,13 +75,13 @@ of the candidates and the full-board validity check are Savina's.
 
 ## The verified answer
 
-Every RESULT carries the solution's identity — a fold of its columns, row by row, through
-`qvo::mix` — and every DONE the identity of the item it completes, salted so that a board that is
-both an item and a solution counts twice, distinctly. The master sums both, as **wrapping sums**,
-and the checksum is that sum. A work item lost, duplicated or delivered twice changes the set of
-boards searched and therefore both sums; a result lost or duplicated changes the first; a done lost
-never ends the run. A worker that answered without searching would have to produce every
-solution's identity, which is the search.
+Every RESULT carries the solution's identity — a fold of its columns, row by row, through `qvo::mix`
+— and every DONE the identity of the item it completes, salted so that a board that is both an item
+and a solution counts twice, distinctly. The master sums both, as **wrapping sums**, and the
+checksum is that sum. A child item lost on its way to the master, or delivered twice, changes the
+set of boards searched and therefore both sums; a result lost or duplicated changes the first; a
+done lost — or an item lost on its way from the master — never ends the run (below). A worker that
+answered without searching would have to produce every solution's identity, which is the search.
 
 `expected()` computes the same sum with **no shared search code**: an independent enumeration over
 column and diagonal bitmasks, the identity folded incrementally, which also asserts its solution
@@ -91,6 +91,16 @@ solutions` (29 076 at the defaults) is asserted alongside: each worker counts th
 and says so in that item's DONE, and the master counts every child item it relays (all but the
 first, which it made), every DONE and every RESULT. The ready handshake and the shutdown are not
 counted.
+
+**What blocks, and what moves the sum** (FAIRNESS.md section 0). The master ends the run when it
+has one DONE per item it handed out. An item lost between the master and a worker, or a DONE
+lost, is never completed: the run **blocks**, the repetition outlives the harness's deadline and
+fails with exit 1 and no timing. A child item lost on its way to the master, or a RESULT lost, is
+never searched or never folded: the sum and the message count move. An item delivered twice to a
+worker, or a DONE delivered twice, brings a DONE no hand-out matches, and the run ends early on a
+wrong sum; a child item delivered twice to the master is handed out twice and its boards searched
+twice: the sum moves. An item delivered to another worker than the one it was handed to is
+searched the same way, and is not seen.
 
 ## The measured window
 

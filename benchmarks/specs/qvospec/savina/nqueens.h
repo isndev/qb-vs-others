@@ -222,10 +222,11 @@ inline Tally reference(const qvo::Params &p) {
 }
 
 // The checksum: the wrapping sum of every RESULT (the solution's board_hash) and every DONE
-// (done_value of the item). A work item lost, duplicated or delivered twice changes the set of
-// boards searched and therefore both sums; a result lost or duplicated changes the first, a done
-// the second (and a lost done never terminates). A worker that answered without searching would
-// have to produce every solution's hash, which is the search.
+// (done_value of the item). A child item lost on its way to the master, or delivered twice, changes
+// the set of boards searched and therefore both sums; a result lost or duplicated changes the
+// first, a done duplicated the second. A done lost, or an item lost on its way FROM the master,
+// never terminates: the run blocks (benchmarks/savina/nqueens.md). A worker that answered without
+// searching would have to produce every solution's hash, which is the search.
 inline std::uint64_t expected(const qvo::Params &p) { return reference(p).checksum; }
 
 // The report divides by this: one solution found and reported to the master.

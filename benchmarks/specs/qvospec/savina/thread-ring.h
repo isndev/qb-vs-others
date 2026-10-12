@@ -37,8 +37,10 @@ inline std::map<std::string, long long> params() {
 
 // The token carries a countdown and an accumulator; each actor that receives it adds
 // mix(remaining) before passing it on. Hop k (1-based; k = hops on injection) contributes
-// mix(k), so a hop that is skipped, repeated, or delivered to an actor that forwards without
-// touching the token changes the sum.
+// mix(k), so a term skipped or folded twice -- an actor that decrements without adding, or adds
+// without decrementing -- changes the sum. A token lost never ends the run (it blocks, FAIRNESS.md
+// section 0); one delivered twice, to the wrong ring actor, or forwarded untouched does NOT change
+// the sum: every copy carries its own countdown (benchmarks/savina/thread-ring.md).
 inline std::uint64_t expected(const qvo::Params &p) {
     const long long hops = p.get("hops");
     std::uint64_t   acc  = 0;

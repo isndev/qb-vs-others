@@ -101,24 +101,26 @@ same value in every document, on every host.
 
 ## The verified answer
 
-Every series is strictly sequential — one request in flight per series, ever — so its worker
-folds every term it receives, IN ORDER, by its exact bit pattern: `chain = (chain ^ bits(x)) ·
+Every series is strictly sequential — one request in flight per series, ever — so its worker folds
+every term it receives, IN ORDER, by its exact bit pattern: `chain = (chain ^ bits(x)) ·
 0x100000001b3` (FNV-1a's 64-bit step), seeded with the series' identity. An ordered fold and not a
 sum, and every term and not only the last: at these rates the orbit settles on a period-4 cycle, so
 a run that computed four terms too few would end on the same final term, and series 0 ends on 0
 however many it computes. When worker *i* answers GetTerm the master adds `series_key(i, chain)`;
-when computer *i* reports the master adds `computer_key(i, served)` — wrapping sums of `mix()`.
-The expected total is the same recurrence run with no framework linked (`series_chain` in the spec
+when computer *i* reports the master adds `computer_key(i, served)` — wrapping sums of `mix()`. The
+expected total is the same recurrence run with no framework linked (`series_chain` in the spec
 header). A NextTerm dropped, duplicated or delivered to the wrong worker, a request sent to the
 wrong computer (computed at another series' rate), an answer duplicated, one bit of one term
-changed, or a GetTerm answered before the chain ended changes a fold, and a request served twice
-or never changes a report: the run ends, on a wrong checksum. An answer LOST, or delivered to a
-worker that did not ask for it, does not end the run at all — the worker that asked waits for it
-forever — so such a run never verifies, and only `tools/run.py --timeout` ends it, recorded as
-`timeout`. `expected_messages = series × (3·terms + 4)` — per worker `terms`
-NextTerm, `terms` answers and one GetTerm, per computer `terms` requests and one stop, and the
-master's `series` answers and `series` reports — is counted at the receivers and asserted
-alongside.
+changed, or a GetTerm answered before the chain ended changes a fold, and a request served twice or
+never changes a report: the run ends, on a wrong checksum. An answer LOST does not end the run at
+all — the worker that asked waits for it forever — and neither does a GetTerm, a request, a worker's
+result, or a computer's stop or report lost: the run **blocks**, and the harness's deadline fails it
+with exit 1 and no timing (FAIRNESS.md section 0). An answer delivered to a worker that did not ask
+for it leaves the one that asked waiting too, and the run blocks — or, when that worker's GetTerm
+arrives while it runs two chains, it answers twice and the run ends a series short, on a wrong
+checksum. `expected_messages = series × (3·terms + 4)` — per worker `terms` NextTerm, `terms`
+answers and one GetTerm, per computer `terms` requests and one stop, and the master's `series`
+answers and `series` reports — is counted at the receivers and asserted alongside.
 
 **Reported beside the cell, not asserted: `held`**, the NextTerm requests that found their worker
 waiting for an answer. It says how the master's burst interleaved with the chains — every request

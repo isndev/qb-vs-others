@@ -74,9 +74,10 @@ receiver's own 1-based count of that kind of message for that philosopher:
   and each **Exit** with `round` = the number of Dones it has received from that philosopher then.
 
 So `expected = Σ_i [ Σ_{r=1..M} (start + grant + eat + done)(i, r) + exit(i, M) ]`, independent of
-who was refused how often. A grant answered twice, a meal delivered twice, a Done lost or
-duplicated, an Exit that overtakes its philosopher's last Done, a philosopher that stops early or
-eats once too often, or two philosophers fed from one fork changes the total.
+who was refused how often. A grant answered twice, a meal delivered twice, a Done duplicated, an
+Exit that overtakes its philosopher's last Done, a philosopher that stops early or eats once too
+often, or two philosophers fed from one fork changes the total. A Done — or any other message —
+LOST stalls the run instead, below.
 `expected_messages = 4·N·M + N` — N·M Starts, N·M granted requests, N·M Eats, N·M Dones and N
 Exits — is counted at the receivers and asserted alongside. The refused pairs (a refused request
 and its Denied, or a Denied and the retry it triggers) are in neither: their number is the
@@ -98,11 +99,13 @@ asserted about it.
 Every message here is needed by a later step — a philosopher has one message of its cycle in
 flight, or two right after a meal (its Done to the arbitrator and its Start to itself) — so a
 message lost in the middle of a run does not produce a wrong answer, it stalls the run: a lost
-Hungry, Denied, Eat or Start stops its philosopher; a lost Done leaves two forks taken for good,
+Hungry, Denied or Start stops its philosopher; a lost Eat or Done leaves two forks taken for good,
 so that philosopher and both neighbours are refused from then on; a lost Exit leaves the
-arbitrator one short. A stalled run emits no timing (`tools/run.py`'s timeout). Only a loss that
-stops nobody — a philosopher's last Done once its neighbours have finished — can complete, and
-the checksum rejects it.
+arbitrator one short. A stalled run **blocks**: the repetition outlives the harness's deadline and
+fails with exit 1 and no timing (FAIRNESS.md section 0). Only a loss that stops nobody — a
+philosopher's last Done once its neighbours have finished — can complete, and the checksum rejects
+it. A message delivered to the wrong philosopher takes the token of the one it was meant for, and
+blocks too.
 
 Termination does not depend on luck: a fork is taken only by a granted philosopher whose Done is
 on its way, so whenever no Done is pending every fork is free and the next request is granted;

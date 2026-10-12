@@ -157,11 +157,12 @@ inline std::uint64_t exit_term(std::uint32_t smoker) noexcept {
 //     right. A smoker that receives a second Exit while it still runs reports twice the same way
 //     (one that has ended -- qb, CAF -- receives nothing, as an exited actor in the reference).
 //
-// A LOST StartSmoking, StartedSmoking, Exit or Report -- or an Exit delivered to the wrong smoker,
-// which leaves one smoker without its own -- cannot complete the run at all: the protocol waits for
-// each, as Savina's does, and the stall is bounded by the driver's timeout (`tools/run.py
-// --timeout`, reported as "timed out", verified false). So a drop is proved on the smoke too
-// (cigsmok.md).
+// A LOST StartSmoking, StartedSmoking, Exit or Report -- or, in qb and CAF, an Exit delivered to
+// the wrong smoker, which leaves one smoker without its own -- cannot complete the run at all: the
+// protocol waits for each, as Savina's does, and the repetition fails at the harness's deadline
+// (FAIRNESS.md section 0). In SObjectizer and the floor that misrouted Exit makes the smoker that
+// got it report twice, and the run ends one share short, on a wrong sum. So a drop is proved on
+// the smoke too (cigsmok.md).
 inline std::uint64_t expected(const qvo::Params &p) {
     const auto rounds  = at_least_one(p.get("rounds"), "rounds");
     const auto smokers = at_least_one(p.get("smokers"), "smokers");

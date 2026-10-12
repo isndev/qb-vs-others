@@ -422,10 +422,12 @@ inline std::uint64_t list_term(const SortedList &list, std::uint64_t requests) n
 // fixed by their own sequences except for the size answers, which list_term cancels; the request
 // terms by the requests, whatever order they arrive in; and the final contents by the multiset of
 // writes, which no interleaving changes (each worker's writes are its own, and every write is
-// applied exactly once). A write lost or applied twice moves the fold; a request whose identity,
-// kind or payload changed on its way, or that the list received twice, moves the request terms;
-// an answer lost hangs its worker (one request in flight per worker -- the run cannot end), and
-// every other corruption of an answer moves the worker's sum.
+// applied exactly once). A write the list skipped or applied twice moves the fold; a request
+// whose identity, kind or payload changed on its way, or that the list received twice, moves the
+// request terms; a request or an answer LOST blocks its worker (one request in flight per worker:
+// the run cannot end, and fails at the harness's deadline); an answer delivered to the wrong
+// worker blocks its own and stops the run (fail()) at the other, or blocks it (CAF); and every
+// other corruption of an answer moves the worker's sum.
 inline std::uint64_t expected(const qvo::Params &p) {
     const Config              c = Config::of(p);
     std::uint64_t             acc = 0;

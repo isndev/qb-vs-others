@@ -60,9 +60,20 @@ The `cores=1` column, again, is the like-for-like dispatch comparison.
 
 Worker `a` folds `job_value(a, i, work)` into its accumulator for its i-th job — `mix((a << 32) |
 i)`, plus `spin_work` of the same key when `work>0` — as a **wrapping sum**, and reports it once
-in its `done`. A job delivered to the wrong worker, dropped, or delivered twice changes the total;
-so does a worker that skipped the spin. `expected_messages = actors x messages + actors` (the
+in its `done`. A job delivered twice, or whose index changed, changes the total; so does a worker
+that skipped the spin. A job dropped or delivered to the wrong worker blocks the run instead
+(below). `expected_messages = actors x messages + actors` (the
 jobs, plus one `done` per worker) is asserted alongside.
+
+**What blocks, and what moves the sum** (FAIRNESS.md section 0). A worker reports on its
+`messages`-th job, and the master ends the run on the last worker's `done`. A job **lost**, or
+delivered to another worker — which then reports early, while the worker it was meant for stays a
+job short — leaves a worker that never reports; a `done` lost, or the handshake's `ready` lost,
+leaves the master short too: the run **blocks**, the repetition outlives the harness's deadline
+and fails with exit 1 and no timing. A job delivered twice is counted, so its worker reports on it
+and leaves its real last job out: the sum moves — unless the duplicate is of that LAST job, which
+then arrives after the worker's `done` and is not seen. A `done` delivered twice ends the run with
+one real `done` missing: the sum moves.
 
 ## The measured window
 

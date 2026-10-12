@@ -159,19 +159,19 @@ A/A spread.
 
 ## The verified answer
 
-Every request carries its identity — the worker's number and the request's index in that
-worker's sequence — and the list echoes it, with the request's kind, in the answer. A worker knows
-what it asked without reading the answer (its sequence is the generator's), and for each answer it
-adds `answer_term`: `reply_term(what it asked, what the answer says it answers, the asserted
-result)` — equal in a correct run, so the term is fixed by the request alone — plus, for a size
-query, the length the answer reports (below). An answer delivered to the wrong worker, an answer
-delivered twice (every later answer of that worker is then one index off), an answer of the wrong
-kind, or a wrong result where the result is fixed, moves the worker's sum. In qb, SObjectizer and
+Every request carries its identity — the worker's number and the request's index in that worker's
+sequence — and the list echoes it, with the request's kind, in the answer. A worker knows what it
+asked without reading the answer (its sequence is the generator's), and for each answer it adds
+`answer_term`: `reply_term(what it asked, what the answer says it answers, the asserted result)` —
+equal in a correct run, so the term is fixed by the request alone — plus, for a size query, the
+length the answer reports (below). An answer delivered twice (every later answer of that worker is
+then one index off), an answer of the wrong kind, or a wrong result where the result is fixed, moves
+the worker's sum; an answer delivered to the wrong worker does not (below). In qb, SObjectizer and
 the floor, a copy that reaches a worker after its last request — its sum already reported — stops
-the run with an explicit protocol failure (`fail()`, as in `concdict`) rather than a number, and
-so does, with `form=1`, a qb answer that no ask of the worker waits for. A CAF worker has quit
-after sending its report (`quit()`, the reference's `exit()`), so a late copy is dropped with its
-mailbox and reaches no handler: it changes nothing the run reports.
+the run with an explicit protocol failure (`fail()`, as in `concdict`) rather than a number, and so
+does, with `form=1`, a qb answer that no ask of the worker waits for. A CAF worker has quit after
+sending its report (`quit()`, the reference's `exit()`), so a late copy is dropped with its mailbox
+and reaches no handler: it changes nothing the run reports.
 
 Which results are fixed, whatever the interleaving:
 
@@ -192,17 +192,20 @@ Which results are fixed, whatever the interleaving:
   walk — is left in the checksum.
 
 The list adds a term per request it RECEIVES — `request_term(identity, kind, payload)`, as the
-request arrived — since the workers' terms only check what comes back: a contains of a value
-nobody inserts answers false whatever value it carried, so without it a payload altered on its way
-to the list would still verify. The sum of those terms is fixed by the requests, whatever order
-they arrive in. After the window the list reports `list_term`: those request terms, minus its size
-walk, plus the fold of its final contents — element *k* of the list, in order, contributes
-`content_term(k, item)`, so the fold asserts the order as well as the multiset. The contents are
-fixed by the multiset of inserts, which no interleaving changes (each worker's inserts are its own
-and each is applied once); an insert lost or applied twice moves the fold. The master adds every
-worker's sum and the list's term. An answer LOST does not move a number: its worker waits for it,
-the run cannot end, and the harness's caller sees a hang — every message of this shape is on the
-critical path.
+request arrived — since the workers' terms only check what comes back: a contains of a value nobody
+inserts answers false whatever value it carried, so without it a payload altered on its way to the
+list would still verify. The sum of those terms is fixed by the requests, whatever order they arrive
+in. After the window the list reports `list_term`: those request terms, minus its size walk, plus
+the fold of its final contents — element *k* of the list, in order, contributes `content_term(k,
+item)`, so the fold asserts the order as well as the multiset. The contents are fixed by the
+multiset of inserts, which no interleaving changes (each worker's inserts are its own and each is
+applied once); an insert the list skipped or applied twice moves the fold. The master adds every
+worker's sum and the list's term. A message LOST does not move a number — every message of this
+shape is on the critical path: a request or an answer lost leaves its worker waiting, a report lost
+the master — so the run **blocks**, and the harness's deadline fails it with exit 1 and no timing
+(FAIRNESS.md section 0). An answer delivered to the wrong worker leaves its own worker waiting and
+gives the other a second request in flight: in qb, SObjectizer and the floor that one stops the run
+(`fail()`), and a CAF worker that has quit drops it, and the run blocks.
 
 `expected_messages = 2 × workers + 2 × workers × messages` is asserted alongside: the workers' DoWork,
 the requests, the answers and the workers' reports, counted at the receivers; `form=1` sends the

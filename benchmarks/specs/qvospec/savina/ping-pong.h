@@ -2,9 +2,10 @@
 //
 // Every framework's implementation includes THIS header. The expected checksum and the expected
 // message count are computed here, by plain arithmetic, with no framework linked. An
-// implementation therefore cannot define its own notion of "correct", and a framework that drops,
-// duplicates or coalesces a single message produces a different checksum and is reported as
-// FAILED with no timing at all (FAIRNESS.md section 0).
+// implementation therefore cannot define its own notion of "correct": a framework that duplicates
+// or coalesces a single message produces a different checksum, one that drops a message the
+// protocol waits for never completes and fails at the harness's deadline, and either way it is
+// reported as FAILED with no timing at all (FAIRNESS.md section 0).
 //
 // Savina reference: PingPong (Imam & Sarkar, AGERE 2014), benchmark 1 of the "micro" group.
 // Deviations from Savina's own parameters are recorded in benchmarks/savina/ping-pong.md.

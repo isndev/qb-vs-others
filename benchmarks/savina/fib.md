@@ -54,12 +54,21 @@ ActorId is 32 bits with a 16-bit index; widening it is an ABI change filed for 4
 
 ## The verified answer
 
-A leaf answers `value=1, chk=mix(1)`; a node answers `value = a + b` and `chk = mix(value) +
-chk_a + chk_b`, as **wrapping sums**, and the root reports `chk(n-1) + chk(n-2)`. A response
-delivered to the wrong parent, dropped, delivered twice or computed by a node that did not wait for
-both children changes the total. Every response also carries the message count of its sub-tree, so
-`expected_messages = 2 × (nodes(n) − 1)` — one request and one response per non-root node — is
-asserted alongside.
+A leaf answers `value=1, chk=mix(1)`; a node answers `value = a + b` and `chk = mix(value) + chk_a +
+chk_b`, as **wrapping sums**, and the root reports `chk(n-1) + chk(n-2)`. A response delivered
+twice, or computed by a node that did not wait for both children, changes the total; a response
+dropped, or delivered to the wrong parent, blocks the run instead (below). Every response also
+carries the message count of its sub-tree, so `expected_messages = 2 × (nodes(n) − 1)` — one request
+and one response per non-root node — is asserted alongside.
+
+**What blocks, and what moves the sum** (FAIRNESS.md section 0). A node answers once both its
+children have, and the root ends the run on its second response. A request or a response **lost**,
+or a response delivered to another node, leaves a parent waiting for good: the run **blocks**, the
+repetition outlives the harness's deadline and fails with exit 1 and no timing — unless the node a
+stray response reaches is the root, which then ends the run early, on a wrong sum. A request
+delivered twice to an inner node asks four children and is answered after two of them; a response
+delivered twice counts one child twice if it beats its sibling's: the sum moves. A response that
+comes after its parent has answered reaches an actor that has ended, and is not seen.
 
 ## The measured window
 

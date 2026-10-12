@@ -76,9 +76,10 @@ inline std::map<std::string, long long> params() {
 //     kExit   the arbitrator, Exit(i), with `round` = the number of Done(i) it has received then
 //
 // A philosopher carries the sum of its own folds (and its own message count) in its Exit; the
-// arbitrator adds them to its own. So a grant answered twice, a meal delivered twice or lost, a
-// Done lost or duplicated, an Exit that overtook its last Done, or a philosopher that stopped
-// early or ate once too often changes the total.
+// arbitrator adds them to its own. So a grant answered twice, a meal delivered twice, a Done
+// duplicated, an Exit that overtook its last Done, or a philosopher that stopped early or ate once
+// too often changes the total. A message LOST stalls the run instead -- every message is needed
+// by a later step -- and the run blocks (benchmarks/savina/philosophers.md).
 enum Kind : std::uint64_t { kStart = 1, kGrant = 2, kEat = 3, kDone = 4, kExit = 5 };
 
 inline std::uint64_t term(Kind kind, std::uint64_t philosopher, std::uint64_t round) noexcept {

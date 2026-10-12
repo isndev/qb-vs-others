@@ -129,11 +129,13 @@ floor, `cores=1` and `2`) ended every time; a worker already gone leaves the shi
 the sum. What neither can see is a duplicate of a worker's LAST answer, which lands after that
 worker's report: `fail()` catches it only when the worker is still there to receive it.
 
-What a checksum cannot report is a message that never arrives: a request or an answer lost, an
-answer delivered to the wrong worker, a worker or the dictionary that never reports. Each worker
-has one request in flight and the master waits for every report, so each of those leaves an actor
-waiting for a message that never comes — the run **hangs**, and the run's timeout
-(`tools/run.py --timeout`) fails the cell.
+What a checksum cannot report is a message that never arrives: a request or an answer lost, a worker
+or the dictionary that never reports. Each worker has one request in flight and the master waits for
+every report, so each of those leaves an actor waiting for a message that never comes — the run
+**blocks**, and the harness's deadline fails it with exit 1 and no timing (FAIRNESS.md section 0).
+An answer delivered to the wrong worker leaves its own worker waiting too, and gives the other two
+requests in flight: in qb, SObjectizer and the floor that worker runs past its last request and
+stops the run (`fail()`), before the deadline; a CAF worker has quit by then, and the run blocks.
 
 Nothing in this shape depends on the interleaving once the keys are partitioned, so it reports no
 `observed` counts and asserts no `observed_at_least`: every quantity it has is asserted.

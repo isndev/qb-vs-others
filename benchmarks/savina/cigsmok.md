@@ -213,13 +213,15 @@ the arbiter's `Start`, the two messages of every round, and an `Exit` and a `Rep
 counted at the receivers. Each smoker's handshake before the window is not counted.
 
 **A lost message cannot be shown as a wrong sum here.** The protocol waits for every
-acknowledgement, and so for every `StartSmoking`, every `Exit` and every `Report`, as the
-reference waits for its acknowledgements and its termination, so losing one of them stalls the
-run. So does an `Exit` delivered to the wrong smoker, which leaves one smoker without its own. The
-stall is bounded by the driver: `tools/run.py --timeout` ends the run and records it as "timed
-out", `verified: false`, which is what every qb and floor cell does when round 100's
-`StartSmoking` is never sent. A drop is also proved on the smoke: a smoker that receives a
-`StartSmoking`, acknowledges it and skips the smoke and its term fails the run.
+acknowledgement, and so for every `StartSmoking`, every `Exit` and every `Report`, as the reference
+waits for its acknowledgements and its termination, so losing one of them stalls the run. So does,
+in qb and CAF, an `Exit` delivered to the wrong smoker, which leaves one smoker without its own —
+the smoker that got it has ended on its own `Exit`; in SObjectizer and the floor that smoker reports
+twice, and the run ends one share short, on a wrong sum. The stall is bounded by the harness itself:
+the repetition outlives its deadline and fails with exit 1 and no timing (FAIRNESS.md section 0) —
+what every qb and floor cell did, under `tools/run.py --timeout` before the harness had a deadline,
+when round 100's `StartSmoking` was never sent. A drop is also proved on the smoke: a smoker that
+receives a `StartSmoking`, acknowledges it and skips the smoke and its term fails the run.
 
 Nothing in this shape depends on the interleaving except time. The round's smoker and period are
 the draw's and every count is fixed, so the documents carry no `observed` field and the spec

@@ -176,11 +176,12 @@ inline std::uint64_t weight(Tag t) noexcept { return qvo::mix(0xba4be4000000ULL 
 //   * the barber's k-th haircut is haircut_work(k) whoever gets it, and it reaches the factory
 //     through that customer's report.
 //
-// So a dropped, duplicated OR MISROUTED delivery of any kind -- including the Waits, which change
-// nothing else -- moves the sum, and a framework that skips a haircut or a production misses its
-// work. The room leaves for Exit only once the barber's n-th Next is in, and fail()s on an
-// (n+1)-th: the factory's Exit and the barber's last Next come from two senders, and nothing
-// orders them.
+// So a Wait or a customer's Start dropped, duplicated OR MISROUTED -- the Waits change nothing else
+// -- moves the sum, and a framework that skips a haircut or a production misses its work. A
+// delivery the protocol waits for (an Enter, a Full, a Returned, a Done, a Next, an Exit) LOST
+// blocks the run instead, and fails at the harness's deadline (benchmarks/savina/barber.md). The
+// room leaves for Exit only once the barber's n-th Next is in, and fail()s on an (n+1)-th: the
+// factory's Exit and the barber's last Next come from two senders, and nothing orders them.
 inline std::uint64_t expected(const qvo::Params &p) {
     const auto n   = at_least_one(p.get("haircuts"), "haircuts");
     const auto apr = at_least_one(p.get("apr"), "apr");

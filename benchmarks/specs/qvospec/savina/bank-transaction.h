@@ -90,9 +90,10 @@ inline std::uint64_t account_key(std::uint32_t account, std::uint64_t balance) n
 
 // The teller folds mix(i) for every acknowledgement it receives -- an acknowledgement carries
 // the index of the transfer it completes -- and account_key() for every balance reported at
-// exit. A transfer acknowledged twice, never acknowledged, or whose deposit landed on the wrong
-// account, or an account that never reported, changes the total; the order in which transfers
-// complete does not.
+// exit. A transfer acknowledged twice, or whose deposit landed on the wrong account, changes the
+// total; the order in which transfers complete does not. A transfer never acknowledged, or an
+// account that never reports, leaves the teller waiting: the run blocks
+// (benchmarks/savina/bank-transaction.md).
 inline std::uint64_t expected(const qvo::Params &p) {
     const auto    n   = static_cast<std::uint64_t>(p.get("transactions"));
     std::uint64_t acc = 0;

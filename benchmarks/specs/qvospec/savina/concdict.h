@@ -224,14 +224,16 @@ inline std::uint64_t digest_key(std::uint64_t digest) noexcept {
 // stored under the wrong key or with the wrong value, an answer not folded, a report counted twice,
 // a Done naming the wrong worker. An answer duplicated mid-run shifts every later term of that
 // worker's fold, and leaves it two requests in flight: it reaches its last answer early, and the
-// answer still in flight stops the run (fail()) if the worker is still there to receive it.
-// What it CANNOT report, because the run never gets that far: a request or an answer lost, an
-// answer delivered to the wrong worker, a worker or the dictionary that never reports -- each
-// worker has one request in flight and the master waits for every Done and the Report, so each of
-// those leaves an actor waiting for a message that never comes and the run HANGS; the run's
-// timeout (tools/run.py --timeout) fails the cell. A duplicate of a worker's LAST answer lands after
-// its Done and moves nothing a checksum can see; a worker that receives it stops the run (fail()),
-// when it is still there to receive it.
+// answer still in flight stops the run (fail()) if the worker is still there to receive it. What it
+// CANNOT report, because the run never gets that far: a request or an answer lost, a worker or the
+// dictionary that never reports -- each worker has one request in flight and the master waits for
+// every Done and the Report, so each of those leaves an actor waiting for a message that never
+// comes and the run BLOCKS; the harness's deadline fails it (FAIRNESS.md section 0). An answer
+// delivered to the wrong worker blocks its own, and gives the other two requests in flight: that
+// one stops the run (fail()) where it is still there to receive the extra answer (qb, SObjectizer,
+// the floor), and the run blocks where it has quit (CAF). A duplicate of a worker's LAST answer
+// lands after its Done and moves nothing a checksum can see; a worker that receives it stops the
+// run (fail()), when it is still there to receive it.
 inline std::uint64_t expected(const qvo::Params &p) {
     const Shape s = shape(p);
     (void)asks(p);
