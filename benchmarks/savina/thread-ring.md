@@ -56,51 +56,51 @@ avoid in the other direction. The rule is that a framework's cell says what its 
 
 ## The verified answer
 
-The token carries a countdown and an accumulator. The ring actor at index `i` that receives it
-with `remaining = k` adds `term(i, k) = mix((i << 40) ^ k)` as a **wrapping sum** before passing
-it on — one function in the spec, `thread_ring::term`, that every adapter folds through. The sink
-injects `k = hops` at actor 0 and actor `i` hands `k - 1` to actor `i + 1`, so the hop of rank `h`
-is folded by actor `h % actors` with `k = hops - h`: the expected sum, computed from the
-parameters alone, names **which actor folds every hop**. A term skipped or folded twice — an actor
-that decrements without adding, or adds without decrementing — changes the total, and so does
-any defect that puts a term under the wrong actor (below).
+The token is a **countdown and nothing else** — Savina's own shape. The sink injects
+`remaining = hops` at actor 0 and actor `i` hands `remaining - 1` to actor `i + 1`, so the hop of
+rank `h` (from 0) reaches actor `h % actors` carrying `hops - h`. What a ring actor keeps of the
+tokens it received is its **tally** (`thread_ring::Tally`): how many, and the wrapping sum of the
+countdowns they carried — two independent adds per hop, no multiply, nothing folded into the token.
+Each actor's tally is one slot of its **own cache line** in a vector the body owns, so no two
+actors, whichever threads run them, ever write one line. Once the framework is gone the body
+reduces the tallies, **outside the window**, through the spec's `checksum()` — the wrapping sum
+of `mix(mix((i << 40) ^ count) ^ sum)` over the actors — and `delivered()`, the counts plus the
+results the sink's handler ran. Both numbers are fixed for every actor by the parameters: actor
+`i` receives exactly the ranks `i, i + actors, i + 2·actors, …` below `hops`, so its count and
+its sum have a closed form (`expected_count`, `expected_sum`), and `expected()` is the digest of
+that closed form, O(actors). `expected_messages = hops + 1` — the token deliveries, the injection
+being the first, plus the result — is asserted **exactly** against that counted total.
 
-`expected_messages = hops + 1` — the token deliveries, the injection being the first, plus the
-result to the sink — is asserted **exactly**, and it is **counted**: every ring actor counts the
-tokens its handler ran, the sink the results its handler ran, and the adapter reports their sum.
-Each ring actor hands its count over when the framework tears it down — qb from the actor's
-destructor, CAF from its state's (destroyed when the actor terminates), SObjectizer from
-`so_evt_finish`, the floor from a per-actor slot read once its workers are joined — so the
-collection is outside the window; inside it, each hop adds one increment of the receiving actor's
-own count and one XOR of its index into the term, the same two operations in every adapter. (Until
-Huly QB-1017 every term was `mix(k)` and every adapter's sink *declared* `hops + 1`: the four
-defects below verified. Result documents measured before that change carry the earlier
-`expected_checksum`.)
+Until Huly QB-1017 the token also carried an accumulator, each actor folded `mix(remaining)` into
+it, and every adapter's sink *declared* `hops + 1` messages: the four routing defects below
+verified, and a multiply chain ran inside the window on every hop. Result documents measured
+before that change carry the earlier `expected_checksum`, and their per-hop work included that
+fold; the per-hop work now is the hand-off plus the receiver's two adds.
 
-In qb the token is **one event for its whole life** — each actor mutates it in place and
+In qb the token is **one event for its whole life** — each actor decrements it in place and
 `forward()`s it, the same recycling ping-pong's `reply()` does — which is qb's cheapest hand-off
-and the idiom `Actor.h` documents `forward()` for. CAF re-sends a bare `(remaining, acc)` pair;
-SObjectizer re-sends a `msg_token`; the floor pushes a two-word struct into a ring.
+and the idiom `Actor.h` documents `forward()` for. CAF re-sends a bare `uint64` countdown;
+SObjectizer re-sends a one-field `msg_token`; the floor pushes its fixed four-field message into a
+ring. The result to the sink is a signal (CAF's `close_atom`).
 
 **What blocks, what moves the sum, and what neither sees** (FAIRNESS.md section 0). The token is
 the only message in flight, and the sink ends the run on the first result. A token or a result
 **lost** leaves nothing to end the run, and so does a token that reaches the sink (which has no
 handler for it) or one whose `remaining` arrives as 0 (the decrement wraps): the run **blocks**,
-the repetition outlives the harness's deadline and fails with exit 1 and no timing. An `acc`
-altered, or a `remaining` altered to another non-zero value, moves the sum. So do three defects
-the first version of this checksum could not see, because every term now carries the index of
-the actor that folds it. A token delivered to the **wrong ring actor** goes on from that actor's
-successor: its term and every later one sit under another index. An actor the ring **routes
-around** never folds its share, and its successors fold theirs one index off. A token
-**forwarded untouched** is folded, for the same `k`, by the next actor, under the next index. The
-fourth, a token **delivered twice**, gives two tokens, each carrying its own countdown and
-accumulator, each folding every remaining hop under the right index: both reach the sink with the
-right total and the run ends on the first — the count sees it, the duplicated delivery being one
-more than `hops + 1` even when it is the last one. A planted version of each is rejected by the
-harness's negative control (`tools/negative-control.py`, section K, on
-`tools/control/thread-ring-subject.cpp`), which also confirms that a correct ring verifies. What
-reaches neither verdict is a copy no handler ever runs — one still queued when the first result
-tears the run down: it changes nothing the run did, and nothing it reports.
+the repetition outlives the harness's deadline and fails with exit 1 and no timing. Everything
+else that changes which actor receives which countdown moves a tally. A token **delivered twice**
+adds a count and a countdown to one actor twice — even the last delivery, whose copy carries the
+right countdown. A `remaining` altered puts other countdowns into every later tally. A token
+delivered to the **wrong ring actor** puts a countdown into the tally of an actor that should not
+have it, and every later one with it. An actor the ring **routes around** keeps an empty tally,
+and one that **forwards the token untouched** keeps one short. A **consistent misroute** — every
+hop two actors on, on a ring of odd size — hands every actor exactly as many tokens as it should
+get: every count is right, which is why a per-actor count alone would not do, and every actor's
+sum is someone else's. A planted version of each is rejected by the harness's negative control
+(`tools/negative-control.py`, section K, on `tools/control/thread-ring-subject.cpp`, the
+consistent misroute shown passing every count first), which also confirms that a correct ring
+verifies. What reaches neither verdict is a copy no handler ever runs — one still queued when the
+first result tears the run down: it changes nothing the run did, and nothing it reports.
 
 ## The measured window
 

@@ -11,7 +11,9 @@
 
 #include <qvo/harness.h>
 
+#include <cstddef>
 #include <string>
+#include <vector>
 
 namespace qvospec::savina::thread_ring {
 
@@ -39,8 +41,8 @@ inline std::map<std::string, long long> params() {
 
 // The parameters, checked by expected() before anything is built: a ring of at least one actor
 // and a token that makes at least one hop (one injected with no hop left would count down from
-// 2^64 and block), both small enough for an actor's index to sit above every hop count in a term
-// (below). Outside that, the run is refused with the harness's fatal exit 2 (qvo::refuse).
+// 2^64 and block), both small enough for an actor's index to sit above every count in a digest
+// term (below). Outside that, the run is refused with the harness's fatal exit 2 (qvo::refuse).
 inline constexpr long long kMaxActors = 1LL << 24;
 inline constexpr long long kMaxHops   = 1LL << 40;
 inline void check(const qvo::Params &p) {
@@ -51,30 +53,82 @@ inline void check(const qvo::Params &p) {
                     + std::to_string(actors) + " hops=" + std::to_string(hops) + ")");
 }
 
-// The token carries a countdown and an accumulator; the ring actor at index i that receives it
-// with `remaining` = k adds term(i, k) before passing it on, and every adapter folds through THIS
-// function. The injection hands k = hops to actor 0 and actor i passes k - 1 to actor i + 1 (mod
-// actors), so the hop of rank h (from 0) is folded by actor h % actors with k = hops - h: the
-// expected sum names, for every hop, WHICH actor folds it. A term skipped or folded twice (an
-// actor that decrements without adding, or adds without decrementing), a token delivered to the
-// wrong ring actor, an actor the ring routes around, a token one actor forwards untouched -- each
-// puts a term under another actor's index or another k, and every later term with it: the sum
-// moves (Huly QB-1017). A token DUPLICATED gives two tokens, each carrying a right total: the count
-// below is what sees it. A token lost never ends the run: it blocks, and the harness's deadline
-// fails it (FAIRNESS.md section 0).
-inline std::uint64_t term(std::uint64_t index, std::uint64_t remaining) noexcept {
-    return qvo::mix((index << 40) ^ remaining);
+// THE VERIFIED ANSWER (Huly QB-1017). The token is a countdown and nothing else -- Savina's own
+// shape. The sink injects `remaining = hops` at actor 0 and actor i hands `remaining - 1` to actor
+// i + 1 (mod actors), so the hop of rank h (from 0) reaches actor h % actors with remaining
+// hops - h. What a ring actor keeps of the tokens it received is a Tally: how many, and the sum
+// of the countdowns they carried -- two independent adds, no multiply, no fold riding on the
+// token. Each actor's tally is one slot of its own cache line in a vector the body owns (no two
+// actors, whatever thread runs them, write one line); the body reads the slots once the
+// framework is gone, OUTSIDE the window, and reduces them to the checksum below.
+//
+// Both numbers are fixed per actor by the parameters (expected_count, expected_sum): actor i
+// receives exactly the ranks h = i, i + actors, i + 2 actors, ... below hops. So a delivery
+// duplicated adds a count and a countdown twice; an actor the ring never reaches, or one that
+// passes the token on without handling it, is short; a token delivered to the wrong actor puts a
+// countdown into one tally that belongs to another, and shifts every later one. A CONSISTENT
+// misroute -- every hop to i + 2 on an odd ring, which hands every actor as many tokens as it
+// should get -- leaves every count right and still moves the sums: each actor receives another
+// actor's ranks. A token lost never ends the run: it blocks, and the harness's deadline fails it
+// (FAIRNESS.md section 0).
+#if defined(__aarch64__) || defined(_M_ARM64)
+inline constexpr std::size_t kTallyLine = 128;  // Apple M-series prefetches lines in pairs
+#else
+inline constexpr std::size_t kTallyLine = 64;
+#endif
+struct alignas(kTallyLine) Tally {
+    std::uint64_t count{0};  // the tokens this actor's handler ran
+    std::uint64_t sum{0};    // the countdowns they carried, wrapping
+    void add(std::uint64_t remaining) noexcept {
+        ++count;
+        sum += remaining;
+    }
+};
+
+inline std::uint64_t expected_count(std::uint64_t index, std::uint64_t actors,
+                                    std::uint64_t hops) noexcept {
+    return index < hops ? (hops - 1 - index) / actors + 1 : 0;
 }
 
+// The sum of hops - (index + j * actors) for j below the count, in wrapping arithmetic -- the
+// adapters' sums wrap the same way. count * (count - 1) / 2 is taken exactly modulo 2^64 by
+// halving whichever factor is even.
+inline std::uint64_t expected_sum(std::uint64_t index, std::uint64_t actors,
+                                  std::uint64_t hops) noexcept {
+    const std::uint64_t c = expected_count(index, actors, hops);
+    if (c == 0) return 0;
+    const std::uint64_t pairs = c % 2 == 0 ? (c / 2) * (c - 1) : c * ((c - 1) / 2);
+    return c * (hops - index) - actors * pairs;
+}
+
+// One actor's tally in the checksum: its index, its count and its sum, mixed, so that a tally
+// off in either number moves the total -- and an actor's tally carried by another moves it too.
+inline std::uint64_t digest(std::uint64_t index, std::uint64_t count, std::uint64_t sum) noexcept {
+    return qvo::mix(qvo::mix((index << 40) ^ count) ^ sum);
+}
+
+// What every adapter returns, computed after teardown from its tallies and the results its sink
+// counted: the wrapping sum of the actors' digests, and every delivery the handlers ran.
+inline std::uint64_t checksum(const std::vector<Tally> &tallies) noexcept {
+    std::uint64_t acc = 0;
+    for (std::size_t i = 0; i < tallies.size(); ++i)
+        acc += digest(i, tallies[i].count, tallies[i].sum);
+    return acc;
+}
+inline std::uint64_t delivered(const std::vector<Tally> &tallies, std::uint64_t results) noexcept {
+    std::uint64_t n = results;
+    for (const Tally &t : tallies) n += t.count;
+    return n;
+}
+
+// The framework-free answer: the same digest over the closed form, O(actors).
 inline std::uint64_t expected(const qvo::Params &p) {
     check(p);
     const auto    actors = static_cast<std::uint64_t>(p.get("actors"));
+    const auto    hops   = static_cast<std::uint64_t>(p.get("hops"));
     std::uint64_t acc    = 0;
-    std::uint64_t index  = 0;
-    for (auto k = static_cast<std::uint64_t>(p.get("hops")); k >= 1; --k) {
-        acc += term(index, k);
-        if (++index == actors) index = 0;
-    }
+    for (std::uint64_t i = 0; i < actors; ++i)
+        acc += digest(i, expected_count(i, actors, hops), expected_sum(i, actors, hops));
     return acc;
 }
 
@@ -85,11 +139,7 @@ inline std::uint64_t work_units(const qvo::Params &p) {
 }
 
 // `hops` token deliveries (the injection is the first) + one result to the sink -- COUNTED, not
-// declared: every ring actor counts the tokens its handler ran and the sink the results its
-// handler ran, and the adapter reports the sum of those counts, collected once the framework has
-// torn down (a ring actor hands its count over from its destructor or its finish hook, outside
-// the window). A token delivered twice -- even the last one, whose copy's sum is right -- is one
-// delivery too many (Huly QB-1017).
+// declared: the tallies' counts plus the results the sink's handler ran (delivered() above).
 inline std::uint64_t expected_messages(const qvo::Params &p) {
     return static_cast<std::uint64_t>(p.get("hops")) + 1;
 }

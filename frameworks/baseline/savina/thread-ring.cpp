@@ -19,7 +19,7 @@ namespace savina_thread_ring_baseline {
 
 using namespace qvospec::savina::thread_ring;
 
-// Msg.a = remaining hops, Msg.b = the accumulator riding on the token.
+// Msg.a = remaining hops: the token is a countdown and nothing else (thread_ring::Tally).
 enum Tag : std::uint32_t { kToken = 1, kResult = 2 };
 
 qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
@@ -32,29 +32,24 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     // The sink is actor `actors` (owned by worker actors % W); ring actors are 0..actors-1.
     const std::uint32_t sink = actors;
 
-    // Each ring actor's state: the tokens its handler ran, written only by the worker that owns
-    // the actor. A line of its own, so no two workers write one line (actors i and i + 1 live on
-    // different workers at cores=2).
-    struct alignas(qvobase::kCacheLine) Slot {
-        std::uint64_t received{0};
-    };
-    std::vector<Slot> state(actors);
-    std::uint64_t     result  = 0;
-    std::uint64_t     results = 0;  // the results the sink's handler ran
+    // Each ring actor's state is its tally: one slot of its own line, written only by the worker
+    // that owns the actor (actors i and i + 1 live on different workers at cores=2). The handler
+    // holds the slots' base by value: one load fewer than through the vector.
+    std::vector<Tally> tallies(actors);
+    Tally *const       tally   = tallies.data();
+    std::uint64_t      results = 0;  // the results the sink's handler ran
 
-    qvobase::Mesh mesh(W, spin, [&](auto &m, unsigned worker, const qvobase::Msg &msg) {
+    qvobase::Mesh mesh(W, spin, [&, tally](auto &m, unsigned worker, const qvobase::Msg &msg) {
         if (msg.tag == kToken) {
-            ++state[msg.dst].received;
             const std::uint64_t remaining = msg.a;
-            const std::uint64_t acc       = msg.b + term(msg.dst, remaining);
+            tally[msg.dst].add(remaining);
             if (remaining == 1) {
-                m.send(worker, qvobase::Msg{sink, kResult, acc, 0});
+                m.send(worker, qvobase::Msg{sink, kResult, 0, 0});
             } else {
                 const std::uint32_t next = msg.dst + 1 == actors ? 0 : msg.dst + 1;
-                m.send(worker, qvobase::Msg{next, kToken, remaining - 1, acc});
+                m.send(worker, qvobase::Msg{next, kToken, remaining - 1, 0});
             }
         } else if (results++ == 0) {  // the first result ends the run; a later one is counted
-            result = msg.a;
             watch.stop();
             m.stop();
         }
@@ -65,10 +60,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     mesh.send(0, qvobase::Msg{0, kToken, hops, 0});
     mesh.run();
 
-    // run() joined every worker: each count is in its slot.
-    std::uint64_t delivered = results;
-    for (const Slot &s : state) delivered += s.received;
-    return qvo::Answer{result, delivered};
+    // run() joined every worker: every tally is final, and reduced here, outside the window.
+    return qvo::Answer{checksum(tallies), delivered(tallies, results)};
 }
 
 }  // namespace savina_thread_ring_baseline

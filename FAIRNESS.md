@@ -56,8 +56,8 @@ which move its sum is said on its page under `benchmarks/savina/` ("What blocks,
 the sum"), and so are the few that reach neither verdict — a duplicate of a `concdict` worker's
 last answer, for one, lands after its report and is caught only while the worker is still there
 to receive it. (A duplicated `thread-ring` token was one, its copy carrying a right total, until
-the ring's terms named the actor that folds each hop and its deliveries were counted rather than
-declared.)
+each ring actor kept a tally — how many tokens, the sum of their countdowns — checked against its
+closed form after the window, and the deliveries were counted rather than declared.)
 
 ## 1. The seven mechanisms
 
@@ -239,7 +239,7 @@ WSL2 g++-14 and on Windows MSVC 19.51; its floors are those counts):
 
 ```
 python3 tools/negative-control.py --build build/final
-    CAUGHT=27 CONFIRMED=11 MISSED=0
+    CAUGHT=28 CONFIRMED=11 MISSED=0
 ```
 
 It plants one defect at a time — a message lost 1 time in 10⁷, a single lost message, a duplicate
@@ -251,9 +251,10 @@ that never returns — inside its window, in its teardown, after an earlier fail
 `--deadline` that is not a number of seconds, a protocol violation the body declares through
 `qvo::fail()` — from its own thread or another, with the watchdog on or off, after an earlier
 failure — a refusal from another thread (`qvo::refuse()`, exit 2), and, on a `thread-ring`
-subject that folds and counts like every adapter, a token delivered twice, a token delivered to
-the wrong actor, a token forwarded untouched, an actor the ring routes around and a ring of zero
-hops — and asserts each is **rejected**, by the check meant to see it where it names one, with no
+subject that tallies like every adapter, a token delivered twice, a token delivered to the wrong
+actor, a token forwarded untouched, an actor the ring routes around, a consistent misroute that
+leaves every per-actor count right, and a ring of zero hops — and asserts each is **rejected**, by
+the check meant to see it where it names one, with no
 partial samples or summary emitted; a blocked repetition must end inside its deadline, and a
 declared failure at once, with a document `tools/run.py` publishes as an unverified cell. It also
 asserts eleven legitimate shapes are **not** rejected — among them a run inside its deadline,

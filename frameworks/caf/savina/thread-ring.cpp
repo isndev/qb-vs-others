@@ -2,9 +2,10 @@
 // @framework     caf 1.1.0
 // @idiom-source  the ping-pong adapter beside this file (function-based behaviors,
 //                stateful_actor, handles exchanged before the window) and caf/type_id.hpp's
-//                built-in `put_atom` / `ok_atom` for the wiring handshake.
-// @idiom-note    The token is a bare `(uint64 remaining, uint64 acc)` pair -- the one hot handler
-//                per actor needs no atom to disambiguate it, the same reasoning as ping-pong.
+//                built-in `put_atom` / `ok_atom` for the wiring handshake, `close_atom` for the
+//                result.
+// @idiom-note    The token is a bare `uint64` countdown -- the one hot handler per actor needs no
+//                atom to disambiguate it, the same reasoning as ping-pong.
 //                Each actor learns its successor ONCE, from the sink, before the window opens:
 //                a ring cannot be spawned with its `next` as a constructor argument because the
 //                last actor's successor is the first, which does not exist yet.
@@ -29,21 +30,13 @@ namespace savina_thread_ring_caf {
 using namespace qvospec::savina::thread_ring;
 
 struct Sink {
-    std::uint64_t checksum{0};
     std::uint64_t results{0};  // the results the sink's handler ran
 };
 
 struct ring_state {
-    caf::actor     next;
-    caf::actor     sink;
-    std::uint32_t  index{0};
-    std::uint64_t  received{0};     // the tokens this actor's handler ran
-    std::uint64_t *tally{nullptr};  // its slot in the body's count
-    // CAF destroys an actor's state when the actor terminates (stateful_actor::on_exit), after
-    // the window; the body reads the slot once the actor system is gone.
-    ~ring_state() {
-        if (tally) *tally = received;
-    }
+    caf::actor next;
+    caf::actor sink;
+    Tally     *tally{nullptr};  // this actor's slot, a line of its own; read after the system
 };
 
 struct sink_state {
@@ -54,9 +47,7 @@ struct sink_state {
     Sink                   *sink{nullptr};
 };
 
-caf::behavior ring_fun(caf::stateful_actor<ring_state> *self, std::uint32_t index,
-                       std::uint64_t *tally) {
-    self->state().index = index;
+caf::behavior ring_fun(caf::stateful_actor<ring_state> *self, Tally *tally) {
     self->state().tally = tally;
     return {
         // Wiring handshake, once per actor, outside the window.
@@ -66,15 +57,14 @@ caf::behavior ring_fun(caf::stateful_actor<ring_state> *self, std::uint32_t inde
             s.sink  = sink;
             self->mail(caf::ok_atom_v).send(sink);
         },
-        // The hot path: one token, mutated and passed on.
-        [self](std::uint64_t remaining, std::uint64_t acc) {
+        // The hot path: one countdown, tallied and passed on.
+        [self](std::uint64_t remaining) {
             auto &s = self->state();
-            ++s.received;
-            acc += term(s.index, remaining);
+            s.tally->add(remaining);
             if (--remaining == 0)
-                self->mail(caf::ok_atom_v, acc).send(s.sink);
+                self->mail(caf::close_atom_v).send(s.sink);
             else
-                self->mail(remaining, acc).send(s.next);
+                self->mail(remaining).send(s.next);
         },
     };
 }
@@ -100,14 +90,13 @@ caf::behavior sink_fun(caf::stateful_actor<sink_state> *self, std::vector<caf::a
             auto &s = self->state();
             if (++s.wired != s.ring.size()) return;
             s.watch->start();
-            self->mail(s.hops, std::uint64_t{0}).send(s.ring[0]);
+            self->mail(s.hops).send(s.ring[0]);
         },
         // The first result ends the run; one after it is counted, never measured.
-        [self](caf::ok_atom, std::uint64_t acc) {
+        [self](caf::close_atom) {
             auto &s = self->state();
             if (s.sink->results++ != 0) return;
             s.watch->stop();
-            s.sink->checksum = acc;
             for (auto &a : s.ring) self->send_exit(a, caf::exit_reason::user_shutdown);
             self->quit();
         },
@@ -121,8 +110,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const bool spin   = p.get("wait") != 0;
     qvocaf::refuse_spin_if_detached(spin);
 
-    Sink                       sink;
-    std::vector<std::uint64_t> received(actors, 0);  // slot i: actor i's count, at its termination
+    Sink               sink;
+    std::vector<Tally> tallies(actors);
     {
         caf::actor_system_config cfg;
         qvocaf::configure(cfg, cores, spin);
@@ -133,18 +122,14 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         std::vector<caf::actor> ring;
         ring.reserve(actors);
         for (std::size_t i = 0; i < actors; ++i)
-            ring.push_back(sys.spawn<qvocaf::kSpawnOptions>(
-                ring_fun, static_cast<std::uint32_t>(i), &received[i]));
+            ring.push_back(sys.spawn<qvocaf::kSpawnOptions>(ring_fun, &tallies[i]));
         sys.spawn<qvocaf::kSpawnOptions>(sink_fun, ring, hops, &watch, &sink);
         sys.await_all_actors_done();
         qvocaf::assert_pins_took();
     }
-    // The system's destructor joined its workers, so every state destructor has run -- including
-    // one still finishing when the running count reached zero (CAF unregisters an actor before it
-    // destroys its state): each count is in its slot.
-    std::uint64_t messages = sink.results;
-    for (const std::uint64_t n : received) messages += n;
-    return qvo::Answer{sink.checksum, messages};
+    // The system's destructor joined its workers: every tally is final, and reduced here,
+    // outside the window.
+    return qvo::Answer{checksum(tallies), delivered(tallies, sink.results)};
 }
 
 }  // namespace savina_thread_ring_caf
@@ -162,7 +147,7 @@ int main(int argc, char **argv) {
     spec.work_unit         = qvospec::savina::thread_ring::kWorkUnit;
     spec.work_units        = qvospec::savina::thread_ring::work_units;
     spec.idiom_source      = "the ping-pong adapter + caf/type_id.hpp built-in put_atom/ok_atom";
-    spec.idiom_note        = "bare (uint64, uint64) token; successor learnt once in a wiring "
+    spec.idiom_note        = "bare uint64 countdown token; successor learnt once in a wiring "
                              "handshake outside the window; placement left to the pool";
     spec.caveats           = qvocaf::caveats(qvocaf::Shape::other);
     spec.caveats.emplace_back(

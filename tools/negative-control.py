@@ -33,7 +33,7 @@ import run as runner  # noqa: E402  (tools/run.py: its own acceptance rule judge
 
 # Floors. Raise them in the same commit that adds a control; a count that goes DOWN is a control
 # that stopped firing, which is indistinguishable from a guard that stopped guarding.
-FLOOR_CAUGHT = 27
+FLOOR_CAUGHT = 28
 FLOOR_CONFIRMED = 11
 
 # The deadline controls (section I): a planted hang must end inside DEADLINE_S plus this slack --
@@ -448,29 +448,42 @@ def main() -> int:
                 f"rc={rc}, document={'none' if doc is None else 'present'}, "
                 f"err={err.strip()[:100]}")
 
-    print("\n== K. savina/thread-ring -- every hop names the actor that folds it, every delivery "
-          "is counted ==")
-    # Until Huly QB-1017 a term depended on the hop count alone and the count was declared, so a
-    # token delivered twice, to the wrong ring actor, or forwarded untouched verified. The
-    # thread-ring subject folds through the spec's own term() and counts like every adapter.
+    print("\n== K. savina/thread-ring -- every actor's tally (count, sum of countdowns) against "
+          "the closed form ==")
+    # Until Huly QB-1017 the ring folded mix(remaining) into the token and the count was
+    # declared, so a token delivered twice, to the wrong ring actor, or forwarded untouched
+    # verified. The thread-ring subject tallies through the spec's own Tally and reduces through
+    # its checksum() and delivered(), like every adapter.
     ring_params = ["actors=100", "hops=100000", "cores=1", "wait=1"]
     rc, doc, err = run_subject(ring, "none", params=ring_params, extra=["--no-pin"])
     if rc == 0 and doc and doc.get("verified") is True and len(doc.get("work_ns", [])) == 1 \
             and doc.get("expected_messages") == 100001:
-        verdict("CONFIRMED", "a correct ring verifies: every hop folded by the actor the spec "
-                             "names, 100 001 deliveries counted")
+        verdict("CONFIRMED", "a correct ring verifies: every actor's count and sum as the closed "
+                             "form says, 100 001 deliveries counted")
     else:
         verdict("MISSED", "a correct ring was REJECTED",
                 f"rc={rc}, failures={(doc or {}).get('failures')}, err={err.strip()[:100]}")
-    for plant, what, because in (
-        ("duplicate", "the last token delivered twice -- the copy's total is right, the count is "
-                      "one over", "delivered 100002 messages, expected 100001"),
-        ("misroute", "one hop to the wrong ring actor -- every count right", "checksum "),
-        ("untouched", "one actor forwards the token untouched -- the next folds that hop",
-         "checksum "),
-        ("never-touched", "the ring routes around one actor on every lap", "checksum "),
+    for plant, what in (
+        ("duplicate", "the last token delivered twice -- its copy carries the right countdown"),
+        ("misroute", "one hop to the wrong ring actor"),
+        ("untouched", "one actor forwards the token without handling it"),
+        ("never-touched", "the ring routes around one actor on every lap -- its tally is empty"),
     ):
-        expect_rejected(ring, plant, what, because=because, params=ring_params)
+        expect_rejected(ring, plant, what, because="checksum ", params=ring_params)
+    # The CONSISTENT misroute: every hop two actors on, on a ring of 101 with 101 000 hops. Every
+    # actor receives exactly the 1 000 tokens it should -- a per-actor count passes it, and the
+    # subject says so on stderr -- and each receives another actor's countdowns: the sums fail it.
+    stride_params = ["actors=101", "hops=101000", "cores=1", "wait=1"]
+    rc, doc, err = run_subject(ring, "stride-2", params=stride_params, extra=["--no-pin"])
+    fails = (doc or {}).get("failures") or []
+    if (rc == 1 and doc and doc.get("verified") is False and fails
+            and fails[0].startswith("repetition 0: checksum ") and not doc.get("work_ns")
+            and "every count as the closed form says: yes" in err):
+        verdict("CAUGHT", "a consistent misroute (stride 2 on an odd ring): every count right, "
+                          "the sums reject it", fails[0][:100])
+    else:
+        verdict("MISSED", "a consistent misroute was not rejected by the sums with every count "
+                          "right", f"rc={rc}, failures={fails}, err={err.strip()[-160:]}")
     rc, doc, err = run_subject(ring, "none", params=["actors=100", "hops=0", "cores=1", "wait=1"],
                                extra=["--no-pin"])
     if rc == 2 and doc is None and "qvo: FATAL: savina/thread-ring: need" in err:

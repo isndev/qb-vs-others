@@ -22,41 +22,33 @@ namespace savina_thread_ring_qb {
 
 using namespace qvospec::savina::thread_ring;
 
+// The token is a countdown and nothing else (thread_ring::Tally says why).
 struct Token : qb::Event {
     std::uint64_t remaining{0};
-    std::uint64_t acc{0};
     explicit Token(std::uint64_t hops) noexcept : remaining(hops) {}
 };
 struct Ready : qb::Event {};
-struct Result : qb::Event {
-    std::uint64_t acc{0};
-    explicit Result(std::uint64_t a) noexcept : acc(a) {}
-};
+struct Result : qb::Event {};
 
 struct Sink {
-    std::uint64_t checksum{0};
     std::uint64_t results{0};  // the results the sink's handler ran
 };
 
 // The ring actors are created before start(), so every id is known to every actor from its
 // constructor -- no discovery protocol on the hot path.
 struct Ring {
-    std::vector<qb::ActorId>   ids;
-    qb::ActorId                sink;
-    std::vector<std::uint64_t> received;  // slot i: the tokens actor i's handler ran, at teardown
+    std::vector<qb::ActorId> ids;
+    qb::ActorId              sink;
 };
 
 class RingActor final : public qb::Actor {
-    Ring               &_ring;
+    const Ring         &_ring;
+    Tally              &_tally;  // this actor's slot, a line of its own; read after the engine
     const std::uint32_t _index;
-    std::uint64_t       _received{0};
 
 public:
-    RingActor(Ring &ring, std::uint32_t index) noexcept : _ring(ring), _index(index) {}
-
-    // Runs on this actor's VirtualCore when the engine tears it down, after the window; the body
-    // reads the slot once the engine is gone.
-    ~RingActor() noexcept override { _ring.received[_index] = _received; }
+    RingActor(const Ring &ring, Tally &tally, std::uint32_t index) noexcept
+        : _ring(ring), _tally(tally), _index(index) {}
 
     qb::io::async::task<bool> onInit() final {
         registerEvent<Token>(*this);
@@ -65,10 +57,9 @@ public:
     }
 
     void on(Token &event) {
-        ++_received;
-        event.acc += term(_index, event.remaining);
+        _tally.add(event.remaining);
         if (--event.remaining == 0) {
-            push<Result>(_ring.sink, event.acc);
+            push<Result>(_ring.sink);
         } else {
             const std::uint32_t next = _index + 1 == _ring.ids.size() ? 0 : _index + 1;
             forward(_ring.ids[next], event);
@@ -102,10 +93,9 @@ public:
     }
 
     // The first result ends the run; one after it is counted, never measured.
-    void on(Result const &event) {
+    void on(Result const &) {
         if (_sink.results++ != 0) return;
         _watch.stop();
-        _sink.checksum = event.acc;
         broadcast<qb::KillEvent>();
     }
 };
@@ -116,9 +106,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const auto cores  = static_cast<int>(p.get("cores"));
     const bool spin   = p.get("wait") != 0;
 
-    Sink sink;
-    Ring ring;
-    ring.received.assign(actors, 0);
+    Sink               sink;
+    Ring               ring;
+    std::vector<Tally> tallies(actors);
     {
         qb::Main engine;
 
@@ -130,16 +120,14 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         ring.ids.reserve(actors);
         for (std::uint32_t i = 0; i < actors; ++i)
             ring.ids.push_back(engine.addActor<RingActor>(
-                static_cast<qb::CoreId>(i % static_cast<std::uint32_t>(ncores)), std::ref(ring),
-                i));
+                static_cast<qb::CoreId>(i % static_cast<std::uint32_t>(ncores)), std::cref(ring),
+                std::ref(tallies[i]), i));
 
         engine.start();
         engine.join();
     }
-    // Every actor was destroyed with the engine: each count is in its slot.
-    std::uint64_t messages = sink.results;
-    for (const std::uint64_t n : ring.received) messages += n;
-    return qvo::Answer{sink.checksum, messages};
+    // The engine is gone: every tally is final, and reduced here, outside the window.
+    return qvo::Answer{checksum(tallies), delivered(tallies, sink.results)};
 }
 
 }  // namespace savina_thread_ring_qb
