@@ -40,25 +40,21 @@ struct Pending {
     std::uint64_t txn;
 };
 
-// One worker owns every account, so it needs no padding. With multiple workers, isolate
-// adjacent accounts' balance, deque metadata and receive counters between their owners.
-// Alignment=0 keeps the record's natural alignment; deque storage is a separate allocation.
-template <std::size_t Alignment>
-struct alignas(Alignment) Account {
+struct Account {
     std::uint64_t       balance{0};
     bool                busy{false};
     std::deque<Pending> held;
     std::uint64_t       received{0};
 };
 
-static_assert(alignof(Account<0>) < qvobase::kCacheLine);
-static_assert(alignof(Account<qvobase::kCacheLine>) >= qvobase::kCacheLine);
-static_assert(sizeof(Account<qvobase::kCacheLine>) % qvobase::kCacheLine == 0);
+// Keep the historical compact slot and deque type. MSVC and clang-cl use this body for every
+// worker count; other compilers use it for one worker. Each policy is the same in spin and park.
+static_assert(alignof(Pending) == alignof(std::uint64_t));
+static_assert(sizeof(Pending) == 3 * sizeof(std::uint64_t));
+static_assert(alignof(Account) == alignof(std::deque<Pending>));
+static_assert(sizeof(Account) == sizeof(std::deque<Pending>) + 3 * sizeof(std::uint64_t));
 
-// Keep this helper internal: an exported template made AppleClang outline handler/send
-// calls per message. Check hot-loop codegen before changing its linkage.
-template <typename Slot>
-static qvo::Answer body_with_layout(const qvo::Params &p, qvo::Watch &watch) {
+qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     const auto     accounts     = static_cast<std::uint32_t>(p.get("accounts"));
     const auto     transactions = static_cast<std::uint64_t>(p.get("transactions"));
     const auto     cores        = static_cast<unsigned>(p.get("cores"));
@@ -69,7 +65,7 @@ static qvo::Answer body_with_layout(const qvo::Params &p, qvo::Watch &watch) {
     auto                actor_of = [](std::uint32_t a) { return 1 + a; };
     auto                index_of = [](std::uint32_t actor) { return actor - 1; };
 
-    std::vector<Slot>    state(accounts);
+    std::vector<Account> state(accounts);
     std::uint64_t        teller_received = 0;
     std::uint64_t        acked           = 0;
     std::uint32_t        reported        = 0;
@@ -77,7 +73,7 @@ static qvo::Answer body_with_layout(const qvo::Params &p, qvo::Watch &watch) {
     std::uint64_t        delivered       = 0;
 
     auto start = [&](auto &m, unsigned worker, std::uint32_t src, const Pending &t) {
-        Slot &a = state[src];
+        Account &a = state[src];
         a.busy     = true;
         a.balance -= t.amount;
         m.send(worker, qvobase::Msg{actor_of(t.dst), kDeposit,
@@ -88,7 +84,7 @@ static qvo::Answer body_with_layout(const qvo::Params &p, qvo::Watch &watch) {
         switch (msg.tag) {
         case kTransfer: {
             const std::uint32_t src = index_of(msg.dst);
-            Slot               &a   = state[src];
+            Account            &a   = state[src];
             ++a.received;
             const Pending t{static_cast<std::uint32_t>(msg.a >> 32), msg.b,
                             msg.a & 0xffffffffu};
@@ -99,7 +95,7 @@ static qvo::Answer body_with_layout(const qvo::Params &p, qvo::Watch &watch) {
             break;
         }
         case kDeposit: {
-            Slot &a = state[index_of(msg.dst)];
+            Account &a = state[index_of(msg.dst)];
             ++a.received;
             a.balance += msg.b;
             m.send(worker, qvobase::Msg{actor_of(static_cast<std::uint32_t>(msg.a >> 32)),
@@ -108,7 +104,7 @@ static qvo::Answer body_with_layout(const qvo::Params &p, qvo::Watch &watch) {
         }
         case kReply: {
             const std::uint32_t src = index_of(msg.dst);
-            Slot               &a   = state[src];
+            Account            &a   = state[src];
             ++a.received;
             m.send(worker, qvobase::Msg{teller, kAck, msg.a, 0});
             if (a.held.empty()) {
@@ -129,7 +125,7 @@ static qvo::Answer body_with_layout(const qvo::Params &p, qvo::Watch &watch) {
             break;
         case kExit: {
             const std::uint32_t index = index_of(msg.dst);
-            Slot               &a     = state[index];
+            Account            &a     = state[index];
             ++a.received;
             m.send(worker, qvobase::Msg{teller, kReport, (a.received << 32) | index, a.balance});
             break;
@@ -158,12 +154,143 @@ static qvo::Answer body_with_layout(const qvo::Params &p, qvo::Watch &watch) {
     return qvo::Answer{result, delivered};
 }
 
-qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
-    // Select once, before the measured window; each handler has a compile-time slot stride.
-    const auto cores = static_cast<unsigned>(p.get("cores"));
-    if (cores <= 1) return body_with_layout<Account<0>>(p, watch);
-    return body_with_layout<Account<qvobase::kCacheLine>>(p, watch);
+#if !defined(_MSC_VER)
+// Separate the multicore body and its pending type: two instantiations sharing the same
+// std::deque<Pending> changed GCC's helper inlining and compact Mesh::drain codegen.
+// Keep this body internal; check handler/send inlining before changing its linkage.
+namespace isolated {
+
+struct Pending {
+    std::uint32_t dst;
+    std::uint64_t amount;
+    std::uint64_t txn;
+};
+
+struct alignas(qvobase::kCacheLine) Account {
+    std::uint64_t       balance{0};
+    bool                busy{false};
+    std::deque<Pending> held;
+    std::uint64_t       received{0};
+};
+
+static_assert(sizeof(Pending) == sizeof(savina_bank_transaction_baseline::Pending));
+static_assert(alignof(Pending) == alignof(savina_bank_transaction_baseline::Pending));
+static_assert(sizeof(std::deque<Pending>) ==
+              sizeof(std::deque<savina_bank_transaction_baseline::Pending>));
+static_assert(alignof(Account) == qvobase::kCacheLine);
+static_assert(sizeof(Account) ==
+              ((sizeof(savina_bank_transaction_baseline::Account) + qvobase::kCacheLine - 1) /
+               qvobase::kCacheLine) * qvobase::kCacheLine);
+
+static qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
+    const auto     accounts     = static_cast<std::uint32_t>(p.get("accounts"));
+    const auto     transactions = static_cast<std::uint64_t>(p.get("transactions"));
+    const auto     cores        = static_cast<unsigned>(p.get("cores"));
+    const bool     spin         = p.get("wait") != 0;
+    const unsigned W            = cores < 1 ? 1u : cores;
+
+    const std::uint32_t teller   = 0;
+    auto                actor_of = [](std::uint32_t a) { return 1 + a; };
+    auto                index_of = [](std::uint32_t actor) { return actor - 1; };
+
+    std::vector<Account> state(accounts);
+    std::uint64_t        teller_received = 0;
+    std::uint64_t        acked           = 0;
+    std::uint32_t        reported        = 0;
+    std::uint64_t        result          = 0;
+    std::uint64_t        delivered       = 0;
+
+    auto start = [&](auto &m, unsigned worker, std::uint32_t src, const Pending &t) {
+        Account &a = state[src];
+        a.busy     = true;
+        a.balance -= t.amount;
+        m.send(worker, qvobase::Msg{actor_of(t.dst), kDeposit,
+                                    (std::uint64_t{src} << 32) | t.txn, t.amount});
+    };
+
+    qvobase::Mesh mesh(W, spin, [&](auto &m, unsigned worker, const qvobase::Msg &msg) {
+        switch (msg.tag) {
+        case kTransfer: {
+            const std::uint32_t src = index_of(msg.dst);
+            Account            &a   = state[src];
+            ++a.received;
+            const Pending t{static_cast<std::uint32_t>(msg.a >> 32), msg.b,
+                            msg.a & 0xffffffffu};
+            if (a.busy)
+                a.held.push_back(t);
+            else
+                start(m, worker, src, t);
+            break;
+        }
+        case kDeposit: {
+            Account &a = state[index_of(msg.dst)];
+            ++a.received;
+            a.balance += msg.b;
+            m.send(worker, qvobase::Msg{actor_of(static_cast<std::uint32_t>(msg.a >> 32)),
+                                        kReply, msg.a & 0xffffffffu, 0});
+            break;
+        }
+        case kReply: {
+            const std::uint32_t src = index_of(msg.dst);
+            Account            &a   = state[src];
+            ++a.received;
+            m.send(worker, qvobase::Msg{teller, kAck, msg.a, 0});
+            if (a.held.empty()) {
+                a.busy = false;
+                break;
+            }
+            const Pending next = a.held.front();
+            a.held.pop_front();
+            start(m, worker, src, next);
+            break;
+        }
+        case kAck:
+            ++teller_received;
+            result += qvo::mix(msg.a);
+            if (++acked == transactions)
+                for (std::uint32_t a = 0; a < accounts; ++a)
+                    m.send(worker, qvobase::Msg{actor_of(a), kExit, 0, 0});
+            break;
+        case kExit: {
+            const std::uint32_t index = index_of(msg.dst);
+            Account            &a     = state[index];
+            ++a.received;
+            m.send(worker, qvobase::Msg{teller, kReport, (a.received << 32) | index, a.balance});
+            break;
+        }
+        case kReport:
+            ++teller_received;
+            result += account_key(static_cast<std::uint32_t>(msg.a & 0xffffffffu), msg.b);
+            delivered += msg.a >> 32;
+            if (++reported == accounts) {
+                delivered += teller_received;
+                watch.stop();
+                m.stop();
+            }
+            break;
+        }
+    });
+
+    mesh.start();
+    watch.start();
+    for (std::uint64_t i = 0; i < transactions; ++i) {
+        const Transfer t = transfer(i, accounts);
+        mesh.send(0, qvobase::Msg{actor_of(t.src), kTransfer,
+                                  (std::uint64_t{t.dst} << 32) | i, t.amount});
+    }
+    mesh.run();
+    return qvo::Answer{result, delivered};
 }
+
+}  // namespace isolated
+
+qvo::Answer dispatch(const qvo::Params &p, qvo::Watch &watch) {
+    // Select before either body starts its runtime or measurement window, independently of wait.
+    const auto cores = static_cast<unsigned>(p.get("cores"));
+    if (cores <= 1) return body(p, watch);
+    return isolated::body(p, watch);
+}
+#endif
 
 }  // namespace savina_bank_transaction_baseline
 
@@ -190,8 +317,14 @@ int main(int argc, char **argv) {
         "the teller lives on thread 0 and account a on thread (1 + a) % cores -- the same "
         "placement qb's cell fixes -- so with cores=2 about half the deposits and half the "
         "transfers and acknowledgements cross a core",
-        "cores=1 keeps naturally aligned account slots; cores>=2 isolates each inline slot "
-        "on a cache-line boundary; deque storage remains separately allocated",
+#if defined(_MSC_VER)
+        "MSVC and clang-cl keep naturally aligned compact account slots at every worker count, "
+        "for both spin and park; deque storage remains separately allocated",
+#else
+        "GCC and Clang keep naturally aligned compact account slots at cores<=1 and isolate "
+        "each inline slot on a cache-line boundary at cores>=2, for both spin and park; "
+        "deque storage remains separately allocated",
+#endif
         "the 50 000 transfers are pushed into the rings BEFORE worker 0 runs, from the caller's "
         "thread, so the teller's burst is the ring capacity the spec keeps N under, not a "
         "mailbox that grows",
@@ -200,5 +333,9 @@ int main(int argc, char **argv) {
         "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which "
         "with a thousand accounts in flight is rare"};
 
+#if defined(_MSC_VER)
     return qvo::run(argc, argv, std::move(spec), savina_bank_transaction_baseline::body);
+#else
+    return qvo::run(argc, argv, std::move(spec), savina_bank_transaction_baseline::dispatch);
+#endif
 }

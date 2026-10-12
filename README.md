@@ -47,13 +47,15 @@ argument it exists to win:
 | Seastar | not yet — Linux-only, and its dependencies need root on this host |
 | Cross-language references (Erlang, Pekko, Actix, Orleans) | not yet |
 
-**Floor layout correction (QB-990).** The `big` and `bank-transaction` raw-thread implementations
-keep compact records at one worker and separate inline records at the cache-line boundary with
-two or more workers. The layout is selected before the measured window. Their published floor
-figures and framework-to-floor comparisons below were measured before that correction. They remain
-the recorded historical results; a quiet-host, same-session remeasurement is still needed before
-claiming any performance effect or replacing them. The `chameneos` layout is unchanged because all
-creatures are owned by one worker.
+**Floor layout correction (QB-990).** The `big` raw-thread implementation keeps compact records
+at one worker and separates inline records at cache-line boundaries with multiple workers. The
+bank keeps compact records at every worker count under MSVC and clang-cl; GCC and other Clang
+toolchains use compact records at one worker and separate cache-line slots with multiple workers.
+Both spin and park follow the same compiler policy, selected before the measured window and
+recorded in each result's caveats. The published floor figures and framework-to-floor comparisons
+below remain the recorded historical results; a quiet-host, same-session remeasurement is still
+needed before claiming any performance effect or replacing them. The `chameneos` layout is
+unchanged because all creatures are owned by one worker.
 
 Five benchmarks are five shapes — a two-actor round trip, a many-to-one funnel, a ring, a
 scatter-gather and an all-to-all — and the results below should be read per shape, not as one

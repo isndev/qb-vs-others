@@ -14,6 +14,7 @@
 
 #include "../baseline_support.h"
 
+#include <cstddef>
 #include <thread>
 #include <vector>
 
@@ -26,9 +27,9 @@ enum Tag : std::uint32_t { kStart = 1, kPing = 2, kPong = 3, kDone = 4 };
 
 // One worker owns every slot, so it needs no padding. With multiple workers, adjacent actor
 // IDs have different owners: keep their slot writes from sharing cache lines.
-// Alignment=0 keeps the record's natural alignment.
+// Alignment=0 selects natural alignment without an alignas(0) GCC warning.
 template <std::size_t Alignment>
-struct alignas(Alignment) Actor {
+struct alignas(Alignment == 0 ? alignof(TargetSequence) : Alignment) Actor {
     TargetSequence seq;
     std::uint64_t  acc{0};
     std::uint32_t  sent{0};
@@ -41,9 +42,23 @@ struct alignas(Alignment) Actor {
     Actor(std::uint32_t self, std::uint32_t n) : seq(self, n) {}
 };
 
-static_assert(alignof(Actor<0>) < qvobase::kCacheLine);
+static_assert(alignof(Actor<0>) == alignof(TargetSequence));
+static_assert(sizeof(Actor<0>) == sizeof(TargetSequence) + 3 * sizeof(std::uint64_t));
+static_assert(sizeof(Actor<0>) == 40);
+static_assert(alignof(Actor<64>) == 64);
+static_assert(sizeof(Actor<64>) == 64);
+static_assert(offsetof(Actor<0>, seq) == 0);
+static_assert(offsetof(Actor<0>, acc) == sizeof(TargetSequence));
+static_assert(offsetof(Actor<0>, sent) == sizeof(TargetSequence) + sizeof(std::uint64_t));
+static_assert(offsetof(Actor<0>, messages) == sizeof(TargetSequence) + 2 * sizeof(std::uint64_t));
+static_assert(offsetof(Actor<0>, seq) == offsetof(Actor<qvobase::kCacheLine>, seq));
+static_assert(offsetof(Actor<0>, acc) == offsetof(Actor<qvobase::kCacheLine>, acc));
+static_assert(offsetof(Actor<0>, sent) == offsetof(Actor<qvobase::kCacheLine>, sent));
+static_assert(offsetof(Actor<0>, messages) == offsetof(Actor<qvobase::kCacheLine>, messages));
 static_assert(alignof(Actor<qvobase::kCacheLine>) >= qvobase::kCacheLine);
-static_assert(sizeof(Actor<qvobase::kCacheLine>) % qvobase::kCacheLine == 0);
+static_assert(sizeof(Actor<qvobase::kCacheLine>) ==
+              ((sizeof(Actor<0>) + qvobase::kCacheLine - 1) / qvobase::kCacheLine) *
+                  qvobase::kCacheLine);
 
 // Keep this helper internal: an exported template made AppleClang outline handler/send
 // calls per message. Check hot-loop codegen before changing its linkage.
