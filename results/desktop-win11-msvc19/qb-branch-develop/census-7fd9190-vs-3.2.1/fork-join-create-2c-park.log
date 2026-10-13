@@ -1,0 +1,9 @@
+
+savina/fork-join-create: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians     46.1   min     44.3   max     51.6   n=12   [47 44 45 44 44 47 45 47 52 48 50 44]
+    shp          median-of-medians     57.7   min     55.0   max     60.4   n=12   [58 59 55 57 59 60 56 56 57 59 60 55]
+    cand vs shp: 46.1 vs 57.7 (-20.1%) -- distributions separate
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\fork-join-create-2c-park

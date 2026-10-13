@@ -1,0 +1,9 @@
+
+savina/bndbuffer: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians   6748.8   min   6677.3   max   6841.3   n=12   [6818 6736 6742 6756 6677 6690 6696 6768 6779 6716 6841 6777]
+    shp          median-of-medians   6726.6   min   6692.4   max   6830.6   n=12   [6734 6692 6694 6727 6701 6708 6704 6730 6791 6726 6791 6831]
+    cand vs shp: 6748.8 vs 6726.6 (+0.3%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\bndbuffer-2c-spin

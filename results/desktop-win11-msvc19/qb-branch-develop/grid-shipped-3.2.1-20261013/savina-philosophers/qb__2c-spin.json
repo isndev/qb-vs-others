@@ -1,0 +1,45 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/philosophers",
+  "framework": "qb",
+  "framework_version": "3.2.1",
+  "verified": true,
+  "expected_checksum": 4215202917252104846,
+  "expected_messages": 800020,
+  "work_unit": "meal",
+  "work_units": 200000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "philosophers": 20, "rounds": 10000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-13T22:18:17Z"
+  },
+  "idiom": {
+    "source": "the chameneos/big adapters (reply() recycling) + qb/llm/qb.llm.md",
+    "note": "one Request event per philosopher, mutated Hungry -> Eat/Denied at the arbitrator and Denied -> Hungry / Eat -> Done at the philosopher, each time reply()ed; Start and Exit are push<>; arbitrator alone on VirtualCore 0, philosophers on the others"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "placement is fixed before start: the arbitrator alone on VirtualCore 0 and the philosophers on the remaining cores (all on core 0 when cores=1), so with cores=2 every request and every answer crosses a core -- the pools place the arbitrator and the philosophers wherever stealing puts them", "how many requests the arbitrator REFUSES (Savina's 'Num retries') depends on the interleaving: it is REPORTED beside the cell (observed `refused`), never asserted; every refused request and its retry are delivered and timed, so a framework whose scheduling makes philosophers collide more often does more work in the same cell -- that is the benchmark, as Savina defines it, and the observation says how much more"],
+  "failures": [],
+  "work_ns": [26108400.0, 33802400.0, 26336300.0, 25828900.0, 26843700.0, 24558300.0, 26277600.0, 25057600.0, 25920600.0],
+  "total_ns": [28010600.0, 36206700.0, 28082300.0, 27999000.0, 29061500.0, 27330500.0, 28273600.0, 27376000.0, 28407200.0],
+  "outside_window_ns": [1902200.0, 2404300.0, 1746000.0, 2170100.0, 2217800.0, 2772200.0, 1996000.0, 2318400.0, 2486600.0],
+  "observed": {
+    "refused": {"samples": [308316, 306484, 306677, 310505, 305494, 310992, 305756, 308968, 310803], "min": 305494, "p50": 308316.0, "max": 310992}
+  },
+  "summary": {
+    "work_min": 24558300.0,
+    "work_p50": 26108400.0,
+    "work_p99": 33245704.0,
+    "work_iqr": 507400.0
+  }
+}

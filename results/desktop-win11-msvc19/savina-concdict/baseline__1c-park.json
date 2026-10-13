@@ -8,21 +8,21 @@
   "expected_messages": 400042,
   "work_unit": "operation",
   "work_units": 200000,
-  "repetitions": 9,
-  "warmup": 2,
+  "repetitions": 5,
+  "warmup": 1,
   "params": {"cores": 1, "form": 0, "keys": 524287, "messages": 10000, "wait": 0, "workers": 20, "write": 10},
   "pinned": true,
-  "cpus": "0,2",
+  "cpus": "0,2,4,6,8,10,12,14",
   "thread_pinning_supported": true,
   "env": {
-    "host": "desktop-x86",
+    "host": "DESKTOP-B67OSN6",
     "os": "windows",
     "logical_cpus": 24,
     "compiler": "MSVC",
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-10-11T01:06:36Z"
+    "utc": "2026-10-13T22:25:05Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Workers are slots of a vector with no mailbox, and the dictionary's twenty-writer fan-in is a scan of one SPSC ring per thread, not a shared mailbox: the per-actor queue every framework keeps is engineered out", "the master and the dictionary live on thread 0 and worker w on thread (1 + w) % cores -- the same placement qb's cell fixes -- so with cores=2 half the round trips cross a core", "no request/response primitive: the form=1 documents are not applicable here, by the harness's third verdict, and this form=0 cell is the floor for both forms", "the dictionary is the spec's Store (one std::unordered_map of `keys` entries, the same object code in every adapter), built before the threads by the thread that runs the repetition; its lookups are part of the floor's figure as of every framework's", "cores=1 is one thread with every role in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle thread on a condition variable"],
   "failures": [],
-  "work_ns": [13022300.0, 9961600.0, 9653100.0, 12003600.0, 9625100.0, 9672300.0, 10706600.0, 9825800.0, 9980500.0],
-  "total_ns": [49016000.0, 45849200.0, 44413400.0, 48077300.0, 43011800.0, 44605100.0, 46849500.0, 44096300.0, 48313400.0],
-  "outside_window_ns": [35993700.0, 35887600.0, 34760300.0, 36073700.0, 33386700.0, 34932800.0, 36142900.0, 34270500.0, 38332900.0],
+  "work_ns": [10376300.0, 11997800.0, 10397900.0, 10861300.0, 14184100.0],
+  "total_ns": [50283900.0, 46707600.0, 48364500.0, 48439900.0, 51980300.0],
+  "outside_window_ns": [39907600.0, 34709800.0, 37966600.0, 37578600.0, 37796200.0],
   "summary": {
-    "work_min": 9625100.0,
-    "work_p50": 9961600.0,
-    "work_p99": 12940804.0,
-    "work_iqr": 1034300.0
+    "work_min": 10376300.0,
+    "work_p50": 10861300.0,
+    "work_p99": 14096648.0,
+    "work_iqr": 1599900.0
   }
 }

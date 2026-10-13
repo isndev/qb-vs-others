@@ -8,21 +8,21 @@
   "expected_messages": 800020,
   "work_unit": "meal",
   "work_units": 200000,
-  "repetitions": 9,
-  "warmup": 2,
+  "repetitions": 5,
+  "warmup": 1,
   "params": {"cores": 1, "philosophers": 20, "rounds": 10000, "wait": 0},
   "pinned": true,
-  "cpus": "0,2",
+  "cpus": "0,2,4,6,8,10,12,14",
   "thread_pinning_supported": true,
   "env": {
-    "host": "desktop-x86",
+    "host": "DESKTOP-B67OSN6",
     "os": "windows",
     "logical_cpus": 24,
     "compiler": "MSVC",
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-10-11T01:09:16Z"
+    "utc": "2026-10-13T22:26:35Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,16 +30,16 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Philosophers are slots of a vector and the arbitrator has no mailbox: the 20 philosophers share one SPSC ring into worker 0, so the 20-producer fan-in the frameworks pay for is engineered out here by placement", "the arbitrator lives on thread 0 and philosopher i on thread 1 + i % (cores - 1), so with cores=2 every request and every answer crosses a core -- the same placement qb's cell fixes", "cores=1 is one thread with the arbitrator and the philosophers in its own ring -- the floor for single-threaded dispatch, still a real queue, and the cell this floor bounds", "with cores=2 the floor is NOT a bound: every message is its own ring hand-off to the other thread, where qb publishes a pass's events in one batched flush and runs under this floor -- read it there as the per-message cost of a hand-off", "how many requests are refused depends on the interleaving: it is REPORTED beside the cell (observed `refused`, Savina's 'Num retries'), never asserted; every refused request and its retry are delivered and timed", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 20 philosophers retrying is rare"],
   "failures": [],
-  "work_ns": [15184200.0, 15678000.0, 15014500.0, 15219700.0, 14927200.0, 14895800.0, 15109300.0, 15008800.0, 15418800.0],
-  "total_ns": [15530400.0, 16037800.0, 15384400.0, 15565300.0, 15267100.0, 15233200.0, 15446200.0, 15357900.0, 15749700.0],
-  "outside_window_ns": [346200.0, 359800.0, 369900.0, 345600.0, 339900.0, 337400.0, 336900.0, 349100.0, 330900.0],
+  "work_ns": [16508400.0, 16499800.0, 16856800.0, 16236100.0, 17142400.0],
+  "total_ns": [16853500.0, 16855400.0, 17203800.0, 16574700.0, 17476200.0],
+  "outside_window_ns": [345100.0, 355600.0, 347000.0, 338600.0, 333800.0],
   "observed": {
-    "refused": {"samples": [285670, 285670, 285670, 285670, 285670, 285670, 285670, 285670, 285670], "min": 285670, "p50": 285670.0, "max": 285670}
+    "refused": {"samples": [285670, 285670, 285670, 285670, 285670], "min": 285670, "p50": 285670.0, "max": 285670}
   },
   "summary": {
-    "work_min": 14895800.0,
-    "work_p50": 15109300.0,
-    "work_p99": 15657264.0,
-    "work_iqr": 210900.0
+    "work_min": 16236100.0,
+    "work_p50": 16508400.0,
+    "work_p99": 17130976.0,
+    "work_iqr": 357000.0
   }
 }

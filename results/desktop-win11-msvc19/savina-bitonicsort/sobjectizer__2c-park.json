@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bitonicsort",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 2270309388473169468,
+  "expected_messages": 541869,
+  "work_unit": "message",
+  "work_units": 541869,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"cores": 2, "max": 1152921504606846976, "n": 1024, "seed": 2048, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-13T22:23:09Z"
+  },
+  "idiom": {
+    "source": "the thread-ring adapter + dev/sample/so_5/mutable_msg_agents (a mutable_msg redirected with so_5::send(next, std::move(cmd))) + the logmap adapter's group binding",
+    "note": "mutable_msg values redirected in place; every agent on thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the network's 44 772 agents (at the defaults) are placed by the thread_pool: whichever work thread is free takes the next demand, so how many hops cross a core is the dispatcher's decision, where qb's cell cuts the steps into two contiguous halves -- see benchmarks/savina/bitonicsort.md"],
+  "failures": [],
+  "work_ns": [101118700.0, 99422200.0, 98753500.0, 104195500.0, 96045500.0],
+  "total_ns": [237170300.0, 236858100.0, 232877200.0, 244798200.0, 233100800.0],
+  "outside_window_ns": [136051600.0, 137435900.0, 134123700.0, 140602700.0, 137055300.0],
+  "summary": {
+    "work_min": 96045500.0,
+    "work_p50": 99422200.0,
+    "work_p99": 104072428.0,
+    "work_iqr": 2365200.0
+  }
+}

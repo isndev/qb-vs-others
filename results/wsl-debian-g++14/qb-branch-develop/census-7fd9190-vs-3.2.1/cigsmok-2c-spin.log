@@ -1,0 +1,9 @@
+
+savina/cigsmok: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians   1150.0   min   1144.3   max   1162.1   n=12   [1157 1154 1155 1148 1144 1162 1148 1153 1145 1147 1151 1149]
+    shp          median-of-medians   1152.2   min   1146.2   max   1167.2   n=12   [1152 1153 1149 1146 1160 1167 1150 1167 1162 1149 1149 1153]
+    cand vs shp: 1150.0 vs 1152.2 (-0.2%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/cigsmok-2c-spin

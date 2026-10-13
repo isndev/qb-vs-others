@@ -1,0 +1,9 @@
+
+savina/bank-transaction: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians    109.3   min    105.5   max    117.3   n=12   [109 106 114 117 107 111 106 110 112 113 106 107]
+    shp          median-of-medians    108.5   min    104.1   max    118.6   n=12   [109 108 106 119 106 107 105 116 110 104 115 116]
+    cand vs shp: 109.3 vs 108.5 (+0.8%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\bank-transaction-2c-spin

@@ -1,0 +1,9 @@
+
+savina/uct: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians    103.9   min    102.5   max    119.7   n=12   [111 104 104 103 104 103 103 104 120 103 107 107]
+    shp          median-of-medians    160.9   min    154.0   max    170.1   n=12   [160 163 154 161 161 161 158 170 162 169 157 155]
+    cand vs shp: 103.9 vs 160.9 (-35.4%) -- distributions separate
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/uct-2c-park

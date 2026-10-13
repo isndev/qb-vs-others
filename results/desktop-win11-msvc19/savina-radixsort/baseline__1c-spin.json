@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/radixsort",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 12889275414389432083,
+  "expected_messages": 6100001,
+  "work_unit": "message",
+  "work_units": 6100000,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"bits": 60, "cores": 1, "seed": 2048, "values": 100000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-13T22:19:57Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the chain cut into `cores` contiguous blocks, qb's placement; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a hand-off is one ring push and one ring pop, and there is no scheduler: the floor for a chain of stable partitions, not for finding the next actor", "the source, the stages and the validation, in pipeline order, are cut into `cores` contiguous blocks -- the placement qb gets -- so with cores=2 a value crosses a core once", "cores=1 is one thread pushing into its own ring and draining it inline when the source or a flushing stage fills it -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [76815300.0, 76323300.0, 76390700.0, 77274100.0, 76254100.0],
+  "total_ns": [79600500.0, 79088700.0, 79166400.0, 80095900.0, 79065700.0],
+  "outside_window_ns": [2785200.0, 2765400.0, 2775700.0, 2821800.0, 2811600.0],
+  "summary": {
+    "work_min": 76254100.0,
+    "work_p50": 76390700.0,
+    "work_p99": 77255748.0,
+    "work_iqr": 492000.0
+  }
+}

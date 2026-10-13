@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/trapezoid",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 7433087872415660884,
+  "expected_messages": 200,
+  "work_unit": "trapezoid",
+  "work_units": 10000000,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"cores": 1, "left": 1, "pieces": 10000000, "right": 5, "wait": 0, "workers": 100},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-13T21:42:07Z"
+  },
+  "idiom": {
+    "source": "the nqueens adapter (direct mboxes, make_pool_binder, ready signal)",
+    "note": "one coop: the master sends one msg_work per worker from one handler, each worker one msg_result to the master's direct mbox; thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "which pool thread runs a worker's one demand is the thread_pool's decision, so the integration is balanced by the dispatcher where qb's cell keeps worker w on core w % cores"],
+  "failures": [],
+  "work_ns": [419285626.0, 415565034.0, 418268381.0, 417917610.0, 420637266.0],
+  "total_ns": [419841491.0, 416229877.0, 418842484.0, 418611731.0, 421277190.0],
+  "outside_window_ns": [555865.0, 664843.0, 574103.0, 694121.0, 639924.0],
+  "summary": {
+    "work_min": 415565034.0,
+    "work_p50": 418268381.0,
+    "work_p99": 420583200.4,
+    "work_iqr": 1368016.0
+  }
+}

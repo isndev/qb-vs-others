@@ -1,0 +1,9 @@
+
+savina/counting: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians     13.8   min     11.1   max     14.7   n=12   [14 14 13 12 15 11 14 14 14 14 14 14]
+    shp          median-of-medians     12.5   min     10.8   max     14.0   n=12   [13 13 11 14 14 12 13 12 11 14 12 12]
+    cand vs shp: 13.8 vs 12.5 (+10.1%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\counting-2c-park

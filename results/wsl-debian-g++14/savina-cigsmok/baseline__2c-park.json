@@ -8,21 +8,21 @@
   "expected_messages": 100401,
   "work_unit": "round",
   "work_units": 50000,
-  "repetitions": 9,
-  "warmup": 2,
+  "repetitions": 5,
+  "warmup": 1,
   "params": {"cores": 2, "rounds": 50000, "smoke": 1000, "smokers": 200, "wait": 0},
   "pinned": true,
-  "cpus": "0,2",
+  "cpus": "0,2,4,6,8,10,12,14",
   "thread_pinning_supported": true,
   "env": {
-    "host": "desktop-x86",
+    "host": "DESKTOP-B67OSN6",
     "os": "linux",
     "logical_cpus": 24,
     "compiler": "GNU",
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-10-11T00:39:43Z"
+    "utc": "2026-10-13T21:42:32Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. A round is one ring push to the chosen smoker and one back, a smoker's state one cache line: the floor for what this coordination costs", "the arbiter is on worker 0 and smoker j on worker (j + 1) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
   "failures": [],
-  "work_ns": [684274699.0, 667830706.0, 666006226.0, 670933759.0, 668251910.0, 668885494.0, 671229079.0, 668150931.0, 658681327.0],
-  "total_ns": [686737201.0, 669968395.0, 668161749.0, 673159127.0, 670421124.0, 671060953.0, 673406388.0, 670397277.0, 660936113.0],
-  "outside_window_ns": [2462502.0, 2137689.0, 2155523.0, 2225368.0, 2169214.0, 2175459.0, 2177309.0, 2246346.0, 2254786.0],
+  "work_ns": [688146158.0, 684359083.0, 674589348.0, 685636873.0, 694865865.0],
+  "total_ns": [690485616.0, 686642103.0, 677238000.0, 687892126.0, 697125468.0],
+  "outside_window_ns": [2339458.0, 2283020.0, 2648652.0, 2255253.0, 2259603.0],
   "summary": {
-    "work_min": 658681327.0,
-    "work_p50": 668251910.0,
-    "work_p99": 683231049.4,
-    "work_iqr": 3103053.0
+    "work_min": 674589348.0,
+    "work_p50": 685636873.0,
+    "work_p99": 694597076.7,
+    "work_iqr": 3787075.0
   }
 }

@@ -1,0 +1,9 @@
+
+savina/recmatmul: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians 474685.6   min 469709.0   max 507291.9   n=12   [474092 469709 472873 473637 472191 475279 471936 494790 500664 507292 502992 496490]
+    shp          median-of-medians 473131.2   min 470908.1   max 497612.9   n=12   [470908 471553 472377 476540 473865 472397 472216 472361 489833 494764 497613 494920]
+    cand vs shp: 474685.6 vs 473131.2 (+0.3%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/recmatmul-2c-park

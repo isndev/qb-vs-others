@@ -1,0 +1,45 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/apsp",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 9072176982710404765,
+  "expected_messages": 108072,
+  "work_unit": "block phase",
+  "work_units": 10800,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"block": 50, "cores": 2, "form": 0, "nodes": 300, "wait": 1, "weight": 100},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-13T21:37:51Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; block-row bi owned by worker bi * cores / grid; a tile travels as a pointer; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Blocks are integers and a tile is one ring push and one ring pop per neighbour; the phase is the spec's compute(), the same as every framework's", "block-row bi lives on worker bi * cores / grid -- qb's placement: at cores=2 a block's row neighbours share its worker and half its column neighbours do not", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [9723052.0, 9760935.0, 9834143.0, 9785259.0, 10085773.0],
+  "total_ns": [12277053.0, 11953475.0, 11925198.0, 11802049.0, 12174913.0],
+  "outside_window_ns": [2554001.0, 2192540.0, 2091055.0, 2016790.0, 2089140.0],
+  "observed": {
+    "ahead": {"samples": [6558, 6871, 5286, 4506, 6546], "min": 4506, "p50": 6546.0, "max": 6871}
+  },
+  "summary": {
+    "work_min": 9723052.0,
+    "work_p50": 9785259.0,
+    "work_p99": 10075707.8,
+    "work_iqr": 73208.0
+  }
+}

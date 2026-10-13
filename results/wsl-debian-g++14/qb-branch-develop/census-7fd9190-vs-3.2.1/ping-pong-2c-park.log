@@ -1,0 +1,9 @@
+
+savina/ping-pong: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians    155.8   min    143.8   max    166.9   n=12   [161 154 154 144 155 151 157 160 167 155 160 165]
+    shp          median-of-medians    159.1   min    152.8   max    163.9   n=12   [158 160 156 162 164 159 163 159 153 160 159 157]
+    cand vs shp: 155.8 vs 159.1 (-2.1%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/ping-pong-2c-park

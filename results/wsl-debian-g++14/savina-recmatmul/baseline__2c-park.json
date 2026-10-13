@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/recmatmul",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 15695702070518775688,
+  "expected_messages": 1754,
+  "work_unit": "leaf",
+  "work_units": 512,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"cores": 2, "length": 1024, "threshold": 16384, "wait": 0, "workers": 20},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-13T21:38:24Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the master (actor 0, thread 0) relays every created task to worker (srC + scC) % workers on thread floor(w x cores / workers) -- qb's placement; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A task is one ring message carrying the Task's fields, a done one ring message, and every leaf is the same shared kernel every framework runs: the floor for a recursive decomposition relayed through one master", "worker w is owned by thread floor(w x cores / workers) and the master by thread 0, fixed before the window -- qb's placement exactly: with cores=2 thread 0 multiplies 304 of the default's 512 leaves and thread 1 208, never rebalanced, so this floor bounds the placing frameworks and NOT the pools", "cores=1 is one thread with every actor's messages in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [237346697.0, 238784696.0, 240080452.0, 240476527.0, 238852832.0],
+  "total_ns": [247426918.0, 247347469.0, 248974530.0, 248120434.0, 243307622.0],
+  "outside_window_ns": [10080221.0, 8562773.0, 8894078.0, 7643907.0, 4454790.0],
+  "summary": {
+    "work_min": 237346697.0,
+    "work_p50": 238852832.0,
+    "work_p99": 240460684.0,
+    "work_iqr": 1295756.0
+  }
+}

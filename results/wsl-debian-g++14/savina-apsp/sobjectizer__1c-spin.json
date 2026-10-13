@@ -1,0 +1,45 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/apsp",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 9072176982710404765,
+  "expected_messages": 108072,
+  "work_unit": "block phase",
+  "work_units": 10800,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"block": 50, "cores": 1, "form": 0, "nodes": 300, "wait": 1, "weight": 100},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-13T21:40:51Z"
+  },
+  "idiom": {
+    "source": "the thread-ring adapter + dev/so_5/send_functions.hpp send(Target, message_holder_t)",
+    "note": "agents on their DIRECT mboxes; one msg_tile per generation, holding a pointer to the tile, made once (message_holder_t) and sent to every neighbour; thread_pool(cores) with fifo_t::individual for cores>=2; form=1 not applicable"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the blocks are placed by the thread_pool: whichever pinned work thread is free takes the next demand, so which phases run on which core is the dispatcher's decision where qb and the floor fix block-row bi on core bi * cores / grid -- see benchmarks/savina/apsp.md"],
+  "failures": [],
+  "work_ns": [20718281.0, 20890987.0, 21559252.0, 21599311.0, 21633785.0],
+  "total_ns": [21650639.0, 21749672.0, 22378259.0, 22378557.0, 22325899.0],
+  "outside_window_ns": [932358.0, 858685.0, 819007.0, 779246.0, 692114.0],
+  "observed": {
+    "ahead": {"samples": [0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0}
+  },
+  "summary": {
+    "work_min": 20718281.0,
+    "work_p50": 21559252.0,
+    "work_p99": 21632406.0,
+    "work_iqr": 708324.0
+  }
+}

@@ -1,0 +1,9 @@
+
+savina/trapezoid: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians     21.1   min     21.0   max     21.1   n=12   [21 21 21 21 21 21 21 21 21 21 21 21]
+    shp          median-of-medians     21.0   min     20.8   max     21.1   n=12   [21 21 21 21 21 21 21 21 21 21 21 21]
+    cand vs shp: 21.1 vs 21.0 (+0.5%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/trapezoid-2c-spin

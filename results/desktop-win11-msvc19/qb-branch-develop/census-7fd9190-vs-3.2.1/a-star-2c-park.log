@@ -1,0 +1,9 @@
+
+savina/a-star: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians    158.0   min    154.0   max    162.8   n=12   [160 154 158 158 163 159 155 156 160 158 158 161]
+    shp          median-of-medians    158.0   min    152.8   max    161.4   n=12   [161 160 154 153 158 156 154 158 158 158 155 159]
+    cand vs shp: 158.0 vs 158.0 (+0.0%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\a-star-2c-park

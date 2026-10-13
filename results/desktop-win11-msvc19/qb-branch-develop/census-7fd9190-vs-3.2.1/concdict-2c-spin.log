@@ -1,0 +1,9 @@
+
+savina/concdict: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians     79.9   min     68.4   max     99.1   n=12   [78 82 76 95 80 80 76 81 68 77 83 99]
+    shp          median-of-medians     76.5   min     71.8   max     94.4   n=12   [75 72 76 72 89 73 77 88 83 76 79 94]
+    cand vs shp: 79.9 vs 76.5 (+4.5%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\concdict-2c-spin

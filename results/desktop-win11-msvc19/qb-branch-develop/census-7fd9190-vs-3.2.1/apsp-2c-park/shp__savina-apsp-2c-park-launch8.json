@@ -1,0 +1,45 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/apsp",
+  "framework": "qb",
+  "framework_version": "3.2.1",
+  "verified": true,
+  "expected_checksum": 9072176982710404765,
+  "expected_messages": 108072,
+  "work_unit": "block phase",
+  "work_units": 10800,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"block": 50, "cores": 2, "form": 0, "nodes": 300, "wait": 0, "weight": 100},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-13T22:31:55Z"
+  },
+  "idiom": {
+    "source": "the thread-ring adapter + qb/src/qb/core/Actor.h push() / send()",
+    "note": "one actor per block, block-row bi on VirtualCore bi * cores / grid; a tile travels as a pointer into the spec's double buffers; form=0 publishes with push, form=1 with send"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "block-row bi lives on VirtualCore bi * cores / grid: at cores=2 the top half of the grid on core 0 and the bottom half on core 1, so each block's row neighbours share its core and half its column neighbours do not -- the static placement the floor has; the pools place by themselves", "form=0 publishes each generation with push: an event to another core leaves at the core's next flush, after every handler of the pass that produced it -- several blocks' phases on a busy core; form=1 hands it to the peer's ring at once with send. The run's `form` is in its params (benchmarks/savina/apsp.md, \"The publication\")"],
+  "failures": [],
+  "work_ns": [7990000.0, 6734900.0, 7301900.0],
+  "total_ns": [10680800.0, 9281500.0, 10582700.0],
+  "outside_window_ns": [2690800.0, 2546600.0, 3280800.0],
+  "observed": {
+    "ahead": {"samples": [0, 0, 0], "min": 0, "p50": 0.0, "max": 0}
+  },
+  "summary": {
+    "work_min": 6734900.0,
+    "work_p50": 7301900.0,
+    "work_p99": 7976238.0,
+    "work_iqr": 627550.0
+  }
+}

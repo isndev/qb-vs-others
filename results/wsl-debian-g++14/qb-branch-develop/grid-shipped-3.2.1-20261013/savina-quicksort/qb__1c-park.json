@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/quicksort",
+  "framework": "qb",
+  "framework_version": "3.2.1",
+  "verified": true,
+  "expected_checksum": 7393384507177721426,
+  "expected_messages": 3878,
+  "work_unit": "value",
+  "work_units": 1000000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "max": 1152921504606846976, "n": 1000000, "seed": 1024, "threshold": 2048, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-13T21:37:12Z"
+  },
+  "idiom": {
+    "source": "the fib adapter (addRefActor same-core child + kill()) + qb.llm.md Events: bulk data behind a smart-pointer member",
+    "note": "Sort and Result carry a unique_ptr<vector<uint64_t>>; a splitting actor creates its children with addRefActor, the root's two are seeds created before the window on VirtualCore s % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "qb has no cross-core spawn: a child is created on its parent's VirtualCore, so with cores=2 each half of the first split is sorted on its seed's core and never rebalanced -- the window closes when the larger half and the root's last join are done", "the values travel behind a std::unique_ptr in the event (8 bytes through the pipe); an allocated_push tail would have to fit the ~64 KiB cross-core ring with its event, and the first split hands each seed ~4 MB -- see benchmarks/savina/quicksort.md"],
+  "failures": [],
+  "work_ns": [55095786.0, 55809129.0, 56994924.0, 56055009.0, 54168446.0, 56253584.0, 54349790.0, 55050112.0, 54885294.0],
+  "total_ns": [59937845.0, 60843131.0, 62025152.0, 60958041.0, 59055243.0, 61140876.0, 59256334.0, 59952969.0, 59918674.0],
+  "outside_window_ns": [4842059.0, 5034002.0, 5030228.0, 4903032.0, 4886797.0, 4887292.0, 4906544.0, 4902857.0, 5033380.0],
+  "summary": {
+    "work_min": 54168446.0,
+    "work_p50": 55095786.0,
+    "work_p99": 56935616.8,
+    "work_iqr": 1169715.0
+  }
+}

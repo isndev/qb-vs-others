@@ -8,21 +8,21 @@
   "expected_messages": 80004,
   "work_unit": "actor",
   "work_units": 40000,
-  "repetitions": 9,
-  "warmup": 2,
+  "repetitions": 5,
+  "warmup": 1,
   "params": {"actors": 40000, "cores": 2, "wait": 0, "work": 0},
   "pinned": true,
-  "cpus": "0,2",
+  "cpus": "0,2,4,6,8,10,12,14",
   "thread_pinning_supported": true,
   "env": {
-    "host": "desktop-x86",
+    "host": "DESKTOP-B67OSN6",
     "os": "linux",
     "logical_cpus": 24,
     "compiler": "GNU",
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-10-11T00:42:28Z"
+    "utc": "2026-10-13T21:44:03Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. A forked actor is one `new`, one slot and one `delete`, with no mailbox, no registry and no lifecycle beyond the slot: the floor for what creating and destroying an actor can cost", "a forked actor is allocated on its creator's worker (id = slot * cores + worker), the same static placement qb's addRefActor has: with cores=2 each worker forks and runs its own half, so this floor is a bound for the placing frameworks and NOT for the pools", "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
   "failures": [],
-  "work_ns": [1895838.0, 1870925.0, 1808630.0, 1792073.0, 1799918.0, 1810758.0, 1786879.0, 1807482.0, 1813049.0],
-  "total_ns": [3623110.0, 3510192.0, 3483880.0, 3305792.0, 3313760.0, 3550127.0, 3585846.0, 3203357.0, 3164135.0],
-  "outside_window_ns": [1727272.0, 1639267.0, 1675250.0, 1513719.0, 1513842.0, 1739369.0, 1798967.0, 1395875.0, 1351086.0],
+  "work_ns": [2073052.0, 2118117.0, 1966250.0, 2034709.0, 2018773.0],
+  "total_ns": [3924640.0, 3876208.0, 3418679.0, 3626681.0, 3090272.0],
+  "outside_window_ns": [1851588.0, 1758091.0, 1452429.0, 1591972.0, 1071499.0],
   "summary": {
-    "work_min": 1786879.0,
-    "work_p50": 1808630.0,
-    "work_p99": 1893845.0,
-    "work_iqr": 13131.0
+    "work_min": 1966250.0,
+    "work_p50": 2034709.0,
+    "work_p99": 2116314.4,
+    "work_iqr": 54279.0
   }
 }

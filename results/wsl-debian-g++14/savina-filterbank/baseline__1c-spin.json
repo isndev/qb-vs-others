@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/filterbank",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 12132386210144776264,
+  "expected_messages": 1419393,
+  "work_unit": "sample",
+  "work_units": 34816,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"channels": 8, "columns": 16384, "cores": 1, "simulations": 34816, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-13T21:38:09Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; qb's placement (head on worker 0, bank j on j % cores, the join on the last); not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a hand-off is one ring push and one ring pop, and there is no scheduler: the floor for the bank's filters and its fan-out and fan-in, not for finding the next actor", "the producer, the source and the branches on worker 0, bank j on worker j % cores, the integrator, the combine and the sink on the last worker -- the placement qb gets", "a round reaches the combine as an index into a table the integrator fills (the two share a worker): the least a message carrying `channels` values can be", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [1105021680.0, 1104158344.0, 1105971281.0, 1122629025.0, 1109739863.0],
+  "total_ns": [1106981686.0, 1106102167.0, 1107942773.0, 1124559767.0, 1111778883.0],
+  "outside_window_ns": [1960006.0, 1943823.0, 1971492.0, 1930742.0, 2039020.0],
+  "summary": {
+    "work_min": 1104158344.0,
+    "work_p50": 1105971281.0,
+    "work_p99": 1122113458.5,
+    "work_iqr": 4718183.0
+  }
+}

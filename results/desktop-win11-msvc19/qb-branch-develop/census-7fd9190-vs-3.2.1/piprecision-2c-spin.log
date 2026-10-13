@@ -1,0 +1,9 @@
+
+savina/piprecision: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians   6497.8   min   6418.3   max   6893.0   n=12   [6496 6659 6463 6442 6500 6893 6555 6418 6508 6459 6468 6526]
+    shp          median-of-medians   6489.8   min   6326.9   max   6868.4   n=12   [6499 6549 6565 6662 6868 6392 6428 6481 6402 6433 6327 6664]
+    cand vs shp: 6497.8 vs 6489.8 (+0.1%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\piprecision-2c-spin

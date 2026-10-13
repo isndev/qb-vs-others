@@ -1,0 +1,9 @@
+
+savina/radixsort: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians      9.0   min      8.4   max      9.4   n=12   [9 9 8 9 9 9 9 9 9 9 9 9]
+    shp          median-of-medians      8.4   min      8.2   max      8.8   n=12   [8 8 9 8 8 8 8 9 8 8 8 8]
+    cand vs shp: 9.0 vs 8.4 (+7.8%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\radixsort-2c-park

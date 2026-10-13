@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/uct",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 4328311057014428388,
+  "expected_messages": 251956,
+  "work_unit": "node",
+  "work_units": 59990,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"avg": 500, "binomial": 10, "cores": 1, "nodes": 60000, "stdev": 100, "urgent": 50, "wait": 1, "work": 0},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-13T22:20:24Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; a node is a heap record on its parent's worker, the root's child i on worker i % cores; a report hands the parent the child's record, read and freed there; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A node is one `new` and one `delete`, with no mailbox, no registry and no lifecycle beyond its record: the floor for growing and ending the tree", "a node lives on its parent's worker and the root's child i on worker i % cores -- the same static placement qb has, so with cores=2 this floor bounds the placing frameworks and NOT the pools, and nothing balances the root's subtrees", "cores=1 is one thread with every node's messages in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [9925400.0, 9303900.0, 8531100.0, 8810900.0, 8871200.0],
+  "total_ns": [12825200.0, 12159500.0, 11381000.0, 11941200.0, 11617200.0],
+  "outside_window_ns": [2899800.0, 2855600.0, 2849900.0, 3130300.0, 2746000.0],
+  "summary": {
+    "work_min": 8531100.0,
+    "work_p50": 8871200.0,
+    "work_p99": 9900540.0,
+    "work_iqr": 493000.0
+  }
+}

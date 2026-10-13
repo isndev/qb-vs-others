@@ -1,0 +1,9 @@
+
+savina/nqueens: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians   7700.7   min   7088.5   max   8489.1   n=12   [7109 8356 7704 8480 7114 8489 7089 7697 7163 8430 8362 7123]
+    shp          median-of-medians   7186.6   min   7065.6   max   8573.2   n=12   [7129 7607 7239 7091 8573 7564 8455 7066 7073 7126 7135 7808]
+    cand vs shp: 7700.7 vs 7186.6 (+7.2%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/nqueens-2c-park

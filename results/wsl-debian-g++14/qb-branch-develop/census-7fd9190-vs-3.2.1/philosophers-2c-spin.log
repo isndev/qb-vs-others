@@ -1,0 +1,9 @@
+
+savina/philosophers: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians    100.3   min     95.2   max    105.1   n=12   [98 104 100 104 101 100 95 105 101 96 105 97]
+    shp          median-of-medians     98.0   min     96.5   max    105.1   n=12   [99 97 98 97 105 102 99 96 98 97 100 97]
+    cand vs shp: 100.3 vs 98.0 (+2.3%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/philosophers-2c-spin

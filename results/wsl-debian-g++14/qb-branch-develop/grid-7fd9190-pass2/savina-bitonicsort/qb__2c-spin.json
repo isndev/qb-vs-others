@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bitonicsort",
+  "framework": "qb",
+  "framework_version": "3.2.1",
+  "verified": true,
+  "expected_checksum": 2270309388473169468,
+  "expected_messages": 541869,
+  "work_unit": "message",
+  "work_units": 541869,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "max": 1152921504606846976, "n": 1024, "seed": 2048, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-13T21:44:15Z"
+  },
+  "idiom": {
+    "source": "the thread-ring adapter (ids shared before start, tallies in the actor) + qb/src/qb/core/Actor.h push_forward()",
+    "note": "one actor class per kind of the reference network; a value passing through unchanged is push_forward()ed in place, a compare-exchange, a joiner and a ValueDataAdapter push a new event; every hop ordered"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "with cores=2 the network's steps are cut into two contiguous halves of equal message weight (bitonicsort.h placement(): the cut before step 27 of 55 at the defaults), each step whole on one VirtualCore, so a value crosses a core once; CAF and SObjectizer receive the same budget and their schedulers place every actor -- see benchmarks/savina/bitonicsort.md", "qb's actor id is a 16-bit slot per VirtualCore (65 534 actors): the reference network is 44 772 actors at n=1024, 104 720 at 2048 and 241 984 at Savina's 4096, which neither one core nor two can hold -- the reason the parameter deviates from Savina's 4096; a cell whose network does not fit is declared not applicable"],
+  "failures": [],
+  "work_ns": [4855357.0, 4712045.0, 4725093.0, 5029816.0, 4777443.0, 5007499.0, 4738469.0, 4785583.0, 4718715.0],
+  "total_ns": [9637258.0, 9500796.0, 9233785.0, 9698930.0, 9349181.0, 9936827.0, 9401346.0, 9790768.0, 9286492.0],
+  "outside_window_ns": [4781901.0, 4788751.0, 4508692.0, 4669114.0, 4571738.0, 4929328.0, 4662877.0, 5005185.0, 4567777.0],
+  "summary": {
+    "work_min": 4712045.0,
+    "work_p50": 4777443.0,
+    "work_p99": 5028030.6,
+    "work_iqr": 130264.0
+  }
+}

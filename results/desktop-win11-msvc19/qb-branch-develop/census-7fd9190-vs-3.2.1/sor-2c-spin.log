@@ -1,0 +1,9 @@
+
+savina/sor: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians     27.7   min     26.7   max     29.5   n=12   [29 27 29 27 27 28 27 28 27 29 29 30]
+    shp          median-of-medians     27.7   min     26.5   max     29.0   n=12   [28 29 27 27 28 26 27 27 29 28 29 29]
+    cand vs shp: 27.7 vs 27.7 (+0.1%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\sor-2c-spin

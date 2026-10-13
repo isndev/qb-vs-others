@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/thread-ring",
+  "framework": "qb",
+  "framework_version": "3.2.1",
+  "verified": true,
+  "expected_checksum": 14531782539718253023,
+  "expected_messages": 1000001,
+  "work_unit": "hop",
+  "work_units": 1000000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 100, "cores": 1, "hops": 1000000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-13T21:32:59Z"
+  },
+  "idiom": {
+    "source": "qb/src/qb/core/Actor.h forward() + the ping-pong adapter",
+    "note": "one Token event forward()ed around the ring in place; actor i on VirtualCore i % cores, so every hop crosses a core at cores=2"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "actor i lives on VirtualCore i % cores: with cores=2 EVERY hop is a cross-core hand-off. CAF and SObjectizer receive the same 2-thread budget but their schedulers decide where each hop runs, so the same cell measures qb's cross-core pipe against their intra-thread hand-off -- see benchmarks/savina/thread-ring.md"],
+  "failures": [],
+  "work_ns": [14950459.0, 14877932.0, 15418596.0, 14506793.0, 15024180.0, 15841556.0, 14462965.0, 14654874.0, 15228940.0],
+  "total_ns": [15337712.0, 15305677.0, 15871093.0, 15007084.0, 15404901.0, 16248011.0, 14899094.0, 15051515.0, 15795600.0],
+  "outside_window_ns": [387253.0, 427745.0, 452497.0, 500291.0, 380721.0, 406455.0, 436129.0, 396641.0, 566660.0],
+  "summary": {
+    "work_min": 14462965.0,
+    "work_p50": 14950459.0,
+    "work_p99": 15807719.2,
+    "work_iqr": 574066.0
+  }
+}

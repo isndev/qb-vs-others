@@ -1,0 +1,46 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/piprecision",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 17861393250455950234,
+  "expected_messages": 0,
+  "work_unit": "term",
+  "work_units": 4147,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"cores": 2, "form": 0, "precision": 5000, "wait": 0, "workers": 20},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-13T22:19:53Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; an answer is one heap block whose pointer rides a ring message, freed by the master; master on thread 0, worker w (id cores + w) on thread w % cores -- qb's placement; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A work message is one ring message carrying the term's index, an answer one ring message carrying the pointer of a heap block (length + limbs) the worker filled and the master frees, and the term is the same shared kernel every framework runs: the floor for moving a heavy payload from a worker to a master", "worker w is owned by thread w % cores and the master by thread 0, fixed before the window -- qb's placement exactly: with cores=2 half the answers cross a thread, and the block they point at is read by the master's thread through the cache", "cores=1 is one thread with every actor's messages in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [47304000.0, 50744100.0, 47549100.0, 47775800.0, 47522200.0],
+  "total_ns": [49641000.0, 52370500.0, 49158100.0, 49389000.0, 49247300.0],
+  "outside_window_ns": [2337000.0, 1626400.0, 1609000.0, 1613200.0, 1725100.0],
+  "observed": {
+    "terms": {"samples": [4246, 4246, 4246, 4246, 4246], "min": 4246, "p50": 4246.0, "max": 4246}
+  },
+  "observed_at_least": {"terms": 4147},
+  "summary": {
+    "work_min": 47304000.0,
+    "work_p50": 47549100.0,
+    "work_p99": 50625368.0,
+    "work_iqr": 253600.0
+  }
+}

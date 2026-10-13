@@ -1,0 +1,9 @@
+
+savina/apsp: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians    670.0   min    636.8   max    712.6   n=12   [713 646 668 637 662 705 646 681 672 675 638 693]
+    shp          median-of-medians    681.5   min    647.1   max    709.5   n=12   [682 693 710 705 673 666 677 697 667 647 681 709]
+    cand vs shp: 670.0 vs 681.5 (-1.7%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\apsp-2c-spin

@@ -1,0 +1,9 @@
+
+savina/quicksort: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians     48.5   min     47.2   max     50.3   n=12   [50 48 49 49 48 48 49 48 50 49 47 48]
+    shp          median-of-medians     48.6   min     47.7   max     49.7   n=12   [48 48 48 49 48 49 49 50 48 49 48 50]
+    cand vs shp: 48.5 vs 48.6 (-0.1%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\quicksort-2c-spin

@@ -1,0 +1,9 @@
+
+savina/thread-ring: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians     84.2   min     78.0   max     89.2   n=12   [86 84 78 81 88 86 89 84 82 82 89 81]
+    shp          median-of-medians     80.1   min     76.8   max     81.6   n=12   [77 79 80 80 80 78 78 82 82 80 81 80]
+    cand vs shp: 84.2 vs 80.1 (+5.0%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/thread-ring-2c-park

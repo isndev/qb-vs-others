@@ -1,0 +1,9 @@
+
+savina/fork-join-create: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians     29.9   min     28.9   max     32.0   n=12   [31 29 29 30 29 31 29 30 30 32 30 30]
+    shp          median-of-medians     33.9   min     31.1   max     38.3   n=12   [36 31 33 32 33 34 38 35 31 35 31 36]
+    cand vs shp: 29.9 vs 33.9 (-11.8%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/fork-join-create-2c-park

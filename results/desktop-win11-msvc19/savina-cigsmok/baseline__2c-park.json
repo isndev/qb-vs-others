@@ -8,21 +8,21 @@
   "expected_messages": 100401,
   "work_unit": "round",
   "work_units": 50000,
-  "repetitions": 9,
-  "warmup": 2,
+  "repetitions": 5,
+  "warmup": 1,
   "params": {"cores": 2, "rounds": 50000, "smoke": 1000, "smokers": 200, "wait": 0},
   "pinned": true,
-  "cpus": "0,2",
+  "cpus": "0,2,4,6,8,10,12,14",
   "thread_pinning_supported": true,
   "env": {
-    "host": "desktop-x86",
+    "host": "DESKTOP-B67OSN6",
     "os": "windows",
     "logical_cpus": 24,
     "compiler": "MSVC",
     "compiler_version": "19.51.36256.0",
     "build_type": "Release",
     "cxx_flags": "/O2 /Ob2 /DNDEBUG",
-    "utc": "2026-10-11T01:06:32Z"
+    "utc": "2026-10-13T22:25:03Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +30,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. A round is one ring push to the chosen smoker and one back, a smoker's state one cache line: the floor for what this coordination costs", "the arbiter is on worker 0 and smoker j on worker (j + 1) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
   "failures": [],
-  "work_ns": [78800400.0, 78250100.0, 75210200.0, 73195600.0, 71697300.0, 76142100.0, 76138000.0, 76647900.0, 80223500.0],
-  "total_ns": [80244200.0, 79700800.0, 76644000.0, 74704300.0, 73323100.0, 77707400.0, 77567500.0, 78076800.0, 81661800.0],
-  "outside_window_ns": [1443800.0, 1450700.0, 1433800.0, 1508700.0, 1625800.0, 1565300.0, 1429500.0, 1428900.0, 1438300.0],
+  "work_ns": [71688500.0, 69970900.0, 70247800.0, 71262800.0, 71316000.0],
+  "total_ns": [73130300.0, 71448000.0, 71955800.0, 72823700.0, 72772100.0],
+  "outside_window_ns": [1441800.0, 1477100.0, 1708000.0, 1560900.0, 1456100.0],
   "summary": {
-    "work_min": 71697300.0,
-    "work_p50": 76142100.0,
-    "work_p99": 80109652.0,
-    "work_iqr": 3039900.0
+    "work_min": 69970900.0,
+    "work_p50": 71262800.0,
+    "work_p99": 71673600.0,
+    "work_iqr": 1068200.0
   }
 }

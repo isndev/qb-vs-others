@@ -1,0 +1,9 @@
+
+savina/logmap: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians     18.5   min     17.4   max     21.6   n=12   [17 18 19 18 22 20 21 18 19 18 19 18]
+    shp          median-of-medians     18.9   min     18.3   max     23.5   n=12   [19 19 19 19 18 18 21 19 20 18 24 22]
+    cand vs shp: 18.5 vs 18.9 (-2.1%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\logmap-2c-park

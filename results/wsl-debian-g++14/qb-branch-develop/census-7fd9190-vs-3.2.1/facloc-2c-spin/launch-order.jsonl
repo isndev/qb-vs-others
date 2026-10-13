@@ -1,0 +1,12 @@
+{"config": "2c-spin", "launch": 1, "order": ["cand", "shp"]}
+{"config": "2c-spin", "launch": 2, "order": ["shp", "cand"]}
+{"config": "2c-spin", "launch": 3, "order": ["cand", "shp"]}
+{"config": "2c-spin", "launch": 4, "order": ["shp", "cand"]}
+{"config": "2c-spin", "launch": 5, "order": ["cand", "shp"]}
+{"config": "2c-spin", "launch": 6, "order": ["shp", "cand"]}
+{"config": "2c-spin", "launch": 7, "order": ["cand", "shp"]}
+{"config": "2c-spin", "launch": 8, "order": ["shp", "cand"]}
+{"config": "2c-spin", "launch": 9, "order": ["cand", "shp"]}
+{"config": "2c-spin", "launch": 10, "order": ["shp", "cand"]}
+{"config": "2c-spin", "launch": 11, "order": ["cand", "shp"]}
+{"config": "2c-spin", "launch": 12, "order": ["shp", "cand"]}

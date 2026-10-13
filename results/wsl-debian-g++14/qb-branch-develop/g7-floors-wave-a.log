@@ -1,0 +1,44 @@
+run.py: 121 binaries, frameworks: baseline, caf, caf-detached, qb, sobjectizer
+run.py: pinning to CPUs 0,2,4,6,8,10,12,14, 5 repetitions + 1 warmup
+  savina/a-star            baseline     2c-spin  ok  p50=5,650,343 ns
+  savina/a-star            baseline     2c-park  ok  p50=3,215,300 ns
+  savina/a-star            baseline     1c-spin  ok  p50=5,708,171 ns
+  savina/a-star            baseline     1c-park  ok  p50=5,839,658 ns
+  savina/barber            baseline     2c-spin  ok  p50=11,688,434 ns
+  savina/barber            baseline     2c-park  ok  p50=14,057,114 ns
+  savina/barber            baseline     1c-spin  ok  p50=13,754,371 ns
+  savina/barber            baseline     1c-park  ok  p50=13,895,526 ns
+  savina/bndbuffer         baseline     2c-spin  ok  p50=450,997,148 ns
+  savina/bndbuffer         baseline     2c-park  ok  p50=545,600,518 ns
+  savina/bndbuffer         baseline     1c-spin  ok  p50=532,356,219 ns
+  savina/bndbuffer         baseline     1c-park  ok  p50=529,539,910 ns
+  savina/cigsmok           baseline     2c-spin  ok  p50=60,437,416 ns
+  savina/cigsmok           baseline     2c-park  ok  p50=685,636,873 ns
+  savina/cigsmok           baseline     1c-spin  ok  p50=68,659,763 ns
+  savina/cigsmok           baseline     1c-park  ok  p50=68,017,359 ns
+  savina/concdict          baseline     2c-spin  ok  p50=12,338,894 ns
+  savina/concdict          baseline     2c-park  ok  p50=266,911,565 ns
+  savina/concdict          baseline     1c-spin  ok  p50=7,287,541 ns
+  savina/concdict          baseline     1c-park  ok  p50=8,054,551 ns
+  savina/concsll           baseline     2c-spin  ok  p50=3,433,917,241 ns
+  savina/concsll           baseline     2c-park  ok  p50=4,418,896,455 ns
+  savina/concsll           baseline     1c-spin  ok  p50=3,329,490,146 ns
+  savina/concsll           baseline     1c-park  ok  p50=3,348,367,096 ns
+  savina/fork-join-create  baseline     2c-spin  ok  p50=5,266,902 ns
+  savina/fork-join-create  baseline     2c-park  ok  p50=2,034,709 ns
+  savina/fork-join-create  baseline     1c-spin  ok  p50=1,568,121 ns
+  savina/fork-join-create  baseline     1c-park  ok  p50=1,987,350 ns
+  savina/logmap            baseline     2c-spin  ok  p50=6,193,633 ns
+  savina/logmap            baseline     2c-park  ok  p50=10,104,318 ns
+  savina/logmap            baseline     1c-spin  ok  p50=4,043,181 ns
+  savina/logmap            baseline     1c-park  ok  p50=6,282,289 ns
+  savina/nqueens           baseline     2c-spin  ok  p50=110,573,091 ns
+  savina/nqueens           baseline     2c-park  ok  p50=113,853,110 ns
+  savina/nqueens           baseline     1c-spin  ok  p50=212,339,355 ns
+  savina/nqueens           baseline     1c-park  ok  p50=215,539,978 ns
+  savina/philosophers      baseline     2c-spin  ok  p50=40,193,015 ns
+  savina/philosophers      baseline     2c-park  ok  p50=569,352,996 ns
+  savina/philosophers      baseline     1c-spin  ok  p50=5,333,765 ns
+  savina/philosophers      baseline     1c-park  ok  p50=17,149,687 ns
+
+run.py: 40 cells, 0 not verified, 0 not applicable -> /home/mbelhadi/g7/out/floors-wave-a

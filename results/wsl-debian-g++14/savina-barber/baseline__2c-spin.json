@@ -8,21 +8,21 @@
   "expected_messages": 0,
   "work_unit": "haircut",
   "work_units": 5000,
-  "repetitions": 9,
-  "warmup": 2,
+  "repetitions": 5,
+  "warmup": 1,
   "params": {"ahr": 1000, "apr": 1000, "cores": 2, "haircuts": 5000, "pace": 0, "room": 5000, "wait": 1},
   "pinned": true,
-  "cpus": "0,2",
+  "cpus": "0,2,4,6,8,10,12,14",
   "thread_pinning_supported": true,
   "env": {
-    "host": "desktop-x86",
+    "host": "DESKTOP-B67OSN6",
     "os": "linux",
     "logical_cpus": 24,
     "compiler": "GNU",
     "compiler_version": "14.2.0",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-10-11T00:39:10Z"
+    "utc": "2026-10-13T21:42:13Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,18 +30,18 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. A customer is one `new`, one slot and one `delete`, the waiting room a ring of ids, a message one ring push: the floor for what this coordination costs", "the factory and every customer are on worker 0, the room and the barber on worker 1 % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools", "the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler, refused at cores>=2 above haircuts=65 536 (one ring: a worker inside the loop drains none of its inbound rings); 1 adds n-1 self-addressed Starts to the reported count", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
   "failures": [],
-  "work_ns": [11788044.0, 11512357.0, 11829350.0, 11248151.0, 10874290.0, 11705814.0, 11049946.0, 11786798.0, 12091105.0],
-  "total_ns": [12071283.0, 12084718.0, 12123869.0, 12034609.0, 11940588.0, 12033322.0, 11744519.0, 12108563.0, 12400448.0],
-  "outside_window_ns": [283239.0, 572361.0, 294519.0, 786458.0, 1066298.0, 327508.0, 694573.0, 321765.0, 309343.0],
+  "work_ns": [9982307.0, 11797319.0, 11850087.0, 11214500.0, 11688434.0],
+  "total_ns": [11600378.0, 12090862.0, 12188201.0, 11943578.0, 11999945.0],
+  "outside_window_ns": [1618071.0, 293543.0, 338114.0, 729078.0, 311511.0],
   "observed": {
-    "rejections": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0},
-    "wakeups": {"samples": [2, 2, 2, 2, 2, 2, 2, 2, 2], "min": 2, "p50": 2.0, "max": 2}
+    "rejections": {"samples": [0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0},
+    "wakeups": {"samples": [3, 2, 2, 2, 2], "min": 2, "p50": 2.0, "max": 3}
   },
   "observed_at_least": {"wakeups": 1},
   "summary": {
-    "work_min": 10874290.0,
-    "work_p50": 11705814.0,
-    "work_p99": 12070164.6,
-    "work_iqr": 539893.0
+    "work_min": 9982307.0,
+    "work_p50": 11688434.0,
+    "work_p99": 11847976.3,
+    "work_iqr": 582819.0
   }
 }

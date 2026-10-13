@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/facloc",
+  "framework": "qb",
+  "framework_version": "3.2.1",
+  "verified": true,
+  "expected_checksum": 6056148395906018919,
+  "expected_messages": 665514,
+  "work_unit": "customer",
+  "work_units": 100000,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"alpha": 2, "cores": 2, "grid": 500, "points": 100000, "seed": 123456, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-13T22:01:47Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md: addRefActor<T>() (same-core child) + kill(); the uct adapter's per-core planter",
+    "note": "a quadrant splits by creating four children with addRefActor from their seeds; customers travel down with push<>; producer and root on VirtualCore 0, the root's child k on core k % cores through a planter"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "qb has no cross-core spawn: a quadrant lives on its parent's VirtualCore, so with cores=2 the root's children 0 and 2 (the left half) and their subtrees run on core 0 with the producer and the root, children 1 and 3 on core 1, and nothing balances the two; the pools place every quadrant dynamically -- see benchmarks/savina/facloc.md", "the root's children on another core are created by a planter actor of that core (one Plant event each, the seed behind a std::unique_ptr), and the root holds the customers it routes to such a child until the planter names it: neither message is counted"],
+  "failures": [],
+  "work_ns": [8168118.0, 9139171.0, 8215153.0],
+  "total_ns": [8805199.0, 9779484.0, 8906672.0],
+  "outside_window_ns": [637081.0, 640313.0, 691519.0],
+  "summary": {
+    "work_min": 8168118.0,
+    "work_p50": 8215153.0,
+    "work_p99": 9120690.6,
+    "work_iqr": 485526.5
+  }
+}

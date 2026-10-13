@@ -1,0 +1,9 @@
+
+savina/facloc: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians     80.7   min     78.5   max     84.5   n=12   [80 79 84 80 81 84 81 82 82 79 80 78]
+    shp          median-of-medians     86.5   min     82.2   max     90.5   n=12   [87 90 87 86 89 89 82 83 85 90 86 83]
+    cand vs shp: 80.7 vs 86.5 (-6.8%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/facloc-2c-spin

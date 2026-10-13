@@ -1,0 +1,42 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bitonicsort",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 2270309388473169468,
+  "expected_messages": 541869,
+  "work_unit": "message",
+  "work_units": 541869,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"cores": 1, "max": 1152921504606846976, "n": 1024, "seed": 2048, "wait": 0},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "utc": "2026-10-13T21:37:52Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; every actor of the reference network an integer with its state in a vector slot; qb's step placement; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a message is one ring push and one ring pop, and there is no scheduler: the floor for moving 541 869 small messages (at the defaults) through a fixed network", "each step of the network lives whole on one worker and the steps are cut into contiguous halves of equal message weight at cores=2 -- the same placement qb gets -- so a value crosses a worker once", "cores=1 is one thread pushing every message into its own ring and popping it back -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [6059621.0, 5965011.0, 5855263.0, 5950661.0, 5917863.0],
+  "total_ns": [10409351.0, 10142980.0, 9616084.0, 9653179.0, 9575743.0],
+  "outside_window_ns": [4349730.0, 4177969.0, 3760821.0, 3702518.0, 3657880.0],
+  "summary": {
+    "work_min": 5855263.0,
+    "work_p50": 5950661.0,
+    "work_p99": 6055836.6,
+    "work_iqr": 47148.0
+  }
+}

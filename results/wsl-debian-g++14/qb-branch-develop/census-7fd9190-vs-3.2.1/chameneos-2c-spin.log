@@ -1,0 +1,9 @@
+
+savina/chameneos: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians     44.8   min     41.6   max     48.1   n=12   [47 43 42 43 46 48 43 45 43 45 45 44]
+    shp          median-of-medians     44.2   min     43.3   max     48.6   n=12   [44 43 44 43 49 49 47 44 44 43 45 44]
+    cand vs shp: 44.8 vs 44.2 (+1.3%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/chameneos-2c-spin

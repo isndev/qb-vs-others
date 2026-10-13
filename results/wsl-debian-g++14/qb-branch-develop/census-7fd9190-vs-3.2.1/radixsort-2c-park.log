@@ -1,0 +1,9 @@
+
+savina/radixsort: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians      5.6   min      5.6   max      5.8   n=12   [6 6 6 6 6 6 6 6 6 6 6 6]
+    shp          median-of-medians      6.2   min      6.1   max      6.3   n=12   [6 6 6 6 6 6 6 6 6 6 6 6]
+    cand vs shp: 5.6 vs 6.2 (-9.2%) -- distributions separate
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/radixsort-2c-park

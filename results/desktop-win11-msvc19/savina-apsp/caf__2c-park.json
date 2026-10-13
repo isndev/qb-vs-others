@@ -1,0 +1,45 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/apsp",
+  "framework": "caf",
+  "framework_version": "1.1.0",
+  "verified": true,
+  "expected_checksum": 9072176982710404765,
+  "expected_messages": 108072,
+  "work_unit": "block phase",
+  "work_units": 10800,
+  "repetitions": 5,
+  "warmup": 1,
+  "params": {"block": 50, "cores": 2, "form": 0, "nodes": 300, "wait": 0, "weight": 100},
+  "pinned": true,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "DESKTOP-B67OSN6",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/O2 /Ob2 /DNDEBUG",
+    "utc": "2026-10-13T22:20:25Z"
+  },
+  "idiom": {
+    "source": "the thread-ring and nqueens adapters + CAF's custom_types_1 example (type ID block) + CAF_ALLOW_UNSAFE_MESSAGE_TYPE",
+    "note": "neighbour handles wired once from the sink (Savina's ApspNeighborMessage); one caf::message per generation, holding a pointer to the tile, mailed to every neighbour; placement left to the pool; form=1 not applicable"
+  },
+  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship", "the blocks are placed by the work-stealing pool: a block made ready by a tile stays on the sender's worker (worker::delay) unless the idle worker steals it, so which phases run on which core is the scheduler's decision where qb and the floor fix block-row bi on core bi * cores / grid -- see benchmarks/savina/apsp.md"],
+  "failures": [],
+  "work_ns": [25246600.0, 23328600.0, 23655800.0, 24349100.0, 24117500.0],
+  "total_ns": [26330900.0, 24444400.0, 24736000.0, 25504300.0, 25213400.0],
+  "outside_window_ns": [1084300.0, 1115800.0, 1080200.0, 1155200.0, 1095900.0],
+  "observed": {
+    "ahead": {"samples": [27817, 27890, 27914, 27855, 28284], "min": 27817, "p50": 27890.0, "max": 28284}
+  },
+  "summary": {
+    "work_min": 23328600.0,
+    "work_p50": 24117500.0,
+    "work_p99": 25210700.0,
+    "work_iqr": 693300.0
+  }
+}

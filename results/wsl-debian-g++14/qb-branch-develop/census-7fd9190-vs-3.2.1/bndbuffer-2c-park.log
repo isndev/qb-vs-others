@@ -1,0 +1,9 @@
+
+savina/bndbuffer: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians   6655.2   min   6643.8   max   6751.0   n=12   [6670 6644 6656 6651 6646 6650 6751 6655 6672 6678 6654 6665]
+    shp          median-of-medians   6648.7   min   6628.2   max   6683.2   n=12   [6648 6637 6640 6636 6664 6628 6639 6649 6666 6683 6658 6677]
+    cand vs shp: 6655.2 vs 6648.7 (+0.1%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/bndbuffer-2c-park

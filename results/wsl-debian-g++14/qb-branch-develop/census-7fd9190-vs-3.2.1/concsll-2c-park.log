@@ -1,0 +1,9 @@
+
+savina/concsll: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians  21371.5   min  21272.2   max  21833.5   n=12   [21315 21327 21272 21401 21390 21332 21321 21393 21378 21365 21618 21833]
+    shp          median-of-medians  21289.3   min  21196.0   max  21631.1   n=12   [21286 21201 21196 21288 21253 21291 21322 21315 21331 21285 21555 21631]
+    cand vs shp: 21371.5 vs 21289.3 (+0.4%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/concsll-2c-park

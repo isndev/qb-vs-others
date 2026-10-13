@@ -1,0 +1,9 @@
+
+savina/fib: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians     48.5   min     45.9   max     50.9   n=12   [46 48 50 49 47 49 47 46 50 51 49 48]
+    shp          median-of-medians     59.5   min     57.7   max     62.7   n=12   [60 61 58 58 59 61 59 58 60 59 63 62]
+    cand vs shp: 48.5 vs 59.5 (-18.5%) -- distributions separate
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/fib-2c-park

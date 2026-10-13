@@ -1,0 +1,9 @@
+
+savina/barber: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians   1960.5   min   1935.9   max   1986.9   n=12   [1953 1957 1957 1963 1969 1936 1959 1968 1952 1987 1971 1962]
+    shp          median-of-medians   2762.0   min   2736.1   max   2856.8   n=12   [2744 2761 2754 2753 2827 2802 2789 2736 2755 2857 2786 2763]
+    cand vs shp: 1960.5 vs 2762.0 (-29.0%) -- distributions separate
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/barber-2c-park

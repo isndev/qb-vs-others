@@ -1,0 +1,9 @@
+
+savina/filterbank: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians  16477.0   min  16402.3   max  16722.3   n=12   [16462 16490 16464 16495 16419 16514 16550 16447 16446 16722 16516 16402]
+    shp          median-of-medians  16526.8   min  16423.3   max  16580.3   n=12   [16572 16580 16502 16440 16441 16423 16506 16570 16569 16580 16506 16548]
+    cand vs shp: 16477.0 vs 16526.8 (-0.3%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> D:\repo\g7\win\census\filterbank-2c-park

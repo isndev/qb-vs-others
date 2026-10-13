@@ -1,0 +1,9 @@
+
+savina/sieve: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians   1935.6   min   1920.8   max   1959.3   n=12   [1927 1943 1937 1937 1959 1941 1924 1933 1921 1940 1935 1931]
+    shp          median-of-medians   1947.1   min   1928.5   max   1966.1   n=12   [1928 1947 1936 1960 1936 1941 1953 1950 1946 1948 1966 1949]
+    cand vs shp: 1935.6 vs 1947.1 (-0.6%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/sieve-2c-spin

@@ -1,0 +1,9 @@
+
+savina/big: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-spin
+    cand         median-of-medians     17.5   min     17.3   max     19.2   n=12   [17 18 17 17 18 18 19 17 17 18 17 18]
+    shp          median-of-medians     17.7   min     17.6   max     18.1   n=12   [18 18 18 18 18 18 18 18 18 18 18 18]
+    cand vs shp: 17.5 vs 17.7 (-1.4%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/big-2c-spin

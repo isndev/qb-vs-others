@@ -1,0 +1,9 @@
+
+savina/sor: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, cpus 0,2,4,6,8,10,12,14
+
+  2c-park
+    cand         median-of-medians     21.5   min     21.1   max     22.2   n=12   [21 21 22 22 21 22 22 22 21 22 21 21]
+    shp          median-of-medians     22.7   min     22.2   max     23.1   n=12   [22 23 23 23 23 23 23 23 23 23 23 23]
+    cand vs shp: 21.5 vs 22.7 (-5.5%) -- distributions separate
+
+launch-census.py: 24 launches, 0 not verified -> /home/mbelhadi/g7/census/sor-2c-park
