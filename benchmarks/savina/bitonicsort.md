@@ -40,13 +40,16 @@ draws of the full-period generator are distinct — 1 024 distinct values.
 The reference network for `n` values has `log2(n) (log2(n) + 1) / 2` steps of `n / 2` compare-exchanges
 each, and around them the split-joins' splitters, joiners, adapters and forwarders. Counted by the
 spec's `topology()`, it is **44 772 actors at `n` = 1 024, 104 720 at 2 048 and 241 984 at Savina's
-4 096**. qb's actor id is a 16-bit slot per VirtualCore — 65 534 actors on one core (`Max number of
-Actors reached`, qb `src/qb/core/Main.h:1170`) — so 4 096 fits neither one core nor two, and 2 048
-not one: **1 024 is the largest network every framework in the field can hold at `cores=1`**, which is
-savina/fib's deviation (n = 23 for Savina's 25) for the same cap. The cap is qb's and is reported as
-qb's: the qb adapter declares a cell whose network does not fit **not applicable** (exit 3, the
-reason in the document) before building anything, so `--param n=2048` runs every framework but qb's
-one-core cells, and Savina's `--param n=4096` every framework but qb.
+4 096**. The common comparison uses the delivered qb 3.2.1 identity domain: a 16-bit
+slot per VirtualCore, at most 65 534 actors on one core. Under that domain, 4 096 fits neither
+one nor two cores, and 2 048 does not fit one; **1 024 is the largest network every framework
+can hold at `cores=1`** without changing the delivered qb baseline. The cap is recorded as qb's
+constraint, not as a limitation of Savina's algorithm.
+
+The ActorId64 candidate (Huly QB-970/QB-971) separates incarnation and slot and removes that
+fixed 16-bit ordinary-slot ceiling. The table retains the common 1 024-node input until the
+canonical 4 096 case and its costs have been validated on the new candidate on both architectures.
+A capacity change does not make different-sized sorting networks a comparable timing pair.
 
 ### The other deviations
 
@@ -77,7 +80,7 @@ differs from another's in anything but the messaging:
 
 | framework | a value, a stamped value, the Exit | idiom |
 |---|---|---|
-| qb | `Value{value}`, `Data{order, value}`, `Exit{}` events, `push` | one actor class per kind; a value that passes through unchanged (a forwarder, a splitter, a DataValue adapter) is the received event `push_forward`ed in place (qb `src/qb/core/Actor.h:1332`, "Forward a received event to a new destination with push's ordering, reusing the event object"); a compare-exchange, a joiner and a ValueData adapter push a new one. Every hop is ordered — never the unordered `forward` — because a joiner's lanes and the Exit wave rely on per-sender FIFO |
+| qb | `Value{value}`, `Data{order, value}`, `Exit{}` events, `push` | one actor class per kind; a value that passes through unchanged (a forwarder, a splitter, a DataValue adapter) is the received event `push_forward`ed in place (qb `src/qb/core/Actor.h:1338`, "Forward a received event to a new destination with push's ordering, reusing the event object"); a compare-exchange, a joiner and a ValueData adapter push a new one. Every hop is ordered — never the unordered `forward` — because a joiner's lanes and the Exit wave rely on per-sender FIFO |
 | CAF | a bare `uint64`, `(uint32 order, uint64 value)`, `close_atom` | one behavior per kind, every actor spawned before the window with the handles it sends to; CAF's mailbox is FIFO per sender |
 | SObjectizer | `mutable_msg<msg_value>`, `mutable_msg<msg_data>`, a `msg_exit` signal | one agent class per kind on direct mboxes; a value that passes through unchanged is the received mutable message **redirected** (`so_5::send(next, std::move(cmd))`, SObjectizer's own `mutable_msg_agents` sample), only a compare-exchange, a joiner and a ValueData adapter allocate one |
 | floor | the four-field `Msg` in a ring (`b` = the order) | every actor an integer, its state a vector slot, its kind a switch |

@@ -56,18 +56,21 @@ promises.
 
 Savina's `MAX_NODES` is 200 000, and every node of the tree is alive until the end — a node is
 created, asks, is answered or not, and waits for the traversal; nothing ends before the tree is
-complete. A qb `ActorId` carries a **16-bit** per-core index (`ServiceIdPool`): at most 65 534 actors
+complete. The delivered qb 3.2.1 `ActorId` carries a **16-bit** per-core index (`ServiceIdPool`): at most 65 534 actors
 alive on one VirtualCore. At `cores=1` the whole tree is on one core, and at `cores=2` qb's static
 placement puts 103 685 of Savina's 199 990 nodes on core 0: Savina's cap does not fit, in any
-configuration — measured: the qb adapter at `nodes=200000` fails both core counts with
+configuration on that delivered identity domain — measured: its qb adapter at `nodes=200000` fails both core counts with
 `qvo::fail()` naming the pool, where CAF, SObjectizer and the floor verify. 60 000 is a round cap
 with headroom under the per-core limit at `cores=1` (59 991 nodes against 65 534; `nodes=65000`,
 64 991 nodes, still verifies); it applies to every framework, and
 `--param nodes=200000` reproduces Savina's tree for the three that can hold it (199 990 nodes,
 19 998 grants, cap depth 7). The 60 000 case is the common comparison variant across all four
-frameworks; the canonical 200 000 case remains separate, with qb's capacity failure visible.
-A wider `ActorId` requires a separate API/ABI design decision; this adapter changes neither
-the actor-id domain nor its capacity handling.
+frameworks; the canonical 200 000 case remains separate, with the delivered qb capacity failure visible.
+
+The ActorId64 candidate (Huly QB-970/QB-971) removes that fixed 16-bit ordinary-slot ceiling.
+Its canonical capacity validation is separate from the matched 60 000-node timing comparison;
+the common table input remains unchanged until native validation and the API/ABI decision.
+The adapter changes neither identity layout nor allocation policy itself.
 
 ### The tree, for every interleaving
 
