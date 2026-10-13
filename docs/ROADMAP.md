@@ -50,11 +50,12 @@ ambition has already misled the reader.
   actually block, and the measurement of what it then pays.
 - `tools/run.py`, `tools/report.py`. Every published figure is regenerated.
 - The tuning sweeps, including the one that had CAF handicapped.
-- `tools/negative-control.py` — **9 CAUGHT / 5 CONFIRMED / 0 MISSED**. The verifier has been
-  watched rejecting a 1-in-10^7 message loss, a single lost message, a duplicate, a wrong
-  checksum, a right checksum reached by the wrong amount of work, an unmarked measurement window,
-  an observation below its asserted lower bound, a bounded observation never reported and a
-  refused CPU pin — and watched NOT rejecting the five shapes that are legitimate.
+- `tools/negative-control.py` — the last complete base census is **28 CAUGHT / 11 CONFIRMED /
+  0 MISSED**, recorded on Windows MSVC and WSL2 g++-14 on 2026-10-12. This historical result covers
+  A–K. The merged B/C battery and actual-adapter plants passed their macOS arm64 census
+  (151 CAUGHT / 43 CONFIRMED / 0 MISSED, 194 cases); Windows/WSL validation remains;
+  branch sums are not measured floors. [FAIRNESS.md](../FAIRNESS.md) describes the export and
+  the required case-by-case reconciliation.
 - **The document guards**, and their battery. `tools/check-roster.py`: every spec has an adapter
   in every framework or a declared omission with a reason, every adapter binds to exactly its
   spec, every spec has its page, and — given a results directory — every roster cell has a
@@ -63,7 +64,7 @@ ambition has already misled the reader.
   table (`<!-- check-report: <dir> ... -->`, including the one-framework `framework=qb` grids
   of the candidate branch) equals the JSON it summarises, to `report.py`'s own formatting and
   its own ratio. `tools/guards-negative-control.py` plants a defect at a time in a sandbox copy
-  and hashes the real checkout before and after: **33 CAUGHT / 3 CONFIRMED / 0 MISSED**. Its
+  and hashes the real checkout before and after: **34 CAUGHT / 3 CONFIRMED / 0 MISSED** in the last recorded base census. Its
   first full run found two of its own controls planting nothing (one written for a `N.NN ns`
   the renderer never emits) and one guard answering "inconclusive" where a named results
   directory that does not exist is a finding — all three fixed before the figure was recorded.
@@ -157,52 +158,49 @@ is left of the pipeline is the train itself.
    g++'s 5.9–9.3 from 2 k to 4 M, so the clang-cl A/B has no premise left.
 
 
-### The other 12 Savina benchmarks
+### Savina B/C: source integrated, combined proof pending
 
-Eighteen of the suite's thirty are written (this page said "twenty-five" until 2026-10-11; the
-reference repository, `shamsimam/savina`, has thirty) — the round trip, the fan-in, the ring, the fan-out,
-the all-to-all, since 2026-09-06 the two that the first five could not show: `savina/fib`
-(dynamic actor creation and destruction — 57 312 actors born and dead inside the window) and
-`savina/chameneos` (rendezvous through a shared broker), and since 2026-09-07
-`savina/bank-transaction`, the first that WAITS for a reply (one `qb::ask` per transfer, 50 000
-of them, `benchmarks/savina/bank-transaction.md`). All three are published on Windows and WSL2
-with shipped 3.1.0 like the five before them (`results/<host>/savina-fib/`,
-`savina-chameneos/`, `savina-bank-transaction/`; macOS since 2026-09-19), and were written against the
-qb work they produced (`results/<host>/qb-branch-perf-dense-table-growth/`,
-`qb-branch-perf-coro-scope-local-refcount/`; `docs/TUNING.md` §11 and §12), and joined the
-tables with the 3.2.0 grid on 2026-09-07 (`qb-branch-develop/`, §13). fib alone found a 43 s defect in unreleased `develop` on its first
-run, and then found that shipped 3.1.0 logs nine INFO lines per actor lifetime inside the window
-— 159 / 459 ms against the branch's 7.6 / 10.5; bank-transaction put a `perf` profile on the
-coroutine request path for the first time and found five defects on it in one afternoon (qb
-`fa1c5ce3`) — the argument for writing the rest. Since 2026-10-11 the ten of **wave A** are
-published on Windows and WSL2 with shipped 3.2.1, the 3.3.0 candidate beside them in the same
-session (`docs/TUNING.md` §21): creation from a flat loop (`fork-join-create`), creation and a
-search arriving as messages with work per node (`nqueens`, `a-star`), arbitration with refusals
-(`philosophers`, `cigsmok`), a bounded room with dynamic customers and a bounded buffer
-(`barber`, `bndbuffer`), a shared actor under twenty request/reply chains (`concdict`,
-`concsll`) and chained round trips into deep mailboxes (`logmap`). None of the eighteen carries a
-pipeline. What remains, in two waves, roughly in order of what they would teach:
+The source roster contains thirty specifications, thirty pages and thirty adapters in each of
+qb, CAF, SObjectizer and the floor. Waves B and C supply the twelve shapes below. This source
+inventory does not establish validated or published thirty-shape coverage. Published datasets
+still cover the earlier eighteen shapes, and the complete-results roster/report controls remain
+red until new complete datasets exist.
 
-| wave | benchmarks | what they add that the eighteen cannot show |
+| wave | benchmarks | combined acceptance work still needed |
 |---|---|---|
-| B | `radixsort`, `filterbank`, `sieve`, `trapezoid`, `piprecision`, `recmatmul`, `quicksort`, `bitonicsort` | pipelines and data-parallel shapes |
-| C | `apsp`, `sor`, `uct`, `facloc` | computation over graphs and grids, and a tree that grows while it is searched |
+| B1 | `radixsort`, `filterbank`, `sieve` | Revalidate the shared Mesh dispatch change and wave-A callers; complete applicable sanitizers and supported sieve placement cases. |
+| B2 | `trapezoid`, `piprecision`, `recmatmul` | Complete four-framework native matrices, controls, document guards and sanitizers. The handoff reports Windows roster/report/runner checks, but supplies no complete matrix or sanitizer evidence and no battery census. |
+| B3 | `quicksort`, `bitonicsort` | Complete native matrices, document guards, runner checks and sanitizers. The handoff reports a standalone MSVC battery of 43 CAUGHT / 13 CONFIRMED / 0 MISSED; it does not certify the merged candidate. Quicksort's `n < threshold` leaf-root is refused before the body runs; retain that domain. |
+| C1 | `apsp`, `sor` | Run the new compile-only plants in the actual qb/floor adapter sources, including blind checksum witnesses, protocol rejection and lost-message deadlines; revalidate the final combined source. |
+| C2 | `uct`, `facloc` | Prove the SObjectizer dispatcher-binder ownership repair through complete Windows return and repeated teardown, then revalidate matrices and sanitizers on the combined source; include sieve in the lifetime audit. |
 
-Wave A left four things for the shapes that follow it (§21.5): a quiet-host form sweep is part of
-publishing a shape whose adapters declare more than one idiom — it found SObjectizer's logmap
-2.0–2.5 × faster with its coops grouped, which became the adapter's default and the re-measured
-row's form; `concsll.md`
-promises a one-time measurement of the other placement (the list sharing a core with half the
-workers) that no adapter can switch to today; `tools/report.py` printed one version per framework
-for a host whose shapes were measured with two qb builds — it names each row's own version since
-Huly QB-1011; and the first `perf` / ETW profile of each new shape, which QB-244 asks of every
-wave, was not part of the measurement session.
+The five standalone batteries share the same base. Their additions are merged into unique
+sections L–W with A–K preserved, including positive shuffled arrivals and checksum-only
+witnesses. Actual APSP/SOR qb/floor plants are compiled into `qvoctl-*` control executables from
+the real adapter sources, with no plant path in ordinary benchmark binaries. A separate Mesh
+owner-dispatch control emits functional verdicts without timing fields and compares a compile-only
+reentrant mutant with the fixed dispatcher. Run the complete combined battery, retain stdout and
+exit code, and reconcile every identity in its `--census-out` export with the source inventory
+before deriving another floor. The macOS arm64 merged census is recorded in FAIRNESS.md;
+Windows/WSL validation and the remaining architecture campaign are still required.
 
-Each needs one spec header in `benchmarks/specs/qvospec/savina/` and one implementation per
-framework — `check-roster.py` refuses a framework missing from one. The per-framework support
-headers (`frameworks/<fw>/*_support.h`) exist so that placement and spin/park do not have to be
-re-decided twelve more times; fib, chameneos and bank-transaction cost one afternoon each on
-that basis.
+Workload decisions remain visible: UCT's **common `nodes=60000` variant** applies to all four
+frameworks; Savina's **canonical `nodes=200000`** is a separate case, with qb's declared pool
+failure retained until the Actor64 design has a proven capacity solution. Actor64 is design work
+only here. Sieve keeps **canonical `local=1000`**; **`local=1`** is separately labelled
+one-filter-per-prime stress. Facility location's omission of sibling notifications and
+radixsort's 16-bit generator remain documented deviations applied consistently across the field.
+
+Publication needs one quiet-host campaign: shipped qb and the candidate in the same session,
+all four frameworks, one and two cores, spin and park, complete documents and launch censuses
+where required. It must include the supported sieve placement sweep and APSP qb push/send forms.
+Windows and WSL2 run sequentially on the Windows host; macOS runs unpinned with its launch census.
+The existing historical eighteen-shape figures cannot supply B/C results. Do not weaken a guard,
+replace a timing output or relabel old data to fill that gap.
+
+Wave A also left the one-time `concsll` placement experiment, the form sweep for every newly
+published multi-form shape, and the first `perf` / ETW profile of each new shape. These remain
+publication obligations; the source merge does not complete them.
 
 ### Actor creation cost and memory footprint
 
