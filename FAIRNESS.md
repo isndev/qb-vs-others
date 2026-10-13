@@ -234,12 +234,12 @@ For a launch census over physical binary copies and A/A controls, `tools/launch-
 that exact plan. The default fixed order and the two-binary `--alternate-order` mode remain
 available; these ordering modes cannot be combined.
 
-The harness has its own negative control, and it has been run (2026-10-12, the same census on
+The harness has its own negative control, and it has been run (2026-10-13, the same census on
 WSL2 g++-14 and on Windows MSVC 19.51; its floors are those counts):
 
 ```
 python3 tools/negative-control.py --build build/final
-    CAUGHT=28 CONFIRMED=11 MISSED=0
+    CAUGHT=47 CONFIRMED=17 MISSED=0
 ```
 
 It plants one defect at a time — a message lost 1 time in 10⁷, a single lost message, a duplicate
@@ -253,14 +253,21 @@ that never returns — inside its window, in its teardown, after an earlier fail
 failure — a refusal from another thread (`qvo::refuse()`, exit 2), and, on a `thread-ring`
 subject that tallies like every adapter, a token delivered twice, a token delivered to the wrong
 actor, a token forwarded untouched, an actor the ring routes around, a consistent misroute that
-leaves every per-actor count right, and a ring of zero hops — and asserts each is **rejected**, by
+leaves every per-actor count right, and a ring of zero hops — and, on `trapezoid`, `piprecision` and
+`recmatmul` subjects that run each protocol through its spec's own functions, a work message or an
+answer delivered twice, a range or a task delivered to the wrong worker, work answered without being
+done, an answer of value 0 duplicated or answered by nobody (the one seen by a per-index count alone,
+the other by a proof of work alone), a created task lost while the run still ends, a leaf that
+multiplies the wrong half of the inner index (which Savina's own data accepts), an answer for a term
+never handed out and a parameter outside the spec's domain — and asserts each is **rejected**, by
 the check meant to see it where it names one, with no
 partial samples or summary emitted; a blocked repetition must end inside its deadline, and a
 declared failure at once, with a document `tools/run.py` publishes as an unverified cell. It also
-asserts eleven legitimate shapes are **not** rejected — among them a run inside its deadline,
-`--deadline 0`, a correct ring, and a correct run whose document is the same, clock and timings
-aside, with the watchdog armed and without it — because a battery that fails everything is not a
-working battery.
+asserts seventeen legitimate shapes are **not** rejected — among them a run inside its deadline,
+`--deadline 0`, a correct ring, a correct run whose document is the same, clock and timings aside,
+with the watchdog armed and without it, and the orders no framework controls (results folded in
+reverse arrival order, answers drawn at random, deliveries interleaved with each sender's order
+kept) — because a battery that fails everything is not a working battery.
 
 The two document guards have theirs, and it plants in a sandbox copy while hashing the real
 checkout before and after:

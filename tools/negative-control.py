@@ -33,8 +33,8 @@ import run as runner  # noqa: E402  (tools/run.py: its own acceptance rule judge
 
 # Floors. Raise them in the same commit that adds a control; a count that goes DOWN is a control
 # that stopped firing, which is indistinguishable from a guard that stopped guarding.
-FLOOR_CAUGHT = 28
-FLOOR_CONFIRMED = 11
+FLOOR_CAUGHT = 47
+FLOOR_CONFIRMED = 17
 
 # The deadline controls (section I): a planted hang must end inside DEADLINE_S plus this slack --
 # process start and the document write, generous for a loaded host -- and the battery gives up on
@@ -206,6 +206,30 @@ def expect_declared_failure(exe: Path, plant: str, what: str, repetitions: int, 
         verdict("CAUGHT", what, f"{fails[-1][:100]} (exit 1 after {elapsed:.1f} s)")
 
 
+def expect_rejected_saying(exe: Path, plant: str, what: str, params: list[str], because: str,
+                           said: str) -> None:
+    """A planted defect that ONE check alone can see: rejected by the check meant to see it (the
+    first failure starts with `because`), with no timing, AND the subject's own report on stderr
+    saying `said` -- the other checks it carries would have let the defect through."""
+    rc, doc, err = run_subject(exe, plant, params=params, extra=["--no-pin"])
+    fails = (doc or {}).get("failures") or []
+    if (rc == 1 and doc and doc.get("verified") is False and fails
+            and fails[0].startswith(because) and not doc.get("work_ns") and said in err):
+        verdict("CAUGHT", what, fails[0][:100])
+    else:
+        verdict("MISSED", what, f"rc={rc}, failures={fails}, err={err.strip()[-200:]}")
+
+
+def expect_refused(exe: Path, what: str, params: list[str], needle: str) -> None:
+    """A parameter outside the spec's domain: exit 2 before anything runs, no document."""
+    rc, doc, err = run_subject(exe, "none", params=params, extra=["--no-pin"])
+    if rc == 2 and doc is None and needle in err:
+        verdict("CAUGHT", what)
+    else:
+        verdict("MISSED", what, f"rc={rc}, document={'none' if doc is None else 'present'}, "
+                                f"err={err.strip()[:100]}")
+
+
 def comparable(doc: dict) -> dict:
     """The document minus what legitimately differs between two launches: the clock (env.utc)
     and the timings. Everything else must be byte-for-byte the same."""
@@ -233,6 +257,9 @@ def main() -> int:
 
     exe = subject("qvoctl-control-subject")
     ring = subject("qvoctl-thread-ring-subject")
+    trap = subject("qvoctl-trapezoid-subject")
+    pip = subject("qvoctl-piprecision-subject")
+    rmm = subject("qvoctl-recmatmul-subject")
 
     print("== A. the positive control: an undefective subject must PASS ==")
     rc, doc, err = run_subject(exe, "none")
@@ -493,6 +520,113 @@ def main() -> int:
         verdict("MISSED", "a ring of 0 hops was not refused",
                 f"rc={rc}, document={'none' if doc is None else 'present'}, "
                 f"err={err.strip()[:100]}")
+
+    print("\n== L. savina/trapezoid -- the master's records folded in worker order, every worker's "
+          "count, the answer's bits ==")
+    # Savina's master folds the areas in arrival order, so its answer moves in the last bits from
+    # run to run; the spec's master keeps one record per worker and folds them in worker order,
+    # through one compiled kernel (Huly QB-246). The subject integrates through the spec's own
+    # integrate(), records through Record and folds through fold(), like every adapter.
+    trap_params = ["pieces=100000", "workers=10", "cores=1", "wait=1"]
+    for plant, what in (
+        ("none", "a correct fan-out verifies: every area to the bit, 20 deliveries counted"),
+        ("reverse", "the results folded in REVERSE arrival order verify -- no arrival order moves "
+                    "a bit of the answer"),
+    ):
+        rc, doc, err = run_subject(trap, plant, params=trap_params, extra=["--no-pin"])
+        if rc == 0 and doc and doc.get("verified") is True and doc.get("expected_messages") == 20:
+            verdict("CONFIRMED", what)
+        else:
+            verdict("MISSED", what, f"rc={rc}, failures={(doc or {}).get('failures')}, "
+                                    f"err={err.strip()[:100]}")
+    for plant, what in (
+        ("duplicate-work", "one work message delivered twice -- two results, twice the area"),
+        ("duplicate-result", "one result delivered twice -- the master's count reached one real "
+                             "result early"),
+        ("misroute", "one worker's range delivered to another -- every message count right"),
+        ("untouched", "one worker answers without integrating"),
+        ("wrong-range", "one worker integrates its range shifted by one trapezoid"),
+    ):
+        expect_rejected(trap, plant, what, because="checksum ", params=trap_params)
+    expect_refused(trap, "fewer trapezoids than workers is refused (exit 2) before anything runs",
+                   ["pieces=5", "workers=10", "cores=1", "wait=1"],
+                   "qvo: FATAL: savina/trapezoid: need")
+
+    print("\n== M. savina/piprecision -- the exact integer sum of the terms, every term index "
+          "answered once, the terms handed out reported ==")
+    # Savina's terms are BigDecimals at the scale; the spec computes them exactly on their unscaled
+    # integers, so the sum is an integer sum and the race past the first term at the tolerance
+    # (every later term rounds to 0) never reaches the answer (Huly QB-246). The subject computes
+    # through the spec's own bbp_term() and folds through Fold, like every adapter.
+    pip_params = ["precision=1000", "workers=20", "cores=1", "wait=1"]
+    for plant, what in (
+        ("none", "a correct run verifies: the sum to the limb, every index answered once"),
+        ("shuffled", "deliveries drawn at random verify -- another number of terms handed out, "
+                     "the same answer"),
+    ):
+        rc, doc, err = run_subject(pip, plant, params=pip_params, extra=["--no-pin"])
+        if (rc == 0 and doc and doc.get("verified") is True
+                and "terms" in (doc.get("observed") or {})):
+            verdict("CONFIRMED", what)
+        else:
+            verdict("MISSED", what, f"rc={rc}, failures={(doc or {}).get('failures')}, "
+                                    f"err={err.strip()[:100]}")
+    for plant, what in (
+        ("duplicate-answer", "one answer delivered twice"),
+        ("untouched", "one term answered without being computed"),
+        ("wrong-term", "one term answered with the next term's value"),
+    ):
+        expect_rejected(pip, plant, what, because="checksum ", params=pip_params)
+    expect_rejected_saying(pip, "duplicate-zero", "an answer of value 0 delivered twice: the sum "
+                           "unchanged, the per-index count rejects it", pip_params,
+                           "repetition 0: checksum ", "the duplicated answer is 0: yes")
+    expect_rejected_saying(pip, "skip-zero", "a term past k1 answered 0 without being computed: "
+                           "the value right, the proof of work rejects it", pip_params,
+                           "repetition 0: checksum ", "the skipped term's value is 0: yes")
+    expect_rejected(pip, "phantom", "an answer for a term never handed out is a declared protocol "
+                    "failure (qvo::fail)", because="savina/piprecision: protocol violated",
+                    params=pip_params)
+    expect_refused(pip, "a precision of 0 is refused (exit 2) before anything runs",
+                   ["precision=0", "workers=20", "cores=1", "wait=1"],
+                   "qvo: FATAL: savina/piprecision: need")
+
+    print("\n== N. savina/recmatmul -- C against its closed form, every worker's tally against "
+          "the task tree, the master's counts ==")
+    # Savina's data (A[i][k] = i, B[k][j] = j) makes every inner range give the same product, so a
+    # task with the wrong inner corners passes Savina's own check; the spec's data does not, and
+    # every entry of C is an exact integer, so no order of the products moves a bit (Huly QB-246).
+    # The subject splits, routes and multiplies through the spec's own functions, like every
+    # adapter, with a mailbox per sender.
+    rmm_params = ["length=64", "threshold=64", "workers=20", "cores=1", "wait=1"]
+    for plant, what in (
+        ("none", "a correct decomposition verifies: C to the bit, every tally, 1 754 deliveries "
+                 "counted"),
+        ("shuffled", "deliveries interleaved at random, each sender's order kept, verify -- no "
+                     "order of the products moves a bit of C"),
+    ):
+        rc, doc, err = run_subject(rmm, plant, params=rmm_params, extra=["--no-pin"])
+        if (rc == 0 and doc and doc.get("verified") is True
+                and doc.get("expected_messages") == 1754):
+            verdict("CONFIRMED", what)
+        else:
+            verdict("MISSED", what, f"rc={rc}, failures={(doc or {}).get('failures')}, "
+                                    f"err={err.strip()[:100]}")
+    for plant, what in (
+        ("duplicate", "one leaf delivered twice -- its product added twice"),
+        ("lost-child", "one created task lost on its way to the master -- the run still ENDS"),
+        ("untouched", "one leaf answered with a done and no product"),
+    ):
+        expect_rejected(rmm, plant, what, because="checksum ", params=rmm_params)
+    expect_rejected_saying(rmm, "misroute", "one leaf routed to the wrong worker: C right, the "
+                           "tallies reject it", rmm_params, "repetition 0: checksum ",
+                           "every entry as the closed form says: yes")
+    expect_rejected_saying(rmm, "wrong-inner", "one leaf multiplying the other half of the inner "
+                           "index: Savina's own data would accept it, the spec's rejects it",
+                           rmm_params, "repetition 0: checksum ",
+                           "Savina's data would accept this run: yes")
+    expect_refused(rmm, "a dimension that is not a power of two is refused (exit 2) before "
+                   "anything runs", ["length=100", "cores=1", "wait=1"],
+                   "qvo: FATAL: savina/recmatmul: need")
 
     print(f"\n== census ==\n  CAUGHT={caught} CONFIRMED={confirmed} MISSED={missed} "
           f"(floors: CAUGHT>={FLOOR_CAUGHT} CONFIRMED>={FLOOR_CONFIRMED})")
