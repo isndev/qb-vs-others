@@ -33,8 +33,8 @@ import run as runner  # noqa: E402  (tools/run.py: its own acceptance rule judge
 
 # Floors. Raise them in the same commit that adds a control; a count that goes DOWN is a control
 # that stopped firing, which is indistinguishable from a guard that stopped guarding.
-FLOOR_CAUGHT = 28
-FLOOR_CONFIRMED = 11
+FLOOR_CAUGHT = 42
+FLOOR_CONFIRMED = 15
 
 # The deadline controls (section I): a planted hang must end inside DEADLINE_S plus this slack --
 # process start and the document write, generous for a loaded host -- and the battery gives up on
@@ -204,6 +204,107 @@ def expect_declared_failure(exe: Path, plant: str, what: str, repetitions: int, 
         verdict("MISSED", what, f"tools/run.py would not publish the document: {accepted}")
     else:
         verdict("CAUGHT", what, f"{fails[-1][:100]} (exit 1 after {elapsed:.1f} s)")
+
+
+def run_shape(exe: Path, plant: str, benchmark: str, params: dict,
+              deadline: str | None = None) -> tuple[int | None, dict | None, str, float, str]:
+    """Run a shape's subject (sections L and M), unpinned, one repetition, with its own params.
+
+    Returns (rc -- None when the battery had to kill the child --, document, stderr, elapsed
+    seconds, tools/run.py's verdict on the document: "" when it would publish it)."""
+    env = dict(os.environ)
+    env["QVO_CONTROL_PLANT"] = plant
+    with tempfile.TemporaryDirectory() as td:
+        out = Path(td) / "r.json"
+        cmd = [str(exe), "--repetitions", "1", "--warmup", "0", "--no-pin", "--out", str(out)]
+        for k, v in params.items():
+            cmd += ["--param", f"{k}={v}"]
+        if deadline is not None:
+            cmd += ["--deadline", deadline]
+        t0 = time.monotonic()
+        try:
+            p = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=HANG_WAIT_S)
+        except subprocess.TimeoutExpired:
+            return None, None, "", time.monotonic() - t0, "the battery killed the child"
+        elapsed = time.monotonic() - t0
+        doc = None
+        if out.exists():
+            try:
+                doc = json.loads(out.read_text())
+            except json.JSONDecodeError:
+                doc = None
+        if p.returncode in (0, 1, 3):
+            _, accepted = runner.read_attempt(out, benchmark, "control", params, p.returncode, 1, 0)
+        else:
+            accepted = f"exit {p.returncode}"
+        return p.returncode, doc, p.stderr, elapsed, accepted
+
+
+def shape_controls(exe: Path, benchmark: str, params: dict, expected_messages: int,
+                   rejected: list[tuple[str, str, str]], blind: tuple[str, str, list[str]],
+                   refused: tuple[dict, str], observed: str | None = None) -> None:
+    """The battery of one shape's subject (sections L and M):
+
+    * `none` and `shuffle` must verify -- the second delivering every message in a seeded random
+      order: the answer does not depend on the interleaving;
+    * every (plant, what, needle) of `rejected` must be rejected by the check whose first failure
+      reason contains `needle`;
+    * `lost` must end at the deadline with a failure document tools/run.py publishes;
+    * the `blind` plant must be rejected by the checksum while the subject says on stderr that
+      every line of its third element still holds -- the counts and the final answer a check
+      without the witness would have compared;
+    * the `refused` parameters must be refused (exit 2, no document) by the spec before anything
+      runs."""
+    for plant, what in (("none", "a correct run verifies"),
+                        ("shuffle", "every message delivered in a seeded random order verifies -- "
+                                    "the answer does not depend on the interleaving")):
+        rc, doc, err, _, accepted = run_shape(exe, plant, benchmark, params)
+        ok = (rc == 0 and doc and doc.get("verified") is True and len(doc.get("work_ns", [])) == 1
+              and doc.get("expected_messages") == expected_messages and not accepted)
+        if ok and observed is not None:
+            ok = observed in (doc.get("observed") or {})
+        if ok:
+            verdict("CONFIRMED", what)
+        else:
+            verdict("MISSED", f"{what}: REJECTED",
+                    f"rc={rc}, failures={(doc or {}).get('failures')}, err={err.strip()[-120:]}, "
+                    f"run.py: {accepted or 'accepted'}")
+    for plant, what, needle in rejected:
+        rc, doc, err, _, accepted = run_shape(exe, plant, benchmark, params, deadline="60")
+        fails = (doc or {}).get("failures") or []
+        if (rc == 1 and doc and doc.get("verified") is False and fails and needle in fails[0]
+                and not doc.get("work_ns") and not accepted):
+            verdict("CAUGHT", what, fails[0][:110])
+        else:
+            verdict("MISSED", what, f"rc={rc}, failures={fails}, err={err.strip()[-120:]}, "
+                                    f"run.py: {accepted or 'accepted'}")
+    rc, doc, err, elapsed, accepted = run_shape(exe, "lost", benchmark, params, str(DEADLINE_S))
+    fails = (doc or {}).get("failures") or []
+    if (rc == 1 and doc and len(fails) == 1
+            and fails[0].startswith(f"repetition 0: deadline exceeded after {DEADLINE_S} s")
+            and DEADLINE_S <= elapsed < DEADLINE_S + DEADLINE_SLACK_S and not doc.get("work_ns")
+            and not accepted):
+        verdict("CAUGHT", "a message lost: the protocol never ends, and the deadline fails it",
+                f"{fails[0][:90]} (exit 1 after {elapsed:.1f} s)")
+    else:
+        verdict("MISSED", "a lost message did not end at the deadline",
+                f"rc={rc}, failures={fails}, elapsed={elapsed:.1f}, run.py: {accepted or 'accepted'}")
+    plant, what, still = blind
+    rc, doc, err, _, accepted = run_shape(exe, plant, benchmark, params, deadline="60")
+    fails = (doc or {}).get("failures") or []
+    if (rc == 1 and doc and fails and fails[0].startswith("repetition 0: checksum ")
+            and not doc.get("work_ns") and not accepted and all(s in err for s in still)):
+        verdict("CAUGHT", what, fails[0][:100])
+    else:
+        verdict("MISSED", what, f"rc={rc}, failures={fails}, err={err.strip()[-200:]}")
+    bad, needle = refused
+    rc, doc, err, _, _ = run_shape(exe, "none", benchmark, {**params, **bad})
+    if rc == 2 and doc is None and needle in err:
+        verdict("CAUGHT", f"parameters outside the spec's domain ({bad}) are refused (exit 2) "
+                          "before anything runs")
+    else:
+        verdict("MISSED", f"parameters outside the spec's domain ({bad}) were not refused",
+                f"rc={rc}, document={'none' if doc is None else 'present'}, err={err.strip()[:100]}")
 
 
 def comparable(doc: dict) -> dict:
@@ -493,6 +594,42 @@ def main() -> int:
         verdict("MISSED", "a ring of 0 hops was not refused",
                 f"rc={rc}, document={'none' if doc is None else 'present'}, "
                 f"err={err.strip()[:100]}")
+
+    print("\n== L. savina/apsp -- every block's phases, tiles and witness against the reference ==")
+    # The grid simulated on one thread through the spec's own Block (Huly QB-247). A tile names its
+    # generation, a block holds the two its neighbours can be at, and every phase folds its tile's
+    # sum into a witness: the final matrix alone cannot see a thrown-away phase.
+    shape_controls(
+        subject("qvoctl-apsp-subject"), "control/apsp",
+        {"nodes": 300, "block": 50, "weight": 100, "form": 0, "cores": 1, "wait": 1}, 108072,
+        [("duplicate", "a tile delivered twice", "twice"),
+         ("misroute", "a tile delivered outside its sender's row and column",
+          "not in its row or its column"),
+         ("misroute-row", "a tile delivered to another block of its sender's row", "twice"),
+         ("far-ahead", "a tile tagged two generations ahead", "one generation ahead, never more"),
+         ("early", "a phase computed one tile short", "a phase that ends early")],
+        ("skip-change", "a phase thrown away (282 distances): every count and the final matrix "
+                        "right, the witness rejects it",
+         ["every block's phases and tiles as the closed form says: yes",
+          "the final matrix as the reference says: yes"]),
+        ({"block": 7}, "qvo: FATAL: savina/apsp: need"), observed="ahead")
+
+    print("\n== M. savina/sor -- every cell's updates, receipts and witness against the reference ==")
+    # The grid and its two owners simulated on one thread through the spec's own Cell and Owner
+    # (Huly QB-247), at Savina's own size: fixed-point values, so the answer is exact in any order,
+    # and a witness per cell, because the relaxation erases an error before the end.
+    shape_controls(
+        subject("qvoctl-sor-subject"), "control/sor",
+        {"size": 20, "iterations": 100, "cores": 1, "wait": 1}, 152042,
+        [("duplicate", "a value delivered twice", "twice"),
+         ("misroute", "a value delivered to a cell that is not its sender's neighbour",
+          "not its neighbour"),
+         ("wrong-round", "a value tagged with the next generation", "waiting for generation")],
+        ("off-by-one", "a value one unit off at one update: every count and every final value "
+                       "right, the witnesses reject it",
+         ["every cell's updates and receipts as the closed form says: yes",
+          "every final value as the reference says: yes"]),
+        ({"size": 1}, "qvo: FATAL: savina/sor: need"))
 
     print(f"\n== census ==\n  CAUGHT={caught} CONFIRMED={confirmed} MISSED={missed} "
           f"(floors: CAUGHT>={FLOOR_CAUGHT} CONFIRMED>={FLOOR_CONFIRMED})")
