@@ -124,15 +124,57 @@ endforeach()
 # Named `qvoctl-` and NOT declared through qvo_add_benchmark, so tools/run.py -- which discovers
 # binaries whose name begins with `qvo-` -- cannot find them. A planted defect must never be able
 # to reach a published table. The ping-pong subject plants defects in the harness's verification,
-# the thread-ring one in savina/thread-ring's own (Huly QB-1017).
+# the thread-ring one in savina/thread-ring's own (Huly QB-1017), and the twelve B/C subjects
+# in their own shape's verifier (Huly QB-246, QB-247).
 option(QVO_BUILD_CONTROLS "Build the negative-control subjects" ON)
 if(QVO_BUILD_CONTROLS)
-    foreach(_subject control-subject thread-ring-subject)
+    foreach(_subject control-subject thread-ring-subject radixsort-subject filterbank-subject
+                     sieve-subject trapezoid-subject piprecision-subject recmatmul-subject
+                     quicksort-subject bitonicsort-subject apsp-subject sor-subject
+                     uct-subject facloc-subject mesh-dispatch-subject)
         add_executable(qvoctl-${_subject} tools/control/${_subject}.cpp)
         target_link_libraries(qvoctl-${_subject} PRIVATE qvo-harness)
         set_target_properties(qvoctl-${_subject} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
             FOLDER "controls")
+    endforeach()
+
+    add_executable(qvoctl-mesh-dispatch-reentrant tools/control/mesh-dispatch-subject.cpp)
+    target_link_libraries(qvoctl-mesh-dispatch-reentrant PRIVATE qvo-harness)
+    target_compile_definitions(qvoctl-mesh-dispatch-reentrant PRIVATE QVO_MESH_REENTRANT_CONTROL=1)
+    set_target_properties(qvoctl-mesh-dispatch-reentrant PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "controls")
+
+    # Real adapters with compile-only plants. Their qvoctl- names keep them out of discovery;
+    # the ordinary qvo-* targets contain none of the plant state, branches or diagnostics.
+    foreach(_fw qb baseline)
+        if(NOT _fw IN_LIST QVO_ENABLED_FRAMEWORKS)
+            continue()
+        endif()
+        string(TOUPPER "${_fw}" _FW)
+        foreach(_shape apsp sor)
+            set(_target "qvoctl-${_fw}-${_shape}")
+            add_executable(${_target} "frameworks/${_fw}/savina/${_shape}.cpp")
+            target_link_libraries(${_target} PRIVATE qvo-harness)
+            if(_fw STREQUAL "qb")
+                target_link_libraries(${_target} PRIVATE qb::core)
+            endif()
+            target_compile_definitions(${_target} PRIVATE
+                QVO_REAL_ADAPTER_CONTROLS=1
+                QVO_BENCHMARK_ID="savina/${_shape}"
+                QVO_FRAMEWORK_ID="${_fw}"
+                QVO_FRAMEWORK_VERSION="${QVO_${_FW}_VERSION}")
+            set_target_properties(${_target} PROPERTIES
+                RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+                FOLDER "controls")
+            if(WIN32)
+                add_custom_command(TARGET ${_target} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E $<IF:$<BOOL:$<TARGET_RUNTIME_DLLS:${_target}>>,copy_if_different,true>
+                            $<TARGET_RUNTIME_DLLS:${_target}> $<TARGET_FILE_DIR:${_target}>
+                    COMMAND_EXPAND_LISTS)
+            endif()
+        endforeach()
     endforeach()
 endif()
 

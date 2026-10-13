@@ -234,8 +234,8 @@ For a launch census over physical binary copies and A/A controls, `tools/launch-
 that exact plan. The default fixed order and the two-binary `--alternate-order` mode remain
 available; these ordering modes cannot be combined.
 
-The harness has its own negative control, and it has been run (2026-10-12, the same census on
-WSL2 g++-14 and on Windows MSVC 19.51; its floors are those counts):
+The harness has its own negative control. Its last complete **base** census was recorded on
+2026-10-12, on WSL2 g++-14 and Windows MSVC 19.51; this historical base census remains recorded:
 
 ```
 python3 tools/negative-control.py --build build/final
@@ -257,19 +257,55 @@ leaves every per-actor count right, and a ring of zero hops — and asserts each
 the check meant to see it where it names one, with no
 partial samples or summary emitted; a blocked repetition must end inside its deadline, and a
 declared failure at once, with a document `tools/run.py` publishes as an unverified cell. It also
-asserts eleven legitimate shapes are **not** rejected — among them a run inside its deadline,
+asserted eleven legitimate shapes were **not** rejected in that base census — among them a run inside its deadline,
 `--deadline 0`, a correct ring, and a correct run whose document is the same, clock and timings
 aside, with the watchdog armed and without it — because a battery that fails everything is not a
 working battery.
 
+The combined source now contains 30 Savina specifications, 30 pages and 30 adapters in each of
+qb, CAF, SObjectizer and the floor. The B/C battery additions occupy unique sections L–W and
+preserve A–K, including shuffled-arrival positives and faults only a checksum witness can see.
+APSP and SOR also have compile-only controls built from their actual qb/floor adapter sources;
+normal `qvo-*` binaries contain no plant path. These controls require a plant-fired marker, the
+intended rejecting check, empty timing arrays and a document accepted by `tools/run.py` under the
+adapter's real identity. The separate Mesh owner-dispatch control has functional JSON verdicts
+and no timing fields; its compile-only reentrant mutant must fail while the fixed dispatcher
+preserves FIFO over every delivered message.
+
+The merged battery was executed on macOS arm64 with CLT 21 on 2026-10-13:
+**151 CAUGHT / 43 CONFIRMED / 0 MISSED**, 194 unique case identities. Its floors are
+read from the successful complete `--census-out` export, not summed branch constants.
+The first two runs remain archived as failed controls: a transmitted SOR +1 rounded away;
++16 changed a real trajectory but left a final-value difference on the 20×20 grid. The
+actual blind control uses a legal 4×4 grid over 100 iterations: the trajectory witness
+rejects the +16 publication while final values and update/message counts still match.
+Normal SOR positive and protocol controls stay at 20×20 over 100 iterations. Mesh controls
+exercise self-ring overflow on owner 0 and owner 1 under both wait modes, delivering all
+65,537 messages; cross-worker sender 1 to owner 0 also preserves FIFO in both wait modes.
+
+Windows and WSL must validate this merged candidate separately. This census establishes
+neither their verdicts nor performance. Retain every stdout, exit code and exported case
+ledger; a new successful census must have zero MISSED and explain any changed identity
+before its applicable floors are recorded.
+
+The workload variants are explicit across the four main frameworks. UCT's `nodes=60000` is the
+common capacity-limited variant; Savina's canonical `nodes=200000` remains a separate case with
+qb's declared actor-pool failure visible. The Actor64 design is under review; it changes no
+runtime here and supplies no capacity proof. Sieve keeps canonical `local=1000`, with `local=1`
+labelled separately as one-filter-per-prime stress. Facility location retains its documented
+omission of sibling notifications in every framework, and radixsort retains Savina's 16-bit
+input generator. See each shape's page for the resulting work and deviation.
+
 The two document guards have theirs, and it plants in a sandbox copy while hashing the real
-checkout before and after:
+checkout before and after. The following is the last recorded base census:
 
 ```
 python3 tools/guards-negative-control.py
     CAUGHT=34 CONFIRMED=3 MISSED=0
 ```
 
-The counts are floors. A run below them fails: a battery that quietly stopped planting anything
+The recorded base counts remain floors. A run below them fails: a battery that quietly stopped planting anything
 looks exactly like one that passes. A verifier nobody has watched reject anything is not known to
-work.
+work. B/C results have not been published: existing eighteen-shape datasets remain historical,
+and the complete-results roster/report controls stay red until complete new datasets exist.
+Do not weaken those guards to accept missing result documents.
