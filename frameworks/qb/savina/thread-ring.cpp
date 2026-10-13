@@ -41,14 +41,21 @@ struct Ring {
     qb::ActorId              sink;
 };
 
+// The tally is the actor's own state, beside the members every hop reads: an actor object lives in
+// its core's thread arena, so no actor of another core shares its line (thread_ring::Counts). The
+// slot, a line of its own in the body's vector, receives it when the engine tears the actor down
+// -- on its VirtualCore, after the window.
 class RingActor final : public qb::Actor {
     const Ring         &_ring;
-    Tally              &_tally;  // this actor's slot, a line of its own; read after the engine
     const std::uint32_t _index;
+    Counts              _counts;
+    Tally              &_slot;
 
 public:
-    RingActor(const Ring &ring, Tally &tally, std::uint32_t index) noexcept
-        : _ring(ring), _tally(tally), _index(index) {}
+    RingActor(const Ring &ring, Tally &slot, std::uint32_t index) noexcept
+        : _ring(ring), _index(index), _slot(slot) {}
+
+    ~RingActor() noexcept override { static_cast<Counts &>(_slot) = _counts; }
 
     qb::io::async::task<bool> onInit() final {
         registerEvent<Token>(*this);
@@ -57,7 +64,7 @@ public:
     }
 
     void on(Token &event) {
-        _tally.add(event.remaining);
+        _counts.add(event.remaining);
         if (--event.remaining == 0) {
             push<Result>(_ring.sink);
         } else {
@@ -126,7 +133,8 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
         engine.start();
         engine.join();
     }
-    // The engine is gone: every tally is final, and reduced here, outside the window.
+    // The engine is gone: every actor handed its counts to its slot as it was destroyed, and the
+    // tallies are reduced here, outside the window.
     return qvo::Answer{checksum(tallies), delivered(tallies, sink.results)};
 }
 

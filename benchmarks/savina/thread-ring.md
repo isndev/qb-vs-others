@@ -61,8 +61,14 @@ The token is a **countdown and nothing else** — Savina's own shape. The sink i
 rank `h` (from 0) reaches actor `h % actors` carrying `hops - h`. What a ring actor keeps of the
 tokens it received is its **tally** (`thread_ring::Tally`): how many, and the wrapping sum of the
 countdowns they carried — two independent adds per hop, no multiply, nothing folded into the token.
-Each actor's tally is one slot of its **own cache line** in a vector the body owns, so no two
-actors, whichever threads run them, ever write one line. Once the framework is gone the body
+Each actor's tally is a **128-byte slot** of a vector the body owns — two lines, because x86's
+adjacent-line prefetcher and Apple's cores fetch lines in pairs — so no two actors, whichever
+threads run them, ever write one line or one pair. CAF, SObjectizer and the floor add into the
+slot on every hop. qb adds into two members of the actor itself, on the line its handler already
+reads — an actor object lives in its own core's thread arena, so no actor of another core shares
+that line — and the actor hands them to its slot when the engine destroys it, on its core, after
+the window: measured with the slot written on every hop instead, qb's one-core cells ran 7 %
+slower on Windows/MSVC, the hop touching one line more. Once the framework is gone the body
 reduces the tallies, **outside the window**, through the spec's `checksum()` — the wrapping sum
 of `mix(mix((i << 40) ^ count) ^ sum)` over the actors — and `delivered()`, the counts plus the
 results the sink's handler ran. Both numbers are fixed for every actor by the parameters: actor

@@ -58,9 +58,9 @@ inline void check(const qvo::Params &p) {
 // i + 1 (mod actors), so the hop of rank h (from 0) reaches actor h % actors with remaining
 // hops - h. What a ring actor keeps of the tokens it received is a Tally: how many, and the sum
 // of the countdowns they carried -- two independent adds, no multiply, no fold riding on the
-// token. Each actor's tally is one slot of its own cache line in a vector the body owns (no two
-// actors, whatever thread runs them, write one line); the body reads the slots once the
-// framework is gone, OUTSIDE the window, and reduces them to the checksum below.
+// token. Each actor's tally is one 128-byte slot of a vector the body owns (no two actors,
+// whatever thread runs them, write one line or one prefetched pair of lines); the body reads the
+// slots once the framework is gone, OUTSIDE the window, and reduces them to the checksum below.
 //
 // Both numbers are fixed per actor by the parameters (expected_count, expected_sum): actor i
 // receives exactly the ranks h = i, i + actors, i + 2 actors, ... below hops. So a delivery
@@ -71,12 +71,20 @@ inline void check(const qvo::Params &p) {
 // should get -- leaves every count right and still moves the sums: each actor receives another
 // actor's ranks. A token lost never ends the run: it blocks, and the harness's deadline fails it
 // (FAIRNESS.md section 0).
-#if defined(__aarch64__) || defined(_M_ARM64)
-inline constexpr std::size_t kTallyLine = 128;  // Apple M-series prefetches lines in pairs
-#else
-inline constexpr std::size_t kTallyLine = 64;
-#endif
-struct alignas(kTallyLine) Tally {
+//
+// A slot is 128 bytes on every target, not one 64-byte line: x86's adjacent-line (spatial)
+// prefetcher and Apple M-series fetch lines in aligned 128-byte pairs, so two 64-byte slots of a
+// pair written by two threads (actors i and i + 1 on different workers at cores=2) can bounce
+// between their cores. With 64-byte slots Windows/MSVC measured the floor's 2c-spin cell +11.5 %
+// and SObjectizer's +3.8 % against develop, every launch above (Huly QB-1017).
+//
+// The two numbers themselves are Counts. An adapter whose actors of two threads can never share a
+// line may keep Counts inside the actor's own state, on the line its handler already reads, and
+// hand them to the actor's Tally slot at teardown: qb, whose actor objects live in the arena of
+// their own core's thread (qb/system/allocator/thread_arena.h). Measured on Windows/MSVC with the
+// slot written on every hop instead: qb's 1c cells +7 % against develop, the hop touching one
+// line more (Huly QB-1017).
+struct Counts {
     std::uint64_t count{0};  // the tokens this actor's handler ran
     std::uint64_t sum{0};    // the countdowns they carried, wrapping
     void add(std::uint64_t remaining) noexcept {
@@ -84,6 +92,8 @@ struct alignas(kTallyLine) Tally {
         sum += remaining;
     }
 };
+inline constexpr std::size_t kTallyLine = 128;
+struct alignas(kTallyLine) Tally : Counts {};
 
 inline std::uint64_t expected_count(std::uint64_t index, std::uint64_t actors,
                                     std::uint64_t hops) noexcept {
