@@ -33,8 +33,8 @@ import run as runner  # noqa: E402  (tools/run.py: its own acceptance rule judge
 
 # Floors. Raise them in the same commit that adds a control; a count that goes DOWN is a control
 # that stopped firing, which is indistinguishable from a guard that stopped guarding.
-FLOOR_CAUGHT = 28
-FLOOR_CONFIRMED = 11
+FLOOR_CAUGHT = 53
+FLOOR_CONFIRMED = 14
 
 # The deadline controls (section I): a planted hang must end inside DEADLINE_S plus this slack --
 # process start and the document write, generous for a loaded host -- and the battery gives up on
@@ -206,6 +206,85 @@ def expect_declared_failure(exe: Path, plant: str, what: str, repetitions: int, 
         verdict("CAUGHT", what, f"{fails[-1][:100]} (exit 1 after {elapsed:.1f} s)")
 
 
+def expect_blocked(exe: Path, plant: str, what: str, benchmark: str, params: list[str]) -> None:
+    """A planted loss in a shape that waits for the end of its protocol: the run blocks, and the
+    harness's deadline must end it -- exit 1 inside DEADLINE_S plus the slack, one failure naming
+    the deadline, no timing, and a document tools/run.py publishes as an unverified cell."""
+    env = dict(os.environ)
+    env["QVO_CONTROL_PLANT"] = plant
+    with tempfile.TemporaryDirectory() as td:
+        out = Path(td) / "r.json"
+        cmd = [str(exe), "--repetitions", "1", "--warmup", "0", "--no-pin", "--out", str(out),
+               "--deadline", str(DEADLINE_S)]
+        for kv in params:
+            cmd += ["--param", kv]
+        t0 = time.monotonic()
+        try:
+            p = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=HANG_WAIT_S)
+        except subprocess.TimeoutExpired:
+            verdict("MISSED", what, f"still running after {HANG_WAIT_S} s -- the deadline never fired")
+            return
+        elapsed = time.monotonic() - t0
+        doc = None
+        if out.exists():
+            try:
+                doc = json.loads(out.read_text())
+            except json.JSONDecodeError:
+                doc = None
+        accepted = f"exit {p.returncode}"
+        if p.returncode == 1:
+            given = {k: int(v) for k, v in (kv.split("=", 1) for kv in params)}
+            _, accepted = runner.read_attempt(out, benchmark, "control", given, 1, 1, 0)
+    fails = (doc or {}).get("failures") or []
+    want = f"repetition 0: deadline exceeded after {DEADLINE_S} s"
+    if p.returncode != 1 or doc is None:
+        verdict("MISSED", what, f"rc={p.returncode}, document={'none' if doc is None else 'present'}, "
+                                f"err={p.stderr.strip()[:100]}")
+    elif not (DEADLINE_S <= elapsed < DEADLINE_S + DEADLINE_SLACK_S):
+        verdict("MISSED", what, f"ended after {elapsed:.1f} s, deadline {DEADLINE_S} s")
+    elif doc.get("verified") is not False or len(fails) != 1 or not fails[0].startswith(want):
+        verdict("MISSED", what, f"failures={fails}")
+    elif accepted:
+        verdict("MISSED", what, f"tools/run.py would not publish the document: {accepted}")
+    else:
+        verdict("CAUGHT", what, f"{fails[0][:100]} (exit 1 after {elapsed:.1f} s)")
+
+
+def expect_refused(exe: Path, params: list[str], what: str, needle: str) -> None:
+    """A parameter outside the spec's domain: exit 2, the fatal code, with no document, before
+    anything is built."""
+    rc, doc, err = run_subject(exe, "none", params=params, extra=["--no-pin"])
+    if rc == 2 and doc is None and needle in err:
+        verdict("CAUGHT", what)
+    else:
+        verdict("MISSED", what, f"rc={rc}, document={'none' if doc is None else 'present'}, "
+                                f"err={err.strip()[:100]}")
+
+
+def expect_consistent(exe: Path, plant: str, what: str, params: list[str], said: str) -> None:
+    """A CONSISTENT fault: the subject says on stderr that every count is the closed form's, and
+    the checksum must reject it anyway."""
+    rc, doc, err = run_subject(exe, plant, params=params, extra=["--no-pin"])
+    fails = (doc or {}).get("failures") or []
+    if (rc == 1 and doc and doc.get("verified") is False and fails
+            and fails[0].startswith("repetition 0: checksum ") and not doc.get("work_ns")
+            and said in err):
+        verdict("CAUGHT", what, fails[0][:100])
+    else:
+        verdict("MISSED", what, f"rc={rc}, failures={fails}, err={err.strip()[-160:]}")
+
+
+def expect_correct(exe: Path, what: str, params: list[str], messages: int) -> None:
+    """The positive control of a shape's subject: it verifies, with the messages it counted."""
+    rc, doc, err = run_subject(exe, "none", params=params, extra=["--no-pin"])
+    if rc == 0 and doc and doc.get("verified") is True and len(doc.get("work_ns", [])) == 1 \
+            and doc.get("expected_messages") == messages:
+        verdict("CONFIRMED", what)
+    else:
+        verdict("MISSED", what + " -- REJECTED",
+                f"rc={rc}, failures={(doc or {}).get('failures')}, err={err.strip()[:100]}")
+
+
 def comparable(doc: dict) -> dict:
     """The document minus what legitimately differs between two launches: the clock (env.utc)
     and the timings. Everything else must be byte-for-byte the same."""
@@ -233,6 +312,9 @@ def main() -> int:
 
     exe = subject("qvoctl-control-subject")
     ring = subject("qvoctl-thread-ring-subject")
+    radix = subject("qvoctl-radixsort-subject")
+    bank = subject("qvoctl-filterbank-subject")
+    sieve = subject("qvoctl-sieve-subject")
 
     print("== A. the positive control: an undefective subject must PASS ==")
     rc, doc, err = run_subject(exe, "none")
@@ -493,6 +575,78 @@ def main() -> int:
         verdict("MISSED", "a ring of 0 hops was not refused",
                 f"rc={rc}, document={'none' if doc is None else 'present'}, "
                 f"err={err.strip()[:100]}")
+
+    print("\n== L. savina/radixsort -- every stage's tally and the sorted sequence, position by "
+          "position ==")
+    # The pipeline on one thread through the spec's Stage and Validation (Huly QB-246). A stage
+    # receives exactly `values` values: one more fails the run as a protocol violation; one fewer
+    # leaves it waiting, and the deadline ends the run.
+    radix_params = ["values=1000", "bits=8", "seed=7", "cores=1", "wait=1"]
+    expect_correct(radix, "a correct pipeline verifies: every stage's tally and the sequence, "
+                   "9 001 deliveries counted", radix_params, 9001)
+    expect_rejected(radix, "duplicate", "a value delivered twice to the next stage",
+                    because="protocol violated", params=radix_params)
+    expect_blocked(radix, "lost", "a value lost between two stages blocks the chain until the "
+                   "deadline", "control/radixsort", radix_params)
+    expect_blocked(radix, "skip", "a value sent past the next stage (a misroute) blocks the stage "
+                   "it skipped", "control/radixsort", radix_params)
+    for plant, what in (
+        ("untouched", "a held value passed on at once (the stage's work not done)"),
+        ("routed-around", "the chain routed around its first stage (never-touched work)"),
+        ("reversed", "the last stage flushing what it held in reverse (no longer stable)"),
+    ):
+        expect_rejected(radix, plant, what, because="checksum ", params=radix_params)
+    expect_consistent(radix, "swapped", "stages 0 and 1 wired in each other's place: every stage "
+                      "tally right, the sequence rejects it", radix_params,
+                      "every stage tally as the closed form says: yes")
+    expect_refused(radix, ["values=0", "cores=1", "wait=1"], "a pipeline of 0 values is refused "
+                   "(exit 2) before anything runs", "qvo: FATAL: savina/radixsort: need")
+
+    print("\n== M. savina/filterbank -- every actor's tally and the sink's sums, bit for bit ==")
+    bank_params = ["simulations=300", "columns=16", "channels=3", "cores=1", "wait=1"]
+    expect_correct(bank, "a correct filter bank verifies: every actor's tally and the sequence, "
+                   "8 354 deliveries counted", bank_params, 8354)
+    for plant, what in (
+        ("duplicate", "a delay's output delivered twice to its FIR"),
+        ("lost", "a sampler's output lost"),
+        ("misroute", "a value tagged with another bank's channel"),
+        ("untouched", "a sampler keeping a value it should zero (its work not done)"),
+        ("routed-around", "a bank's second FIR routed around (never-touched work)"),
+    ):
+        expect_rejected(bank, plant, what, because="checksum ", params=bank_params)
+    expect_consistent(bank, "swapped", "two banks filtering with each other's coefficients: every "
+                      "count right, the sums reject it", bank_params,
+                      "every count as the closed form says: yes")
+    expect_blocked(bank, "lost-exit", "a bank's Exit lost blocks the integrator until the deadline",
+                   "control/filterbank", bank_params)
+    expect_refused(bank, ["channels=1", "cores=1", "wait=1"], "a bank of 1 channel is refused "
+                   "(exit 2) before anything runs", "qvo: FATAL: savina/filterbank: need")
+
+    print("\n== N. savina/sieve -- every filter's tally and the primes it holds, position by "
+          "position ==")
+    sieve_params = ["limit=1000", "local=3", "cores=1", "wait=1"]
+    expect_correct(sieve, "a correct growing chain verifies: 56 filters, every tally and every "
+                   "prime, 5 251 deliveries counted", sieve_params, 5251)
+    for plant, what in (
+        ("duplicate", "a candidate delivered twice"),
+        ("lost", "a prime candidate lost"),
+        ("skip", "a candidate sent past the next filter (a misroute)"),
+        ("early-exit", "the Exit overtaking the last candidates"),
+    ):
+        expect_rejected(sieve, plant, what, because="checksum ", params=sieve_params)
+    # A composite kept as a prime is one prime too many: with 168 primes below 1 000 and 3 per
+    # filter the chain needs exactly 56 filters, and the 57th creation fails the run.
+    for plant, what in (
+        ("reorder", "a composite ahead of its smallest factor, kept as a prime: one filter too many"),
+        ("untouched", "a filter passing candidates on untested (never-touched work): composites "
+                      "kept as primes, filters too many"),
+        ("grow-early", "a filter created one prime early: more filters than the primes allow"),
+    ):
+        expect_rejected(sieve, plant, what, because="protocol violated", params=sieve_params)
+    expect_blocked(sieve, "lost-exit", "a filter's Exit lost blocks the chain until the deadline",
+                   "control/sieve", sieve_params)
+    expect_refused(sieve, ["local=0", "cores=1", "wait=1"], "a filter holding 0 primes is refused "
+                   "(exit 2) before anything runs", "qvo: FATAL: savina/sieve: need")
 
     print(f"\n== census ==\n  CAUGHT={caught} CONFIRMED={confirmed} MISSED={missed} "
           f"(floors: CAUGHT>={FLOOR_CAUGHT} CONFIRMED>={FLOOR_CONFIRMED})")
