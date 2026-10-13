@@ -124,10 +124,11 @@ endforeach()
 # Named `qvoctl-` and NOT declared through qvo_add_benchmark, so tools/run.py -- which discovers
 # binaries whose name begins with `qvo-` -- cannot find them. A planted defect must never be able
 # to reach a published table. The ping-pong subject plants defects in the harness's verification,
-# the thread-ring one in savina/thread-ring's own (Huly QB-1017).
+# the thread-ring one in savina/thread-ring's own (Huly QB-1017), the quicksort and bitonicsort
+# ones in theirs (Huly QB-246).
 option(QVO_BUILD_CONTROLS "Build the negative-control subjects" ON)
 if(QVO_BUILD_CONTROLS)
-    foreach(_subject control-subject thread-ring-subject)
+    foreach(_subject control-subject thread-ring-subject quicksort-subject bitonicsort-subject)
         add_executable(qvoctl-${_subject} tools/control/${_subject}.cpp)
         target_link_libraries(qvoctl-${_subject} PRIVATE qvo-harness)
         set_target_properties(qvoctl-${_subject} PROPERTIES

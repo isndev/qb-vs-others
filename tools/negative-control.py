@@ -33,8 +33,8 @@ import run as runner  # noqa: E402  (tools/run.py: its own acceptance rule judge
 
 # Floors. Raise them in the same commit that adds a control; a count that goes DOWN is a control
 # that stopped firing, which is indistinguishable from a guard that stopped guarding.
-FLOOR_CAUGHT = 28
-FLOOR_CONFIRMED = 11
+FLOOR_CAUGHT = 43
+FLOOR_CONFIRMED = 13
 
 # The deadline controls (section I): a planted hang must end inside DEADLINE_S plus this slack --
 # process start and the document write, generous for a loaded host -- and the battery gives up on
@@ -206,6 +206,30 @@ def expect_declared_failure(exe: Path, plant: str, what: str, repetitions: int, 
         verdict("CAUGHT", what, f"{fails[-1][:100]} (exit 1 after {elapsed:.1f} s)")
 
 
+def expect_blocked(exe: Path, plant: str, what: str, params: list[str]) -> None:
+    """A message a shape's protocol waits for, planted LOST in a shape subject: the run must end at
+    the harness's deadline -- exit 1 inside DEADLINE_S plus slack, a failure document whose one
+    reason is the deadline's, no timing. The ping-pong subject's run_deadline() is wired to its own
+    parameters; this is the same check for a subject of another shape."""
+    t0 = time.monotonic()
+    rc, doc, err = run_subject(exe, plant, params=params,
+                               extra=["--no-pin", "--deadline", str(DEADLINE_S)])
+    elapsed = time.monotonic() - t0
+    fails = (doc or {}).get("failures") or []
+    if rc != 1 or doc is None:
+        verdict("MISSED", what, f"rc={rc}, document={'none' if doc is None else 'present'}, "
+                                f"err={err.strip()[:100]}")
+    elif not (DEADLINE_S <= elapsed < DEADLINE_S + DEADLINE_SLACK_S):
+        verdict("MISSED", what, f"ended after {elapsed:.1f} s, deadline {DEADLINE_S} s")
+    elif doc.get("verified") is not False or len(fails) != 1 \
+            or not fails[0].startswith("repetition 0: deadline exceeded"):
+        verdict("MISSED", what, f"failures={fails}")
+    elif doc.get("work_ns"):
+        verdict("MISSED", what, "a blocked run's document carries a timing")
+    else:
+        verdict("CAUGHT", what, f"{fails[0][:100]} (exit 1 after {elapsed:.1f} s)")
+
+
 def comparable(doc: dict) -> dict:
     """The document minus what legitimately differs between two launches: the clock (env.utc)
     and the timings. Everything else must be byte-for-byte the same."""
@@ -233,6 +257,8 @@ def main() -> int:
 
     exe = subject("qvoctl-control-subject")
     ring = subject("qvoctl-thread-ring-subject")
+    qs = subject("qvoctl-quicksort-subject")
+    bs = subject("qvoctl-bitonicsort-subject")
 
     print("== A. the positive control: an undefective subject must PASS ==")
     rc, doc, err = run_subject(exe, "none")
@@ -491,6 +517,103 @@ def main() -> int:
                           "would count down from 2^64")
     else:
         verdict("MISSED", "a ring of 0 hops was not refused",
+                f"rc={rc}, document={'none' if doc is None else 'present'}, "
+                f"err={err.strip()[:100]}")
+
+    print("\n== L. savina/quicksort -- the driver's sequence (length, multiset, descents) and the "
+          "tree's Sorts and Results against the sequential reference ==")
+    # Huly QB-246. The subject runs the decomposition on one thread through the spec's own split(),
+    # sort_leaf(), join(), measure() and answer(), and says on stderr whether its output is the
+    # sorted input -- which is how inline-split shows the case an output check alone misses.
+    qs_params = ["n=100000", "threshold=2048", "cores=1", "wait=1"]
+    rc, doc, err = run_subject(qs, "none", params=qs_params, extra=["--no-pin"])
+    if rc == 0 and doc and doc.get("verified") is True and len(doc.get("work_ns", [])) == 1 \
+            and doc.get("expected_messages") == 406 \
+            and "the output is the sorted input: yes" in err:
+        verdict("CONFIRMED", "a correct decomposition verifies: the sorted input, 203 actors, "
+                             "406 Sorts and Results counted")
+    else:
+        verdict("MISSED", "a correct decomposition was REJECTED",
+                f"rc={rc}, failures={(doc or {}).get('failures')}, "
+                f"messages={(doc or {}).get('expected_messages')}, err={err.strip()[:100]}")
+    for plant, what in (
+        ("dup-result", "a Result handled twice by its parent -- its values joined twice"),
+        ("wrong-side", "a Result joined on the wrong side -- every value present, out of order"),
+        ("unsorted-leaf", "a leaf answers without its sequential sort"),
+    ):
+        expect_rejected(qs, plant, what, because="checksum ", params=qs_params)
+    rc, doc, err = run_subject(qs, "inline-split", params=qs_params, extra=["--no-pin"])
+    fails = (doc or {}).get("failures") or []
+    if (rc == 1 and doc and doc.get("verified") is False and fails
+            and fails[0].startswith("repetition 0: checksum ") and not doc.get("work_ns")
+            and "the output is the sorted input: yes" in err):
+        verdict("CAUGHT", "an actor that should split sorts its sequence itself: the RIGHT "
+                          "output with fewer actors -- the counts reject it", fails[0][:100])
+    else:
+        verdict("MISSED", "the right output reached by less work was not rejected by the counts "
+                          "with the output right",
+                f"rc={rc}, failures={fails}, err={err.strip()[-160:]}")
+    expect_blocked(qs, "lost-result", "a Result never delivered blocks its parent: the deadline "
+                                      "fails the run", qs_params)
+    rc, doc, err = run_subject(qs, "none", params=["n=100", "threshold=2048", "cores=1", "wait=1"],
+                               extra=["--no-pin"])
+    if rc == 2 and doc is None and "qvo: FATAL: savina/quicksort: need" in err:
+        verdict("CAUGHT", "fewer values than the threshold is refused (exit 2) before anything "
+                          "runs -- the root would never split, its two seeds never be asked")
+    else:
+        verdict("MISSED", "n below the threshold was not refused",
+                f"rc={rc}, document={'none' if doc is None else 'present'}, "
+                f"err={err.strip()[:100]}")
+
+    print("\n== M. savina/bitonicsort -- every actor's tally (messages, sum of values) and the "
+          "sink's sequence against the reference network ==")
+    # Huly QB-246. The subject runs the spec's topology() on one thread through its own Splitter,
+    # Comparator and Joiner and reduces through its checksum(); the spec's explain() line says
+    # whether every actor's COUNT is the reference's and how many descents the output has -- which
+    # is how stride shows the case a per-actor count misses, and swap the case the output misses.
+    bs_params = ["n=256", "cores=1", "wait=1"]
+    rc, doc, err = run_subject(bs, "none", params=bs_params, extra=["--no-pin"])
+    if rc == 0 and doc and doc.get("verified") is True and len(doc.get("work_ns", [])) == 1 \
+            and doc.get("expected_messages") == 87924:
+        verdict("CONFIRMED", "a correct network verifies: every actor's tally as the reference "
+                             "says, the sorted input, 87 924 deliveries counted")
+    else:
+        verdict("MISSED", "a correct network was REJECTED",
+                f"rc={rc}, failures={(doc or {}).get('failures')}, "
+                f"messages={(doc or {}).get('expected_messages')}, err={err.strip()[:100]}")
+    for plant, what in (
+        ("dup-sink", "the last value delivered to the sink twice"),
+        ("untouched", "a compare-exchange passes its values on without its handler running"),
+        ("lost-value", "a value dropped by a splitter -- the Exit wave still ends the run, short"),
+        ("dup-exit", "a joiner sends an Exit too many"),
+    ):
+        expect_rejected(bs, plant, what, because="checksum ", params=bs_params)
+    for plant, what, needle in (
+        ("stride", "a CONSISTENT misroute (a partition splitter pairing neighbours): every count "
+                   "right, the sums reject it", "every count as the reference says: yes"),
+        ("swap", "a compare-exchange that orders its pair the wrong way: the network still sorts, "
+                 "only the downstream tallies reject it", " 0 descents"),
+    ):
+        rc, doc, err = run_subject(bs, plant, params=bs_params, extra=["--no-pin"])
+        fails = (doc or {}).get("failures") or []
+        if (rc == 1 and doc and doc.get("verified") is False and fails
+                and fails[0].startswith("repetition 0: checksum ") and not doc.get("work_ns")
+                and needle in err):
+            verdict("CAUGHT", what, fails[0][:100])
+        else:
+            verdict("MISSED", f"{plant}: not rejected by the tallies with {needle.strip()!r}",
+                    f"rc={rc}, failures={fails}, err={err.strip()[-200:]}")
+    expect_rejected(bs, "dup-data", "a stamped value handled twice by a joiner: its lane "
+                                    "overflows, a named failure (qvo::fail)",
+                    because="savina/bitonicsort: a joiner received more values", params=bs_params)
+    expect_blocked(bs, "lost-exit", "a compare-exchange's Exit never delivered: its joiner never "
+                                    "closes, the deadline fails the run", bs_params)
+    rc, doc, err = run_subject(bs, "none", params=["n=1000", "cores=1", "wait=1"],
+                               extra=["--no-pin"])
+    if rc == 2 and doc is None and "qvo: FATAL: savina/bitonicsort: need" in err:
+        verdict("CAUGHT", "n not a power of two is refused (exit 2) before anything runs")
+    else:
+        verdict("MISSED", "n not a power of two was not refused",
                 f"rc={rc}, document={'none' if doc is None else 'present'}, "
                 f"err={err.strip()[:100]}")
 
