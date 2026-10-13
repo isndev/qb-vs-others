@@ -33,8 +33,8 @@ import run as runner  # noqa: E402  (tools/run.py: its own acceptance rule judge
 
 # Floors. Raise them in the same commit that adds a control; a count that goes DOWN is a control
 # that stopped firing, which is indistinguishable from a guard that stopped guarding.
-FLOOR_CAUGHT = 28
-FLOOR_CONFIRMED = 11
+FLOOR_CAUGHT = 45
+FLOOR_CONFIRMED = 13
 
 # The deadline controls (section I): a planted hang must end inside DEADLINE_S plus this slack --
 # process start and the document write, generous for a loaded host -- and the battery gives up on
@@ -233,6 +233,8 @@ def main() -> int:
 
     exe = subject("qvoctl-control-subject")
     ring = subject("qvoctl-thread-ring-subject")
+    uct = subject("qvoctl-uct-subject")
+    facloc = subject("qvoctl-facloc-subject")
 
     print("== A. the positive control: an undefective subject must PASS ==")
     rc, doc, err = run_subject(exe, "none")
@@ -491,6 +493,79 @@ def main() -> int:
                           "would count down from 2^64")
     else:
         verdict("MISSED", "a ring of 0 hops was not refused",
+                f"rc={rc}, document={'none' if doc is None else 'present'}, "
+                f"err={err.strip()[:100]}")
+
+    print("\n== L. savina/uct -- the tree, node by node: every node's report against the plan ==")
+    # The tree grows inside the window, by grants the root decides from each node's identity and
+    # a cap the spec places before the run (Huly QB-247). The subject runs the protocol on one
+    # thread through the spec's decide(), Tally and checksum(), the adapters' protocol checks
+    # included. A fault the sums see must fail the checksum; a fault the protocol sees first must
+    # fail as a protocol violation; a delivery left uncounted must fail the message count.
+    uct_params = ["nodes=2000", "cores=1", "wait=1"]
+    rc, doc, err = run_subject(uct, "none", params=uct_params, extra=["--no-pin"])
+    if rc == 0 and doc and doc.get("verified") is True and len(doc.get("work_ns", [])) == 1 \
+            and doc.get("expected_messages", 0) > 0:
+        verdict("CONFIRMED", "a correct tree verifies: every node's report as the plan says, "
+                             f"{doc.get('expected_messages')} deliveries counted")
+    else:
+        verdict("MISSED", "a correct tree was REJECTED",
+                f"rc={rc}, failures={(doc or {}).get('failures')}, err={err.strip()[:100]}")
+    for plant, what, because, params in (
+        ("misroute-grant", "a grant delivered to a sibling the plan never grants", "checksum ",
+         uct_params),
+        ("wrong-comp", "a grant carrying another computation size", "checksum ", uct_params),
+        ("lost-update", "an UpdateGrant lost -- it blocks nothing", "checksum ", uct_params),
+        ("skip-work", "a traversal that skips its busy work", "checksum ",
+         ["nodes=2000", "work=1", "cores=1", "wait=1"]),
+        ("untouched", "a leaf that reports without its handler counting the Traverse",
+         "delivered ", uct_params),
+        ("duplicate-grant", "a grant delivered twice", "protocol violated", uct_params),
+        ("duplicate-request", "a request delivered twice", "protocol violated", uct_params),
+        ("duplicate-traverse", "a Traverse delivered twice", "protocol violated", uct_params),
+    ):
+        expect_rejected(uct, plant, what, because=because, params=params)
+    rc, doc, err = run_subject(uct, "none", params=["nodes=5", "cores=1", "wait=1"],
+                               extra=["--no-pin"])
+    if rc == 2 and doc is None and "qvo: FATAL: savina/uct: need" in err:
+        verdict("CAUGHT", "a cap below the root's first generation is refused (exit 2) before "
+                          "anything runs")
+    else:
+        verdict("MISSED", "a cap below the root's first generation was not refused",
+                f"rc={rc}, document={'none' if doc is None else 'present'}, "
+                f"err={err.strip()[:100]}")
+
+    print("\n== M. savina/facloc -- the quadtree: every quadrant's ConfirmExit against the "
+          "reference ==")
+    # The quadtree grows inside the window where the customers fall; the spec's reference fixes
+    # which quadrants split and which customers each of the others holds (Huly QB-247).
+    fl_params = ["points=20000", "cores=1", "wait=1"]
+    rc, doc, err = run_subject(facloc, "none", params=fl_params, extra=["--no-pin"])
+    if rc == 0 and doc and doc.get("verified") is True and len(doc.get("work_ns", [])) == 1 \
+            and doc.get("expected_messages", 0) > 0:
+        verdict("CONFIRMED", "a correct quadtree verifies: every quadrant's ConfirmExit as the "
+                             f"reference says, {doc.get('expected_messages')} deliveries counted")
+    else:
+        verdict("MISSED", "a correct quadtree was REJECTED",
+                f"rc={rc}, failures={(doc or {}).get('failures')}, err={err.strip()[:100]}")
+    for plant, what, because in (
+        ("misroute-customer", "a customer routed to a sibling of the child whose region holds it",
+         "checksum "),
+        ("duplicate-customer", "a customer delivered twice below the root", "checksum "),
+        ("lost-customer", "a customer lost below the root -- the producer's flow control sees "
+                          "only the root", "checksum "),
+        ("no-split", "a quadrant that never splits, whatever its cost says", "checksum "),
+        ("lost-facility", "a Facility notification lost on its way up", "checksum "),
+        ("untouched", "a quadrant that passes a customer on without counting it", "delivered "),
+        ("duplicate-exit", "a RequestExit delivered twice", "protocol violated"),
+    ):
+        expect_rejected(facloc, plant, what, because=because, params=fl_params)
+    rc, doc, err = run_subject(facloc, "none", params=["points=0", "cores=1", "wait=1"],
+                               extra=["--no-pin"])
+    if rc == 2 and doc is None and "qvo: FATAL: savina/facloc: need" in err:
+        verdict("CAUGHT", "a run of no customer is refused (exit 2) before anything runs")
+    else:
+        verdict("MISSED", "a run of no customer was not refused",
                 f"rc={rc}, document={'none' if doc is None else 'present'}, "
                 f"err={err.strip()[:100]}")
 
