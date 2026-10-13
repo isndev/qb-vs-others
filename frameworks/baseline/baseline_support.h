@@ -28,6 +28,7 @@
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <new>
@@ -145,9 +146,10 @@ struct Msg {
 //
 // Delivery: the handler for actor d runs on worker d % W, and messages from one worker to one
 // actor arrive in the order they were sent (one ring per pair). A message to a FULL ring owned
-// by the sending worker itself is resolved by draining the sender's own inbound rings inline --
-// that is what a single-threaded actor runtime does when its own queue is the bottleneck, and
-// without it a one-core fan-out of more than one ring's worth of messages would deadlock. A full
+// by the sending worker itself makes room by draining inbound rings. If a handler is already
+// running, those messages are deferred in arrival order until it returns: handlers never reenter
+// their own worker and cannot reorder their outputs. The deferred queue allocates only when
+// this overflow path is reached. A full
 // ring to ANOTHER worker spins until the consumer makes room; in park mode the consumer was
 // woken by the first push, so it is making room.
 //
@@ -166,7 +168,8 @@ public:
         , _spin(spin)
         , _handler(std::move(handler))
         , _rings(static_cast<std::size_t>(_workers) * _workers)
-        , _parks(_workers) {
+        , _parks(_workers)
+        , _dispatch(_workers) {
         for (auto &r : _rings) r = std::make_unique<Ring>();
     }
 
@@ -223,6 +226,11 @@ public:
     }
 
 private:
+    struct alignas(kCacheLine) Dispatch {
+        bool                             active{false};
+        std::unique_ptr<std::deque<Msg>> deferred;
+    };
+
     struct alignas(kCacheLine) Park {
         std::mutex              m;
         std::condition_variable cv;
@@ -233,6 +241,33 @@ private:
         return *_rings[static_cast<std::size_t>(from) * _workers + to];
     }
 
+    // Only the owner worker touches its dispatch state. Self-ring overflow can
+    // drain recursively while a handler sends; queue those deliveries until all
+    // outputs of the current handler have been submitted. Pop before calling:
+    // another overflow may append to the queue. Consumed blocks can be released
+    // instead of retaining every message from a long deferred cascade.
+    void dispatch(unsigned w, const Msg &m) {
+#ifdef QVO_MESH_REENTRANT_CONTROL
+        // Compile-only negative-control variant; absent from measured adapters.
+        _handler(*this, w, m);
+        return;
+#endif
+        Dispatch &state = _dispatch[w];
+        if (state.active) {
+            if (!state.deferred) state.deferred = std::make_unique<std::deque<Msg>>();
+            state.deferred->push_back(m);
+            return;
+        }
+        state.active = true;
+        _handler(*this, w, m);
+        while (state.deferred && !state.deferred->empty()) {
+            const Msg deferred = state.deferred->front();
+            state.deferred->pop_front();
+            _handler(*this, w, deferred);
+        }
+        state.active = false;
+    }
+
     // Pop everything currently queued for `w`, one ring at a time. Returns whether anything ran.
     bool drain(unsigned w) {
         bool any = false;
@@ -240,7 +275,7 @@ private:
         for (unsigned src = 0; src < _workers; ++src) {
             Ring &r = ring(src, w);
             while (r.try_pop(m)) {
-                _handler(*this, w, m);
+                dispatch(w, m);
                 any = true;
             }
         }
@@ -279,6 +314,7 @@ private:
     Handler                            _handler;
     std::vector<std::unique_ptr<Ring>> _rings;  // [from * W + to]
     std::vector<Park>                  _parks;
+    std::vector<Dispatch>              _dispatch;
     std::vector<std::thread>           _threads;
     std::atomic<bool>                  _stop{false};
 };
