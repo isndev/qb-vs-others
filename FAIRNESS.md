@@ -297,7 +297,8 @@ omission of sibling notifications in every framework, and radixsort retains Savi
 input generator. See each shape's page for the resulting work and deviation.
 
 The two document guards have theirs, and it plants in a sandbox copy while hashing the real
-checkout before and after. The following is the last recorded base census:
+checkout before and after. The following is the document-control census re-measured on
+macOS arm64 on 2026-10-14:
 
 ```
 python3 tools/guards-negative-control.py
@@ -306,6 +307,12 @@ python3 tools/guards-negative-control.py
 
 The recorded base counts remain floors. A run below them fails: a battery that quietly stopped planting anything
 looks exactly like one that passes. A verifier nobody has watched reject anything is not known to
-work. B/C results have not been published: existing eighteen-shape datasets remain historical,
-and the complete-results roster/report controls stay red until complete new datasets exist.
-Do not weaken those guards to accept missing result documents.
+work. Roster controls derive a complete set of filenames from the real adapters in a disposable
+sandbox, independently of the guard's expected-cell logic. Their files explicitly identify
+themselves as control fixtures and contain no timings. Removing or adding a cell must still
+be rejected; report controls continue to use real recorded reports. This separates proof of
+the guards from completion of the measurement campaign. B/C results have not been published:
+existing eighteen-shape datasets remain historical, and `check-roster.py --results` still
+rejects their missing cells against the current roster. The WSL historical directory was
+rechecked with 192 findings. Do not weaken that guard or invent result documents to make a
+historical dataset complete.

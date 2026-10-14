@@ -23,9 +23,10 @@ MISSED, not a CAUGHT: the guard was right to find nothing, and the control was w
 
     python3 tools/guards-negative-control.py [--results results/<host>]
 
-The CONFIRMED controls need a results directory that IS complete for the roster and a README
-whose figures ARE current; the default is the WSL host, the first one measured for all five
-benchmarks in one session. Floors are counted, and a run below them fails.
+Roster coverage controls use temporary filename-only fixtures derived from the real adapters.
+They contain no measurements and never change public results: a historical result directory
+need not cover shapes added later. Report controls still use the selected real result directory
+and its current README figures. Floors are counted, and a run below them fails.
 """
 
 from __future__ import annotations
@@ -135,15 +136,49 @@ def botched(what: str, why: str) -> None:
 
 # ----------------------------------------------------------------------------- roster controls
 
+def roster_filename_fixture(root: Path) -> str:
+    """Build only a roster's filenames inside this disposable sandbox, never timing data.
+
+    Discover existing adapters independently of check-roster's expected-cell logic. Its source
+    checks still reject absent adapters, contradictory omissions and bad spec bindings.
+    """
+    relative = "control-fixtures/roster-filenames-only"
+    dest = root / relative
+    configs = ("1c-spin", "1c-park", "2c-spin", "2c-park")
+    cells = 0
+    for header in sorted((root / "benchmarks/specs/qvospec").glob("*/*.h")):
+        suite, shape = header.parent.name, header.stem
+        for framework in sorted((root / "frameworks").iterdir()):
+            if not (framework / "CMakeLists.txt").is_file():
+                continue
+            if not (framework / suite / (shape + ".cpp")).is_file():
+                continue
+            folder = dest / (suite + "-" + shape)
+            folder.mkdir(parents=True, exist_ok=True)
+            for config in configs:
+                (folder / (framework.name + "__" + config + ".json")).write_text(
+                    '{"control_fixture":"roster filenames only; not a measurement"}\n',
+                    encoding="utf-8")
+                cells += 1
+    if cells < 16:
+        raise RuntimeError("roster filename fixture has an empty or under-floor adapter scope")
+    # A directory not corresponding to a spec remains an intentional side experiment.
+    side = dest / "side-experiment-not-a-spec"
+    side.mkdir()
+    (side / "qb__1c-spin.json").write_text('{"control_fixture":"side experiment"}\n', encoding="utf-8")
+    return relative
+
+
 def roster_controls(base: Path, results: str) -> None:
     print("check-roster.py")
     R = "check-roster.py"
     res_args = ("--results", results)
 
     with Sandbox(base) as s:
-        rc, out = run_guard(s, R, *res_args)
-        expect("CONFIRMED", rc, out, f"clean tree + complete {results} is OK "
-               "(the caf-detached variant include and the side-experiment directories included)", 0)
+        fixture = roster_filename_fixture(s)
+        rc, out = run_guard(s, R, "--results", fixture)
+        expect("CONFIRMED", rc, out, "clean source tree + complete filename-only roster fixture is OK "
+               "(caf-detached variant and side-experiment directories included; no timing data)", 0)
 
     with Sandbox(base) as s:
         (s / "frameworks/sobjectizer/savina/counting.cpp").unlink()
@@ -226,23 +261,25 @@ def roster_controls(base: Path, results: str) -> None:
                    "whose benchmark is not this file's")
 
     with Sandbox(base) as s:
-        docs = sorted((s / results / "savina-counting").glob("qb__*.json"))
+        fixture = roster_filename_fixture(s)
+        docs = sorted((s / fixture / "savina-counting").glob("qb__*.json"))
         if not docs:
-            botched("a result document missing from a roster cell", f"no qb counting docs in {results}")
+            botched("a result document missing from a roster cell", f"no qb counting docs in {fixture}")
         else:
             docs[0].unlink()
-            rc, out = run_guard(s, R, *res_args)
+            rc, out = run_guard(s, R, "--results", fixture)
             expect("CAUGHT", rc, out, "one result document missing from a roster cell "
                    "(a framework silently absent from one row of one table)", 1,
                    "no document for qb on savina/counting")
 
     with Sandbox(base) as s:
-        src = s / results / "savina-counting" / "qb__1c-spin.json"
+        fixture = roster_filename_fixture(s)
+        src = s / fixture / "savina-counting" / "qb__1c-spin.json"
         if not src.is_file():
             botched("a document for a framework the roster does not know", f"{src.name} absent")
         else:
             shutil.copy(src, src.parent / "ghost__1c-spin.json")
-            rc, out = run_guard(s, R, *res_args)
+            rc, out = run_guard(s, R, "--results", fixture)
             expect("CAUGHT", rc, out, "a document for a framework the roster does not know", 1,
                    "a cell the roster does not expect")
 
@@ -542,8 +579,8 @@ def main() -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results/wsl-debian-g++14",
-                    help="a results directory complete for the roster, whose README table is "
-                         "current (the CONFIRMED controls' subject)")
+                    help="real results used for report and current README controls; roster "
+                         "coverage controls use sandbox filename fixtures without timings")
     args = ap.parse_args()
     if not (ROOT / args.results / "run.json").is_file():
         print(f"guards-negative-control: {args.results} has no run.json", file=sys.stderr)
