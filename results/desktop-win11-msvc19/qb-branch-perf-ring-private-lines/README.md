@@ -62,19 +62,27 @@ mode of each: bank-transaction 2c-park (147.2 → 158.6 / 154.4 in the grid) and
 (11.60 → 11.46 / 12.16). (The wait modes in these two paragraphs are read from each document's
 `params.wait`, 1 spin and 0 park; an earlier text named them the other way round.)
 
-## `dev/bench` — the four core binaries (median of three run medians, ns; `bench/`)
+## `dev/bench` — the four core binaries (median of three run medians, ns per operation; `bench/`)
+
+Google Benchmark records each cell's `real_time` in milliseconds per ITERATION; the figures below
+divide it by the operations one iteration performs: 1 000 000 round trips for the three ping-pong
+latency cells (their figures read the same in both units), 1 500 000 deliveries for each pipeline
+(150 000 × 10 on one core, 187 500 × 8 on eight), 64 × 32 768 = 2 097 152 round trips for
+`BM_PINGPONG`, 50 000 asks for each ask cell. Each iteration's window holds the whole of that
+work, so a figure is a mean over it, not an isolated latency. (This table printed the
+milliseconds under an `ns` header until Huly QB-820; the Δ column is unchanged.)
 
 | cell | `670e9433` | **branch** | Δ |
 |---|---:|---:|---:|
-| `BM_Multi_PingPong_Latency` (cross-core round trip) | 317.8 | **245.6** | **−23 %** |
-| `BM_Reference_Multi_PingPong_Latency` (raw spsc ring, tight poll, no actor) | 285.6 | **222.9** | **−22 %** — MSVC's tight poll sees the fix too |
-| `BM_Pipeline_Chain_Latency` 8 actors / 8 cores (per delivery) | 252.5 | **220.2** | **−13 %** |
-| `BM_Ask_RoundTrip_CrossCore` | 51.7 | **47.0** | −9 % |
-| `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores (per round trip) | 24.9 | 23.9 | −4 % |
-| `BM_Ask_RoundTrip_SameCore` | 45.4 | 36.9 | the control bimodal (36 … 54); the branch's three runs 36–37 |
-| `BM_Mono_PingPong_Latency` (same core) | 71.7 | 70.9 | level |
-| pipeline 10 actors / 1 core | 36.7 | 37.4 | +2 % (37 … 37 vs 37 … 38) |
-| `BM_PINGPONG` 64 actors, 1 core | 26.5 | 26.2 | level |
+| `BM_Multi_PingPong_Latency` (cross-core, per round trip) | 317.8 | **245.6** | **−23 %** |
+| `BM_Reference_Multi_PingPong_Latency` (raw spsc ring, tight poll, no actor, per round trip) | 285.6 | **222.9** | **−22 %** — MSVC's tight poll sees the fix too |
+| `BM_Pipeline_Chain_Latency` 8 actors / 8 cores (per delivery) | 168.4 | **146.8** | **−13 %** |
+| `BM_Ask_RoundTrip_CrossCore` (per ask) | 1 033.6 | **939.4** | −9 % |
+| `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores (per round trip) | 11.87 | 11.39 | −4 % |
+| `BM_Ask_RoundTrip_SameCore` (per ask) | 908.3 | 737.2 | both spread: the control's three run medians 726 / 908 / 1 087, the branch's 721 / 737 / 870 |
+| `BM_Mono_PingPong_Latency` (same core, per round trip) | 71.7 | 70.9 | level |
+| pipeline 10 actors / 1 core (per delivery) | 24.47 | 24.96 | +2 % (run medians 24.5 … 24.9 vs 24.5 … 25.0) |
+| `BM_PINGPONG` 64 actors, 1 core (per round trip) | 12.64 | 12.51 | level |
 
 ## The probes (`probe.txt`, ns; cand / ctl, three alternations)
 

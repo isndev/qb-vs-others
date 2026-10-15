@@ -1981,8 +1981,10 @@ measures, and nothing here has tried it.
 
 Shipped 3.1.0 in the same sessions: ping-pong 1c 113.6 / 97.9, so the head is **−63 / −71 %**
 against the release. `dev/bench`'s same-core cells say the same thing in the engine's own units:
-`BM_Mono_PingPong_Latency` **117.8 → 76.7** (MSVC) and **100.2 → 62.9** (g++), the 10-actor
-one-core pipeline **79.1 → 43.3** and **65.1 → 31.8 ns** per delivery, the 8 × 8 pipeline and the
+`BM_Mono_PingPong_Latency` **117.8 → 76.7** (MSVC) and **100.2 → 62.9** (g++) ns per round trip,
+the 10-actor one-core pipeline **52.7 → 28.9** and **43.4 → 21.2 ns** per delivery (Google
+Benchmark's milliseconds per iteration divided by its 1 500 000 deliveries; an earlier text quoted
+the milliseconds, 79.1 → 43.3 and 65.1 → 31.8, as nanoseconds — Huly QB-820), the 8 × 8 pipeline and the
 cross-core `Multi_PingPong` inside their spread (257.3 vs 258.4 over eight interleaved g++ runs),
 the ask round trips −3 to −7 %. The cross-core spin medians on g++ sit +2 / +5 % with
 overlapping distributions across three censuses — recorded with their sign, not rounded away:
@@ -2047,8 +2049,8 @@ bytes every time.
 | counting 1c-spin (message) | bimodal, both builds | 8.9 → 8.0 |
 | ping-pong 2c-park / 2c-spin | 260 → 230–246 / 248 → 238–246 | 213 → 200 / 209 → 200–211 |
 | thread-ring 2c-spin / 2c-park | 122 → 125–127 / 123 → 126 (**+2–5 %**) | 108.5 → 110–114 / 108 → 112 (**+1–5 %**) |
-| `dev/bench` `Mono_PingPong` / one-core pipeline | 76.6 → **66.4** / 42.7 → **34.6** | 63.7 → 58.5 / 32.2 → 29.9 |
-| `dev/bench` `BM_PINGPONG` 64 actors, 1 core | 29.4 → 26.5 | 26.5 → **21.3** (−20 %) |
+| `dev/bench` `Mono_PingPong` (round trip) / one-core pipeline (delivery) | 76.6 → **66.4** / 28.5 → **23.1** | 63.7 → 58.5 / 21.4 → 20.0 |
+| `dev/bench` `BM_PINGPONG` 64 actors, 1 core (round trip) | 14.0 → 12.7 | 12.6 → **10.2** (−20 %) |
 
 ### 15.2 The cell that moves the other way, and why it is kept
 
@@ -2187,8 +2189,8 @@ per unit; the per-directory READMEs carry every cell, the censuses and the bench
 | bank-transaction 2c (transfer) | 93 → 88–90 (2c-spin census level) | 2c-park 147 → 159 / 154 in the grid, not censused; 2c-spin 154.7 → 158.2 on a 15-launch census — level |
 | every 1c cell, counting, fork-join, fib | level where censused (10- and 15-launch censuses); bank 1c-park and fork-join 1c-spin, which the grid moved, have no census | level (15-launch census on fib 2c, counting 2c-spin and 1c-park, bank 2c-spin, big 2c-spin; counting 2c-park not censused) |
 | `dev/bench` `Multi_PingPong` (cross-core) | 253 → **203** (−20 %) | 318 → **246** (−23 %); the raw-ring reference 286 → 223 (−22 %) |
-| `dev/bench` pipeline 8 × 8 cores / `BM_PINGPONG` 64 actors, 8 cores | 322 → **264** (−18 %) / 24.7 → **21.7** | 252 → **220** (−13 %) / 24.9 → 23.9 |
-| `dev/bench` same-core cells (`Mono`, pipeline 1c, `BM_PINGPONG` 1c, ask) | level | level (`Mono` 71.7 → 70.9, pipeline 1c 36.7 → 37.4, `BM_PINGPONG` 1c 26.5 → 26.2) |
+| `dev/bench` pipeline 8 × 8 cores (delivery) / `BM_PINGPONG` 64 actors, 8 cores (round trip) | 215 → **176** (−18 %) / 11.8 → **10.4** | 168 → **147** (−13 %) / 11.9 → 11.4 |
+| `dev/bench` same-core cells (`Mono`, pipeline 1c, `BM_PINGPONG` 1c, ask) | level | level (`Mono` 71.7 → 70.9, pipeline 1c 24.5 → 25.0, `BM_PINGPONG` 1c 12.6 → 12.5) |
 | `xcore-hop` send / push, phase-averaged (jitter 150) | 240 → **198** / 240 → **159** | 295–303 → **257–271** / 258–283 → 254–273 (the locked push bimodal on MSVC) |
 | `pass-cost` k = 1 / 2 / 4 | 12.9 / 17.1 / 25.0 → 12.7 / 17.1 / 25.0 | 16.2 / 23.7 / 38.1 → 16.1 / 23.6 / 37.9 |
 

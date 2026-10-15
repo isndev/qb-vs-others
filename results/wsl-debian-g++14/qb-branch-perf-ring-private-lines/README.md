@@ -93,19 +93,27 @@ eighth.) The ring change touches nothing a same-core cell executes — the self 
 `segmented_pipe`, not this ring — and the batched cross-core shapes publish runs of hundreds of
 events per ring write, where one load per publish is invisible.
 
-## `dev/bench` — the four core binaries (median of three run medians, ns; `bench/`)
+## `dev/bench` — the four core binaries (median of three run medians, ns per operation; `bench/`)
+
+Google Benchmark records each cell's `real_time` in milliseconds per ITERATION; the figures below
+divide it by the operations one iteration performs: 1 000 000 round trips for the three ping-pong
+latency cells (their figures read the same in both units), 1 500 000 deliveries for each pipeline
+(150 000 × 10 on one core, 187 500 × 8 on eight), 64 × 32 768 = 2 097 152 round trips for
+`BM_PINGPONG`, 50 000 asks for each ask cell. Each iteration's window holds the whole of that
+work, so a figure is a mean over it, not an isolated latency. (This table printed the
+milliseconds under an `ns` header until Huly QB-820; the Δ column is unchanged.)
 
 | cell | `670e9433` | **branch** | Δ |
 |---|---:|---:|---:|
-| `BM_Multi_PingPong_Latency` (cross-core round trip) | 253.3 | **202.8** | **−20 %** |
-| `BM_Pipeline_Chain_Latency` 8 actors / 8 cores (per delivery) | 321.9 | **264.5** | **−18 %** |
-| `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores (per round trip) | 24.7 | **21.7** | **−12 %** |
-| `BM_Ask_RoundTrip_CrossCore` | 48.5 | 46.3 | −4.5 % |
-| `BM_Mono_PingPong_Latency` (same core) | 59.3 | 59.6 | level |
-| pipeline 10 actors / 1 core | 30.4 | 30.4 | level |
-| `BM_PINGPONG` 64 actors, 1 core | 21.3 | 21.3 | level |
-| `BM_Ask_RoundTrip_SameCore` | 42.8 | 42.5 | level |
-| `BM_Reference_Multi_PingPong_Latency` (raw spsc, tight poll, no qb code) | 196.8 | 203.4 | +3 % — the host; a tight poll is the regime the fix does not reach |
+| `BM_Multi_PingPong_Latency` (cross-core, per round trip) | 253.3 | **202.8** | **−20 %** |
+| `BM_Pipeline_Chain_Latency` 8 actors / 8 cores (per delivery) | 214.6 | **176.3** | **−18 %** |
+| `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores (per round trip) | 11.78 | **10.36** | **−12 %** |
+| `BM_Ask_RoundTrip_CrossCore` (per ask) | 969.8 | 926.6 | −4.5 % |
+| `BM_Mono_PingPong_Latency` (same core, per round trip) | 59.3 | 59.6 | level |
+| pipeline 10 actors / 1 core (per delivery) | 20.27 | 20.29 | level |
+| `BM_PINGPONG` 64 actors, 1 core (per round trip) | 10.15 | 10.16 | level |
+| `BM_Ask_RoundTrip_SameCore` (per ask) | 855.3 | 850.3 | level |
+| `BM_Reference_Multi_PingPong_Latency` (raw spsc, tight poll, no qb code, per round trip) | 196.8 | 203.4 | +3 % — the host; a tight poll is the regime the fix does not reach |
 
 Suites at the branch: release / ASan+UBSan / TSan on this host — the figures are in the Huly
 comment and the qb `CHANGELOG.md` `[Unreleased]` entry.

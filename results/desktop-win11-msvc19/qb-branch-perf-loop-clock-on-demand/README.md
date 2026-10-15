@@ -54,19 +54,27 @@ measurable difference by `FAIRNESS.md` §1.5 — which is what the idle-clock ha
 on WSL2 the guard alone had cost the two 2c-spin cells +25 % (the other README), and Windows
 measured the branch head only, with the clock read already in place.
 
-## `dev/bench` — the four core binaries (median of three run medians, ns; `bench/`)
+## `dev/bench` — the four core binaries (median of three run medians, ns per operation; `bench/`)
+
+Google Benchmark records each cell's `real_time` in milliseconds per ITERATION; the figures below
+divide it by the operations one iteration performs: 1 000 000 round trips for the three ping-pong
+latency cells (their figures read the same in both units), 1 500 000 deliveries for each pipeline
+(150 000 × 10 on one core, 187 500 × 8 on eight), 64 × 32 768 = 2 097 152 round trips for
+`BM_PINGPONG`, 50 000 asks for each ask cell. Each iteration's window holds the whole of that
+work, so a figure is a mean over it, not an isolated latency. (This table printed the
+milliseconds under an `ns` header until Huly QB-820; the Δ column is unchanged.)
 
 | cell | `43f62afe` | **`c42abddf`** | Δ |
 |---|---:|---:|---:|
-| `BM_Mono_PingPong_Latency` (same-core round trip) | 117.8 | **76.7** | **−35 %** |
-| `BM_Multi_PingPong_Latency` (cross-core) | 323.4 | 285.9 | −12 % (306–335 against 265–307, three runs each) |
-| `BM_Reference_Multi_PingPong_Latency` (raw spsc, the ratio's denominator) | 242.7 | 246.9 | +2 % |
-| pipeline chain, 10 actors / 1 core (per delivery) | 79.1 | **43.3** | **−45 %** |
-| pipeline chain, 8 actors / 8 cores | 254.9 | 257.1 | +1 % |
-| `BM_PINGPONG<TinyEvent>` 64 actors, 1 core (per round trip) | 31.2 | 30.0 | −4 % |
-| `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores | 26.9 | 25.7 | −4 % |
-| `BM_Ask_RoundTrip_SameCore` | 38.0 | 35.3 | −7 % |
-| `BM_Ask_RoundTrip_CrossCore` | 46.3 | 43.6 | −6 % |
+| `BM_Mono_PingPong_Latency` (same-core, per round trip) | 117.8 | **76.7** | **−35 %** |
+| `BM_Multi_PingPong_Latency` (cross-core, per round trip) | 323.4 | 285.9 | −12 % (306–335 against 265–307, three runs each) |
+| `BM_Reference_Multi_PingPong_Latency` (raw spsc, the ratio's denominator, per round trip) | 242.7 | 246.9 | +2 % |
+| pipeline chain, 10 actors / 1 core (per delivery) | 52.72 | **28.86** | **−45 %** |
+| pipeline chain, 8 actors / 8 cores (per delivery) | 170.0 | 171.4 | +1 % |
+| `BM_PINGPONG<TinyEvent>` 64 actors, 1 core (per round trip) | 14.89 | 14.32 | −4 % |
+| `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores (per round trip) | 12.83 | 12.28 | −4 % |
+| `BM_Ask_RoundTrip_SameCore` (per ask) | 760.4 | 705.8 | −7 % |
+| `BM_Ask_RoundTrip_CrossCore` (per ask) | 926.5 | 872.2 | −6 % |
 
 Suite at the head: `dev/agent/verify-windows.ps1` — the numbers are in the Huly comment and the
 qb `CHANGELOG.md` `[Unreleased]` entry (release **373/373 executed, 0 skipped, 556 TUs, 0
