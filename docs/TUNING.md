@@ -2178,14 +2178,14 @@ per unit; the per-directory READMEs carry every cell, the censuses and the bench
 
 | cell | WSL2 / g++-14 | Windows / MSVC 19.51 |
 |---|---|---|
-| ping-pong 2c-park (round trip) | 209 → **165 / 159** (census **211.7 → 164.7**, −22 %) | 257 → **209 / 206** (census **263.2 → 204.9**, −22 %) |
-| ping-pong 2c-spin | 221 → **163 / 173** (census 207.5 → 163.2, −21 %) | 258 → **217 / 199** (census 257.0 → 206.1, −20 %) |
-| thread-ring 2c-park (hop) | 114 → **82 / 80** (census **115.0 → 79.9**, −31 %) | 130 → **102 / 100** (census **138.6 → 98.9**, −29 %) |
-| thread-ring 2c-spin | 114 → **81 / 83** (census 116.1 → 80.4, −31 %) | 144 → **105 / 96** (census 137.0 → 98.4, −28 %) |
-| chameneos 2c (meeting) | 49 → **45** (census −7 %) | 55 → **53 / 51** (census −5 %) |
-| big 2c (round trip) | 19.3 → 18.7 / 17.9 (census −4 %) | 22.5 → 20.4 / 20.3 (−9 %; census 21.1 → 20.5) |
-| bank-transaction 2c (transfer) | 93 → 88–90 (census level) | 147 → 159 / 154 in the grid, 154.7 → 158.2 on a 15-launch census — level |
-| every 1c cell, counting, fork-join, fib | level (15-launch census on each cell the grid had moved) | level (15-launch census on fib 2c, counting, bank, big) |
+| ping-pong 2c-park (round trip) | 209 → **165 / 159** (census **207.5 → 163.2**, −21 %) | 257 → **209 / 206** (census **257.0 → 206.1**, −20 %) |
+| ping-pong 2c-spin | 221 → **163 / 173** (census 211.7 → 164.7, −22 %) | 258 → **217 / 199** (census 263.2 → 204.9, −22 %) |
+| thread-ring 2c-park (hop) | 114 → **82 / 80** (census **116.1 → 80.4**, −31 %) | 130 → **102 / 100** (census **137.0 → 98.4**, −28 %) |
+| thread-ring 2c-spin | 114 → **81 / 83** (census 115.0 → 79.9, −31 %) | 144 → **105 / 96** (census 138.6 → 98.9, −29 %) |
+| chameneos 2c-spin (meeting) | 49 → **45** (census −7 %) | 55 → **53 / 51** (census −5 %) |
+| big 2c (round trip) | 2c-park 19.3 → 18.7 / 17.9; 2c-spin census −4 % | 2c-park 22.5 → 20.4 / 20.3 (−9 %); 2c-spin census 21.1 → 20.5 |
+| bank-transaction 2c (transfer) | 93 → 88–90 (2c-spin census level) | 2c-park 147 → 159 / 154 in the grid, not censused; 2c-spin 154.7 → 158.2 on a 15-launch census — level |
+| every 1c cell, counting, fork-join, fib | level where censused (10- and 15-launch censuses); bank 1c-park and fork-join 1c-spin, which the grid moved, have no census | level (15-launch census on fib 2c, counting 2c-spin and 1c-park, bank 2c-spin, big 2c-spin; counting 2c-park not censused) |
 | `dev/bench` `Multi_PingPong` (cross-core) | 253 → **203** (−20 %) | 318 → **246** (−23 %); the raw-ring reference 286 → 223 (−22 %) |
 | `dev/bench` pipeline 8 × 8 cores / `BM_PINGPONG` 64 actors, 8 cores | 322 → **264** (−18 %) / 24.7 → **21.7** | 252 → **220** (−13 %) / 24.9 → 23.9 |
 | `dev/bench` same-core cells (`Mono`, pipeline 1c, `BM_PINGPONG` 1c, ask) | level | level (`Mono` 71.7 → 70.9, pipeline 1c 36.7 → 37.4, `BM_PINGPONG` 1c 26.5 → 26.2) |

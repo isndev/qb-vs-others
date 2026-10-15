@@ -15,10 +15,10 @@ the working tree of the branch; the control `~/qvo/ctl-670e9433`, a clean LF clo
 |---|---|---|
 | `grid-worktree/`, `grid-worktree-pass2/` | **the branch** — measured first and third | **32 cells** each, qb only, all verified: eight shapes × {1c-spin, 1c-park, 2c-spin, 2c-park}. 18:41:21–18:41:55 UTC. |
 | `grid-670e9433/` | `develop` `670e9433` — the control, measured second | same 32 cells, same session. |
-| `census/` | branch vs `670e9433`, **10 interleaved launches** each, 3 reps + 1 warmup, on the 2c cells of all eight shapes (ping-pong and thread-ring in both wait modes) and the ping-pong 1c anchor | 18:41:55–18:42:53 UTC. |
+| `census/` | branch vs `670e9433`, **10 interleaved launches** each, 3 reps + 1 warmup, on the 2c-spin cells of all eight shapes (ping-pong and thread-ring in both wait modes) and the ping-pong 1c-spin anchor | 18:41:55–18:42:53 UTC. |
 | `bench/` | the four core `dev/bench` binaries, candidate and control alternated three times (`cand-N/` / `ctl-N/`, one process per run, 5 repetitions, every iteration recorded) | 18:42:53–18:46:23 UTC. |
 | `probe.txt` | `qvoprobe-pass-cost` k = 1, 2, 4 and `qvoprobe-xcore-hop` send / push, phase-averaged (jitter 150 ns) and locked, candidate and control alternated three times | 18:46:23–18:47:48 UTC. |
-| `census-throughput/` | the cells whose GRID readings had moved +2 to +10 % — counting 1c (both modes) and 2c-spin, fib 2c (both modes), fork-join 1c and 2c-spin, bank-transaction 1c-park — **15 interleaved launches** each, same protocol, a second quiet window | 18:48:41–18:48:51 UTC. |
+| `census-throughput/` | throughput cells after the GRID readings had moved +2 to +10 % — counting 1c (both modes) and 2c-park, fib 2c (both modes), fork-join 1c-park and 2c-park, bank-transaction 1c-spin (the wait mode read from each document's `params.wait`: 1 spin, 0 park) — **15 interleaved launches** each, same protocol, a second quiet window | 18:48:41–18:48:51 UTC. |
 
 None of the grids is merged into the published tables; the branch joins `qb-branch-develop/`
 when the final candidate is measured on all eight shapes.
@@ -70,20 +70,26 @@ variant read ±10 % from one binary's memory layout to the next (`../qb-branch-p
 | ping-pong 1c-spin / 1c-park | 22.81 / 23.15 | 22.94 / 23.11 — 22.95 / 22.89 | level |
 | thread-ring 1c-spin / 1c-park | 17.38 / 17.42 | 17.38 / 17.35 — 17.31 / 17.34 | level |
 | big 1c, chameneos 1c, fib 1c | 18.35–18.66, 25.95–27.03, 126.5–129.1 | within spread | level |
-| counting 1c-spin / 2c-spin, fork-join, fib 2c, bank 1c-park | 7.84 / 9.82, 8.3–8.7, 85.4–85.7, 136.1 | +2 to +11 % in the grid | **noise — see the throughput census** |
+| counting 1c-spin / 2c-spin, fork-join, fib 2c, bank 1c-park | 7.84 / 9.82, 8.3–8.7, 85.4–85.7, 136.1 | +2 to +11 % in the grid | **noise where censused — see both censuses below; bank 1c-park and fork-join 1c-spin have none** |
 
-`census/`, ten interleaved launches, medians: ping-pong 2c-park **164.7** vs 211.7 (**−22 %**),
-2c-spin **163.2** vs 207.5 (−21 %); thread-ring 2c-park **79.9** vs 115.0 (**−31 %**), 2c-spin
-80.4 vs 116.1 (−31 %); chameneos 2c 45.6 vs 49.1 (−7 %); big 2c 18.3 vs 19.1 (−4 %); bank 2c
-90.3 vs 90.4, fork-join 2c 9.0 vs 9.1, counting 2c 9.9 vs 10.0, fib 2c 92.1 vs 88.1 (+4.5 %,
-overlapping distributions — re-measured below), ping-pong 1c 23.2 vs 23.4.
+`census/`, ten interleaved launches, medians: ping-pong 2c-spin **164.7** vs 211.7 (**−22 %**),
+2c-park **163.2** vs 207.5 (−21 %); thread-ring 2c-spin **79.9** vs 115.0 (**−31 %**), 2c-park
+80.4 vs 116.1 (−31 %); chameneos 2c-spin 45.6 vs 49.1 (−7 %); big 2c-spin 18.3 vs 19.1 (−4 %);
+bank 2c-spin 90.3 vs 90.4, fork-join 2c-spin 9.0 vs 9.1, counting 2c-spin 9.9 vs 10.0, fib
+2c-spin 92.1 vs 88.1 (+4.5 %, overlapping distributions — re-measured below), ping-pong 1c-spin
+23.2 vs 23.4.
 
-`census-throughput/`, fifteen interleaved launches on every cell the grids had moved the other
-way: counting 1c-spin **8.4** vs 8.3, 1c-park 8.4 vs 8.3, 2c-spin 10.1 vs 10.0; fib 2c-spin
-**89.3** vs 89.6, 2c-park 90.9 vs 89.6 (+1.5 %, distributions 88.3–99.3 vs 85.7–96.6); fork-join
-1c 8.6 vs 8.5, 2c 9.2 vs 9.2; bank-transaction 1c-park 140.0 vs 142.5. Level, all of them: the
-grid's +2 to +11 % on those cells was launch-to-launch noise of the batched shapes, not the
-change. The ring change touches nothing a same-core cell executes — the self pipe is a
+`census-throughput/`, fifteen interleaved launches on throughput cells the grids had moved the
+other way: counting 1c-spin **8.4** vs 8.3, 1c-park 8.4 vs 8.3, 2c-park 10.1 vs 10.0; fib
+2c-park **89.3** vs 89.6, 2c-spin 90.9 vs 89.6 (+1.5 %, distributions 88.3–99.3 vs 85.7–96.6);
+fork-join 1c-park 8.6 vs 8.5, 2c-park 9.2 vs 9.2; bank-transaction 1c-spin 140.7 vs 142.5. Level,
+all of them: the grid's +2 to +11 % on those cells was launch-to-launch noise of the batched
+shapes, not the change. Two cells the grid had moved have no census here, because the census
+measured the other wait mode of each: bank-transaction 1c-park (136.1 → 142.5 / 143.9 in the grid)
+and fork-join 1c-spin (8.28 → 8.75 / 8.78). (The wait modes in these two paragraphs are read from
+each document's `params.wait`, 1 spin and 0 park; an earlier text named them the other way round,
+and quoted the bank 1c median as 140.0, the seventh of fifteen sorted launches instead of the
+eighth.) The ring change touches nothing a same-core cell executes — the self pipe is a
 `segmented_pipe`, not this ring — and the batched cross-core shapes publish runs of hundreds of
 events per ring write, where one load per publish is invisible.
 
