@@ -882,7 +882,12 @@ recorded as an option, not taken, because the slabs are retained at the high-wat
 faults are paid in warmup.
 
 **The three grids** (`grid-final/`, `grid-230c5035/`, `grid-shipped-3.1.0/`, 7 + 2, 19:06–19:08 UTC).
-One-core cells, ns per unit, p50 (min–max spread 1–4 %, quotable as they are):
+One-core cells, ns per unit, p50 of seven repetitions — not all of them steady: the min–max
+spread reaches 20.6 % on the candidate's counting 1c-park and 16.6 % on its 1c-spin, and
+`230c5035`'s big 1c-spin is bimodal (four repetitions at 45–47 ms, three at 109–113 ms; its p50 is
+the fast mode). The documents are in git history at `30838d50`
+(`results/macbook-m4pro-macos-clang21/README.md`); an earlier text called every cell "min–max
+spread 1–4 %, quotable as they are" (Huly QB-838):
 
 | | candidate | `230c5035` | 3.1.0 | candidate vs `230c5035` |
 |---|---:|---:|---:|---:|

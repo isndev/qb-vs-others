@@ -23,7 +23,14 @@ PLATFORM HAS NO REAL THREAD PINNING") is in each of its documents. What that cos
 two-core cells are bimodal by launch on this host (the scheduler decides which core pair and
 when), so **no two-core figure is quoted from the grid alone** — the launch censuses under
 `qb-branch-develop/` are the instrument for those cells, exactly as on Windows (§9.11). One-core
-cells are steady (min–max spread 1–4 %).
+cells are steadier, not steady: over the nine repetitions of each of the 65 verified one-core
+cells, the min–max spread runs from 1.2 % (CAF big 1c-spin) to 87 % (the floor's
+bank-transaction 1c-spin), and exceeds 4 % in 38 of them — in 11 of qb's 16, up to **27.2 %**
+(counting 1c-spin; fork-join 1c-park 16.4 %). The interquartile range is within 4 % of the median
+in 55 of the 65; the other ten are the floor's bank-transaction, fork-join, fib and thread-ring
+cells, qb's two fork-join cells (11.1 % park, 8.8 % spin) and SObjectizer's fork-join 1c-spin
+(6.4 %). Read a one-core cell by its distribution, as `REPORT.md` prints it. (An earlier text
+said "min–max spread 1–4 %" for every one-core cell, Huly QB-838.)
 
 `REPORT.md` beside this file is `tools/report.py`'s render of this directory and
 `tools/check-report.py` fails if it drifts. `docs/TUNING.md` §13.9 is the reading guide for the
