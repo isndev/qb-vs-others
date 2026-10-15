@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cerrno>
 #include <cmath>
 #include <condition_variable>
 #include <cstdio>
@@ -20,6 +21,7 @@
 #    define WIN32_LEAN_AND_MEAN
 #    include <windows.h>
 #    include <shellapi.h>
+#    include <tlhelp32.h>
 #else
 #    include <pthread.h>
 #    include <sched.h>
@@ -158,6 +160,7 @@ struct Pin {
     bool             requested{false};
     bool             applied{false};
     std::vector<int> cpus;
+    int              threads{0};  // the threads read back on the pinned set (Linux, Windows); 0 unpinned
 };
 
 std::vector<int> parse_cpu_list(const std::string &s) {
@@ -178,9 +181,31 @@ std::vector<int> parse_cpu_list(const std::string &s) {
     return out;
 }
 
+#if defined(__linux__)
+// The threads of this process, from /proc/self/task.
+bool list_threads(std::vector<pid_t> &tids, std::string &why_not) {
+    tids.clear();
+    std::error_code ec;
+    for (std::filesystem::directory_iterator it("/proc/self/task", ec), end; !ec && it != end;
+         it.increment(ec)) {
+        const std::string name = it->path().filename().string();
+        char             *last = nullptr;
+        const long        tid  = std::strtol(name.c_str(), &last, 10);
+        if (!name.empty() && *last == '\0' && tid > 0) tids.push_back(static_cast<pid_t>(tid));
+    }
+    if (ec || tids.empty()) {
+        why_not = "cannot list the threads of this process in /proc/self/task";
+        return false;
+    }
+    return true;
+}
+#endif
+
 // Applies the mask to the whole process, so every thread a framework spawns afterwards inherits
 // it. This is the only way to constrain a framework whose scheduler threads we do not control.
-bool apply_and_verify_pin(const std::vector<int> &cpus, std::string &why_not) {
+// `threads` receives the number of the process's threads read back on the set (Linux, Windows).
+bool apply_and_verify_pin(const std::vector<int> &cpus, int &threads, std::string &why_not) {
+    threads = 0;
 #if defined(_WIN32)
     DWORD_PTR mask = 0;
     for (int c : cpus) {
@@ -196,32 +221,113 @@ bool apply_and_verify_pin(const std::vector<int> &cpus, std::string &why_not) {
         why_not = "GetProcessAffinityMask failed";
         return false;
     }
+    const auto hex = [](unsigned long long v) {
+        char buf[24];
+        std::snprintf(buf, sizeof buf, "0x%llx", v);
+        return std::string(buf);
+    };
     if (got_proc != mask) {
-        why_not = "affinity read back as 0x" + std::to_string(got_proc) + " but 0x"
-                  + std::to_string(mask) + " was requested";
+        why_not = "affinity read back as " + hex(got_proc) + " but " + hex(mask) + " was requested";
+        return false;
+    }
+    // The system applies the process mask to every thread of the process. Each one is read back
+    // all the same, from a Toolhelp snapshot of the process's threads -- a thread a static
+    // initialiser started before main() (qb's log writer) included -- so `threads` counts what was
+    // verified, not what was asked (Huly QB-841). A thread that ended after the snapshot is
+    // skipped (OpenThread: ERROR_INVALID_PARAMETER); one started later inherits the process mask.
+    const DWORD  pid  = GetCurrentProcessId();
+    const HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    if (snap == INVALID_HANDLE_VALUE) {
+        why_not = "CreateToolhelp32Snapshot failed, GetLastError=" + std::to_string(GetLastError());
+        return false;
+    }
+    THREADENTRY32 te{};
+    te.dwSize = sizeof te;
+    for (BOOL more = Thread32First(snap, &te); more; more = Thread32Next(snap, &te)) {
+        if (te.th32OwnerProcessID != pid) continue;
+        const HANDLE thread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, te.th32ThreadID);
+        if (!thread) {
+            const DWORD err = GetLastError();
+            if (err == ERROR_INVALID_PARAMETER) continue;  // it ended: it runs nowhere
+            why_not = "OpenThread failed for thread " + std::to_string(te.th32ThreadID)
+                      + ", GetLastError=" + std::to_string(err);
+            CloseHandle(snap);
+            return false;
+        }
+        GROUP_AFFINITY ga{};
+        const BOOL read = GetThreadGroupAffinity(thread, &ga);
+        CloseHandle(thread);
+        if (!read || ga.Group != 0 || ga.Mask != mask) {
+            why_not = read ? "affinity of thread " + std::to_string(te.th32ThreadID) + " read back as "
+                                 + hex(ga.Mask) + " in group " + std::to_string(ga.Group) + " but "
+                                 + hex(mask) + " was requested"
+                           : "GetThreadGroupAffinity failed for thread "
+                                 + std::to_string(te.th32ThreadID);
+            CloseHandle(snap);
+            return false;
+        }
+        ++threads;
+    }
+    CloseHandle(snap);
+    if (threads == 0) {
+        why_not = "no thread of this process was found in a Toolhelp snapshot";
         return false;
     }
     return true;
 #elif defined(__linux__)
+    // On Linux the mask belongs to each THREAD, and sched_setaffinity(0, ...) sets the caller's
+    // alone. A thread started before main() -- qb's log writer, from a static initialiser when qb
+    // is built with QB_WITH_LOGGING, its default -- kept the mask the process was launched with
+    // while main() alone was pinned and read back (Huly QB-841). So every thread of the process is
+    // pinned, listing /proc/self/task again until a listing holds no thread left to pin: a thread
+    // started later inherits the mask of its creator, which by then is pinned. Then every thread
+    // of that last listing is read back.
     cpu_set_t set;
     CPU_ZERO(&set);
-    for (int c : cpus) CPU_SET(c, &set);
-    if (sched_setaffinity(0, sizeof(set), &set) != 0) {
-        why_not = std::string("sched_setaffinity failed: ") + std::strerror(errno);
-        return false;
-    }
-    cpu_set_t got;
-    CPU_ZERO(&got);
-    if (sched_getaffinity(0, sizeof(got), &got) != 0) {
-        why_not = "sched_getaffinity failed";
-        return false;
-    }
-    for (int c = 0; c < CPU_SETSIZE; ++c) {
-        bool want = std::find(cpus.begin(), cpus.end(), c) != cpus.end();
-        if (want != (CPU_ISSET(c, &got) != 0)) {
-            why_not = "affinity read back differs from the requested set at cpu " + std::to_string(c);
+    for (int c : cpus) {
+        if (c < 0 || c >= CPU_SETSIZE) {
+            why_not = "cpu index out of range for a Linux cpu_set_t";
             return false;
         }
+        CPU_SET(c, &set);
+    }
+    std::vector<pid_t> pinned, tids;
+    for (int listing = 0;; ++listing) {
+        if (!list_threads(tids, why_not)) return false;
+        bool fresh = false;
+        for (const pid_t tid : tids) {
+            if (std::find(pinned.begin(), pinned.end(), tid) != pinned.end()) continue;
+            fresh = true;
+            if (sched_setaffinity(tid, sizeof(set), &set) != 0) {
+                if (errno == ESRCH) continue;  // it ended after the listing: nothing left to pin
+                why_not = "sched_setaffinity failed for thread " + std::to_string(tid) + ": "
+                          + std::strerror(errno);
+                return false;
+            }
+            pinned.push_back(tid);
+        }
+        if (!fresh) break;
+        if (listing == 16) {
+            why_not = "threads kept appearing while the process was being pinned";
+            return false;
+        }
+    }
+    for (const pid_t tid : tids) {
+        cpu_set_t got;
+        CPU_ZERO(&got);
+        if (sched_getaffinity(tid, sizeof(got), &got) != 0) {
+            if (errno == ESRCH) continue;  // it ended: it runs nowhere
+            why_not = "sched_getaffinity failed for thread " + std::to_string(tid);
+            return false;
+        }
+        for (int c = 0; c < CPU_SETSIZE; ++c) {
+            if ((CPU_ISSET(c, &set) != 0) != (CPU_ISSET(c, &got) != 0)) {
+                why_not = "affinity of thread " + std::to_string(tid)
+                          + " read back differs from the requested set at cpu " + std::to_string(c);
+                return false;
+            }
+        }
+        ++threads;
     }
     return true;
 #else
@@ -610,12 +716,12 @@ int run(int argc, char **argv, Spec spec, Body body) {
     if (warmup < 0) fatal("--warmup must be >= 0");
 
     // Pinning happens BEFORE any framework object is constructed, so every thread the framework
-    // creates inherits the mask. A framework that spawns its scheduler in a static initializer
-    // would defeat this; none of the ones measured here does, and the report records the mask
-    // that was actually read back rather than the one requested.
+    // creates inherits the mask. A thread a static initialiser started earlier -- qb's log writer
+    // -- is pinned with it: on Windows by the process mask, on Linux one thread at a time (above);
+    // on both, every thread is read back and the document records how many (`pinned_threads`).
     if (pin.requested && !no_pin) {
         std::string why;
-        if (!apply_and_verify_pin(pin.cpus, why))
+        if (!apply_and_verify_pin(pin.cpus, pin.threads, why))
             fatal("CPU pinning was requested and could not be verified (" + why
                   + "). Refusing to produce a number that a hybrid CPU would make meaningless. "
                     "Pass --no-pin to measure anyway; the result is then marked pinned:false.");
@@ -660,13 +766,16 @@ int run(int argc, char **argv, Spec spec, Body body) {
 
     std::vector<double>        work_ns, total_ns, setup_ns, teardown_ns;
     std::vector<std::string>   failures;
-    // Every measured repetition's observations, by name, in repetition order.
+    // Every VERIFIED measured repetition's observations, by name, in repetition order.
     std::map<std::string, std::vector<std::uint64_t>> observed;
 
     // The result document: one builder for the end of the run and for the deadline's watchdog, so
     // a blocked run's document has the shape of any other failed run. A run with a failed
     // repetition has no publishable timing, even when earlier repetitions passed: the reasons are
-    // kept, and no partial sample or summary is written unless `ok`.
+    // kept, and no timing sample or summary is written unless `ok`. Counts are kept, timings
+    // never: the observations of the measured repetitions that DID verify stay in a refused
+    // document, a diagnostic of what the run did before it failed -- never a timing, and no table
+    // reads an unverified document (Huly QB-870; tools/negative-control.py section H asserts both).
     auto document = [&](bool ok, const std::vector<std::string> &why) -> std::string {
         const std::vector<double>  none;
         const std::vector<double> &work  = ok ? work_ns : none;
@@ -701,6 +810,9 @@ int run(int argc, char **argv, Spec spec, Body body) {
 
         j << "  \"pinned\": " << (pin.applied ? "true" : "false") << ",\n";
         j << "  \"cpus\": " << quoted(pin_repr) << ",\n";
+        // Every thread present when the mask was applied, each read back -- Linux and Windows;
+        // macOS has no pin to verify (Huly QB-841).
+        if (pin.threads > 0) j << "  \"pinned_threads\": " << pin.threads << ",\n";
         j << "  \"thread_pinning_supported\": " << (thread_pinning_supported() ? "true" : "false")
           << ",\n";
 

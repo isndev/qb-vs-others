@@ -121,19 +121,27 @@ scan costs the one-event pass 0.5 ns and the four-event pass 3 ns on the probe, 
 spin pass should be paced explicitly rather than by whatever work it happens to do is QB-181's
 question; the ring is now its most sensitive instrument.
 
-## `dev/bench` — the four core binaries (median of three run medians, ns; `bench/`)
+## `dev/bench` — the four core binaries (median of three run medians, ns per operation; `bench/`)
+
+Google Benchmark records each cell's `real_time` in milliseconds per ITERATION; the figures below
+divide it by the operations one iteration performs: 64 × 32 768 = 2 097 152 round trips for
+`BM_PINGPONG`, 1 000 000 round trips for the three ping-pong latency cells (their figures read
+the same in both units), 1 500 000 deliveries for each pipeline (150 000 × 10 on one core,
+187 500 × 8 on eight), 50 000 asks for each ask cell. Each iteration's window holds the whole of
+that work, so a figure is a mean over it, not an isolated latency. (This table printed the
+milliseconds under an `ns` header until Huly QB-820; the Δ column is unchanged.)
 
 | cell | `c42abddf` | **`670e9433`** | Δ |
 |---|---:|---:|---:|
-| `BM_PINGPONG<TinyEvent>` 64 actors, 1 core (per round trip) | 26.5 | **21.3** | **−20 %** |
-| `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores | 24.3 | 23.6 | −3 % |
-| `BM_Mono_PingPong_Latency` (same-core round trip) | 63.7 | **58.5** | −8 % |
-| `BM_Multi_PingPong_Latency` (cross-core) | 254.8 | 249.6 | −2 % |
-| `BM_Reference_Multi_PingPong_Latency` (raw spsc, no qb code) | 188.0 | 196.4 | +4 % (186–197 both) |
-| pipeline chain, 10 actors / 1 core (per delivery) | 32.2 | 29.9 | −7 % |
-| pipeline chain, 8 actors / 8 cores | 314.0 | 309.3 | −2 % |
-| `BM_Ask_RoundTrip_SameCore` | 42.8 | 41.7 | −3 % |
-| `BM_Ask_RoundTrip_CrossCore` | 47.6 | 46.8 | −2 % |
+| `BM_PINGPONG<TinyEvent>` 64 actors, 1 core (per round trip) | 12.63 | **10.16** | **−20 %** |
+| `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores (per round trip) | 11.60 | 11.25 | −3 % |
+| `BM_Mono_PingPong_Latency` (same-core, per round trip) | 63.7 | **58.5** | −8 % |
+| `BM_Multi_PingPong_Latency` (cross-core, per round trip) | 254.8 | 249.6 | −2 % |
+| `BM_Reference_Multi_PingPong_Latency` (raw spsc, no qb code, per round trip) | 188.0 | 196.4 | +4 % (186–197 both) |
+| pipeline chain, 10 actors / 1 core (per delivery) | 21.44 | 19.95 | −7 % |
+| pipeline chain, 8 actors / 8 cores (per delivery) | 209.3 | 206.2 | −2 % |
+| `BM_Ask_RoundTrip_SameCore` (per ask) | 857.0 | 833.3 | −3 % |
+| `BM_Ask_RoundTrip_CrossCore` (per ask) | 951.7 | 935.9 | −2 % |
 
 Suites at the head, standalone `cmake -S qb`, 0 warnings: WSL2 g++-14 Release / ASan+UBSan /
 TSan **192/192/0** each, run twice (before and after the last two steps). The Windows A/B is in

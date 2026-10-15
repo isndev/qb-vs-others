@@ -338,7 +338,7 @@ one-core cells follow (ping-pong 84 → 30, ring 45 → 18, big 20 → 17, chame
 wherever the majority fell — counting 2c read 11.7 at the midpoint and 13.4 now, chameneos 2c
 65 and 74 — and for those the interleaved census is the instrument: ten alternated launches of
 the final build against the midpoint build in one session
-(`qb-branch-develop/census-77b358d8-vs-43f62afe/`) read counting 13.6 vs 13.5, chameneos 66.9 vs
+(`qb-branch-develop/census-77b358d8-vs-f8eba11d/` (the directory keeps `43f62afe`'s hash from before the 2026-09-10 history rewrite, `f8eba11d`)) read counting 13.6 vs 13.5, chameneos 66.9 vs
 67.8 (its lower mode 46.8 vs 55.2), ping-pong 189 vs 243 and thread-ring 107 vs 120 — level or
 better on every cell, the cross-session difference being the host's mode of the day. The two 2c-park
 collapses are gone on both hosts (ping-pong 3.07 µs → 193 ns on Windows this session, 26.27 µs →

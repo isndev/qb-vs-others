@@ -30,8 +30,9 @@ measurement window is reported `unverified` and excluded from every table.
 Some shapes do an amount of work that depends on the interleaving — a philosopher's refused
 requests, a barber's turned-away customers, how often a search hands its frontier back — and no
 framework-free value can assert it. Such work is **reported beside the cell, never silently
-compared**: the body returns it in `qvo::Answer::observed`, every measured repetition's value is
-written into the result document, and the report prints it next to the row it belongs to. Where
+compared**: the body returns it in `qvo::Answer::observed`, every verified measured repetition's
+value is written into the result document — a refused document too, as a diagnostic: counts are
+kept there, timings never — and the report prints it next to the row it belongs to. Where
 the semantics requires a minimum of that work, the spec declares it in
 `qvo::Spec::observed_at_least` and it is asserted like the checksum: a missing or short
 observation fails the run, with no timing.
@@ -132,6 +133,17 @@ Every measured run therefore pins to an explicit CPU set, recorded in the result
 pinning was **requested and silently refused** is discarded rather than reported. That is a real
 failure mode, not a hypothetical: qb's own documentation records `setAffinity` returning success
 on Apple Silicon while doing nothing at all.
+
+The set must hold every thread, not only the one that asked — qb's log writer is started before
+`main()` by a static initialiser. On Windows the harness sets the process mask, which the system
+applies to every thread of the process; on Linux the mask belongs to each thread, so the harness
+pins every thread the process already has. On both it then reads every thread back (a Toolhelp
+snapshot on Windows, `/proc/self/task` on Linux) and writes how many it verified into the
+document (`pinned_threads`); a thread started later inherits a mask already applied. Documents
+written before Huly QB-841 read back the process mask (Windows) or `main()` alone (Linux): on
+Linux, a thread started before `main()` kept the mask the process was launched with (every CPU,
+or the set a `taskset` prefix gave it), and no document recorded which. `tools/negative-control.py`
+section X watches a thread started before `main()` land in the pinned set, on both platforms.
 
 Pinning is necessary and not sufficient: **the host must be quiet, and this was measured rather
 than assumed.** A pass over qb's `perf/core-hot-path` branch taken while a build and a test suite
@@ -255,7 +267,9 @@ subject that tallies like every adapter, a token delivered twice, a token delive
 actor, a token forwarded untouched, an actor the ring routes around, a consistent misroute that
 leaves every per-actor count right, and a ring of zero hops — and asserts each is **rejected**, by
 the check meant to see it where it names one, with no
-partial samples or summary emitted; a blocked repetition must end inside its deadline, and a
+timing sample or summary emitted — counts are kept, timings never: the observations of the
+repetitions that verified before the failure stay in the refused document as a diagnostic, and
+the battery asserts both halves; a blocked repetition must end inside its deadline, and a
 declared failure at once, with a document `tools/run.py` publishes as an unverified cell. It also
 asserted eleven legitimate shapes were **not** rejected in that base census — among them a run inside its deadline,
 `--deadline 0`, a correct ring, and a correct run whose document is the same, clock and timings

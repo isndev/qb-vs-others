@@ -138,19 +138,27 @@ distributions — by `FAIRNESS.md` §1.5 no measurable difference, with a sign t
 rather than hides: the branch's idle pass is a few nanoseconds shorter than the control's (it no
 longer builds the empty tick snapshot), and the sweet spot above is not sharp enough to say more.
 
-## `dev/bench` — the four core binaries (median of three run medians, ns; `bench/`)
+## `dev/bench` — the four core binaries (median of three run medians, ns per operation; `bench/`)
+
+Google Benchmark records each cell's `real_time` in milliseconds per ITERATION; the figures below
+divide it by the operations one iteration performs: 1 000 000 round trips for the three ping-pong
+latency cells (their figures read the same in both units), 150 000 × 10 = 1 500 000 deliveries
+for the one-core pipeline and 187 500 × 8 = 1 500 000 for the eight-core one, 64 × 32 768 =
+2 097 152 round trips for `BM_PINGPONG`, 50 000 asks for each ask cell. Each iteration's window
+holds the whole of that work, so a figure is a mean over it, not an isolated latency. (This table
+printed the milliseconds under an `ns` header until Huly QB-820; the Δ column is unchanged.)
 
 | cell | `43f62afe` | **`c42abddf`** | Δ |
 |---|---:|---:|---:|
-| `BM_Mono_PingPong_Latency` (same-core round trip) | 100.2 | **62.9** | **−37 %** |
-| `BM_Multi_PingPong_Latency` (cross-core) | 235.9 | 246.8 | +5 % over 3 runs; **257.3 vs 258.4** over eight interleaved runs (5 reps each, both 243–295 bimodal) |
-| `BM_Reference_Multi_PingPong_Latency` (raw spsc, the ratio's denominator) | 190.1 | 192.5 | +1 % |
-| pipeline chain, 10 actors / 1 core (per delivery) | 65.1 | **31.8** | **−51 %** (23.0 M → 47.1 M deliveries/s) |
-| pipeline chain, 8 actors / 8 cores | 314.7 | 314.2 | 0 % |
-| `BM_PINGPONG<TinyEvent>` 64 actors, 1 core (per round trip) | 27.9 | 26.4 | −5 % |
-| `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores | 25.2 | 23.7 | −6 % |
-| `BM_Ask_RoundTrip_SameCore` | 44.6 | 42.8 | −4 % |
-| `BM_Ask_RoundTrip_CrossCore` | 49.0 | 47.4 | −3 % |
+| `BM_Mono_PingPong_Latency` (same-core, per round trip) | 100.2 | **62.9** | **−37 %** |
+| `BM_Multi_PingPong_Latency` (cross-core, per round trip) | 235.9 | 246.8 | +5 % over 3 runs; **257.3 vs 258.4** over eight interleaved runs (5 reps each, both 243–295 bimodal) |
+| `BM_Reference_Multi_PingPong_Latency` (raw spsc, the ratio's denominator, per round trip) | 190.1 | 192.5 | +1 % |
+| pipeline chain, 10 actors / 1 core (per delivery) | 43.42 | **21.22** | **−51 %** (23.0 M → 47.1 M deliveries/s) |
+| pipeline chain, 8 actors / 8 cores (per delivery) | 209.8 | 209.5 | 0 % |
+| `BM_PINGPONG<TinyEvent>` 64 actors, 1 core (per round trip) | 13.33 | 12.59 | −5 % |
+| `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores (per round trip) | 12.03 | 11.32 | −6 % |
+| `BM_Ask_RoundTrip_SameCore` (per ask) | 892.9 | 855.9 | −4 % |
+| `BM_Ask_RoundTrip_CrossCore` (per ask) | 979.0 | 948.3 | −3 % |
 
 `bench-compare.py` against `dev/bench/baseline/linux-wsl2-x86_64.json` on each candidate pass:
 0 regressed, 9–10 improved, 17–18 within threshold of the 27 core-cell metrics (the run is VACUOUS

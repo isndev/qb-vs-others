@@ -104,8 +104,9 @@ struct Answer {
 
     // Optional: named counts the run OBSERVED but the spec cannot assert, because they depend on
     // the interleaving -- a philosopher's refused requests, a barber's turned-away customers, how
-    // often a search handed its frontier back. Every measured repetition's values are written
-    // into the result document and rendered beside the cell (FAIRNESS.md section 0), so two
+    // often a search handed its frontier back. Every verified measured repetition's values are
+    // written into the result document -- a refused one too, where counts are kept and timings
+    // never -- and rendered beside the cell (FAIRNESS.md section 0), so two
     // cells that did different amounts of work are never compared silently. Reported, not
     // asserted -- unless the spec declares a lower bound for the name (Spec::observed_at_least).
     std::map<std::string, std::uint64_t> observed{};

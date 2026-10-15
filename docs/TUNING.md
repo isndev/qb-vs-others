@@ -882,7 +882,12 @@ recorded as an option, not taken, because the slabs are retained at the high-wat
 faults are paid in warmup.
 
 **The three grids** (`grid-final/`, `grid-230c5035/`, `grid-shipped-3.1.0/`, 7 + 2, 19:06–19:08 UTC).
-One-core cells, ns per unit, p50 (min–max spread 1–4 %, quotable as they are):
+One-core cells, ns per unit, p50 of seven repetitions — not all of them steady: the min–max
+spread reaches 20.6 % on the candidate's counting 1c-park and 16.6 % on its 1c-spin, and
+`230c5035`'s big 1c-spin is bimodal (four repetitions at 45–47 ms, three at 109–113 ms; its p50 is
+the fast mode). The documents are in git history at `30838d50`
+(`results/macbook-m4pro-macos-clang21/README.md`); an earlier text called every cell "min–max
+spread 1–4 %, quotable as they are" (Huly QB-838):
 
 | | candidate | `230c5035` | 3.1.0 | candidate vs `230c5035` |
 |---|---:|---:|---:|---:|
@@ -1550,7 +1555,7 @@ within a launch (counting 2c's nine repetitions sort 10.6, 10.8, 12.3, 13.3 … 
 mode at 10.6 and an upper at 13.4, and the median lands wherever the majority fell). So the
 final build was censused against the midpoint build in ONE session — ten alternated launches of
 3 + 1 on CPUs 0 and 2, `build/final` (`77b358d8`) against `build/ab180-ctl` (`43f62afe`, the same
-adapters), `results/desktop-win11-msvc19/qb-branch-develop/census-77b358d8-vs-43f62afe/`
+adapters), `results/desktop-win11-msvc19/qb-branch-develop/census-77b358d8-vs-f8eba11d/` (the directory keeps `43f62afe`'s hash from before the 2026-09-10 history rewrite, `f8eba11d`)
 — median of the ten launch medians, [min … max]: counting 2c **13.6** [10.0 … 13.9] against
 **13.5** [10.9 … 14.0]; chameneos 2c **66.9** [46.8 … 74.7] against **67.8** [55.2 … 81.0]; ping-pong
 2c **189.3** [187.0 … 192.5] against **242.7** [215.9 … 249.7]; thread-ring 2c **107.2** [91.2 … 114.7]
@@ -1977,12 +1982,14 @@ measures, and nothing here has tried it.
 | thread-ring 2c-spin | 123.3 → 123.3 / 124.7 | 105.8 → 107.4 / 110.9 | 122.4 vs 122.8 / 104.4 vs 109.3, overlapping |
 | ping-pong 2c-park | 257.3 → 257.1 | 219.4 → 209.3 | — |
 | thread-ring 2c-park | 128.3 → 123.3 | 114.9 → 108.0 | — |
-| counting (all four) | bimodal on both builds (§9.11) | 8.0–9.9, level | 9.8 vs 9.8 / 9.9 vs 9.8 (2c) |
+| counting (all four) | bimodal on both builds (§9.11) | 8.0–9.9, level | WSL2 only: 2c-spin 9.8 vs 9.8, 2c-park 9.9 vs 9.8 |
 
 Shipped 3.1.0 in the same sessions: ping-pong 1c 113.6 / 97.9, so the head is **−63 / −71 %**
 against the release. `dev/bench`'s same-core cells say the same thing in the engine's own units:
-`BM_Mono_PingPong_Latency` **117.8 → 76.7** (MSVC) and **100.2 → 62.9** (g++), the 10-actor
-one-core pipeline **79.1 → 43.3** and **65.1 → 31.8 ns** per delivery, the 8 × 8 pipeline and the
+`BM_Mono_PingPong_Latency` **117.8 → 76.7** (MSVC) and **100.2 → 62.9** (g++) ns per round trip,
+the 10-actor one-core pipeline **52.7 → 28.9** and **43.4 → 21.2 ns** per delivery (Google
+Benchmark's milliseconds per iteration divided by its 1 500 000 deliveries; an earlier text quoted
+the milliseconds, 79.1 → 43.3 and 65.1 → 31.8, as nanoseconds — Huly QB-820), the 8 × 8 pipeline and the
 cross-core `Multi_PingPong` inside their spread (257.3 vs 258.4 over eight interleaved g++ runs),
 the ask round trips −3 to −7 %. The cross-core spin medians on g++ sit +2 / +5 % with
 overlapping distributions across three censuses — recorded with their sign, not rounded away:
@@ -2047,8 +2054,8 @@ bytes every time.
 | counting 1c-spin (message) | bimodal, both builds | 8.9 → 8.0 |
 | ping-pong 2c-park / 2c-spin | 260 → 230–246 / 248 → 238–246 | 213 → 200 / 209 → 200–211 |
 | thread-ring 2c-spin / 2c-park | 122 → 125–127 / 123 → 126 (**+2–5 %**) | 108.5 → 110–114 / 108 → 112 (**+1–5 %**) |
-| `dev/bench` `Mono_PingPong` / one-core pipeline | 76.6 → **66.4** / 42.7 → **34.6** | 63.7 → 58.5 / 32.2 → 29.9 |
-| `dev/bench` `BM_PINGPONG` 64 actors, 1 core | 29.4 → 26.5 | 26.5 → **21.3** (−20 %) |
+| `dev/bench` `Mono_PingPong` (round trip) / one-core pipeline (delivery) | 76.6 → **66.4** / 28.5 → **23.1** | 63.7 → 58.5 / 21.4 → 20.0 |
+| `dev/bench` `BM_PINGPONG` 64 actors, 1 core (round trip) | 14.0 → 12.7 | 12.6 → **10.2** (−20 %) |
 
 ### 15.2 The cell that moves the other way, and why it is kept
 
@@ -2135,6 +2142,17 @@ net of the jitter; `results/wsl-debian-g++14/qb-branch-perf-ring-private-lines/r
 | one line per hop as two 32-byte AVX2 stores, `pause` | 182 · 183 · 185 · 185 · 186 · 186 |
 | one line per hop written by ONE `movdir64b` + `sfence`, `pause` | 210 · 213 · 213 · 269 · 270 · 270 |
 
+A caveat on the two rows with the six checks (gaps 7 and 8), found afterwards (Huly QB-835): the
+probe added the checks' result into one plain global that BOTH threads wrote on every poll — a
+data race ThreadSanitizer reports at gaps 7, 8 and 9 — and that source, compiled today with the
+same g++ 14.2 and `-O3`, keeps the load-add-store in every inlined poll. So those two rows also
+carry that line moving between the two cores, and are not a measurement of six L1-hit loads
+alone; for them, "never below 165" below rests on the ALU rows. The probe now keeps the compares
+with no store at all (`keep()` in `raw-ring.cpp`); the two rows have not been re-measured.
+The last two rows (`1lineA`, `1lineF`) publish the slot with two AVX2 stores or one `movdir64b`
+that the consumer reads with an atomic acquire load: outside the C++ memory model by design — the
+hardware's ordering of those stores is what they measure — so ThreadSanitizer cannot check them.
+
 Four things read off that table. The one-line hop — the "sequence in the slot" design that was
 axis O — reaches the same ~120 the two-line handshake reaches, in the same share of launches:
 the two misses of a hop overlap, or the spatial prefetcher pairs them; it is not worth a ring.
@@ -2170,17 +2188,17 @@ per unit; the per-directory READMEs carry every cell, the censuses and the bench
 
 | cell | WSL2 / g++-14 | Windows / MSVC 19.51 |
 |---|---|---|
-| ping-pong 2c-park (round trip) | 209 → **165 / 159** (census **211.7 → 164.7**, −22 %) | 257 → **209 / 206** (census **263.2 → 204.9**, −22 %) |
-| ping-pong 2c-spin | 221 → **163 / 173** (census 207.5 → 163.2, −21 %) | 258 → **217 / 199** (census 257.0 → 206.1, −20 %) |
-| thread-ring 2c-park (hop) | 114 → **82 / 80** (census **115.0 → 79.9**, −31 %) | 130 → **102 / 100** (census **138.6 → 98.9**, −29 %) |
-| thread-ring 2c-spin | 114 → **81 / 83** (census 116.1 → 80.4, −31 %) | 144 → **105 / 96** (census 137.0 → 98.4, −28 %) |
-| chameneos 2c (meeting) | 49 → **45** (census −7 %) | 55 → **53 / 51** (census −5 %) |
-| big 2c (round trip) | 19.3 → 18.7 / 17.9 (census −4 %) | 22.5 → 20.4 / 20.3 (−9 %; census 21.1 → 20.5) |
-| bank-transaction 2c (transfer) | 93 → 88–90 (census level) | 147 → 159 / 154 in the grid, 154.7 → 158.2 on a 15-launch census — level |
-| every 1c cell, counting, fork-join, fib | level (15-launch census on each cell the grid had moved) | level (15-launch census on fib 2c, counting, bank, big) |
+| ping-pong 2c-park (round trip) | 209 → **165 / 159** (census **207.5 → 163.2**, −21 %) | 257 → **209 / 206** (census **257.0 → 206.1**, −20 %) |
+| ping-pong 2c-spin | 221 → **163 / 173** (census 211.7 → 164.7, −22 %) | 258 → **217 / 199** (census 263.2 → 204.9, −22 %) |
+| thread-ring 2c-park (hop) | 114 → **82 / 80** (census **116.1 → 80.4**, −31 %) | 130 → **102 / 100** (census **137.0 → 98.4**, −28 %) |
+| thread-ring 2c-spin | 114 → **81 / 83** (census 115.0 → 79.9, −31 %) | 144 → **105 / 96** (census 138.6 → 98.9, −29 %) |
+| chameneos 2c-spin (meeting) | 49 → **45** (census −7 %) | 55 → **53 / 51** (census −5 %) |
+| big 2c (round trip) | 2c-park 19.3 → 18.7 / 17.9; 2c-spin census −4 % | 2c-park 22.5 → 20.4 / 20.3 (−9 %); 2c-spin census 21.1 → 20.5 |
+| bank-transaction 2c (transfer) | 93 → 88–90 (2c-spin census level) | 2c-park 147 → 159 / 154 in the grid, not censused; 2c-spin 154.7 → 158.2 on a 15-launch census — level |
+| every 1c cell, counting, fork-join, fib | level where censused (10- and 15-launch censuses); bank 1c-park and fork-join 1c-spin, which the grid moved, have no census | level (15-launch census on fib 2c, counting 2c-spin and 1c-park, bank 2c-spin, big 2c-spin; counting 2c-park not censused) |
 | `dev/bench` `Multi_PingPong` (cross-core) | 253 → **203** (−20 %) | 318 → **246** (−23 %); the raw-ring reference 286 → 223 (−22 %) |
-| `dev/bench` pipeline 8 × 8 cores / `BM_PINGPONG` 64 actors, 8 cores | 322 → **264** (−18 %) / 24.7 → **21.7** | 252 → **220** (−13 %) / 24.9 → 23.9 |
-| `dev/bench` same-core cells (`Mono`, pipeline 1c, `BM_PINGPONG` 1c, ask) | level | level (`Mono` 71.7 → 70.9, pipeline 1c 36.7 → 37.4, `BM_PINGPONG` 1c 26.5 → 26.2) |
+| `dev/bench` pipeline 8 × 8 cores (delivery) / `BM_PINGPONG` 64 actors, 8 cores (round trip) | 215 → **176** (−18 %) / 11.8 → **10.4** | 168 → **147** (−13 %) / 11.9 → 11.4 |
+| `dev/bench` same-core cells (`Mono`, pipeline 1c, `BM_PINGPONG` 1c, ask) | level | level (`Mono` 71.7 → 70.9, pipeline 1c 24.5 → 25.0, `BM_PINGPONG` 1c 12.6 → 12.5) |
 | `xcore-hop` send / push, phase-averaged (jitter 150) | 240 → **198** / 240 → **159** | 295–303 → **257–271** / 258–283 → 254–273 (the locked push bimodal on MSVC) |
 | `pass-cost` k = 1 / 2 / 4 | 12.9 / 17.1 / 25.0 → 12.7 / 17.1 / 25.0 | 16.2 / 23.7 / 38.1 → 16.1 / 23.6 / 37.9 |
 
@@ -2230,8 +2248,8 @@ queue: they run from a token callback or a timer) and making the flag `constinit
 | push | 24.4 → 24.3 | 34.2 → 33.6 |
 | ask | **54.0 → 46.7** (−14 %) | **81.7 → 72.0** (−12 %) |
 | the ask machinery over push | 29.7 → 22.4 (−25 %) | 47.5 → 38.4 (−19 %) |
-| `savina/bank-transaction` 2c-spin / 2c-park (census, per transfer) | 92.4 → **84.0** / 93.2 → 88.3 | 153.7 → 152.7 / 154.7 → **147.4** |
-| bank 1c-spin / 1c-park | 142.3 → 137.7 / 140.8 → 138.5 | 261.7 → 250.6 / 260.8 → 250.1 |
+| `savina/bank-transaction` 2c-spin / 2c-park (census, per transfer) | 92.4 → **84.0** / 93.2 → 88.3 | 154.7 → **147.4** / 153.7 → 152.7 |
+| bank 1c-spin / 1c-park | 142.3 → 137.7 / 140.8 → 138.5 | 260.8 → 250.1 / 261.7 → 250.6 |
 
 Measured and dropped on the way: draining the scheduler's ready coroutines right after the
 receive, in the same pass — for `ask_stream`, `ping`, `require`, `ask_all`, whose wakes keep

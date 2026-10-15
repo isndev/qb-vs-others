@@ -52,16 +52,37 @@
 //   observe-extra    reports above the bound plus an unbounded observation: must be ACCEPTED,
 //                    with both written into the result document.
 //
+// And one about placement (Linux and Windows, the platforms with a verified pin):
+//
+//   pre-main-thread  a static initialiser starts a thread before main() -- the shape of qb's log
+//                    writer -- and the body declares a failure (qvo::fail) unless that thread
+//                    runs on exactly the pinned set. Run pinned: must be ACCEPTED, the document
+//                    counting both threads in `pinned_threads` (Huly QB-841).
+//
 // It is deliberately NOT built by qvo_add_benchmark and its name does not start with "qvo-", so
 // tools/run.py cannot discover it and no planted result can ever reach a published table.
 
 #include <qvospec/savina/ping-pong.h>
 
+#include <atomic>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <string>
 #include <thread>
+
+#if defined(__linux__)
+#    include <sched.h>
+#    include <sys/syscall.h>
+#    include <unistd.h>
+#elif defined(_WIN32)
+#    ifndef NOMINMAX
+#        define NOMINMAX
+#    endif
+#    define WIN32_LEAN_AND_MEAN
+#    include <windows.h>
+#    include <bit>
+#endif
 
 namespace {
 
@@ -69,6 +90,73 @@ std::string plant() {
     if (const char *v = std::getenv("QVO_CONTROL_PLANT")) return v;
     return "none";
 }
+
+#if defined(__linux__) || defined(_WIN32)
+// The thread's id as the platform's affinity calls name it: a Linux tid, a Windows thread id.
+long long this_thread_os_id() {
+#    if defined(__linux__)
+    return static_cast<long long>(::syscall(SYS_gettid));
+#    else
+    return static_cast<long long>(GetCurrentThreadId());
+#    endif
+}
+
+// The `pre-main-thread` plant's thread: started during static initialisation, before main() and so
+// before the harness pins anything; it idles until the process ends normally.
+struct PreMainThread {
+    std::atomic<long long> tid{0};
+    std::atomic<bool>      stop{false};
+    std::thread            thread;
+
+    PreMainThread() {
+        if (plant() != "pre-main-thread") return;
+        thread = std::thread([this] {
+            tid.store(this_thread_os_id());
+            while (!stop.load()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        });
+        while (tid.load() == 0) std::this_thread::yield();
+    }
+    ~PreMainThread() {
+        if (!thread.joinable()) return;
+        stop.store(true);
+        thread.join();
+    }
+    PreMainThread(const PreMainThread &)            = delete;
+    PreMainThread &operator=(const PreMainThread &) = delete;
+};
+PreMainThread g_pre_main;
+
+// Declares a failure unless the thread started before main() runs on exactly the pinned set.
+void check_pre_main_thread() {
+    const auto &cpus = qvo::pinned_cpus();
+    if (cpus.empty()) qvo::fail("pre-main-thread: run it pinned (--cpus), its check reads the pinned set");
+#    if defined(__linux__)
+    cpu_set_t want, got;
+    CPU_ZERO(&want);
+    CPU_ZERO(&got);
+    for (const int c : cpus) CPU_SET(c, &want);
+    if (sched_getaffinity(static_cast<pid_t>(g_pre_main.tid.load()), sizeof got, &got) != 0)
+        qvo::fail("pre-main-thread: cannot read the mask of the thread started before main()");
+    const bool same    = CPU_EQUAL(&got, &want);
+    const int  allowed = CPU_COUNT(&got);
+#    else
+    KAFFINITY want = 0;
+    for (const int c : cpus) want |= KAFFINITY{1} << c;
+    GROUP_AFFINITY got{};
+    const HANDLE   thread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE,
+                                       static_cast<DWORD>(g_pre_main.tid.load()));
+    const BOOL     read   = thread && GetThreadGroupAffinity(thread, &got);
+    if (thread) CloseHandle(thread);
+    if (!read) qvo::fail("pre-main-thread: cannot read the mask of the thread started before main()");
+    const bool same    = got.Group == 0 && got.Mask == want;
+    const int  allowed = std::popcount(static_cast<unsigned long long>(got.Mask));
+#    endif
+    if (!same)
+        qvo::fail("a thread started before main() runs outside the pinned CPU set ("
+                  + std::to_string(allowed) + " CPUs allowed, " + std::to_string(cpus.size())
+                  + " pinned)");
+}
+#endif
 
 // What a benchmark does when the message that ends its protocol never comes: it waits.
 [[noreturn]] void wait_forever() {
@@ -85,6 +173,9 @@ qvo::Answer body(const qvo::Params &p, qvo::Watch &watch) {
     std::uint64_t delivered = 0;
     std::uint64_t played    = 0;
 
+#if defined(__linux__) || defined(_WIN32)
+    if (mode == "pre-main-thread") check_pre_main_thread();
+#endif
     if (mode != "no-window") watch.start();
     if ((mode == "hang" && call == 0) || (mode == "fail-then-hang" && call == 1)) wait_forever();
     if (mode == "fail-body") qvo::fail("planted protocol violation on the body's thread");

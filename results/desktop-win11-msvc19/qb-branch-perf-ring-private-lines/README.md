@@ -17,10 +17,10 @@ candidate in ONE quiet session on 2026-09-07 with the WSL2 side idle (its own se
 |---|---|---|
 | `grid-worktree/`, `grid-worktree-pass2/` | **the branch** — measured first and third | **32 cells** each, qb only, all verified: eight shapes × {1c-spin, 1c-park, 2c-spin, 2c-park}. 18:59:20–19:00:04 UTC. |
 | `grid-670e9433/` | `develop` `670e9433` — the control, measured second | same 32 cells, same session. |
-| `census/` | branch vs `670e9433`, **10 interleaved launches** each, 3 reps + 1 warmup, on the 2c cells of all eight shapes (ping-pong and thread-ring in both wait modes) and the ping-pong 1c anchor | 19:00:04–19:01:18 UTC. |
+| `census/` | branch vs `670e9433`, **10 interleaved launches** each, 3 reps + 1 warmup, on the 2c-spin cells of all eight shapes (ping-pong and thread-ring in both wait modes) and the ping-pong 1c-spin anchor | 19:00:04–19:01:18 UTC. |
 | `bench/` | the four core `dev/bench` binaries, candidate and control alternated three times (`cand-N/` / `ctl-N/`, one process per run, 5 repetitions, every iteration recorded) | 19:01:18–19:04:54 UTC. |
 | `probe.txt` | `qvoprobe-pass-cost` k = 1, 2, 4 and `qvoprobe-xcore-hop` send / push, phase-averaged (jitter 150 ns) and locked, candidate and control alternated three times | 19:04:54–19:06:50 UTC. |
-| `census-throughput/` | the cells whose grid or census readings had moved the other way — fib 2c (both modes), bank-transaction 2c-park, big 2c-park, counting 2c-park and 1c-spin — **15 interleaved launches** each, a second quiet window | 19:10–19:14 UTC. |
+| `census-throughput/` | throughput cells after grid or census readings had moved the other way — fib 2c (both modes), bank-transaction 2c-spin, big 2c-spin, counting 2c-spin and 1c-park (the wait mode read from each document's `params.wait`: 1 spin, 0 park) — **15 interleaved launches** each, a second quiet window | 19:10–19:14 UTC. |
 
 None of the grids is merged into the published tables; the branch joins `qb-branch-develop/`
 when the final candidate is measured on all eight shapes.
@@ -38,39 +38,51 @@ when the final candidate is measured on all eight shapes.
 | big 2c-park (round trip) | 22.49 | **20.44 / 20.28** | **−9 / −10 %** |
 | big 2c-spin | 20.92 | 21.56 / 21.22 | +3 / +1 % |
 | fork-join 2c-spin (message) | 13.36 | 10.43 / 10.18 | −22 / −24 % (the control's 13.4 is its upper mode; 2c-park 10.3 → 10.1 / 10.3) |
-| bank-transaction 2c-park / 2c-spin (transfer) | 147.2 / 150.3 | 158.6 / 154.4 — 154.7 / 148.4 | +8 / +5 — +3 / −1 % (census below: level) |
+| bank-transaction 2c-park / 2c-spin (transfer) | 147.2 / 150.3 | 158.6 / 154.4 — 154.7 / 148.4 | +8 / +5 — +3 / −1 % (census below: 2c-spin level; 2c-park not censused) |
 | ping-pong 1c-spin / 1c-park | 32.21 / 32.59 | 32.26 / 32.23 — 32.40 / 32.26 | level |
 | thread-ring 1c-spin / 1c-park | 19.17 / 19.12 | 19.40 / 19.34 — 19.34 / 19.29 | +1 % |
 | big 1c, chameneos 1c, fib 1c, counting 1c, fork-join 1c, bank 1c | — | within spread | level |
 
-`census/`, ten interleaved launches, medians (min … max): ping-pong 2c-park **204.9** (183.0 …
-226.1) vs 263.2 (234.9 … 286.8), **−22 %**; ping-pong 2c-spin **206.1** vs 257.0, **−20 %**;
-thread-ring 2c-park **98.9** (93.6 … 110.3) vs 138.6 (133.4 … 146.2), **−29 %**; thread-ring
-2c-spin **98.4** vs 137.0, **−28 %**; chameneos 2c 52.0 vs 54.7 (−5 %); fork-join 2c 10.4 vs
-12.2 (the control bimodal, 10.1 … 15.4); counting 2c 11.3 vs 11.4; bank 2c 156.4 vs 155.5; big 2c
-21.7 vs 21.1; fib 2c 124.7 vs 118.8 (+5 %, overlapping — re-measured below); ping-pong 1c 32.2 vs
-32.6.
+`census/`, ten interleaved launches, medians (min … max): ping-pong 2c-spin **204.9** (183.0 …
+226.1) vs 263.2 (234.9 … 286.8), **−22 %**; ping-pong 2c-park **206.1** vs 257.0, **−20 %**;
+thread-ring 2c-spin **98.9** (93.6 … 110.3) vs 138.6 (133.4 … 146.2), **−29 %**; thread-ring
+2c-park **98.4** vs 137.0, **−28 %**; chameneos 2c-spin 52.0 vs 54.7 (−5 %); fork-join 2c-spin
+10.4 vs 12.2 (the control bimodal, 10.1 … 15.4); counting 2c-spin 11.3 vs 11.4; bank 2c-spin
+156.4 vs 155.5; big 2c-spin 21.7 vs 21.1; fib 2c-spin 124.7 vs 118.8 (+5 %, overlapping —
+re-measured below); ping-pong 1c-spin 32.2 vs 32.6.
 
-`census-throughput/`, fifteen interleaved launches: fib 2c-spin **117.8** vs 118.3, 2c-park
-119.9 vs 118.6 (+1 %, 116.1–127.4 vs 111.2–127.8); bank 2c-park 158.2 vs 154.7 (143–179 vs
-147–165); big 2c 20.5 vs 21.1 (−3 %); counting 2c 11.2 vs 12.0 (the control's tail), counting 1c
-9.2 vs 9.0. Level, all of them — the same verdict WSL2's fifteen-launch census gave the same
-cells: the batched cross-core shapes publish runs of hundreds of events per ring write and do
-not see one load per publish, and the same-core shapes never touch this ring.
+`census-throughput/`, fifteen interleaved launches: fib 2c-park **117.8** vs 118.3, 2c-spin
+119.9 vs 118.6 (+1 %, 116.1–127.4 vs 111.2–127.8); bank 2c-spin 158.2 vs 154.7 (143–179 vs
+147–165); big 2c-spin 20.5 vs 21.1 (−3 %); counting 2c-spin 11.2 vs 12.0 (the control's tail),
+counting 1c-park 9.2 vs 9.0. Level, all of them — the same verdict WSL2's fifteen-launch census
+gave the cells it measured: the batched cross-core shapes publish runs of hundreds of events per
+ring write and do not see one load per publish, and the same-core shapes never touch this ring.
+Two cells the grid had moved have no census here, because both censuses measured the other wait
+mode of each: bank-transaction 2c-park (147.2 → 158.6 / 154.4 in the grid) and counting 2c-park
+(11.60 → 11.46 / 12.16). (The wait modes in these two paragraphs are read from each document's
+`params.wait`, 1 spin and 0 park; an earlier text named them the other way round.)
 
-## `dev/bench` — the four core binaries (median of three run medians, ns; `bench/`)
+## `dev/bench` — the four core binaries (median of three run medians, ns per operation; `bench/`)
+
+Google Benchmark records each cell's `real_time` in milliseconds per ITERATION; the figures below
+divide it by the operations one iteration performs: 1 000 000 round trips for the three ping-pong
+latency cells (their figures read the same in both units), 1 500 000 deliveries for each pipeline
+(150 000 × 10 on one core, 187 500 × 8 on eight), 64 × 32 768 = 2 097 152 round trips for
+`BM_PINGPONG`, 50 000 asks for each ask cell. Each iteration's window holds the whole of that
+work, so a figure is a mean over it, not an isolated latency. (This table printed the
+milliseconds under an `ns` header until Huly QB-820; the Δ column is unchanged.)
 
 | cell | `670e9433` | **branch** | Δ |
 |---|---:|---:|---:|
-| `BM_Multi_PingPong_Latency` (cross-core round trip) | 317.8 | **245.6** | **−23 %** |
-| `BM_Reference_Multi_PingPong_Latency` (raw spsc ring, tight poll, no actor) | 285.6 | **222.9** | **−22 %** — MSVC's tight poll sees the fix too |
-| `BM_Pipeline_Chain_Latency` 8 actors / 8 cores (per delivery) | 252.5 | **220.2** | **−13 %** |
-| `BM_Ask_RoundTrip_CrossCore` | 51.7 | **47.0** | −9 % |
-| `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores (per round trip) | 24.9 | 23.9 | −4 % |
-| `BM_Ask_RoundTrip_SameCore` | 45.4 | 36.9 | the control bimodal (36 … 54); the branch's three runs 36–37 |
-| `BM_Mono_PingPong_Latency` (same core) | 71.7 | 70.9 | level |
-| pipeline 10 actors / 1 core | 36.7 | 37.4 | +2 % (37 … 37 vs 37 … 38) |
-| `BM_PINGPONG` 64 actors, 1 core | 26.5 | 26.2 | level |
+| `BM_Multi_PingPong_Latency` (cross-core, per round trip) | 317.8 | **245.6** | **−23 %** |
+| `BM_Reference_Multi_PingPong_Latency` (raw spsc ring, tight poll, no actor, per round trip) | 285.6 | **222.9** | **−22 %** — MSVC's tight poll sees the fix too |
+| `BM_Pipeline_Chain_Latency` 8 actors / 8 cores (per delivery) | 168.4 | **146.8** | **−13 %** |
+| `BM_Ask_RoundTrip_CrossCore` (per ask) | 1 033.6 | **939.4** | −9 % |
+| `BM_PINGPONG<TinyEvent>` 64 actors, 8 cores (per round trip) | 11.87 | 11.39 | −4 % |
+| `BM_Ask_RoundTrip_SameCore` (per ask) | 908.3 | 737.2 | both spread: the control's three run medians 726 / 908 / 1 087, the branch's 721 / 737 / 870 |
+| `BM_Mono_PingPong_Latency` (same core, per round trip) | 71.7 | 70.9 | level |
+| pipeline 10 actors / 1 core (per delivery) | 24.47 | 24.96 | +2 % (run medians 24.5 … 24.9 vs 24.5 … 25.0) |
+| `BM_PINGPONG` 64 actors, 1 core (per round trip) | 12.64 | 12.51 | level |
 
 ## The probes (`probe.txt`, ns; cand / ctl, three alternations)
 

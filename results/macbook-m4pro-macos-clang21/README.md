@@ -23,17 +23,37 @@ PLATFORM HAS NO REAL THREAD PINNING") is in each of its documents. What that cos
 two-core cells are bimodal by launch on this host (the scheduler decides which core pair and
 when), so **no two-core figure is quoted from the grid alone** — the launch censuses under
 `qb-branch-develop/` are the instrument for those cells, exactly as on Windows (§9.11). One-core
-cells are steady (min–max spread 1–4 %).
+cells are steadier, not steady: over the nine repetitions of each of the 65 verified one-core
+cells, the min–max spread runs from 1.2 % (CAF big 1c-spin) to 87 % (the floor's
+bank-transaction 1c-spin), and exceeds 4 % in 38 of them — in 11 of qb's 16, up to **27.2 %**
+(counting 1c-spin; fork-join 1c-park 16.4 %). The interquartile range is within 4 % of the median
+in 55 of the 65; the other ten are the floor's bank-transaction, fork-join, fib and thread-ring
+cells, qb's two fork-join cells (11.1 % park, 8.8 % spin) and SObjectizer's fork-join 1c-spin
+(6.4 %). Read a one-core cell by its distribution, as `REPORT.md` prints it. (An earlier text
+said "min–max spread 1–4 %" for every one-core cell, Huly QB-838.)
 
 `REPORT.md` beside this file is `tools/report.py`'s render of this directory and
 `tools/check-report.py` fails if it drifts. `docs/TUNING.md` §13.9 is the reading guide for the
-2026-09-19 session, §9.13 for everything under `qb-branch-perf-event-pipe-segmented/`.
+2026-09-19 session, §9.13 for the 2026-09-05 session, whose directories are in git history only
+(the second table below).
 
 | directory | what it is |
 |---|---|
 | `savina-ping-pong/` | **20 cells** — 18 verified + 2 declared `n/a` (`caf-detached` has no spin mode); 2026-09-19, qb = the candidate `174e515a`. |
 | `savina-counting/`, `savina-thread-ring/`, `savina-fork-join/`, `savina-big/`, `savina-fib/`, `savina-chameneos/`, `savina-bank-transaction/` | **16 cells** each, all verified, same session; `caf-detached` declares itself omitted from these seven. |
 | `qb-branch-develop/` | **the 3.2.0 candidate on this host** (2026-09-19): `grid-174e515a/` and its second pass, `grid-shipped-3.1.0-20260919/` and `grid-f2779605-20260919/` (the two controls), `census-174e515a-field/` and `census-174e515a-vs-controls/` (the two-core cells, 12 interleaved launches), `bisect-f2779605-174e515a/` (the two one-core cells that moved the other way, attributed). Its README carries the tables. |
+
+**In git history only: the 2026-09-05 session.** Its directories under
+`qb-branch-perf-event-pipe-segmented/` were removed from the tree by `0e6c6e92` (2026-09-20, the
+first pass of the public release, Huly QB-227). Every path below exists at that commit's parent
+**`30838d50`**, an ancestor of `main` and `develop`:
+`git show 30838d50:results/macbook-m4pro-macos-clang21/qb-branch-perf-event-pipe-segmented/<path>`
+reads one file, and
+`git archive 30838d50 results/macbook-m4pro-macos-clang21/qb-branch-perf-event-pipe-segmented | tar -x`
+restores them all. (An earlier text listed them as if they were still here, Huly QB-837.)
+
+| directory at `30838d50` | what it is |
+|---|---|
 | `qb-branch-perf-event-pipe-segmented/grid-final/` | **the candidate of 2026-09-05**: qb at `perf/event-pipe-segmented` `279e6cd4` through the same adapters, all five benchmarks, 7 + 2, 19:06 UTC. |
 | `qb-branch-perf-event-pipe-segmented/grid-230c5035/` | the previous candidate (`perf/core-hot-path` `230c5035`, before the segmented pipe), same protocol, 19:07 UTC — the control for what the two `event-pipe-segmented` commits change. |
 | `qb-branch-perf-event-pipe-segmented/grid-shipped-3.1.0/` | shipped v3.1.0 through the same protocol, 19:07–19:08 UTC — the control for the whole branch. |
@@ -43,7 +63,7 @@ cells are steady (min–max spread 1–4 %).
 | `qb-branch-perf-event-pipe-segmented/axis-k/round{1,2,3}-{with,without}/` | the axis-K A/B on arm64 — qb at `6a0897c0` (`Mailbox::notify()` fences in spin mode too, a `dmb ish` here) against its parent `61b0b4cf`, ping-pong and thread-ring, 2c-spin and 2c-park, three interleaved rounds of 7 + 2. |
 | `qb-branch-perf-event-pipe-segmented/axis-k/launch-census/` | the same A/B as a 12-launch census — the figure to quote. |
 
-**What the 2026-09-05 session said, in one paragraph each** (all in §9.13 with the tables; its field tables are in git history, its branch directories are still here):
+**What the 2026-09-05 session said, in one paragraph each** (all in §9.13 with the tables; its field tables and its branch directories are in git history, at `30838d50`):
 
 - **Same-core dispatch**: candidate ping-pong 1c-spin **49.7 ns** against `230c5035` 53.8 and
   3.1.0 84.9 (−7.6 % / −41 %); counting 6.6 / 8.3 / 11.6; fork-join 6.2 / 8.6 / 12.9; thread-ring
