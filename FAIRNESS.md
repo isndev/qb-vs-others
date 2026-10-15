@@ -133,6 +133,16 @@ pinning was **requested and silently refused** is discarded rather than reported
 failure mode, not a hypothetical: qb's own documentation records `setAffinity` returning success
 on Apple Silicon while doing nothing at all.
 
+The set must hold every thread, not only the one that asked. On Windows the harness sets the
+process mask; on Linux the mask belongs to each thread, so the harness pins every thread the
+process already has — qb's log writer is started before `main()` by a static initialiser — reads
+each one back, and writes how many it verified into the document (`pinned_threads`); a thread
+started later inherits the mask of a thread already pinned. Documents written before Huly QB-841
+pinned and read back `main()` alone: on Linux, a thread started before `main()` kept the mask the
+process was launched with (every CPU, or the set a `taskset` prefix gave it), and no document
+recorded which. `tools/negative-control.py` section X watches a thread started before `main()`
+land in the pinned set.
+
 Pinning is necessary and not sufficient: **the host must be quiet, and this was measured rather
 than assumed.** A pass over qb's `perf/core-hot-path` branch taken while a build and a test suite
 ran on the other cores moved the two-core cells by 20–30 % (Windows 2c-spin 319 → 262 ns, WSL2

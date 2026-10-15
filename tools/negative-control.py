@@ -100,6 +100,29 @@ def run_subject(exe: Path, plant: str, extra: list[str] | None = None,
         return p.returncode, doc, p.stderr
 
 
+def pre_main_pin_control(exe: Path) -> None:
+    """Huly QB-841: on Linux the affinity mask belongs to each thread, and a thread a static
+    initialiser started before main() -- qb's log writer -- kept the launch mask while the harness
+    pinned and read back main() alone. The subject's `pre-main-thread` plant starts such a thread
+    and its body declares a failure unless that thread runs on exactly the pinned set: run pinned
+    to one CPU, it must verify, with both threads counted in `pinned_threads`. No verdict
+    elsewhere: Windows pins the process mask, and macOS has no verified pin to apply."""
+    if not sys.platform.startswith("linux"):
+        print("  (Linux only -- no verdict on this platform)")
+        return
+    cpu = min(os.sched_getaffinity(0))
+    rc, doc, err = run_subject(exe, "pre-main-thread", extra=["--cpus", str(cpu)], messages=1000)
+    threads = (doc or {}).get("pinned_threads")
+    if (rc == 0 and doc and doc.get("verified") is True and doc.get("pinned") is True
+            and type(threads) is int and threads >= 2):
+        verdict("CONFIRMED", "a thread started before main() is pinned and read back with the "
+                             "process", f"cpus={cpu}, pinned_threads={threads}")
+    else:
+        verdict("MISSED", "a thread started before main() was left outside the pinned set",
+                f"rc={rc}, pinned_threads={threads}, failures={(doc or {}).get('failures')}, "
+                f"err={err.strip()[:120]}")
+
+
 def expect_rejected(exe: Path, plant: str, what: str, messages: int = 20000000,
                     because: str | None = None, params: list[str] | None = None) -> None:
     """A planted defect: exit non-zero, a failure document with a reason and no timing -- and,
@@ -1385,6 +1408,11 @@ def main() -> int:
     print("\n== Mesh owner dispatch: functional causal control, no timed workload ==")
     mesh_controls(subject("qvoctl-mesh-dispatch-subject"),
                   subject("qvoctl-mesh-dispatch-reentrant"))
+
+    # Its own group, after every other one, so no earlier case identity is renumbered.
+    set_case_group("X")
+    print("\n== X. the pin reaches a thread started before main() (Huly QB-841) ==")
+    pre_main_pin_control(exe)
 
     print(f"\n== census ==\n  CAUGHT={caught} CONFIRMED={confirmed} MISSED={missed} "
           f"(floors: CAUGHT>={FLOOR_CAUGHT} CONFIRMED>={FLOOR_CONFIRMED})")
