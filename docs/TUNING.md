@@ -1555,7 +1555,7 @@ within a launch (counting 2c's nine repetitions sort 10.6, 10.8, 12.3, 13.3 … 
 mode at 10.6 and an upper at 13.4, and the median lands wherever the majority fell). So the
 final build was censused against the midpoint build in ONE session — ten alternated launches of
 3 + 1 on CPUs 0 and 2, `build/final` (`77b358d8`) against `build/ab180-ctl` (`43f62afe`, the same
-adapters), `results/desktop-win11-msvc19/qb-branch-develop/census-77b358d8-vs-43f62afe/`
+adapters), `results/desktop-win11-msvc19/qb-branch-develop/census-77b358d8-vs-f8eba11d/` (the directory keeps `43f62afe`'s hash from before the 2026-09-10 history rewrite, `f8eba11d`)
 — median of the ten launch medians, [min … max]: counting 2c **13.6** [10.0 … 13.9] against
 **13.5** [10.9 … 14.0]; chameneos 2c **66.9** [46.8 … 74.7] against **67.8** [55.2 … 81.0]; ping-pong
 2c **189.3** [187.0 … 192.5] against **242.7** [215.9 … 249.7]; thread-ring 2c **107.2** [91.2 … 114.7]
