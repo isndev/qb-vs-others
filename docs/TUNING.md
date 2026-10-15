@@ -2149,6 +2149,9 @@ same g++ 14.2 and `-O3`, keeps the load-add-store in every inlined poll. So thos
 carry that line moving between the two cores, and are not a measurement of six L1-hit loads
 alone; for them, "never below 165" below rests on the ALU rows. The probe now keeps the compares
 with no store at all (`keep()` in `raw-ring.cpp`); the two rows have not been re-measured.
+The last two rows (`1lineA`, `1lineF`) publish the slot with two AVX2 stores or one `movdir64b`
+that the consumer reads with an atomic acquire load: outside the C++ memory model by design — the
+hardware's ordering of those stores is what they measure — so ThreadSanitizer cannot check them.
 
 Four things read off that table. The one-line hop — the "sequence in the slot" design that was
 axis O — reaches the same ~120 the two-line handshake reaches, in the same share of launches:
