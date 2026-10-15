@@ -718,13 +718,16 @@ int run(int argc, char **argv, Spec spec, Body body) {
 
     std::vector<double>        work_ns, total_ns, setup_ns, teardown_ns;
     std::vector<std::string>   failures;
-    // Every measured repetition's observations, by name, in repetition order.
+    // Every VERIFIED measured repetition's observations, by name, in repetition order.
     std::map<std::string, std::vector<std::uint64_t>> observed;
 
     // The result document: one builder for the end of the run and for the deadline's watchdog, so
     // a blocked run's document has the shape of any other failed run. A run with a failed
     // repetition has no publishable timing, even when earlier repetitions passed: the reasons are
-    // kept, and no partial sample or summary is written unless `ok`.
+    // kept, and no timing sample or summary is written unless `ok`. Counts are kept, timings
+    // never: the observations of the measured repetitions that DID verify stay in a refused
+    // document, a diagnostic of what the run did before it failed -- never a timing, and no table
+    // reads an unverified document (Huly QB-870; tools/negative-control.py section H asserts both).
     auto document = [&](bool ok, const std::vector<std::string> &why) -> std::string {
         const std::vector<double>  none;
         const std::vector<double> &work  = ok ? work_ns : none;

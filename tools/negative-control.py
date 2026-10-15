@@ -714,20 +714,29 @@ def main() -> int:
                 "a typo in a parameter name would then run a different benchmark than intended")
 
     print("\n== H. one defective repetition invalidates the whole run ==")
+    # The contract of a refused document (Huly QB-870): timings NEVER -- no sample, no summary --
+    # and the observations (counts) of the measured repetitions that DID verify are kept as a
+    # diagnostic of what the run did; a failed or warmup repetition contributes none.
     for plant, warmup, failed_rep, what in (
-        ("fail-second", 0, 1, "success then failure publishes no partial timing"),
-        ("fail-first", 0, 0, "failure then success publishes no partial timing"),
-        ("fail-first", 1, 0, "a defective warmup invalidates later measured successes"),
+        ("fail-second", 0, 1, "success then failure publishes no partial timing, and keeps the "
+                              "verified repetition's counts"),
+        ("fail-first", 0, 0, "failure then success publishes no partial timing, and keeps the "
+                             "verified repetition's counts"),
+        ("fail-first", 1, 0, "a defective warmup invalidates later measured successes, whose "
+                             "counts are kept"),
     ):
         rc, doc, err = run_subject(exe, plant, messages=1000,
                                   repetitions=2, warmup=warmup, extra=["--no-pin"])
+        verified_measured = 2 - (1 if failed_rep >= warmup else 0)
         if (rc == 1 and doc and doc.get("verified") is False
                 and doc.get("repetitions") == 2 and doc.get("warmup") == warmup
                 and len(doc.get("failures", [])) == 1
                 and doc["failures"][0].startswith(f"repetition {failed_rep}: checksum ")
                 and all(doc.get(key) == [] for key in
                         ("work_ns", "total_ns", "outside_window_ns"))
-                and doc.get("summary") == {}):
+                and doc.get("summary") == {}
+                and (doc.get("observed") or {}).get("rounds", {}).get("samples")
+                == [1000] * verified_measured):
             verdict("CAUGHT", what, doc["failures"][0])
         else:
             verdict("MISSED", what, f"rc={rc}, doc={doc}, err={err.strip()[:100]}")
