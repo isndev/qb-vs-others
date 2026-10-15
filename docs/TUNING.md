@@ -1982,7 +1982,7 @@ measures, and nothing here has tried it.
 | thread-ring 2c-spin | 123.3 → 123.3 / 124.7 | 105.8 → 107.4 / 110.9 | 122.4 vs 122.8 / 104.4 vs 109.3, overlapping |
 | ping-pong 2c-park | 257.3 → 257.1 | 219.4 → 209.3 | — |
 | thread-ring 2c-park | 128.3 → 123.3 | 114.9 → 108.0 | — |
-| counting (all four) | bimodal on both builds (§9.11) | 8.0–9.9, level | 9.8 vs 9.8 / 9.9 vs 9.8 (2c) |
+| counting (all four) | bimodal on both builds (§9.11) | 8.0–9.9, level | WSL2 only: 2c-spin 9.8 vs 9.8, 2c-park 9.9 vs 9.8 |
 
 Shipped 3.1.0 in the same sessions: ping-pong 1c 113.6 / 97.9, so the head is **−63 / −71 %**
 against the release. `dev/bench`'s same-core cells say the same thing in the engine's own units:
