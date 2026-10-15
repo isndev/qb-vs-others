@@ -82,8 +82,16 @@ enum Scheme { S2, S1, S1F, S1A };
 // Six loads from six distinct lines nobody writes (a signal flag, a stop token, io counters,
 // an activation list, a callback list, pipe cursors -- the checks of a qb pass), with compares.
 alignas(64) volatile unsigned g_checks[6 * 16] = {};
-unsigned                       g_sink          = 0;
 int                            g_preload       = 0;
+
+// Keeps the compares' result alive WITHOUT storing it: an empty asm statement that must be
+// assumed to read the register. Both threads poll with the same gap, so a shared sink they both
+// add into is two unordered writes to one plain variable -- a data race (Huly QB-835), and a
+// store a qb pass's checks do not make. GCC and Clang only, like the rest of this x86-64 file.
+inline void
+keep(unsigned value) {
+    asm volatile("" : : "r"(value));
+}
 
 inline unsigned
 cheap_checks() {
@@ -123,14 +131,14 @@ idle_gap(int mode) {
         break;
     case 7:
         (void)now_ns();
-        g_sink += cheap_checks();
+        keep(cheap_checks());
         break;
     case 8:
-        g_sink += cheap_checks();
+        keep(cheap_checks());
         (void)now_ns();
         break;
     case 9:
-        g_sink += cheap_checks();
+        keep(cheap_checks());
         break;
     default:
         break;

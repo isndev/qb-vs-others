@@ -2135,6 +2135,14 @@ net of the jitter; `results/wsl-debian-g++14/qb-branch-perf-ring-private-lines/r
 | one line per hop as two 32-byte AVX2 stores, `pause` | 182 · 183 · 185 · 185 · 186 · 186 |
 | one line per hop written by ONE `movdir64b` + `sfence`, `pause` | 210 · 213 · 213 · 269 · 270 · 270 |
 
+A caveat on the two rows with the six checks (gaps 7 and 8), found afterwards (Huly QB-835): the
+probe added the checks' result into one plain global that BOTH threads wrote on every poll — a
+data race ThreadSanitizer reports at gaps 7, 8 and 9 — and that source, compiled today with the
+same g++ 14.2 and `-O3`, keeps the load-add-store in every inlined poll. So those two rows also
+carry that line moving between the two cores, and are not a measurement of six L1-hit loads
+alone; for them, "never below 165" below rests on the ALU rows. The probe now keeps the compares
+with no store at all (`keep()` in `raw-ring.cpp`); the two rows have not been re-measured.
+
 Four things read off that table. The one-line hop — the "sequence in the slot" design that was
 axis O — reaches the same ~120 the two-line handshake reaches, in the same share of launches:
 the two misses of a hop overlap, or the spatial prefetcher pairs them; it is not worth a ring.
