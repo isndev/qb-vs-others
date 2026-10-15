@@ -2248,8 +2248,8 @@ queue: they run from a token callback or a timer) and making the flag `constinit
 | push | 24.4 → 24.3 | 34.2 → 33.6 |
 | ask | **54.0 → 46.7** (−14 %) | **81.7 → 72.0** (−12 %) |
 | the ask machinery over push | 29.7 → 22.4 (−25 %) | 47.5 → 38.4 (−19 %) |
-| `savina/bank-transaction` 2c-spin / 2c-park (census, per transfer) | 92.4 → **84.0** / 93.2 → 88.3 | 153.7 → 152.7 / 154.7 → **147.4** |
-| bank 1c-spin / 1c-park | 142.3 → 137.7 / 140.8 → 138.5 | 261.7 → 250.6 / 260.8 → 250.1 |
+| `savina/bank-transaction` 2c-spin / 2c-park (census, per transfer) | 92.4 → **84.0** / 93.2 → 88.3 | 154.7 → **147.4** / 153.7 → 152.7 |
+| bank 1c-spin / 1c-park | 142.3 → 137.7 / 140.8 → 138.5 | 260.8 → 250.1 / 261.7 → 250.6 |
 
 Measured and dropped on the way: draining the scheduler's ready coroutines right after the
 receive, in the same pass — for `ask_stream`, `ping`, `require`, `ask_all`, whose wakes keep

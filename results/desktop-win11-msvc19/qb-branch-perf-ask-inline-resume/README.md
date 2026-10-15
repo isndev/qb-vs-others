@@ -42,11 +42,15 @@ are the next thing to record).
 
 | cell | `c4f9d439` | **branch** p1 / p2 | census (10 launches) |
 |---|---:|---:|---|
-| 1c-spin | 258.7 | 251.0 / 253.6 | 261.7 → **250.6** (−4 %) |
-| 1c-park | 260.3 | 266.4 / 249.1 | 260.8 → **250.1** (−4 %) |
-| 2c-spin | 151.4 | 147.0 / 149.3 | 153.7 → 152.7 (−1 %) |
-| 2c-park | 150.4 | 154.8 / 147.9 | 154.7 → **147.4** (−5 %) |
+| 1c-spin | 258.7 | 251.0 / 253.6 | 260.8 → **250.1** (−4 %) |
+| 1c-park | 260.3 | 266.4 / 249.1 | 261.7 → **250.6** (−4 %) |
+| 2c-spin | 151.4 | 147.0 / 149.3 | 154.7 → **147.4** (−5 %) |
+| 2c-park | 150.4 | 154.8 / 147.9 | 153.7 → 152.7 (−1 %) |
 | ping-pong 1c-spin (anchor) | — | — | 31.9 → 31.8 (level) |
+
+The census column is read from each launch document's `params.wait` (1 spin, 0 park); an earlier
+text had the two wait modes of each core count the other way round in this column — the grid
+columns were right (Huly QB-836).
 
 ## `dev/bench` — the ask cells (median of three run medians; `bench/`)
 
