@@ -19,7 +19,9 @@ vCPU threads, and a futex wake across two vCPUs costs the hypervisor — `baseli
 **20.8 µs per ping-pong round trip and 10.6 µs per ring hop**, WSL2's caveat word for word (24.8 and
 12.6 in its current field): every `2c-park` cell of a shape that crosses a core per message measures that wake for
 any framework that truly parks — shipped qb 3.1.0 29.6 µs, SObjectizer 22.1 µs, `caf-detached`
-21.8 µs — and the candidate's 0.17 µs is the 50 µs idle-spin floor never letting the pair sleep. The pooled `caf` row (0.30 µs) is below the floor because it never crosses a core.
+**bimodal**: 7 of its 9 repetitions at 21.7–22.7 µs (median 21.8 µs) and 2 at 2.23–2.24 µs, a mode
+ten times faster that this text does not explain and `REPORT.md` flags — and the candidate's
+0.17 µs is the 50 µs idle-spin floor never letting the pair sleep. The pooled `caf` row (0.30 µs) is below the floor because it never crosses a core.
 
 `REPORT.md` beside this file is `tools/report.py`'s render of this directory and
 `tools/check-report.py` fails if it drifts. `docs/TUNING.md` §13.9 is the reading guide;
