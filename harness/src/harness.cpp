@@ -21,6 +21,7 @@
 #    define WIN32_LEAN_AND_MEAN
 #    include <windows.h>
 #    include <shellapi.h>
+#    include <tlhelp32.h>
 #else
 #    include <pthread.h>
 #    include <sched.h>
@@ -159,7 +160,7 @@ struct Pin {
     bool             requested{false};
     bool             applied{false};
     std::vector<int> cpus;
-    int              threads{0};  // Linux: the threads pinned and read back; 0 where not enumerated
+    int              threads{0};  // the threads read back on the pinned set (Linux, Windows); 0 unpinned
 };
 
 std::vector<int> parse_cpu_list(const std::string &s) {
@@ -202,7 +203,7 @@ bool list_threads(std::vector<pid_t> &tids, std::string &why_not) {
 
 // Applies the mask to the whole process, so every thread a framework spawns afterwards inherits
 // it. This is the only way to constrain a framework whose scheduler threads we do not control.
-// `threads` receives the number of threads pinned and read back where they are enumerated (Linux).
+// `threads` receives the number of the process's threads read back on the set (Linux, Windows).
 bool apply_and_verify_pin(const std::vector<int> &cpus, int &threads, std::string &why_not) {
     threads = 0;
 #if defined(_WIN32)
@@ -220,9 +221,56 @@ bool apply_and_verify_pin(const std::vector<int> &cpus, int &threads, std::strin
         why_not = "GetProcessAffinityMask failed";
         return false;
     }
+    const auto hex = [](unsigned long long v) {
+        char buf[24];
+        std::snprintf(buf, sizeof buf, "0x%llx", v);
+        return std::string(buf);
+    };
     if (got_proc != mask) {
-        why_not = "affinity read back as 0x" + std::to_string(got_proc) + " but 0x"
-                  + std::to_string(mask) + " was requested";
+        why_not = "affinity read back as " + hex(got_proc) + " but " + hex(mask) + " was requested";
+        return false;
+    }
+    // The system applies the process mask to every thread of the process. Each one is read back
+    // all the same, from a Toolhelp snapshot of the process's threads -- a thread a static
+    // initialiser started before main() (qb's log writer) included -- so `threads` counts what was
+    // verified, not what was asked (Huly QB-841). A thread that ended after the snapshot is
+    // skipped (OpenThread: ERROR_INVALID_PARAMETER); one started later inherits the process mask.
+    const DWORD  pid  = GetCurrentProcessId();
+    const HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    if (snap == INVALID_HANDLE_VALUE) {
+        why_not = "CreateToolhelp32Snapshot failed, GetLastError=" + std::to_string(GetLastError());
+        return false;
+    }
+    THREADENTRY32 te{};
+    te.dwSize = sizeof te;
+    for (BOOL more = Thread32First(snap, &te); more; more = Thread32Next(snap, &te)) {
+        if (te.th32OwnerProcessID != pid) continue;
+        const HANDLE thread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, te.th32ThreadID);
+        if (!thread) {
+            const DWORD err = GetLastError();
+            if (err == ERROR_INVALID_PARAMETER) continue;  // it ended: it runs nowhere
+            why_not = "OpenThread failed for thread " + std::to_string(te.th32ThreadID)
+                      + ", GetLastError=" + std::to_string(err);
+            CloseHandle(snap);
+            return false;
+        }
+        GROUP_AFFINITY ga{};
+        const BOOL read = GetThreadGroupAffinity(thread, &ga);
+        CloseHandle(thread);
+        if (!read || ga.Group != 0 || ga.Mask != mask) {
+            why_not = read ? "affinity of thread " + std::to_string(te.th32ThreadID) + " read back as "
+                                 + hex(ga.Mask) + " in group " + std::to_string(ga.Group) + " but "
+                                 + hex(mask) + " was requested"
+                           : "GetThreadGroupAffinity failed for thread "
+                                 + std::to_string(te.th32ThreadID);
+            CloseHandle(snap);
+            return false;
+        }
+        ++threads;
+    }
+    CloseHandle(snap);
+    if (threads == 0) {
+        why_not = "no thread of this process was found in a Toolhelp snapshot";
         return false;
     }
     return true;
@@ -669,8 +717,8 @@ int run(int argc, char **argv, Spec spec, Body body) {
 
     // Pinning happens BEFORE any framework object is constructed, so every thread the framework
     // creates inherits the mask. A thread a static initialiser started earlier -- qb's log writer
-    // -- is pinned with it: on Windows by the process mask, on Linux one thread at a time (above),
-    // and the document records how many threads were read back there (`pinned_threads`).
+    // -- is pinned with it: on Windows by the process mask, on Linux one thread at a time (above);
+    // on both, every thread is read back and the document records how many (`pinned_threads`).
     if (pin.requested && !no_pin) {
         std::string why;
         if (!apply_and_verify_pin(pin.cpus, pin.threads, why))
@@ -762,7 +810,8 @@ int run(int argc, char **argv, Spec spec, Body body) {
 
         j << "  \"pinned\": " << (pin.applied ? "true" : "false") << ",\n";
         j << "  \"cpus\": " << quoted(pin_repr) << ",\n";
-        // Linux only: every thread present when the mask was applied, each read back (Huly QB-841).
+        // Every thread present when the mask was applied, each read back -- Linux and Windows;
+        // macOS has no pin to verify (Huly QB-841).
         if (pin.threads > 0) j << "  \"pinned_threads\": " << pin.threads << ",\n";
         j << "  \"thread_pinning_supported\": " << (thread_pinning_supported() ? "true" : "false")
           << ",\n";

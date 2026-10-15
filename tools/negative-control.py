@@ -105,12 +105,16 @@ def pre_main_pin_control(exe: Path) -> None:
     initialiser started before main() -- qb's log writer -- kept the launch mask while the harness
     pinned and read back main() alone. The subject's `pre-main-thread` plant starts such a thread
     and its body declares a failure unless that thread runs on exactly the pinned set: run pinned
-    to one CPU, it must verify, with both threads counted in `pinned_threads`. No verdict
-    elsewhere: Windows pins the process mask, and macOS has no verified pin to apply."""
-    if not sys.platform.startswith("linux"):
-        print("  (Linux only -- no verdict on this platform)")
+    to one CPU, it must verify, with both threads counted in `pinned_threads`. On Windows the
+    process mask reaches every thread and the harness reads each one back: the same verdict. No
+    verdict on macOS, which has no verified pin to apply."""
+    if sys.platform.startswith("linux"):
+        cpu = min(os.sched_getaffinity(0))
+    elif sys.platform == "win32":
+        cpu = 0  # every Windows process may run on CPU 0
+    else:
+        print("  (Linux and Windows only -- no verdict on this platform)")
         return
-    cpu = min(os.sched_getaffinity(0))
     rc, doc, err = run_subject(exe, "pre-main-thread", extra=["--cpus", str(cpu)], messages=1000)
     threads = (doc or {}).get("pinned_threads")
     if (rc == 0 and doc and doc.get("verified") is True and doc.get("pinned") is True
