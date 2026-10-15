@@ -19,11 +19,17 @@
 //
 //   qvoprobe-dispatch-population <actors> [batch=256] [seconds=2] [core_cpu=0] [latency_us=0]
 //
-// One line on stdout: actors, batch, rounds, events, elapsed ns, ns per event.
+// One line on stdout: actors, batch, rounds, events, elapsed ns, ns per event. `rounds` counts the
+// Round events dispatched, and `events` counts the Hit events the driver EMITTED -- not
+// rounds * batch: the first Round (posted by onInit) and the last one (which stops the window)
+// emit no batch, so a window of R rounds dispatched (R - 1) batches (Huly QB-787). Before it exits,
+// the probe checks that denominator against the Hits its cells counted on delivery: a mismatch
+// prints why on stderr and exits 1, so a figure with a wrong denominator is never left standing.
 
 #include <qb/actor.h>
 #include <qb/main.h>
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -41,11 +47,21 @@ struct Hit : qb::Event {
 };
 struct Round : qb::Event {};
 
+// The denominator's two witnesses, compared by main() after join(): the events the driver printed,
+// and the Hits the cells counted on delivery, added once per cell as it is destroyed. Both are
+// written by the core's thread outside the measured window and read after the join.
+std::atomic<std::uint64_t> g_reported_events{0};
+std::atomic<std::uint64_t> g_delivered{0};
+
 class Cell : public qb::Actor {
     std::uint64_t _hits = 0;
     std::uint8_t  _payload[192]{}; // the session's own state: one line of it is touched per hit
 
 public:
+    ~Cell() override {
+        g_delivered.fetch_add(_hits, std::memory_order_relaxed);
+    }
+
     qb::io::async::task<bool>
     onInit() override {
         registerEvent<Hit>(*this);
@@ -64,6 +80,7 @@ class Driver : public qb::Actor {
     const std::uint32_t                                   _batch;
     const std::uint64_t                                   _window_ns;
     std::uint64_t                                         _rounds = 0;
+    std::uint64_t                                         _sent   = 0; ///< Hits emitted: the denominator
     std::uint64_t                                         _lcg    = 0x9E3779B97F4A7C15ull;
     std::uint32_t                                         _seq    = 0;
     qb::mono_time                                         _t0{};
@@ -94,7 +111,10 @@ public:
         if ((_rounds & 0x3FFu) == 0) {
             const auto elapsed = static_cast<std::uint64_t>((qb::mono_now() - _t0).count());
             if (elapsed >= _window_ns) {
-                const double events = static_cast<double>(_rounds) * _batch;
+                // Every batch emitted was queued ahead of the Round that follows it, so all of them
+                // were dispatched before this one; this Round emits none.
+                const double events = static_cast<double>(_sent);
+                g_reported_events.store(_sent, std::memory_order_relaxed);
                 std::printf("actors=%zu batch=%u rounds=%llu events=%.0f elapsed_ns=%llu ns_per_event=%.2f\n", _cells->size(), _batch,
                             static_cast<unsigned long long>(_rounds), events, static_cast<unsigned long long>(elapsed),
                             static_cast<double>(elapsed) / events);
@@ -108,6 +128,7 @@ public:
         auto const &cells = *_cells;
         for (std::uint32_t k = 0; k < _batch; ++k)
             push<Hit>(cells[draw()], _seq++);
+        _sent += _batch;
         push<Round>(id()); // behind the batch: the next pass dispatches the batch, then this
     }
 };
@@ -142,5 +163,14 @@ main(int argc, char **argv) {
     core.addActor<Driver>(cells, static_cast<std::uint32_t>(batch), window);
     engine.start();
     engine.join();
-    return engine.hasError() ? 1 : 0;
+    if (engine.hasError())
+        return 1;
+    const auto reported  = g_reported_events.load(std::memory_order_relaxed);
+    const auto delivered = g_delivered.load(std::memory_order_relaxed);
+    if (reported != delivered) {
+        std::fprintf(stderr, "denominator mismatch: events=%llu printed, %llu Hit events delivered to the cells\n",
+                     static_cast<unsigned long long>(reported), static_cast<unsigned long long>(delivered));
+        return 1;
+    }
+    return 0;
 }
