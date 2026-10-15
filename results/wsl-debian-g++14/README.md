@@ -5,7 +5,7 @@ WSL2 (Hyper-V guest) — Debian 13, g++ 14.2.0, `-O3 -DNDEBUG`, i9-12900K, pinne
 directories was measured in one quiet session on 2026-09-04 (15:50–16:05 UTC, the Windows side
 idle throughout — its own session started at 16:09 UTC), and the candidate qb branch's 20 cells
 followed at 16:05 UTC in the same session. The **32 cells** of `savina-fib/` and
-`savina-chameneos/` (the two shapes that create actors inside the window, added 2026-09-06) were
+`savina-chameneos/` (added 2026-09-06: fib creates its actors inside the window; chameneos creates its 100 creatures and their mall before the window opens and times their 200 000 meetings) were
 measured in a second quiet session that day — the field at 17:40 UTC, shipped qb at 18:13 UTC
 after the 3.1.0 build had been rebuilt with the two new adapters, the Windows side idle until
 18:14 — bringing this host to 116 cells across seven directories. The **16 cells** of

@@ -140,8 +140,13 @@ allocator's neighbourhood, not of the arena's layout.
 
 The candidate's chameneos census above has the same fast mode as `f2779605` (43 – 45 ns a meeting)
 and a heavier slow one: 6 of its 12 spin launches at 64 – 98 against 1 of 12, 7 of 12 park launches
-at 61 – 93 against 1. A repetition of this shape is about nine milliseconds of work — 100 chameneos
-and their mall created inside the window, then 200 000 meetings — short enough for a launch to be
+at 61 – 93 against 1. A repetition's measured window is about nine milliseconds — 200 000
+meetings between 100 chameneos and their mall. The mall and the creatures are created, and have
+each reported ready, BEFORE that window opens (`frameworks/qb/savina/chameneos.cpp`: every
+`addActor` precedes `engine.start()`, and the mall starts the `Watch` on the last `Ready`), so
+their construction is not a timed cost here (`outside_window_ns` holds it), though where it
+placed them can still shape the window that follows (an earlier text put the construction inside
+the window, Huly QB-840) — short enough for a launch to be
 decided by where things land when it starts, and twelve launches are few. Twenty-four, over five builds (`a134ccd6-global-new` is the arena
 commit with its four class-level operators routed to the global allocator, everything else kept):
 

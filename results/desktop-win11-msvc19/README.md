@@ -6,7 +6,7 @@ Windows 11 (10.0.26100), MSVC 19.51 (VS 2026), `/O2 /DNDEBUG`, i9-12900K, pinned
 build, no test suite and no WSL measurement running anywhere on the host (the WSL2 session ended
 at 16:05 UTC) — and the candidate qb branch's 20 cells followed at 16:17–16:18 UTC in the same
 session, so shipped and branch share their provenance. The **32 cells** of `savina-fib/` and
-`savina-chameneos/` (the two shapes that create actors inside the window, added 2026-09-06) were
+`savina-chameneos/` (added 2026-09-06: fib creates its actors inside the window; chameneos creates its 100 creatures and their mall before the window opens and times their 200 000 meetings) were
 measured the same way in one quiet session on 2026-09-06, 18:14–18:16 UTC, after the WSL2
 session had ended at 18:13 — the field, shipped qb 3.1.0 (`build/shipped-win`, rebuilt with the
 two new adapters) and the candidate branch's eight qb cells back to back — bringing this host to
