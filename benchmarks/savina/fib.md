@@ -33,15 +33,20 @@ the stack, so nothing here can overflow.
 
 ### Deviation from Savina's `n`, and why
 
-Savina uses `n=25`: 150 049 actors per run. A qb `ActorId` carries a **16-bit** per-core index
+Savina uses `n=25`: 150 049 actors per run. The delivered qb 3.2.1 `ActorId` carries a **16-bit** per-core index
 (`ServiceIdPool`), so at most 65 534 actors can be alive on one VirtualCore at once — and a
 breadth-first drain of the seed's pipe brings the whole sub-tree alive before the first leaf
 answers, since a child is spawned in its parent's handler and asked before the parent returns.
 `n=24` puts 92 735 nodes on the only core at `cores=1`, above the cap whenever the drain is
 breadth-first; `n=23` puts 57 313 there and fits in every drain order, so it is the largest `n`
-every framework can run in every configuration without depending on scheduling luck. The cap is recorded as a qb defect in the report (a 3.2
-ActorId is 32 bits with a 16-bit index; widening it is an ABI change filed for 4.0 next to the
-32-byte bucket) and the deviation is stated on every document.
+every framework can run in every configuration with the delivered qb baseline without depending
+on scheduling luck. That 32-bit identity domain is the reason for the common comparison variant,
+not a Savina requirement.
+
+The ActorId64 candidate (Huly QB-970/QB-971) removes the fixed 16-bit ordinary-slot ceiling.
+The comparison retains `n=23` until the canonical `n=25` is validated on the new candidate and
+its comparable performance is measured; do not compare the two different recursion trees as
+an engine speedup. The API/ABI release decision remains separate.
 
 ## How `cores` maps to each framework
 
