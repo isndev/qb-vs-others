@@ -16,11 +16,11 @@ merged) plus the branch's commits.
 |---|---|---|
 | `grid-d44e7b44/` | `perf/dense-table-growth` **two** commits over `develop`: `5665b6f8` (the dense router table grows by capacity, not by one slot; per-actor lifecycle logs demoted to VERBOSE) and `d44e7b44` (per-core actor registry as a slot-indexed vector, kill queue as a vector, `static_cast` in subscribe) | **32 cells**, all verified: fib × chameneos × {baseline, caf, qb, sobjectizer} × {2c-spin, 2c-park, 1c-spin, 1c-park}. |
 | `grid-001be013/` | the same plus `001be013` (the actor's coroutine counter allocated on its first `spawn`, not in the constructor) — **the branch as proposed for merge** | **32 cells**, all verified, same protocol, 20 minutes later in the same quiet session. |
-| `grid-001be013-session2/` | `001be013` again | **8 cells**, qb only, at this host's PUBLISHED protocol (**5 + 1**), 18:13 UTC — the same quiet session as the shipped-3.1.0 control in `../savina-fib/` and `../savina-chameneos/` (field 17:40, shipped qb 18:13), which is the pair FAIRNESS.md asks for. Every cell lands inside the 9 + 2 grid's spread: fib 7.59 / 7.14 / 11.89 / 11.79 ms (2c-spin / 2c-park / 1c-spin / 1c-park) against 7.08 / 7.20 / 11.44 / 11.29; chameneos 11.09 / 11.23 / 6.52 / 6.89 against 11.17 / 10.97 / 6.79 / 6.89. |
+| `grid-001be013-session2/` | `001be013` again | **8 cells**, qb only, at this host's PUBLISHED protocol (**5 + 1**), 18:13 UTC — the same quiet session as the shipped-3.1.0 control in `../savina-fib/` and `../savina-chameneos/` (field 17:40, shipped qb 18:13), which is the pair FAIRNESS.md asks for. Seven of the eight session-2 medians lie inside the earlier 9 + 2 repetition ranges. Chameneos 1c-spin is the exception: 6,518,556 ns, below the earlier 6,611,545–6,905,372 ns range. The preserved medians are: fib 7.59 / 7.14 / 11.89 / 11.79 ms (2c-spin / 2c-park / 1c-spin / 1c-park) against 7.08 / 7.20 / 11.44 / 11.29; chameneos 11.09 / 11.23 / 6.52 / 6.89 against 11.17 / 10.97 / 6.79 / 6.89. |
 
-None of the three is merged into the published tables: `../savina-fib/` and `../savina-chameneos/`
-render shipped 3.1.0, like the five shapes before them, and the candidate joins the tables when
-the 3.2.0 grid is measured for all seven shapes in one session. The branch's starting point,
+At the time of this campaign, these three grids were separate from the published field,
+whose qb column was shipped 3.1.0. The direct `../savina-fib/` and `../savina-chameneos/`
+directories have since been remeasured; use the named grids here for this historical account. The branch's starting point,
 `develop` `00b60afe`, measures fib at **43 s** per repetition on Windows (below), which is not a
 cell, it is the defect — introduced on `develop` with the dense tables (axis I, `docs/TUNING.md`
 §7) and never shipped.

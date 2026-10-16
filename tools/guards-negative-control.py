@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plant a defect at a time and assert the two DOCUMENT guards reject it.
+"""Plant a defect at a time and assert the document and build-provenance guards reject it.
 
 `tools/negative-control.py` proves the harness rejects a wrong answer. This battery proves the
 guards over the repository's OWN documents do: `tools/check-roster.py` (every spec has an adapter
@@ -27,6 +27,8 @@ Roster coverage controls use temporary filename-only fixtures derived from the r
 They contain no measurements and never change public results: a historical result directory
 need not cover shapes added later. Report controls still use the selected real result directory
 and its current README figures. Floors are counted, and a run below them fails.
+Build-provenance controls use explicitly synthetic result/cache/argv fixtures without timings,
+CMake or compilation. Their portable parsing checks do not validate native Windows commands.
 """
 
 from __future__ import annotations
@@ -44,8 +46,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 EXCLUDE = {"build", ".git", "vcpkg_installed", "__pycache__", "alt"}
 
-FLOOR_CAUGHT = 34
-FLOOR_CONFIRMED = 3
+FLOOR_CAUGHT = 43
+FLOOR_CONFIRMED = 5
 
 caught = confirmed = missed = 0
 
@@ -572,6 +574,134 @@ def report_controls(base: Path, results: str) -> None:
                "does not exist")
 
 
+
+# ----------------------------------------------------------------------------- build provenance
+
+def provenance_controls(base: Path) -> None:
+    print("check-build-provenance.py (synthetic metadata; no build or timing)")
+    checker = "check-build-provenance.py"
+    common_flags = "-DPROVENANCE_FIXTURE=1 -g"
+    cases = (
+        ("single-debug", "synthetic single-config Debug provenance is accepted", 0, ""),
+        ("multi-debug", "synthetic multi-config database selects Debug, not its Release sibling", 0, ""),
+        ("wrong-flags", "falsely reported optimization flags are rejected", 1,
+         "cxx_flags '-O3 -DNDEBUG' != common configured flags"),
+        ("wrong-config", "a falsely reported build configuration is rejected", 1,
+         "build_type 'Release' != built config 'Debug'"),
+        ("non-string-flags", "non-string reported flags are refused without a traceback", 2,
+         "check-build-provenance: env.cxx_flags must be a string"),
+        ("macro-only", "-g in an old metadata macro is not a real compiler option", 1,
+         "configured flag absent from actual compiler argv in order: '-g'"),
+        ("zero-commands", "zero matching compiler commands cannot validate provenance", 2,
+         "check-build-provenance: expected exactly one Debug harness command, found 0"),
+        ("ambiguous-commands", "two matching compiler commands are refused as ambiguous", 2,
+         "check-build-provenance: expected exactly one Debug harness command, found 2"),
+        ("incomplete-cache", "a cache missing the selected configuration flags is refused", 2,
+         "check-build-provenance: 'CMAKE_CXX_FLAGS_DEBUG'"),
+        ("invalid-env", "a non-object result environment is refused cleanly", 2,
+         "check-build-provenance: result env must be an object"),
+        ("invalid-arguments", "a compiler argument array containing a non-string is refused cleanly", 2,
+         "check-build-provenance: compiler arguments must be a nonempty string array"),
+    )
+    # One checkout copy, with an independent fixture directory per control. None of these
+    # documents is a measured result; all commands are data arrays that are never executed.
+    with Sandbox(base) as sandbox:
+        for name, what, wanted, diagnostic in cases:
+            fixture = sandbox / "control-fixtures" / "build-provenance" / name
+            fixture.mkdir(parents=True)
+            source = fixture / "synthetic-source" / "harness" / "src" / "harness.cpp"
+            result = {
+                "control_fixture": "synthetic provenance only; no binary built and no timings",
+                "env": {"os": "linux", "compiler": "synthetic-cxx", "build_type": "Debug",
+                        "cxx_flags": common_flags,
+                        "cxx_flags_scope": "directory-global-and-config"},
+            }
+            cache = ["CMAKE_CXX_FLAGS:STRING=-DPROVENANCE_FIXTURE=1",
+                     "CMAKE_CXX_FLAGS_DEBUG:STRING=-g", "CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG",
+                     "CMAKE_BUILD_TYPE:STRING=Debug"]
+            command = {"directory": str(fixture), "file": str(source),
+                       "arguments": ["synthetic-cxx", "-DPROVENANCE_FIXTURE=1", "-g", "-c", str(source)]}
+            commands = [command]
+            if name == "multi-debug":
+                cache[-1] = "CMAKE_BUILD_TYPE:STRING="
+                cache.append("CMAKE_CONFIGURATION_TYPES:STRING=Debug;Release")
+                command["arguments"].insert(1, '-DCMAKE_INTDIR="Debug"')
+                release = {"directory": str(fixture), "file": str(source), "arguments": [
+                    "synthetic-cxx", '-DCMAKE_INTDIR="Release"', "-DPROVENANCE_FIXTURE=1",
+                    "-O3", "-DNDEBUG", "-c", str(source)]}
+                commands = [release, command]  # The unrequested configuration comes first.
+            elif name == "wrong-flags":
+                result["env"]["cxx_flags"] = "-O3 -DNDEBUG"
+            elif name == "wrong-config":
+                result["env"]["build_type"] = "Release"
+            elif name == "non-string-flags":
+                result["env"]["cxx_flags"] = None
+            elif name == "macro-only":
+                command["arguments"].remove("-g")
+                command["arguments"].insert(1, '-DQVO_CXX_FLAGS="-g"')
+            elif name == "zero-commands":
+                commands = []
+            elif name == "ambiguous-commands":
+                commands = [command, json.loads(json.dumps(command))]
+            elif name == "incomplete-cache":
+                cache.remove("CMAKE_CXX_FLAGS_DEBUG:STRING=-g")
+            elif name == "invalid-env":
+                result["env"] = []  # Malformed before any platform-specific parsing can occur.
+            elif name == "invalid-arguments":
+                command["arguments"][1] = None
+
+            result_path = fixture / "result.json"
+            commands_path = fixture / "compile_commands.json"
+            cache_path = fixture / "CMakeCache.txt"
+            cache_text = "# SYNTHETIC control fixture; no CMake was run.\n" + "\n".join(cache) + "\n"
+            result_path.write_text(json.dumps(result) + "\n", encoding="utf-8", newline="\n")
+            commands_path.write_text(json.dumps(commands) + "\n", encoding="utf-8", newline="\n")
+            cache_path.write_text(cache_text, encoding="utf-8", newline="\n")
+            # Read the actual planted inputs back before allowing the guard to judge them.
+            try:
+                stored_result = json.loads(result_path.read_text(encoding="utf-8"))
+                stored_commands = json.loads(commands_path.read_text(encoding="utf-8"))
+                stored_cache = cache_path.read_text(encoding="utf-8")
+            except (OSError, ValueError) as error:
+                botched(what, str(error))
+                continue
+            if stored_result != result or stored_commands != commands or stored_cache != cache_text:
+                botched(what, "result, command database or cache differs from the intended fixture")
+                continue
+            if name == "macro-only" and ("-g" in stored_commands[0]["arguments"]
+                    or '-DQVO_CXX_FLAGS="-g"' not in stored_commands[0]["arguments"]):
+                botched(what, "the genuine -g option survived, or its metadata-only bait is absent")
+                continue
+
+            rc, output = run_guard(sandbox, checker, "--result", str(result_path),
+                                   "--compile-commands", str(commands_path), "--config", "Debug")
+            if "Traceback (most recent call last)" in output:
+                verdict("MISSED", what, "the checker crashed rather than issuing its verdict")
+                continue
+            if wanted in (0, 1):
+                try:
+                    receipt = json.loads(output)
+                except ValueError:
+                    verdict("MISSED", what, f"exit {rc} without a JSON receipt: {output[-500:]}")
+                    continue
+                inspected = (isinstance(receipt, dict) and receipt.get("source") == str(source)
+                             and bool(receipt.get("source")) and receipt.get("config") == "Debug")
+                if wanted == 0:
+                    if (rc == 0 and inspected and receipt.get("ok") is True
+                            and receipt.get("errors") == []
+                            and receipt.get("expected_common_flags") == common_flags
+                            and receipt.get("reported_flags") == common_flags):
+                        verdict("CONFIRMED", what)
+                    else:
+                        verdict("MISSED", what, f"exit {rc} or incomplete positive receipt: {output[-500:]}")
+                elif not inspected or receipt.get("ok") is not False or not isinstance(receipt.get("errors"), list):
+                    verdict("MISSED", what, f"exit {rc} without an inspected rejection receipt: {output[-500:]}")
+                else:
+                    expect("CAUGHT", rc, "\n".join(receipt["errors"]), what, wanted, diagnostic)
+            else:
+                expect("CAUGHT", rc, output, what, wanted, diagnostic)
+
+
 # ----------------------------------------------------------------------------- main
 
 def main() -> int:
@@ -589,6 +719,7 @@ def main() -> int:
     before = tree_digest(ROOT)
     roster_controls(ROOT, args.results)
     report_controls(ROOT, args.results)
+    provenance_controls(ROOT)
     after = tree_digest(ROOT)
 
     print(f"\n    CAUGHT={caught} CONFIRMED={confirmed} MISSED={missed}")

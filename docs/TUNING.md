@@ -992,8 +992,9 @@ sets, and which §2 tuned for ping-pong cadence without ever asking what it did 
 counterpart in CAF or SObjectizer, whose schedulers own no sockets, so its figure must never sit
 in a table beside theirs. One `VirtualCore` hosts an echo actor (`qb::Actor` +
 `use<>::tcp::server`) with the cell's `latency`; a raw blocking-socket client on another thread
-sleeps `gap` — longer than the 50 µs idle-spin floor, so the core has parked when the request
-lands — sends one line, and times the round trip. Twelve cells, `latency` ∈ {0, 100, 1000,
+waits `gap`, sends one line, and times the round trip. The client spins for every recorded
+gap; `sleep_precise` only calls `sleep_for` when the gap exceeds 2000 µs. The 200 and
+2000 µs gaps exceed the core's 50 µs idle-spin floor; the 10 µs gap does not. Twelve cells, `latency` ∈ {0, 100, 1000,
 10000} µs × `gap` ∈ {10, 200, 2000} µs, 2000 rounds after 50 warm-ups, control and candidate
 interleaved twice per cell. The `latency=0` column is the busy-poll floor (the core never parks)
 and the `gap=10us` row keeps the core inside its idle-spin floor (it polls); every other cell
@@ -1320,6 +1321,12 @@ window opens and after it closes. What 3.1.0 pays on this shape is the request p
 plus what §7–§11 took: the shipped profile has `_Sp_counted_base::_M_release` at 4.8 %, the
 by-value ask frame at 3.75 %, `malloc` at 2.8 % and `ask_awaiter` at 2.4 % of the core.
 
+**Historical metadata correction (QB-786).** The four WSL2 bank-transaction documents
+in `results/wsl-debian-g++14/qb-branch-perf-coro-scope-local-refcount/grid-shipped-3.1.0-nolog/`
+were built with logging OFF, as the control above records, but each contains the adapter's
+then-unconditional logging-ON caveat. That caveat does not describe this cohort. The JSON
+samples and their summaries are retained unchanged; the adjacent README records the exception.
+
 ### 12.4 What is left, and the Windows 2c cells
 
 `perf` on `fa1c5ce3`, 1c spin: the ask registry — a hash map keyed by correlation id,
@@ -1593,11 +1600,14 @@ park — qb against CAF and the floor → `census-f2779605-field/`. Windows 03:1
 03:33–04:02 (UTC+2). 132 / 132 cells verified on each host, 2 declared `n/a` (CAF-detached has
 no spin mode), 0 census launch unverified.
 
-**The candidate did not move.** Every cell of `grid-f2779605/` sits inside the launch spread
-of `grid-77b358d8/` on both hosts: ping-pong 1c 22.5 against 22.6 ns (WSL2), 31.0 against 29.7
+**The earlier repeatability claim needs two WSL2 exceptions.** The `grid-f2779605/`
+counting 1c-spin median is 8.089844 ns/message, above the maxima of both `77b358d8` passages
+(7.602843 and 8.037149). Ping-pong 1c-park is 22.320986 ns/round trip, below their combined
+minimum 22.477948. The other 30 WSL2 medians fall inside the combined earlier repetition
+ranges. This comparison spans sessions and does not identify a cause or a current regression.
+Some of the historical comparisons are: ping-pong 1c 22.5 against 22.6 ns (WSL2), 31.0 against 29.7
 (Windows); 2c-spin 154.9 against 159.1 and 185.9 against 190.9; thread-ring 1c 16.9 against 17.1
-and 18.3 against 17.9; fib 1c 123.7 against 124.0 and 184.4 against 175.9. The hot path is
-byte-identical and the measurement says so.
+and 18.3 against 17.9; fib 1c 123.7 against 124.0 and 184.4 against 175.9. These timings alone do not establish byte identity or universal repeatability.
 
 **Against the other three, qb is the fastest framework in all 64 cells**, and the ratio to the
 best other framework in the cell — CAF or SObjectizer, whichever won second place — has a
@@ -1748,7 +1758,10 @@ the harness's emplace idiom (see the harness note below); full tables in
 | `dev/bench` ask-roundtrip same-core / cross-core | 5.5 → 5.1 ms / 14.5 → 14.3 ms | — |
 | anchors (ping-pong, fib, counting 1c) and the bimodal cells re-censused | flat | flat |
 
-Every bank distribution is disjoint (control minimum above candidate maximum) on both hosts. The 2c cells gain
+The launch-median ranges are disjoint for all four Windows bank cells and three of the
+four WSL2 cells. WSL2 2c-park overlaps: candidate launch 3 reaches 79.85022 ns/transfer
+while control launch 9 is 78.21706; the medians of twelve launch medians remain
+83.53174 → 73.22939 ns/transfer. This qualifies the former all-disjoint claim. The 2c cells gain
 less on WSL2 than on Windows because there the round trip is dominated by the cross-core hop, not by the ask's own
 mechanics; on Windows, where MSVC's coroutine code is the slower half, removing a frame and two transitions per ask
 is worth as much on two cores as on one.
@@ -2672,8 +2685,10 @@ asked of the timer resolution) → `period = 1 ms` (`timeBeginPeriod(1)` around 
 | 1 ms | **1442 → 1006** | 994 → 910 | 967 → 870 |
 | 10 ms | **998 → 985** | 923 → 906 | 799 → 666 |
 
-Every parked cell's p90 is 1.9 ms and its p99 2.0–2.4 ms, `period` or not; `idle_spin = 0`
-reads the same as the default (1009 / 981 / 1010 µs at the three latencies). Two facts, and
+Across the 18 grid cells with `latency>0`, p50 spans 665.5–1442.3 µs, p90
+1055.9–1984.5 µs and p99 2001.0–2422.1 µs. At `latency=10000us`, `delay=5000us`,
+`period=1ms`, the p50/p90 pair is 665.5/1055.9 µs, so the p90 is not uniformly 1.9 ms.
+The separate `idle_spin = 0` control reads 1009 / 981 / 1010 µs at the three latencies. Two facts, and
 neither is the one the issue was written on:
 
 - **The 15.6 ms tick is not what a 1 ms wait costs here.** `NtQueryTimerResolution` on this box,
@@ -2761,9 +2776,13 @@ at the select backend's microsecond. Windows compiles the same backend over wepo
 | `io-pass timer` (NOWAIT pass, one far timer) | 25.62 | 25.56 |
 | `io-pass pass` (NOWAIT pass, one quiet socket) | 27.62 | 27.70 |
 
-Every timer cell lands on the same 59–60 µs whatever `latency` and `delay` asked, with p90 65–73
-and the five repetitions within 1 µs of each other: the wait is honoured to the duration asked
-and the lateness that remains IS the 50 µs slack plus a pass. The socket wake, the polling cell,
+The six parked timer cells' medians of five p50s are 59.0–60.0 µs, but individual
+launch p50s span 59.0–63.6 µs and p90s span 63.6–73.9 µs. For `latency=1000us`,
+`delay=100us`, the five default-idle-spin p50s are 63.6, 59.5, 59.4, 59.2 and
+63.5 µs (range 4.4 µs); with `idle_spin=0`, they are 59.0, 59.0, 63.0, 59.0
+and 59.1 (range 4.0 µs). Thus neither every launch at 59–60 µs nor repeatability
+within 1 µs is supported. The median lateness is consistent with the 50 µs slack
+and pass overhead discussed here; these measurements do not isolate that decomposition. The socket wake, the polling cell,
 the spinning control and both NOWAIT passes do not move. What a qb server gets from it on Linux:
 a `setLatency` under a millisecond means what it says (a core parked at 100 µs re-checks every
 ~150 µs instead of every millisecond), and a keep-alive, a retry or a poll timer under a

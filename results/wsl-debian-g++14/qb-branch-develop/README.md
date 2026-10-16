@@ -1,4 +1,8 @@
-# qb `develop` `43f62afe` — the 3.2.0 candidate grid, WSL2 / Debian 13 / g++ 14.2
+# qb candidate cohorts — WSL2 / Debian 13 / g++ 14.2
+
+The opening account and its 32-cell table describe the historical 2026-09-07 midpoint at
+`43f62afe`. Later cohorts are indexed below. The repository README's eight-shape candidate
+table currently selects `grid-f2779605/`; the wave-A cohorts have their own section.
 
 The WSL2 half of the **3.2.0 candidate grid** (the Windows half is
 `../../desktop-win11-msvc19/qb-branch-develop/`): qb `develop` at **`43f62afe`** — 29
@@ -27,21 +31,27 @@ on a 9p mount would have been the measurement.
 | `grid-73018675-pass2/` | 00:52:40–00:55:42 | leg A2: the candidate again, 40 / 40 verified |
 | `../wave-a-form-sweep/` | 00:55:42–01:00:52 | leg D: the forms the wave-A adapters declare pending a quiet-host measurement (FAIRNESS.md §1.1) — `concdict` and `concsll` at `form=1` for qb (3.2.1) and CAF, `logmap`'s SObjectizer under `QVO_SO_GROUP_COOPS=1` at two cores — 18 side documents, all verified, never table cells |
 | `census-73018675-vs-3.2.1/` | 01:30:47–01:31:34 | leg E, a second quiet window after the Windows session (the two `fib` binaries built in between): 12 interleaved launches of 3 + 1 in AB/BA order, candidate against shipped 3.2.1, on fork-join-create, `fib` (the other creation shape, the cross-check), philosophers, concdict and logmap at four configurations and nqueens at two cores — 528 launches, 0 unverified, `census.log` per shape |
-| `grid-f2779605/` | 2026-09-13 01:33:58–01:34:08 | **the RELEASE CANDIDATE** as it ships, qb `develop` `f2779605` (`77b358d8` + the train's doc commits + QB-211's CMake; `src/` differs by comments only; `~/qvo/linux` rebuilt at it at 01:32:58, 0 warnings, 17 binaries relinked, 60 s of quiet), 32 / 32 verified — README.md's WSL2 `framework=qb` grid since; every cell inside the launch spread of `grid-77b358d8/` (§13.5). The Windows session ran first (03:19–03:32 local), this side idle. |
+| `grid-f2779605/` | 2026-09-13 01:33:58–01:34:08 | **the RELEASE CANDIDATE** as it ships, qb `develop` `f2779605` (`77b358d8` + the train's doc commits + QB-211's CMake; `src/` differs by comments only; `~/qvo/linux` rebuilt at it at 01:32:58, 0 warnings, 17 binaries relinked, 60 s of quiet), 32 / 32 verified — the repository README's selected WSL2 eight-shape candidate grid; the repeatability qualification below applies (§13.5). The Windows session ran first (03:19–03:32 local), this side idle. |
 | `grid-shipped-3.1.0-20260913/` | 01:34:08–01:42:01 | the same-session control, v3.1.0 through the same adapters (`~/qvo/shipped`, `$HOME` as the working directory for its fib log), 32 / 32 verified — no candidate cell is slower; agrees with `grid-shipped-3.1.0-final/` within the launch spread |
 | `../savina-*/` (the field itself) | 01:42:01–02:01:10 | **132 cells, every framework** (qb, CAF, CAF-detached, SObjectizer, floor), 9 + 2, 0 unverified, 2 `n/a` — the published field re-measured in the candidate's session, `results/wsl-debian-g++14/run.json` fresh, README.md's five WSL2 tables re-transcribed from it |
 | `census-f2779605-field/` | 02:01:10–02:02:28 | 12 interleaved launches of 3 + 1 on ping-pong and thread-ring, 2c-spin (qb / CAF / floor) and 2c-park (qb / CAF) — qb 155.9 under the floor's 182.9 on the ping-pong spin, 75.4 under 103.1 on the ring; §13.5's table |
-| `grid-77b358d8/` | 2026-09-09 14:19:38–14:19:48 | **the FINAL candidate**, qb `develop` `77b358d8` (66 commits over 3.1.0, 37 over `43f62afe`; `~/qvo/linux` rebuilt at it at 14:18:38 — qb-core, qb-io, ev and the eight adapters recompiled), 32 / 32 verified — README.md's WSL2 `framework=qb` grid since; `docs/TUNING.md` §13.4 reads it against the midpoint grid below and this session's control. The Windows half ran first (15:39–15:42 local), this side idle. |
+| `grid-77b358d8/` | 2026-09-09 14:19:38–14:19:48 | **the FINAL candidate**, qb `develop` `77b358d8` (66 commits over 3.1.0, 37 over `43f62afe`; `~/qvo/linux` rebuilt at it at 14:18:38 — qb-core, qb-io, ev and the eight adapters recompiled), 32 / 32 verified — the historical September 9 grid, superseded in the repository README by `grid-f2779605/`; `docs/TUNING.md` §13.4 reads it against the midpoint grid below and this session's control. The Windows half ran first (15:39–15:42 local), this side idle. |
 | `grid-shipped-3.1.0-final/` | 14:19:48–14:27:41 | the control of the final session, v3.1.0 through the same adapters (`~/qvo/shipped`, `$HOME` as the working directory for its fib log), 32 / 32 verified; agrees with `grid-shipped-3.1.0/` within the launch spread. |
-| `grid-77b358d8-pass2/` | 14:27:41–14:27:51 | the final candidate again, after the control — 32 / 32 verified, every cell within its pass-1 spread. |
-| `grid-43f62afe/` | 08:45:23–08:45:39 | **the candidate**, 32 cells, 32 / 32 verified — README.md's WSL2 `framework=qb` grid. |
+| `grid-77b358d8-pass2/` | 14:27:41–14:27:51 | the final candidate again, after the control — 32 / 32 verified; its five medians outside the pass-1 repetition range are bank-transaction 2c-park, big 1c-spin, fork-join 1c-spin, ping-pong 2c-park and thread-ring 2c-spin. This is a per-cell repeatability check, not universal agreement. |
+| `grid-43f62afe/` | 08:45:23–08:45:39 | **the historical September 7 midpoint**, 32 cells, 32 / 32 verified; the table below retains this cohort. |
 | `grid-shipped-3.1.0/` | 08:45:39–08:54:19 | **the control**, v3.1.0 through the same adapters, same session, 32 / 32 verified. |
 | `grid-43f62afe-pass2/` | 08:54:19–08:54:36 | the candidate again, after the control — the repeatability column below, 32 / 32 verified. |
 
-This is the grid that **joins the tables**: README.md's candidate grids for Windows and WSL2
-render `grid-43f62afe/`, and `docs/TUNING.md` §13 reads the two hosts side by side. Every
-earlier branch directory beside this one (`qb-branch-perf-*/`) is the A/B that produced one of
-the 29 commits and stays as its provenance.
+The table below retains `grid-43f62afe/`; it is not the repository README's current candidate
+selection. That selection is `grid-f2779605/` on both hosts. The earlier branch directories
+(`qb-branch-perf-*/`) retain the A/B evidence for their own commits and sessions.
+
+The WSL2 `f2779605` medians are not all inside the earlier `77b358d8` repetition ranges.
+For counting 1c-spin, the new median is 8.089844 ns/message, above the first passage's
+maximum 7.602843 and the second's 8.037149. Ping-pong 1c-park is the other exception when
+the two earlier passages are pooled: 22.320986 ns/round trip against an earlier minimum
+of 22.477948. These compare different sessions and do not establish a current regression
+or the cause of either difference.
 
 ## Shipped 3.1.0 against the candidate, same session (ns per unit, p50)
 

@@ -19,7 +19,10 @@ grid directories were overwritten by the second; its probe run (same numbers as 
 |---|---:|---:|---:|
 | push (ns/trip, median of 7, min–max) | 23.62 (23.43–24.13) | 23.17 (22.93–24.30) | −1.9 % |
 | ask (ns/trip, median of 7, min–max) | 45.16 (45.06–45.57) | 35.55 (35.47–35.70) | −21.3 % |
-| stream (ns/trip, median of 7, min–max) | 24.05 (23.83–24.26) | 24.36 (24.24–25.07) | +1.3 % |
+| stream (ns/chunk, median of 7, min–max) | 24.05 (23.83–24.26) | 24.36 (24.24–25.07) | +1.3 % |
+
+The stream row counts received chunks, with stream setup amortised over them; it does not
+measure one complete stream exchange. Push and ask remain round-trip units.
 
 The ask mechanics above a bare push/reply round trip: **21.5 ns → 12.4 ns (−43 %)**. `stream` (`ask_stream`,
 untouched) +1.3 % — code-layout noise of the probe binary; the real-harness anchors below are flat.
@@ -33,7 +36,11 @@ untouched) +1.3 % — code-layout noise of the probe binary; the real-harness an
 | bank-transaction 2c-spin | 82.3 (78.5–87.5, n=12) | 72.7 (68.0–74.0, n=12) | −11.7 % |
 | bank-transaction 2c-park | 83.5 (78.2–87.6, n=12) | 73.2 (66.8–79.9, n=12) | −12.3 % |
 
-Every bank distribution is disjoint (control min > candidate max). Anchors and the ask-free cells that moved more
+Three of the four bank launch-median ranges are disjoint (control minimum above candidate
+maximum). The 2c-park ranges overlap: candidate launch 3 is 79.85022 ns/transfer, above
+control launch 9 at 78.21706. Their central medians remain 83.53174 → 73.22939 ns/transfer.
+This is a range comparison of twelve launch medians per side, not a claim that every
+within-launch repetition distribution is separated. Anchors and the ask-free cells that moved more
 than 5 % in one grid pass, re-measured the same way (8 or 12 launches):
 
 | cell | control | candidate | Δ |

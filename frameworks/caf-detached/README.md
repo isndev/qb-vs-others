@@ -10,15 +10,15 @@ same behaviors, same checksum, same harness. The sources here are one-line wrapp
 CAF's work-stealing scheduler delivers a message sent **from a worker thread** by prepending the
 receiver to the **sender's own queue** (`work_stealing::worker::delay` → `queue.prepend`, reached
 from `scheduled_actor::enqueue`). The sender's worker then runs the receiver next, unless another
-worker steals it first — and on a two-actor ping-pong nothing else is ever runnable, so the
-receiver runs on the sender's thread every time. CAF's "2 cores" ping-pong is a **same-core
-hand-off**: no cache-line transfer, no wake-up, no cross-core anything. That is CAF's design —
-locality is the point of work stealing — and the plain `caf` row is the right idiomatic figure.
+worker steals it first. In CAF 1.1.0, another worker may take even that runnable receiver with
+`try_take_tail()` (`libcaf_core/caf/scheduler.cpp`, `work_stealing::worker::delay` and
+`work_stealing::worker::try_steal`). Local execution is favored, not guaranteed by the two-actor
+shape. No steal trace in these historical captures establishes how often a message crossed
+cores; the plain `caf` row remains the idiomatic pool measurement.
 
-But it is not the same measurement as a framework whose two actors sit on two pinned cores and
-pay a real cross-core hop per message. A reader comparing the `caf` row to the `qb` 2-core row
-would be comparing a one-core hand-off to a two-core one and reading the difference as
-architecture. `caf::detached` is CAF's own, documented way to give an actor a thread of its own
+That pool row therefore does not guarantee the per-message cross-core hop of two actors fixed
+to different cores. The detached variant makes that placement explicit without inferring the
+pooled run's actual topology from its timing. `caf::detached` is CAF's own, documented way to give an actor a thread of its own
 (`spawn_options.hpp`), which makes it the only public placement primitive CAF has; the adapter
 pins each `thread_owner::pool` thread on its own rotation over the harness CPU set, so the two
 actors land on two different cores.
@@ -56,24 +56,24 @@ cell. The published `caf-detached` 2c-park is therefore read as **"~1 µs or ~10
 
 ## Only ping-pong is mirrored, on purpose
 
-This directory's `savina/` holds one file. The other four Savina benchmarks (`counting`,
-`thread-ring`, `fork-join`, `big`) are **not** given a detached row, and the reason is the one the
+This directory's `savina/` holds one file. The other Savina shapes are **not** given a detached row, and the reason is the one the
 row exists for: `caf::detached` is CAF's placement primitive for *one actor that deserves a
 thread*, and the variant borrows it to make a two-actor exchange cross a core. On a hundred ring
 actors, sixty workers or a hundred and twenty all-to-all actors it would create that many OS
 threads over two CPUs, and the cell would measure the kernel's scheduler switching between them —
 a configuration CAF's own documentation steers away from and nobody would deploy. `counting` has
-only two actors, but its question (single-producer mailbox throughput) is answered by the pool row
-at `cores=2`: the producer never yields its worker while it streams, so the idle worker steals
-the counter and the mailbox between them is a real cross-thread queue for the whole window; the
-detached row would add nothing but a second number to explain. The plain `caf` row is the right idiomatic figure for all four, and the per-benchmark
+only two actors. Its published single-producer mailbox-throughput cell uses the pool at
+`cores=2`; the counter can be stolen by another worker, but this adapter does not record a
+placement census proving a cross-thread queue for the whole window. Omitting a detached
+counting row does not establish that detaching would have no effect. The plain `caf` row is the
+selected idiomatic configuration for those shapes, and the per-benchmark
 docs under `benchmarks/savina/` say what its scheduler does with the same two-CPU budget.
 
 ## What was tried before this and why it was not enough
 
 The first attempt at "CAF cross-core" was a spin profile on the pool
 (`caf.work-stealing.aggressive-poll-attempts` / `steal-interval`), swept in `docs/TUNING.md` §1.
-Every profile more aggressive than CAF's defaults was **slower**, because polling harder only makes
-the idle worker steal the receiver away from the sender's warm cache — CAF's fastest ping-pong is
-the one where nothing ever crosses a core. A knob cannot produce the cross-core cell; only a
-placement primitive can, and this variant is CAF's.
+The more aggressive profiles were **slower** in that recorded sweep. They change polling and
+steal opportunities, but the captures do not contain a steal count that establishes the cause.
+A scheduler profile does not guarantee cross-core placement; the detached variant supplies
+explicit placement through CAF's own API.

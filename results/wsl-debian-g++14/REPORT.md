@@ -13,7 +13,7 @@ Median, minimum, IQR and p99 are total durations per repetition; the per-unit co
 - pinned CPUs: `0,2`
 - repetitions: 9 (+2 warmup), one process per cell
 
-- toolchain: `GNU 14.2.0`, flags `-O3 -DNDEBUG` — identical for every framework
+- toolchain: `GNU 14.2.0`, configuration `Release`, flags `-O3 -DNDEBUG` (reported flags, scope unspecified)
 
 ## Versions under test
 

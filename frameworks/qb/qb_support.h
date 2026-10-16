@@ -107,13 +107,15 @@ inline std::vector<std::string> caveats() {
         "framework is measured with its placement mechanism switched off",
         "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap "
         "on a condition variable that is signalled on every enqueue",
-        "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release "
-        "build): whatever qb logs at INFO inside the window is part of the measured cost -- the "
-        "static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on "
-        "savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at "
-        "VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU "
-        "set. This is left ON deliberately: turning it off would improve qb's figure and no "
-        "other framework gets an equivalent subtraction"};
+#ifdef QB_WITH_LOGGING
+        "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the "
+        "workload window is included; the runtime log level is not inferred from the "
+        "build configuration"
+#else
+        "qb is compiled with QB_WITH_LOGGING disabled. This result records the "
+        "logging-disabled profile; compare profiles knowing this build choice"
+#endif
+    };
     if (const auto floor = idle_spin_override())
         c.emplace_back("QVO_QB_IDLE_SPIN_US=" + std::to_string(floor->count()) +
                        ": the parked-mode idle-spin floor was OVERRIDDEN from qb's default. This "

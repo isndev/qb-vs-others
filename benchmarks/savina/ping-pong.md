@@ -56,10 +56,11 @@ rather than presented as a tuning win.
 Each round trip carries a sequence number counting down from `messages - 1` to 0. The ping actor
 accumulates `mix(seq)` on every reply, as a **wrapping sum**.
 
-A sum rather than an XOR, deliberately: XOR is self-cancelling, so a message delivered twice would
-leave the checksum unchanged. A sum is sensitive to drops *and* duplicates while staying
-insensitive to arrival order, which is the property the fan-in benchmarks in this suite will need
-from the same reduction.
+The reduction is a wrapping sum. Adding one extra occurrence of a nonzero `mix(seq)` changes
+both a sum and an XOR; adding two extra identical occurrences cancels in XOR. The duplicate
+control adds one extra occurrence, so it does not by itself distinguish SUM from XOR, and its
+independent message count also changes. The sum retains order-independent aggregation without
+XOR's even-parity cancellation; the message count remains a separate oracle.
 
 The expected value is computed by plain arithmetic in
 `benchmarks/specs/qvospec/savina/ping-pong.h`, with no framework linked, and

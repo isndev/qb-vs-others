@@ -36,8 +36,8 @@ set(CMAKE_POLICY_DEFAULT_CMP0079 NEW)
 # The single optimization contract
 # -------------------------------------------------------------------------------------------
 #
-# Recorded verbatim into every result file as `env.cxx_flags`, so a reader never has to trust
-# this comment.
+# The selected configuration's common flags are recorded in `env.cxx_flags`. Target-specific
+# options remain separate; the result records this scope explicitly.
 #
 if(MSVC)
     # /Ob2 is forced rather than inherited: MSVC's RelWithDebInfo and MinSizeRel defaults carry
@@ -93,11 +93,17 @@ include(cmake/qvoBenchmark.cmake)
 add_library(qvo-harness STATIC harness/src/harness.cpp)
 target_include_directories(qvo-harness PUBLIC harness/include benchmarks/specs)
 
-target_compile_definitions(qvo-harness PRIVATE
-    QVO_COMPILER="${CMAKE_CXX_COMPILER_ID}"
-    QVO_COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}"
-    QVO_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
-    QVO_CXX_FLAGS="${QVO_OPT_FLAGS}")
+# Each configuration receives its own literal header; generated after all framework declarations.
+# This changes metadata only, never the optimization/debug flags above or framework target options.
+target_include_directories(qvo-harness PRIVATE
+    "${CMAKE_CURRENT_BINARY_DIR}/qvo-build-metadata/$<CONFIG>")
+
+# Independent of the timing harness and qb: parser controls do not create an actor engine.
+add_library(qvo-probe-memory STATIC EXCLUDE_FROM_ALL harness/src/process-memory.cpp)
+target_include_directories(qvo-probe-memory PUBLIC harness/include)
+if(WIN32)
+    target_link_libraries(qvo-probe-memory PUBLIC psapi)
+endif()
 
 if(NOT MSVC)
     find_package(Threads REQUIRED)
@@ -128,7 +134,7 @@ endforeach()
 # in their own shape's verifier (Huly QB-246, QB-247).
 option(QVO_BUILD_CONTROLS "Build the negative-control subjects" ON)
 if(QVO_BUILD_CONTROLS)
-    foreach(_subject control-subject thread-ring-subject radixsort-subject filterbank-subject
+    foreach(_subject control-subject metadata-subject thread-ring-subject radixsort-subject filterbank-subject
                      sieve-subject trapezoid-subject piprecision-subject recmatmul-subject
                      quicksort-subject bitonicsort-subject apsp-subject sor-subject
                      uct-subject facloc-subject mesh-dispatch-subject)
@@ -138,6 +144,22 @@ if(QVO_BUILD_CONTROLS)
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
             FOLDER "controls")
     endforeach()
+
+    add_executable(qvoctl-process-memory tools/control/process-memory-subject.cpp)
+    target_link_libraries(qvoctl-process-memory PRIVATE qvo-probe-memory)
+    set_target_properties(qvoctl-process-memory PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "controls")
+
+    if("qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
+        add_executable(qvoctl-qb-caveats tools/control/qb-caveats-subject.cpp)
+        target_link_libraries(qvoctl-qb-caveats PRIVATE qvo-harness qb::core)
+        target_compile_definitions(qvoctl-qb-caveats PRIVATE
+            QVO_FRAMEWORK_VERSION="${QVO_QB_VERSION}")
+        set_target_properties(qvoctl-qb-caveats PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+            FOLDER "controls")
+    endif()
 
     add_executable(qvoctl-mesh-dispatch-reentrant tools/control/mesh-dispatch-subject.cpp)
     target_link_libraries(qvoctl-mesh-dispatch-reentrant PRIVATE qvo-harness)
@@ -250,7 +272,7 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     # (the per-producer mailbox rings, value-initialised at start) and what the first traffic on
     # every pipe adds (one 256 KB segment per pipe used) -- the two quadratic terms, separated.
     add_executable(qvoprobe-pipe-footprint tools/probes/pipe-footprint.cpp)
-    target_link_libraries(qvoprobe-pipe-footprint PRIVATE qb::core)
+    target_link_libraries(qvoprobe-pipe-footprint PRIVATE qb::core qvo-probe-memory)
     set_target_properties(qvoprobe-pipe-footprint PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "probes")
@@ -266,5 +288,48 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "probes")
 endif()
+
+
+# Capture the final directory-wide flags once configuration has declared every dependency.
+# Literal headers avoid command-line quoting and keep multi-config metadata tied to the binary.
+function(_qvo_cxx_string output value)
+    string(REPLACE "\\" "\\\\" value "${value}")
+    string(REPLACE "\"" "\\\"" value "${value}")
+    string(REPLACE "\n" "\\n" value "${value}")
+    string(REPLACE "\r" "\\r" value "${value}")
+    string(REPLACE "\t" "\\t" value "${value}")
+    set(${output} "\"${value}\"" PARENT_SCOPE)
+endfunction()
+
+set(_qvo_metadata_configs "${CMAKE_CONFIGURATION_TYPES}")
+if(NOT _qvo_metadata_configs)
+    set(_qvo_metadata_configs "${CMAKE_BUILD_TYPE}")
+endif()
+foreach(_config IN LISTS _qvo_metadata_configs)
+    string(TOUPPER "${_config}" _config_upper)
+    set(_flags "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_config_upper}}")
+    string(STRIP "${_flags}" _flags)
+    _qvo_cxx_string(_compiler "${CMAKE_CXX_COMPILER_ID}")
+    _qvo_cxx_string(_compiler_version "${CMAKE_CXX_COMPILER_VERSION}")
+    _qvo_cxx_string(_build_type "${_config}")
+    _qvo_cxx_string(_cxx_flags "${_flags}")
+    set(_dir "${CMAKE_CURRENT_BINARY_DIR}/qvo-build-metadata/${_config}/qvo")
+    file(MAKE_DIRECTORY "${_dir}")
+    string(CONCAT _header
+        "#ifndef QVO_BUILD_INFO_H\n#define QVO_BUILD_INFO_H\n"
+        "#define QVO_COMPILER ${_compiler}\n"
+        "#define QVO_COMPILER_VERSION ${_compiler_version}\n"
+        "#define QVO_BUILD_TYPE ${_build_type}\n"
+        "#define QVO_CXX_FLAGS ${_cxx_flags}\n"
+        "#define QVO_CXX_FLAGS_SCOPE \"directory-global-and-config\"\n"
+        "#endif\n")
+    set(_previous "")
+    if(EXISTS "${_dir}/build-info.h")
+        file(READ "${_dir}/build-info.h" _previous)
+    endif()
+    if(NOT "${_previous}" STREQUAL "${_header}")
+        file(WRITE "${_dir}/build-info.h" "${_header}")
+    endif()
+endforeach()
 
 qvo_report_configuration()

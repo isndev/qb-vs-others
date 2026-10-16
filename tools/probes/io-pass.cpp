@@ -32,7 +32,8 @@
 //   `frames` ignores `seconds` and `gap_us`.
 //
 // Prints one line: mode, counts, ns per pass (pass mode) or the latency percentiles (wake mode).
-// In `wake`, `bytes=` is the number of 8-byte timestamps received (the field's historical name).
+// In `wake`, `records=` is the number of complete 8-byte timestamps received; partial
+// trailing bytes are not counted as records. Historical logs used the label `bytes=`.
 
 #include <qb/actor.h>
 #include <qb/io/async.h>
@@ -82,7 +83,7 @@ class Holder : public qb::Actor, public qb::ICallback {
     const bool           _pass_mode;
     const bool           _frames_mode;
     std::uint64_t        _passes = 0;
-    std::uint64_t        _bytes  = 0; ///< 8-byte records received (timestamps in `wake`)
+    std::uint64_t        _records  = 0; ///< 8-byte records received (timestamps in `wake`)
     std::uint64_t        _out_of_sequence = 0;
     char                 _carry[8]{}; ///< the 1..7 bytes of a record a read ended inside
     std::size_t          _carry_n = 0;
@@ -153,11 +154,11 @@ public:
             std::uint64_t value = 0;
             std::memcpy(&value, buf + off, 8);
             if (_frames_mode) {
-                if (value != _bytes)
+                if (value != _records)
                     ++_out_of_sequence;
             } else if (_lat.size() < _lat.capacity())
                 _lat.push_back(now - value);
-            ++_bytes;
+            ++_records;
         }
         _carry_n = have - off;
         std::memcpy(_carry, buf + off, _carry_n);
@@ -174,9 +175,9 @@ private:
     finish() {
         const auto elapsed = elapsed_ns();
         if (_frames_mode) {
-            const bool ok = _bytes == kFrameRecords && _out_of_sequence == 0 && _carry_n == 0;
+            const bool ok = _records == kFrameRecords && _out_of_sequence == 0 && _carry_n == 0;
             std::printf("frames records=%llu expected=%llu out_of_sequence=%llu leftover_bytes=%zu %s\n",
-                        static_cast<unsigned long long>(_bytes), static_cast<unsigned long long>(kFrameRecords),
+                        static_cast<unsigned long long>(_records), static_cast<unsigned long long>(kFrameRecords),
                         static_cast<unsigned long long>(_out_of_sequence), _carry_n, ok ? "OK" : "MISMATCH");
             g_frames_ok.store(ok);
         } else if (_pass_mode) {
@@ -185,8 +186,8 @@ private:
         } else {
             std::sort(_lat.begin(), _lat.end());
             const auto pct = [&](double p) { return _lat.empty() ? 0ull : static_cast<unsigned long long>(_lat[std::min(_lat.size() - 1, static_cast<std::size_t>(p * static_cast<double>(_lat.size())))]); };
-            std::printf("wake bytes=%llu passes=%llu elapsed_ns=%llu ns_per_pass=%.2f wake_p50_ns=%llu wake_p99_ns=%llu wake_max_ns=%llu\n",
-                        static_cast<unsigned long long>(_bytes), static_cast<unsigned long long>(_passes), static_cast<unsigned long long>(elapsed),
+            std::printf("wake records=%llu passes=%llu elapsed_ns=%llu ns_per_pass=%.2f wake_p50_ns=%llu wake_p99_ns=%llu wake_max_ns=%llu\n",
+                        static_cast<unsigned long long>(_records), static_cast<unsigned long long>(_passes), static_cast<unsigned long long>(elapsed),
                         static_cast<double>(elapsed) / static_cast<double>(_passes), pct(0.5), pct(0.99), _lat.empty() ? 0ull : static_cast<unsigned long long>(_lat.back()));
         }
         std::fflush(stdout);

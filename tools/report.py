@@ -315,19 +315,26 @@ def render(results: Path, out_path: Path | None = None) -> str:
                 e = d.get("env", {})
                 if not e.get("compiler"):
                     continue  # A runner-authored failure has no measured binary/toolchain.
-                key = (e.get("compiler"), e.get("compiler_version"), e.get("cxx_flags"))
+                key = (e.get("compiler"), e.get("compiler_version"), e.get("build_type", "unknown"),
+                       e.get("cxx_flags"), e.get("cxx_flags_scope", "unspecified"))
                 env_seen.setdefault(key, set()).add(d.get("framework"))
+
+    def environment_label(key):
+        comp, ver, config, flags, scope = key
+        meaning = ("directory-global and configuration flags; target options may differ"
+                   if scope == "directory-global-and-config" else "reported flags, scope unspecified")
+        return f"`{comp} {ver}`, configuration `{config}`, flags `{flags}` ({meaning})"
+
     if len(env_seen) > 1:
-        out.append("> **WARNING — the field was not built by one toolchain.** The frameworks below "
-                   "were compiled by more than one compiler build, so part of any difference "
-                   "shown may be the compiler rather than the framework. Rebuild everything in "
-                   "one pass before quoting these figures.\n")
-        for (comp, ver, flags), fws in env_seen.items():
-            out.append(f"> - `{comp} {ver}` `{flags}` -> {', '.join(sorted(fws))}")
+        out.append("> **WARNING — the field records different build environments.** Compiler, "
+                   "configuration or reported flags differ. Account for these build choices "
+                   "before attributing a difference to a framework.\n")
+        for key, fws in env_seen.items():
+            out.append(f"> - {environment_label(key)} -> {', '.join(sorted(fws))}")
         out.append("")
     elif env_seen:
-        (comp, ver, flags), _ = next(iter(env_seen.items()))
-        out.append(f"- toolchain: `{comp} {ver}`, flags `{flags}` — identical for every framework\n")
+        key, _ = next(iter(env_seen.items()))
+        out.append(f"- toolchain: {environment_label(key)}\n")
 
     # Every version every document recorded, counted -- never one per framework: a directory can
     # hold two builds of one framework, and the rows below name each cell's own.

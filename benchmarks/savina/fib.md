@@ -95,9 +95,16 @@ the root receives the second response are released after the window closes. Here
 coops per repetition. The cell's caveats say so; how much of SObjectizer's figure it accounts for
 is not measured.
 
-## What the shipped qb cell measures, and why it is a logging figure
+## The historical shipped 3.1.0 cohort and its logging cost
 
-The published `savina-fib/` documents render **qb 3.1.0** at 159 / 205 ms per repetition on
+This paragraph records the original 2026-09-06 cohort described in the
+[Windows](../../results/desktop-win11-msvc19/qb-branch-perf-dense-table-growth/README.md) and
+[WSL2](../../results/wsl-debian-g++14/qb-branch-perf-dense-table-growth/README.md) campaign notes.
+The direct `results/<host>/savina-fib/` directories now select the 2026-09-13 `f2779605`
+candidate field on Windows/WSL2, not the figures below. Its `framework_version=3.1.0` is the
+candidate's last tag, not an identification of the shipped binary.
+
+The historical shipped **qb 3.1.0** cohort recorded 159 / 205 ms per repetition on
 WSL2 g++-14 and 459 / 558 ms on Windows MSVC (2c-spin / 1c-spin), against CAF's 39 / 69 and
 53 / 85. That is not the actor registry. At its shipped default `QB_WITH_LOGGING=ON`, a release
 build logs at INFO, and 3.1.0 logs **9 lines per actor lifetime** — `registerEvent` × 7 (the
@@ -109,12 +116,12 @@ CPU set. The 3.2 line (`5665b6f8` on `perf/dense-table-growth`) logs those lines
 its fib cell in the same session is 7.6 / 11.9 ms (WSL2) and 10.5 / 17.2 ms (Windows) —
 `results/<host>/qb-branch-perf-dense-table-growth/`.
 
-The figure is kept and published as measured because it is what a 3.1.0 built at its defaults
+The historical figure remains recorded because it is what a 3.1.0 built at its defaults
 does, which is the only qb a user of 3.1.0 has. Two things follow. The generic caveat every qb
 document carried until 2026-09-06 — "its logger writes at startup, outside the measured window"
-— was written for the five static shapes and is false here; the sixteen shipped documents keep
-that sentence as their provenance and `frameworks/qb/qb_support.h` says the true thing for every
-run after. And a 3.1.0 fib driven from a 9p mount (WSL2's `/mnt/<drive>`) takes minutes to EXIT
+— was written for the five static shapes and is false for this original cohort. Read the
+historical metadata with those campaign notes; the direct result directories have since been
+replaced by the candidate field, and later caveat wording does not revise an earlier capture. And a 3.1.0 fib driven from a 9p mount (WSL2's `/mnt/<drive>`) takes minutes to EXIT
 per repetition, draining that log line by line through `p9_client_rpc` — the shipped WSL2 cells
 were driven from an ext4 cwd (`/tmp/qvo-cwd`) for that reason, and the delay is a 3.1.0
 characteristic, not a runtime hang (gdb: `main` in `exit()` → `~NanoLogger` → `thread::join`).

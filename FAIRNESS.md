@@ -118,7 +118,11 @@ policy. The `chameneos` floor needs no such separation: all creatures belong to 
 | Allocator | System allocator for all targets. A framework bundling its own is flagged in the result file, never silently allowed |
 | CPU set | Identical affinity mask, applied by the harness before the framework starts |
 | Warmup, timing, repetition | Shared harness code, framework-agnostic, one implementation |
-| Process isolation | One process per (framework × benchmark × repetition). No two frameworks share a process |
+| Process isolation | One process per (framework × benchmark × configuration), with warmup and measured repetitions inside that process. No two frameworks share a process |
+
+The repetitions of a cell share process state and allocator history, even when its body rebuilds
+framework objects. A launch census starts a new process for each launch and reports that
+between-launch dispersion separately from repetitions within a process.
 
 Anything that *cannot* be held equal is recorded as a machine-readable **caveat** in the result
 JSON and rendered into the report next to the number it affects — not as prose a reader may miss.

@@ -13,7 +13,7 @@ Median, minimum, IQR and p99 are total durations per repetition; the per-unit co
 - pinned CPUs: `unpinned`
 - repetitions: 9 (+2 warmup), one process per cell
 
-- toolchain: `AppleClang 21.0.0.21000101`, flags `-O3 -DNDEBUG` — identical for every framework
+- toolchain: `AppleClang 21.0.0.21000101`, configuration `Release`, flags `-O3 -DNDEBUG` (reported flags, scope unspecified)
 
 ## Versions under test
 

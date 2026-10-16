@@ -13,8 +13,8 @@
 //                 under load wins any wall-clock benchmark, and this is the shape the checksum
 //                 exists to catch. Chosen to be rarer than anything a spot check would notice.
 //   drop-one      loses exactly one message in the whole run.
-//   duplicate     delivers one message twice. This is why the reduction is a wrapping SUM and not
-//                 an XOR -- an XOR would be unchanged by a duplicate and this control would MISS.
+//   duplicate     delivers one message twice. One extra nonzero occurrence changes both SUM and
+//                 XOR; the independent message count changes too. Two extra copies cancel in XOR.
 //   wrong-answer  returns a plausible but incorrect checksum.
 //   short-count   right checksum, wrong message count. Catches a framework reaching the correct
 //                 answer by doing a different amount of work.

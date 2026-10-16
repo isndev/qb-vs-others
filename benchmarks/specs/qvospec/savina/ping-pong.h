@@ -54,11 +54,10 @@ inline std::map<std::string, long long> params() {
 
 // The accumulator is a WRAPPING SUM of mix(seq), not an XOR.
 //
-// That is deliberate, and it is the difference between a checksum that catches a defect and one
-// that does not: XOR is self-cancelling, so a message delivered twice leaves it unchanged. A sum
-// is sensitive to drops AND to duplicates, while staying insensitive to arrival ORDER -- which
-// matters because the fan-in benchmarks in this suite have no deterministic order and must use
-// the same reduction as the sequential ones.
+// One extra occurrence of a nonzero mix(seq) changes both SUM and XOR. Two extra identical
+// occurrences cancel in XOR. The duplicate control adds one occurrence and also changes the
+// independent message count; that control alone does not distinguish the two reductions.
+// The wrapping sum avoids XOR's even-parity cancellation while remaining order-independent.
 inline std::uint64_t expected(const qvo::Params &p) {
     const long long n   = p.get("messages");
     std::uint64_t   acc = 0;
