@@ -35,10 +35,10 @@ argument it exists to win:
 |---|---|
 | Harness, verification, pinning, reporting | Last complete **base** negative-control census: 28 CAUGHT / 11 CONFIRMED / **0 MISSED** (WSL2 g++-14 and Windows MSVC, 2026-10-12). The merged B/C battery passed on macOS arm64 (CLT 21, 2026-10-13): **151 CAUGHT / 43 CONFIRMED / 0 MISSED**, 194 unique executed controls; floors derived from that export. Windows/WSL merged validation remains pending. The battery preserves A–K and adds L–W, actual APSP/SOR qb/floor plants and functional Mesh controls for both owner workers. `--census-out` records executed case identities. See [FAIRNESS.md](FAIRNESS.md). |
 | `savina/ping-pong`, `counting`, `thread-ring`, `fork-join`, `big` × qb, CAF, SObjectizer, floor (+ CAF-detached on ping-pong) | **done**, 84 cells per host: 82 verified + 2 declared `n/a` (a `caf::detached` actor has no spin mode) — first with shipped 3.1.0 (2026-09-04), **re-measured whole on 2026-09-13 with the 3.2.0 candidate `f2779605` in the candidate's own session** (every framework, 9 + 2, both hosts), which is what the tables below show |
-| The document guards (`tools/check-roster.py`, `tools/check-report.py`) | **done**, and negative-controlled: 34 CAUGHT / 3 CONFIRMED / **0 MISSED** (`tools/guards-negative-control.py`, re-measured on macOS arm64 on 2026-10-14, run on every push by `guards.yml`). Roster controls use filename-only sandbox fixtures, without timings; real historical results remain incomplete against the current roster. This control census does not establish complete benchmark results. |
+| Document and build-provenance guards (`tools/check-roster.py`, `tools/check-report.py`, `tools/check-build-provenance.py`) | **done**, and negative-controlled: 43 CAUGHT / 5 CONFIRMED / **0 MISSED** (`tools/guards-negative-control.py`, measured on macOS arm64 on 2026-10-17, run by `guards.yml`). Roster and build-provenance controls use explicit sandbox fixtures without timings or compilation; real historical results remain incomplete against the current roster. This control census does not establish complete benchmark results or a native compiler validation. |
 | Feature comparison, cited to the three sources | [docs/FEATURES.md](docs/FEATURES.md) |
-| `savina/fib`, `savina/chameneos` × the same four (+ CAF-detached declared omitted) | **done on Windows and WSL2**: 16 cells each per host, shipped qb 3.1.0 like the five before them (`results/<host>/savina-fib/`, `savina-chameneos/`, rendered in each host's `REPORT.md`), **116 cells per host**; on macOS and on the arm64 Linux guest since 2026-09-19, with the candidate as the qb column. Written against the qb branch they produced (`results/<host>/qb-branch-perf-dense-table-growth/`): fib found a 43 s defect in unreleased `develop` and drove three qb commits, and its shipped-3.1.0 cell is a LOGGING figure — nine `LOG_INFO` lines per actor lifetime, 515 819 lines per repetition, 159 / 459 ms (WSL2 / Windows, 2c-spin) against the branch's 7.6 / 10.5 in the same session, CAF 39 / 53, floor 3.4 / 4.0 (`docs/TUNING.md` §11) |
-| `savina/bank-transaction` × the same four (+ CAF-detached declared omitted) | **done on Windows and WSL2** (2026-09-07): 16 cells per host, shipped qb 3.1.0 (`results/<host>/savina-bank-transaction/`, rendered in each host's `REPORT.md`), **132 cells per host**; on macOS and on the arm64 Linux guest since 2026-09-19, with the candidate as the qb column. The first shape that WAITS for a reply — one `qb::ask` / CAF `request().then()` per transfer, 50 000 of them — and it found five defects on qb's ask path in one afternoon (`docs/TUNING.md` §12, qb `fa1c5ce3`): shipped 3.1.0 measures 14.7 / 9.2 ms (WSL2, 1c / 2c spin) and 25.5 / 29.2 (Windows), qb `develop` before the fixes 9.4 / 5.1 and 13.7 / 8.0, after them **8.1 / 4.6** and **12.9 / 7.6** in the same session (`results/<host>/qb-branch-perf-coro-scope-local-refcount/`), against CAF 41.5 / 36.6 and 57.8 / 57.5, SObjectizer 19.5 / 25.5 and 29.6 / 38.0, floor 1.1 / 6.3 and 3.5 / 32.2 |
+| `savina/fib`, `savina/chameneos` × the same four (+ CAF-detached declared omitted) | **initially measured on Windows and WSL2 with shipped qb 3.1.0**: 16 cells each per host; the direct `results/<host>/savina-fib/` and `savina-chameneos/` directories now hold the `f2779605` candidate field re-measured on 2026-09-13 (the original addition brought the field to **116 cells per host**); on macOS and on the arm64 Linux guest since 2026-09-19, with the candidate as the qb column. Written against the qb branch they produced (`results/<host>/qb-branch-perf-dense-table-growth/`): fib found a 43 s defect in unreleased `develop` and drove three qb commits, and its shipped-3.1.0 cell is a LOGGING figure — nine `LOG_INFO` lines per actor lifetime, 515 819 lines per repetition, 159 / 459 ms (WSL2 / Windows, 2c-spin) against the branch's 7.6 / 10.5 in the same session, CAF 39 / 53, floor 3.4 / 4.0 (`docs/TUNING.md` §11) |
+| `savina/bank-transaction` × the same four (+ CAF-detached declared omitted) | **initially measured on Windows and WSL2 with shipped qb 3.1.0** (2026-09-07): 16 cells per host; the direct `results/<host>/savina-bank-transaction/` directories now hold the `f2779605` candidate field re-measured on 2026-09-13 (the original addition brought the field to **132 cells per host**); on macOS and on the arm64 Linux guest since 2026-09-19, with the candidate as the qb column. The first shape that WAITS for a reply — one `qb::ask` / CAF `request().then()` per transfer, 50 000 of them — and it found five defects on qb's ask path in one afternoon (`docs/TUNING.md` §12, qb `fa1c5ce3`): shipped 3.1.0 measures 14.7 / 9.2 ms (WSL2, 1c / 2c spin) and 25.5 / 29.2 (Windows), qb `develop` before the fixes 9.4 / 5.1 and 13.7 / 8.0, after them **8.1 / 4.6** and **12.9 / 7.6** in the same session (`results/<host>/qb-branch-perf-coro-scope-local-refcount/`), against CAF 41.5 / 36.6 and 57.8 / 57.5, SObjectizer 19.5 / 25.5 and 29.6 / 38.0, floor 1.1 / 6.3 and 3.5 / 32.2 |
 | **The 3.2.0 candidate grid** — qb `develop` × all eight shapes | **done on Windows and WSL2, twice**: at the midpoint (`43f62afe`, 2026-09-07) and at the final commit (**`77b358d8`**, 2026-09-09) — 96 qb cells per host each time (candidate / shipped 3.1.0 / candidate, 9 + 2, one quiet session per host, `results/<host>/qb-branch-develop/`), the fastest framework in all 64 cells both times, every WSL2 cell faster at the end than at the midpoint (ping-pong 1c 66 → 23 ns, ring 1c 39 → 17), the Windows two-core cells level-or-better under the interleaved census; the two `framework=qb` grids below, `docs/TUNING.md` §13 and §13.4. — and **a third time on 2026-09-13**, at the release candidate **`f2779605`**, with the WHOLE field in the same session (`grid-f2779605/`, `grid-shipped-3.1.0-20260913/`, `census-f2779605-field/`; point 7 and §13.5): fastest in all 64 cells, no cell slower than 3.1.0, at or under the raw-thread floor on the two-core census cells — and **a fourth time on 2026-09-19, on the two arm64 hosts**, at **`174e515a`**: `f2779605` plus the four changes that landed after it (the actor arena QB-212, `pin_frame_copy` QB-213, the frame-free `qb::ask` QB-214, `qb::growable_ring` QB-215), against shipped 3.1.0 AND against `f2779605` in one session per host, the whole field beside them (`results/macbook-m4pro-macos-clang21/qb-branch-develop/`, `results/utm-debian13-arm64-g++14/qb-branch-develop/`; §13.9): fastest in all 64 cells again, no cell slower than 3.1.0, fib −22 % and bank-transaction −18 % against `f2779605` on macOS — and two small cells the arena costs, attributed there |
 | **Savina wave A** — `savina/fork-join-create`, `nqueens`, `a-star`, `philosophers`, `barber`, `bndbuffer`, `cigsmok`, `concdict`, `concsll`, `logmap` × qb, CAF, SObjectizer, floor (CAF-detached declared omitted) | **done on Windows and WSL2** (2026-10-11): 160 cells per host, one quiet session per host, **shipped qb 3.2.1** as the qb column (`results/<host>/savina-<shape>/`, rendered in each host's `REPORT.md`, the tables below), **292 cells per host**; the 3.3.0 candidate `73018675` beside it in the same session (`results/<host>/qb-branch-develop/grid-73018675/`) and a 528-launch census per host: level on every cell but fork-join-create at one core on WSL2 (+19 to +25 %), traced to qb's arena and fixed, the fix level with 3.2.1 in a second session (`results/<host>/qb-branch-perf-fjcreate-regression/`). Not yet on macOS or the arm64 guest. `docs/TUNING.md` §21 |
 | Savina waves B and C — eight pipeline/data-parallel shapes and four graph/grid/tree shapes | **Source integrated**: the roster contains 30 specifications, 30 pages and 30 adapters for each of qb, CAF, SObjectizer and the floor. Combined native correctness, controls, sanitizers and the B/C measurement campaign remain pending; source coverage is not a claim of validated or published coverage. [docs/ROADMAP.md](docs/ROADMAP.md) records the outstanding proof. |
@@ -245,13 +245,13 @@ Seven things in those tables are worth more than the ranking:
    fork-join, big and chameneos at two cores is 0.13–0.73× a floor that crosses it per message,
    on the ring 0.72–0.88× where the floor spins (0.01× where it sleeps), bank-transaction
    0.64–1.20× — which the report says out loud instead of printing as a ratio.
-5. **The widest margins are on the funnel and the all-to-all, and they are qb's dispatch, not
-   its scheduler.** On `big`, every one of 120 actors sends to a random peer, so every message is
-   a hash lookup and a type-erased dispatch in every framework; qb's 17–24 ns per round trip
-   against CAF's 305–479 and SObjectizer's 183–423 is the cost of `EventBucket` relocation plus
-   one dense-table lookup against a mailbox enqueue, a work-item allocation and a
-   `std::function`-shaped handler call. The margin is the same on both compilers (WSL2: 18 ns
-   vs 247–291 vs 133–278).
+5. **The widest recorded margins are on the funnel and the all-to-all.** On `big`, every one
+   of 120 actors sends to a random peer. The qb path uses
+   dense `EventId` and `ActorId` lookups (`router::key_table`); its hash fallback is for other key
+   types, not an operation performed by every message in this adapter. The recorded figures
+   are 17–24 ns per round trip for qb, 305–479 for CAF and 183–423 for SObjectizer on Windows
+   (WSL2: 18 ns vs 247–291 vs 133–278). These campaign results compare the complete adapters;
+   they do not isolate a hash lookup or any other single dispatch operation.
 6. **The narrowest margin was the ring, and it named qb's own cost.** thread-ring is one hop
    per message with nothing to batch; qb 3.1.0's 63 ns per hop on one core was only 1.13×
    (WSL2) to 1.45× (Windows) faster than SObjectizer and 7–22× the floor. The candidate's
@@ -626,7 +626,7 @@ What the ten say, read with their sub-rows:
 ## Running it
 
 ```sh
-# Linux / macOS
+# Linux (verified CPU pinning)
 git clone https://github.com/isndev/qb-vs-others.git && cd qb-vs-others
 git clone --depth 1 https://github.com/isndev/qb.git ../qb        # or any qb source tree: -DQVO_QB_DIR
 cmake -S . -B build/final -G Ninja -DCMAKE_BUILD_TYPE=Release -DQVO_QB_DIR=../qb \
@@ -647,8 +647,18 @@ python tools/run.py --build build/final --out results/<host-id> --repetitions 9 
 python tools/report.py --results results/<host-id> > REPORT.md
 ```
 
-`--cpus` is not optional in spirit. On a hybrid CPU an unpinned run is not a measurement, and the
-harness **aborts** rather than report a number when a requested pin cannot be read back.
+On macOS, use the same configure and build commands, then explicitly opt out of unsupported
+CPU pinning:
+
+```sh
+python3 tools/run.py --build build/final --out results/<macos-host-id> --repetitions 9 --no-pin
+python3 tools/report.py --results results/<macos-host-id> > REPORT.md
+```
+
+These macOS results are **unpinned diagnostics**, recorded with `pinned:false` and a caveat;
+they are not a pinned comparison. Use the launch census when reading their two-core spread.
+On Linux and Windows, choose and verify the CPU set. The harness **refuses** a requested pin
+that cannot be read back; `--no-pin` never silently substitutes for it.
 
 Three things about a run worth knowing before reading its output:
 
@@ -715,3 +725,26 @@ The `host` field of every result document and the machine names in the reports a
 Apple M4 Pro, `trixie` the arm64 Debian guest); the captured build logs read `/home/qvo/`. The
 machines themselves are described, with their firmware, OS and compiler versions, at the top of
 each `results/<host-id>/README.md` — a pseudonym hides a hostname, never a fact a reader needs.
+
+## Checking a result’s build provenance
+
+Use the configuration actually selected at build time. This check reads existing files only; it
+neither builds a target nor starts a measured process:
+
+```sh
+python3 tools/check-build-provenance.py --result /path/to/result.json \
+  --compile-commands /path/to/build/compile_commands.json --config Debug
+```
+
+The cache beside `compile_commands.json` supplies the directory-global and configuration flags;
+`--cache` can name it explicitly. The checker compares the result’s configuration and common
+flags with that cache and the real command for `harness/src/harness.cpp`. Target-specific options
+are outside the reported common-flag scope. For Ninja Multi-Config, check Debug and Release
+results separately against the corresponding configuration. Windows command-line validation
+runs natively on Windows, including when compile commands use `arguments` arrays.
+
+`qvoctl-metadata-subject` is a synthetic consumer of the actual harness, with no actor framework.
+Its emitted timings are not performance evidence. It can produce the ordinary result and the
+unavailable-result path (`--param unavailable=1`) to verify that both record the same build.
+
+The lightweight Python document guards do not invoke this build-dependent check automatically.

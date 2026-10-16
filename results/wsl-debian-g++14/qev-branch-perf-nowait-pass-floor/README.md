@@ -44,10 +44,12 @@ bookkeeping — the target of the roadmap's next step, the embedder's reading ha
 | push | 24.3 | 24.3 | level |
 | `pass-cost` k = 1 (ns per pass, no watcher) | 12.7 | 12.8 | level |
 
-A timed ask runs three NOWAIT passes per round trip; three × 30 ns is what came off. The
-remaining ~68 ns over the untimed ask are the three passes' clock reads and bookkeeping
-(3 × 22) plus the timer arm and disarm — the cost the roadmap's deadline list (QB-189) is
-designed to remove entirely.
+The two measured deltas are distinct: the timed ask falls by **58.7 ns/round trip**
+(173.6 → 114.9), while the timers-only pass falls by **29.4 ns/pass** (51.5 → 22.1).
+Multiplying the latter by three gives 88.2 ns, not the observed ask delta. These archives
+do not supply a matched count of the passes and the work outside them for that decomposition.
+The deadline-list work (QB-189) targets the timeout path; attributing the whole ask change
+requires those additional measurements rather than the three-pass assertion.
 
 Suites at the branch: qev's own (`test-loops` 49/49 with the new NOWAIT and clock cases, ASan
 20 runs × 46/46), the qb WSL2 suites and the superproject presets — figures in the Huly

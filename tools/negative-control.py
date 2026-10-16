@@ -646,11 +646,11 @@ def main() -> int:
     expect_rejected(exe, "drop-one", "exactly one message dropped in the whole run",
                     messages=1000000)
 
-    print("\n== C. duplication -- why the reduction is a sum and not an XOR ==")
+    print("\n== C. duplication -- one extra occurrence ==")
     expect_rejected(exe, "duplicate", "one message delivered twice", messages=1000000)
-    # An XOR-based checksum would be UNCHANGED by a duplicate. This assertion is what stops the
-    # reduction being 'simplified' back to an XOR by someone who has not read ping-pong.md.
-    print("             (an XOR reduction would be unchanged by this and the control would MISS)")
+    # This plant adds one extra occurrence: SUM and XOR both change for a nonzero mix(seq).
+    # Two extra identical occurrences would cancel in XOR; the message count is another oracle.
+    print("             (one extra occurrence changes SUM and XOR; the message count also changes)")
 
     print("\n== D. a wrong answer, and a right answer reached by the wrong amount of work ==")
     expect_rejected(exe, "wrong-answer", "checksum off by one", messages=1000000)

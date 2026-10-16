@@ -11,7 +11,7 @@ Read [FAIRNESS.md](../../FAIRNESS.md) before reading any table below. In particu
 - pinned CPUs: `0,2`
 - repetitions: 9 (+2 warmup), one process per cell
 
-- toolchain: `GNU 14.2.0`, flags `-O3 -DNDEBUG` — identical for every framework
+- toolchain: `GNU 14.2.0`, configuration `Release`, flags `-O3 -DNDEBUG` (reported flags, scope unspecified)
 
 ## Versions under test
 

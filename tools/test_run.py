@@ -718,5 +718,51 @@ class LaunchCensusPlanTest(unittest.TestCase):
             child.assert_not_called()
 
 
+class BuildMetadataReportTest(unittest.TestCase):
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.cells = self.root / "savina-ping-pong"
+        self.cells.mkdir()
+
+    def emit(self, framework, config, scope="directory-global-and-config"):
+        env = {"compiler": "fixture-cxx", "compiler_version": "1", "build_type": config,
+               "cxx_flags": "-g"}
+        if scope is not None:
+            env["cxx_flags_scope"] = scope
+        document = {"schema": "qvo/result/1", "benchmark": "savina/ping-pong",
+                    "framework": framework, "framework_version": "fixture", "verified": True,
+                    "params": {"cores": 1, "wait": 1}, "work_unit": "round trip", "work_units": 1,
+                    "work_ns": [10, 11, 12],
+                    "summary": {"work_min": 10, "work_p50": 11, "work_p99": 12, "work_iqr": 1},
+                    "env": env}
+        (self.cells / f"{framework}.json").write_text(json.dumps(document), encoding="utf-8")
+
+    def test_different_configs_are_visible_even_with_equal_declared_flags(self):
+        self.emit("qb", "Debug")
+        self.emit("caf", "Release")
+        text = report.render(self.root)
+        self.assertIn("WARNING", text)
+        self.assertIn("Debug", text)
+        self.assertIn("Release", text)
+
+    def test_common_flags_do_not_claim_identical_target_options(self):
+        self.emit("qb", "Release")
+        self.emit("caf", "Release")
+        text = report.render(self.root)
+        self.assertNotIn("identical for every framework", text)
+        self.assertIn("target options may differ", text)
+
+    def test_legacy_results_without_scope_remain_readable(self):
+        self.emit("qb", "Release", None)
+        self.emit("caf", "Release", None)
+        text = report.render(self.root)
+        self.assertIn("-g", text)
+        self.assertIn("`qb` fixture", text)
+        self.assertIn("`caf` fixture", text)
+        self.assertNotIn("WARNING", text)
+
+
 if __name__ == "__main__":
     unittest.main()

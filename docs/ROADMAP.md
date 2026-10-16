@@ -5,6 +5,12 @@ ambition has already misled the reader.
 
 ## Done
 
+The dated cohorts below are historical records. The direct Windows/WSL2 result directories for
+the first eight shapes select the 2026-09-13 `f2779605` candidate field; the ten wave-A shapes
+select shipped 3.2.1 from 2026-10-11. A candidate may report its previous tag in
+`framework_version`: use the named campaign and source commit to identify its binary.
+The README's source and result inventories distinguish implemented shapes from measured ones.
+
 - The harness: verified checksums, verified CPU pinning, distribution reporting, JSON results.
 - Build discipline: all frameworks from source, one flag set, pinned refs matching the qb development tree's own
   vcpkg baseline.

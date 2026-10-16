@@ -18,7 +18,7 @@
 //              (QB-43) keeps resident by design: a consumed segment goes back to its owner's pool,
 //              a pool never shrinks on its own.
 //
-// The figures are the process's resident set and its private commit (Linux: VmRSS / VmHWM from
+// The figures are the process's resident set and a platform-specific secondary metric (Linux: VmRSS / VmHWM from
 // /proc/self/status; Windows: WorkingSetSize / PrivateUsage), read from the main thread once the
 // engine has settled (the actors are parked at `latency` -- this is a memory probe, not a timing
 // one), then again after the engine stopped and its cores were destroyed, so what is RETURNED is
@@ -26,7 +26,11 @@
 //
 //   qvoprobe-pipe-footprint <cores> <idle|broadcast|mesh> [settle_ms=1000] [latency_us=100]
 //
-// One line on stdout per phase: phase, cores, mode, rss_kb, private_kb, and the model.
+// Each phase says whether memory is available. Valid readings retain the historical private_kb
+// field; secondary_metric identifies private commit (Windows) or RSS high-water mark (Linux).
+// Unavailable readings carry no numeric memory fields and make the probe fail.
+
+#include <qvo/process-memory.h>
 
 #include <qb/actor.h>
 #include <qb/main.h>
@@ -42,43 +46,10 @@
 #include <thread>
 #include <vector>
 
-#ifdef _WIN32
-#include <windows.h>
-//
-#include <psapi.h>
-#else
-#include <fstream>
-#endif
-
 namespace {
 
-struct Mem {
-    std::uint64_t rss_kb     = 0; ///< resident set (working set on Windows)
-    std::uint64_t private_kb = 0; ///< private commit (Windows) / RSS high-water mark (Linux)
-};
-
-Mem
-read_mem() {
-    Mem m;
-#ifdef _WIN32
-    PROCESS_MEMORY_COUNTERS_EX pmc{};
-    pmc.cb = sizeof(pmc);
-    if (GetProcessMemoryInfo(GetCurrentProcess(), reinterpret_cast<PROCESS_MEMORY_COUNTERS *>(&pmc), sizeof(pmc))) {
-        m.rss_kb     = pmc.WorkingSetSize / 1024u;
-        m.private_kb = pmc.PrivateUsage / 1024u;
-    }
-#else
-    std::ifstream st("/proc/self/status");
-    std::string   line;
-    while (std::getline(st, line)) {
-        if (line.rfind("VmRSS:", 0) == 0)
-            m.rss_kb = std::strtoull(line.c_str() + 6, nullptr, 10);
-        else if (line.rfind("VmHWM:", 0) == 0)
-            m.private_kb = std::strtoull(line.c_str() + 6, nullptr, 10);
-    }
-#endif
-    return m;
-}
+using qvo::probe::MemoryReading;
+using qvo::probe::read_process_memory;
 
 struct Ping : qb::Event {};
 
@@ -115,14 +86,26 @@ public:
     }
 };
 
-void
-print(char const *phase, unsigned cores, char const *mode, Mem const &m, Mem const &base, std::uint64_t model_kb) {
-    std::printf("phase=%s cores=%u mode=%s rss_kb=%llu private_kb=%llu delta_rss_kb=%lld delta_private_kb=%lld model_kb=%llu received=%llu\n",
-                phase, cores, mode, static_cast<unsigned long long>(m.rss_kb), static_cast<unsigned long long>(m.private_kb),
+bool
+print(char const *phase, unsigned cores, char const *mode, MemoryReading const &reading,
+      MemoryReading const &baseline, std::uint64_t model_kb) {
+    if (!reading.value || !baseline.value) {
+        const char *reason = reading.value ? baseline.error : reading.error;
+        std::printf("phase=%s cores=%u mode=%s available=false\n", phase, cores, mode);
+        std::fprintf(stderr, "pipe-footprint: phase=%s memory unavailable: %s\n", phase,
+                     reason ? reason : "unknown read failure");
+        std::fflush(stdout);
+        return false;
+    }
+    const auto &m = *reading.value;
+    const auto &base = *baseline.value;
+    std::printf("phase=%s cores=%u mode=%s rss_kb=%llu private_kb=%llu delta_rss_kb=%lld delta_private_kb=%lld model_kb=%llu received=%llu available=true secondary_metric=%s\n",
+                phase, cores, mode, static_cast<unsigned long long>(m.rss_kb), static_cast<unsigned long long>(m.secondary_kb),
                 static_cast<long long>(m.rss_kb) - static_cast<long long>(base.rss_kb),
-                static_cast<long long>(m.private_kb) - static_cast<long long>(base.private_kb), static_cast<unsigned long long>(model_kb),
-                static_cast<unsigned long long>(g_received.load()));
+                static_cast<long long>(m.secondary_kb) - static_cast<long long>(base.secondary_kb), static_cast<unsigned long long>(model_kb),
+                static_cast<unsigned long long>(g_received.load()), qvo::probe::secondary_memory_metric_name(m.secondary_metric));
     std::fflush(stdout);
+    return true;
 }
 
 } // namespace
@@ -166,8 +149,10 @@ main(int argc, char **argv) {
                                                                    : static_cast<std::uint64_t>(cores) * (cores - 1);
     const std::uint64_t     model_kb   = rings_kb + pipes_used * segment_kb;
 
-    const Mem base = read_mem();
-    print("baseline", cores, mode_s, base, base, 0);
+    const MemoryReading base = read_process_memory();
+    if (!print("baseline", cores, mode_s, base, base, 0))
+        return 2; // No engine or actor is created when the platform cannot supply a baseline.
+    bool readings_ok = true;
 
     auto ids = std::make_shared<std::vector<qb::ActorId>>();
     {
@@ -180,11 +165,11 @@ main(int argc, char **argv) {
             ids->push_back(engine.core(c).addActor<Node>(mode, shared, static_cast<std::size_t>(c)));
         engine.start(true);
         std::this_thread::sleep_for(std::chrono::milliseconds(settle_ms));
-        print("settled", cores, mode_s, read_mem(), base, model_kb);
+        readings_ok = print("settled", cores, mode_s, read_process_memory(), base, model_kb) && readings_ok;
         engine.stop();
         engine.join();
-        print("stopped", cores, mode_s, read_mem(), base, model_kb);
+        readings_ok = print("stopped", cores, mode_s, read_process_memory(), base, model_kb) && readings_ok;
     }
-    print("destroyed", cores, mode_s, read_mem(), base, 0);
-    return 0;
+    readings_ok = print("destroyed", cores, mode_s, read_process_memory(), base, 0) && readings_ok;
+    return readings_ok ? 0 : 1;
 }

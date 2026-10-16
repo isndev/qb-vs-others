@@ -92,11 +92,9 @@ private:
 // WHY THE SECOND ONE EXISTS. In the pool, an actor made ready by a message sent FROM a worker is
 // `delay()`ed -- prepended to the SENDER's own queue (scheduler.cpp, work_stealing::worker::delay)
 // -- and the sender's worker runs it next unless another worker steals it first. On a two-actor
-// ping-pong that means the receiver runs on the sender's thread every time, and CAF's "2 cores"
-// figure is a one-core hand-off that never pays a cache-line transfer or a wake-up. That is
-// CAF's design (locality), not a defect, and the `caf` row is the right idiomatic figure -- but it
-// is NOT comparable to a framework whose two actors live on two pinned cores, and a reader
-// deserves the cross-core number too. `caf::detached` is CAF's own, documented way to give an
+// ping-pong this favours a local hand-off, but another worker can steal even its only ready job.
+// The number of cross-core hops is not fixed or counted by this adapter. The `caf` row measures
+// this pool policy; the separate detached row gives each actor its own pinned worker. `caf::detached` is CAF's own, documented way to give an
 // actor a thread of its own (spawn_options.hpp), which is the only public placement primitive CAF
 // has; the price is that a detached actor can only park (there is no spin profile for a private
 // thread), so the variant reports the spin cells as NOT APPLICABLE rather than inventing one.
@@ -211,24 +209,21 @@ inline std::vector<std::string> caveats(Shape shape = Shape::ping_pong) {
             "decision, not the adapter's, and is not reported",
             "no caf-detached row for this benchmark: one private thread per actor at this actor "
             "count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)",
-            "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the "
-            "harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does "
-            "not ship"});
+            "QVO requests C++20. CAF declares C++17 as a minimum, not a separate compiler mode; "
+            "the library compilation command is the authority for its effective language mode"});
         return c;
     }
     if (kDetached)
         return {
             "every actor is spawned caf::detached: one OS thread per actor, pinned one per CPU "
             "from the harness's set through caf::thread_hook (thread_owner::pool), parked on a "
-            "condition variable between messages. This is CAF's own placement primitive and the "
-            "only way to make its ping-pong cross a core: in the work-stealing pool the receiver "
-            "runs on the sender's worker (worker::delay prepends to the sender's queue), so the "
-            "plain caf row never pays a cross-core hop. Read the two rows together",
+            "condition variable between messages. This explicit placement makes its ping-pong "
+            "cross a core when the actors use distinct CPUs. The pool favours local hand-offs "
+            "but may steal; its actual cross-core hop count is not recorded. Read both rows",
             "a detached actor has no spin profile, so this variant reports wait=1 as not "
             "applicable rather than measuring a pool configuration under a detached label",
-            "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the "
-            "harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does "
-            "not ship"};
+            "QVO requests C++20. CAF declares C++17 as a minimum, not a separate compiler mode; "
+            "the library compilation command is the authority for its effective language mode"};
     std::vector<std::string> c;
     if (poll_override() || steal_override())
         c.emplace_back("SWEEP DOCUMENT, NOT A TABLE CELL: caf.work-stealing.aggressive-poll-attempts=" +
@@ -244,17 +239,15 @@ inline std::vector<std::string> caveats(Shape shape = Shape::ping_pong) {
         "an unbalanced fan-out",
         "wait=1 and wait=0 are the SAME configuration for CAF on this benchmark -- its shipped "
         "defaults (aggressive-poll-attempts=100, steal-interval=10). The sweep in docs/TUNING.md "
-        "section 1 found every more aggressive profile SLOWER, because on a ping-pong the receiver "
-        "runs on the sender's worker and polling harder only makes the idle worker steal it; CAF's "
-        "fastest ping-pong is the one where nothing ever crosses a core. The cross-core figure is "
-        "the caf-detached row",
+        "section 1 recorded slower results for the more aggressive profiles it compared. Those "
+        "results do not count steals or prove that no message crossed a core. The caf-detached "
+        "row measures an explicit worker per actor",
         "in the work-stealing pool the receiver of a message sent from a worker is prepended to "
-        "that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on "
-        "one thread and never pays a cross-core hand-off; read this row as CAF's best-case "
-        "locality, and caf-detached as its cross-core cost",
-        "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the "
-        "harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does "
-        "not ship"});
+        "that worker's own queue (worker::delay), favouring the sender's worker. Another worker "
+        "may steal it, so the two-core row does not guarantee same-core hand-offs; caf-detached "
+        "uses explicit per-actor placement",
+        "QVO requests C++20. CAF declares C++17 as a minimum, not a separate compiler mode; "
+            "the library compilation command is the authority for its effective language mode"});
     return c;
 }
 

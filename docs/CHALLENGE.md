@@ -45,8 +45,10 @@ These are already conceded, in writing, in [FAIRNESS.md](../FAIRNESS.md):
 - **The faster idiom wins.** Where a framework offers something faster than what its documentation
   leads with, the faster one is what belongs in the table. SObjectizer's direct mbox is used here
   rather than the shared mbox both its shipped samples use, for exactly that reason.
-- **One benchmark is not a comparison.** Only `savina/ping-pong` exists so far, and it is the
-  narrowest workload in the suite.
+- **One benchmark is not a comparison.** The current source roster is the set of specifications
+  and pages under `benchmarks/savina/` and `benchmarks/specs/qvospec/savina/`, checked against
+  the adapters by `tools/check-roster.py`. Read the README for measured coverage: implemented
+  shapes and published, validated results are separate claims.
 
 ## What will not be accepted
 

@@ -79,14 +79,21 @@ early, on a wrong sum.
 ## The measured window
 
 Opens when the teller sends the 50 000 transfers into an already-running system — every account
-has reported ready, so every thread is up — and closes when the teller has received the 50 000th
-acknowledgement. Every request frame, every reply routing and every resume is inside it. The
-thousand accounts are created before the window and reported after it; the exit and the balance
-reports are outside the window and inside the message count.
+has reported ready, so every thread is up — and closes after the teller has received the last
+balance report and aggregated its checksum. The final transfer acknowledgement triggers the
+accounts' exit messages; those exits and their reports are inside both the window and the
+message count, as the specification and all four adapters implement. Every request frame,
+reply routing and resume is inside it; account creation and the readiness handshake precede it.
 
 ## What qb 3.1.0 measures here, and what the shape found
 
-The published `savina-bank-transaction/` documents render **qb 3.1.0** at 14.71 / 14.58 / 9.21 /
+The original 2026-09-07 cohort is summarized in [TUNING.md §12](../../docs/TUNING.md)
+and the table below. Its same-session candidate grids remain under
+`results/<host>/qb-branch-perf-coro-scope-local-refcount/`. The direct `results/<host>/savina-bank-transaction/` directories now select the
+2026-09-13 `f2779605` candidate field on Windows/WSL2; they are not the shipped results below.
+A candidate's `framework_version=3.1.0` records its last tag, not its source commit.
+
+That historical shipped **qb 3.1.0** cohort recorded 14.71 / 14.58 / 9.21 /
 9.31 ms per repetition on WSL2 g++-14 and 25.48 / 25.45 / 29.20 / 33.45 ms on Windows MSVC (1c
 spin / 1c park / 2c spin / 2c park), against CAF's 41.5 / 43.0 / 36.6 / 36.6 and 57.8 / 58.0 /
 57.5 / 58.1, SObjectizer's 19.5 / 20.5 / 25.5 / 27.7 and 29.6 / 31.5 / 38.0 / 44.4, and a floor of

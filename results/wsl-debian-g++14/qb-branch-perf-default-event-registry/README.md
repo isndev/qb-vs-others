@@ -21,9 +21,9 @@ own three grids ran 21:06:26–21:06:30 UTC, after this host's had ended). The c
 
 Candidate / control / candidate is the order, not control / candidate: a drift in the host over
 the minute the three grids take would then show as the two candidate passes disagreeing, and
-they do not. None of the three is merged into the published tables (`../savina-fib/`,
-`../savina-chameneos/` render shipped 3.1.0); the candidate joins them when the 3.2.0 grid is
-measured for all seven shapes in one session.
+the observed differences are reported below. These grids were separate from the shipped
+3.1.0 field at the time. The direct `../savina-fib/` and `../savina-chameneos/` directories
+have since been remeasured; they do not identify this campaign's shipped control.
 
 ## Control against the candidate, same session (p50 ms)
 
@@ -39,7 +39,10 @@ measured for all seven shapes in one session.
 | chameneos · 1c-park | 6.61 | **6.52** | 6.62 | -1 % / +0 % |
 
 fib is **−22 % to −27 % (2c 6.96 → 5.21 / 5.31 ms, 1c 10.98 → 8.62 / 8.48 ms)** — every one of its four cells moves by more than its p99–p50 spread and
-the two candidate passes agree to within 2 %. Chameneos does not move (2c-spin 10.74 → 11.81 / 10.64 ms, the one cell whose pass 1 is outside its neighbours, and its pass 2 is back on the control; 1c 6.53 → 6.86 / 6.45): it
+three of the four fib cells' candidate medians agree to within 2 %. The 2c-park exception is
+5.132782 → 5.367610 ms: +4.5751 % of the first passage, or 3.3277 % of the 7.056786 ms
+control. Both candidate passages remain below that control; this exception qualifies
+repeatability without assigning a new cause. Chameneos does not move (2c-spin 10.74 → 11.81 / 10.64 ms, the one cell whose pass 1 is outside its neighbours, and its pass 2 is back on the control; 1c 6.53 → 6.86 / 6.45): it
 creates 101 actors and pushes 400 000 events through a broker, and neither the five `key_table`
 inserts per actor lifetime nor the resolver walk at removal is on that path. That is the shape of
 the change — an actor's construction and destruction, nothing per message.

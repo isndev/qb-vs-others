@@ -20,7 +20,7 @@ candidate in ONE quiet session on 2026-09-07 with the WSL2 side idle (its own se
 | `census/` | branch vs `670e9433`, **10 interleaved launches** each, 3 reps + 1 warmup, on the 2c-spin cells of all eight shapes (ping-pong and thread-ring in both wait modes) and the ping-pong 1c-spin anchor | 19:00:04–19:01:18 UTC. |
 | `bench/` | the four core `dev/bench` binaries, candidate and control alternated three times (`cand-N/` / `ctl-N/`, one process per run, 5 repetitions, every iteration recorded) | 19:01:18–19:04:54 UTC. |
 | `probe.txt` | `qvoprobe-pass-cost` k = 1, 2, 4 and `qvoprobe-xcore-hop` send / push, phase-averaged (jitter 150 ns) and locked, candidate and control alternated three times | 19:04:54–19:06:50 UTC. |
-| `census-throughput/` | throughput cells after grid or census readings had moved the other way — fib 2c (both modes), bank-transaction 2c-spin, big 2c-spin, counting 2c-spin and 1c-park (the wait mode read from each document's `params.wait`: 1 spin, 0 park) — **15 interleaved launches** each, a second quiet window | 19:10–19:14 UTC. |
+| `census-throughput/` | throughput cells after grid or census readings had moved the other way — fib 2c (both modes), bank-transaction 2c-spin, big 2c-spin, counting 2c-spin and 1c-park (the wait mode read from each document's `params.wait`: 1 spin, 0 park) — **15 interleaved launches** each, a follow-up census | The 180 documents carry serialization timestamps **19:07:08–19:07:26 UTC**, 2026-09-07. This is not a measured launch interval; the previously stated 19:10–19:14 window did not enclose these timestamps. |
 
 None of the grids is merged into the published tables; the branch joins `qb-branch-develop/`
 when the final candidate is measured on all eight shapes.

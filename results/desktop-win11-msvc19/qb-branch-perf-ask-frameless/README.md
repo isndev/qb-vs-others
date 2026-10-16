@@ -14,7 +14,10 @@ first pass this corrected).
 |---|---:|---:|---:|
 | push (ns/trip, median of 7, min–max) | 31.15 (31.10–31.86) | 32.45 (32.14–32.99) | +4.2 % |
 | ask (ns/trip, median of 7, min–max) | 63.97 (63.57–65.24) | 48.54 (48.29–48.73) | −24.1 % |
-| stream (ns/trip, median of 7, min–max) | 69.12 (67.79–69.93) | 70.21 (68.78–71.41) | +1.6 % |
+| stream (ns/chunk, median of 7, min–max) | 69.12 (67.79–69.93) | 70.21 (68.78–71.41) | +1.6 % |
+
+The stream row counts received chunks, with stream setup amortised over them; it does not
+measure one complete stream exchange. Push and ask remain round-trip units.
 
 The ask mechanics above a bare push/reply round trip: **32.8 ns → 16.1 ns (−51 %)**. The probe's `push` and
 `stream` modes do not touch `qb::ask`; their +4 % / +1.6 % is the candidate binary's code layout (the real-harness

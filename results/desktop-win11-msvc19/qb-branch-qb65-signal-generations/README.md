@@ -23,9 +23,16 @@ faster, and the candidate's pass is faster. The fix belongs to the pacing, not t
 
 Ruled out along the way, each with its own census: VirtualCore's SIZE alone (`lottery/`: +8 / +64 / +92 / +256 bytes
 move the 2c cells non-monotonically, −0.4 … +4.2 %), VirtualCore cache-line alignment (`align/`: `alignas(64)` changes
-nothing for the candidate), the worker frame's alignment (`frame/`), code position (`nops/`: 8 / 16 / 24 NOPs at the
-top of the pass swing the candidate's ping-pong 2c between +1.3 and +5.3 %), and an `lfence` before the idle pass's
+nothing for the candidate), the worker frame's alignment (`frame/`), and an `lfence` before the idle pass's
 clock read (`lfence/`: costs the control as much as the candidate).
+
+The `nops/` control adds 8 / 16 / 24 **executed instructions per pass** as well as moving
+the instructions that follow. Its candidate ping-pong 2c results span +1.3 to +5.3 %,
+but this combines extra work, a changed polling cadence and code placement. It cannot
+rule out placement independently. `scripts/patch-nops.py` is retained as the historical
+producer; its claim that nothing else changes is too strong. A pure placement control
+would keep the pass's executed work unchanged, for example with padding on a cold branch,
+and would need its own quiet-host comparison. No such new experiment is claimed here.
 
 ## Method — and the two traps it had to get past
 
@@ -39,4 +46,8 @@ clock read (`lfence/`: costs the control as much as the candidate).
 `summary.txt` / `probe.txt` at this level are the first, fixed-order A/B (its cells table printed empty there because a
 PowerShell `$r` probe loop clobbered `$R`, the results directory; recomputed in `census/summary-recomputed.txt`).
 Every experiment directory holds its `summary.txt` (and `orders.txt` from `random/` on); the per-run JSON files are in
-`raw.tar.xz`. The scripts are in `scripts/`.
+`raw.tar.xz`. The scripts are in `scripts/`. The archived `nostop` variant had the same
+case-insensitive `$R`/`$r` collision after eight probe rounds. Its producer now uses
+`$resultDir` and `$probeRound`, checks the summarizer exit and requires a non-empty summary.
+The retained `nostop/summary.txt` is recovery evidence; this repair does not claim it was
+produced successfully by the uncorrected script. Its 720 archived result documents remain unchanged.

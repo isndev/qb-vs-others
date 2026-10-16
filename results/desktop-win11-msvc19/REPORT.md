@@ -11,7 +11,7 @@ Read [FAIRNESS.md](../../FAIRNESS.md) before reading any table below. In particu
 - pinned CPUs: `0,2`
 - repetitions: 9 (+2 warmup), one process per cell
 
-- toolchain: `MSVC 19.51.36256.0`, flags `/O2 /Ob2 /DNDEBUG` — identical for every framework
+- toolchain: `MSVC 19.51.36256.0`, configuration `Release`, flags `/O2 /Ob2 /DNDEBUG` (reported flags, scope unspecified)
 
 ## Versions under test
 

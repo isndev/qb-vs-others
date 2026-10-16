@@ -11,7 +11,7 @@ Read [FAIRNESS.md](../../FAIRNESS.md) before reading any table below. In particu
 - pinned CPUs: `unpinned`
 - repetitions: 9 (+2 warmup), one process per cell
 
-- toolchain: `AppleClang 21.0.0.21000101`, flags `-O3 -DNDEBUG` — identical for every framework
+- toolchain: `AppleClang 21.0.0.21000101`, configuration `Release`, flags `-O3 -DNDEBUG` (reported flags, scope unspecified)
 
 ## Versions under test
 

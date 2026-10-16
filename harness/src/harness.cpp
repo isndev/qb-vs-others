@@ -1,5 +1,9 @@
 #include "qvo/harness.h"
 
+#if __has_include("qvo/build-info.h")
+#    include "qvo/build-info.h"
+#endif
+
 #include <algorithm>
 #include <atomic>
 #include <cerrno>
@@ -29,7 +33,7 @@
 #endif
 
 // Build-time facts the harness records so a result file is self-describing. Supplied by
-// cmake/qvoHarness.cmake; the defaults exist only so the header compiles standalone.
+// CMakeLists.txt as a configuration-specific header; defaults support manual harness builds.
 #ifndef QVO_COMPILER
 #    define QVO_COMPILER "unknown"
 #endif
@@ -41,6 +45,9 @@
 #endif
 #ifndef QVO_CXX_FLAGS
 #    define QVO_CXX_FLAGS ""
+#endif
+#ifndef QVO_CXX_FLAGS_SCOPE
+#    define QVO_CXX_FLAGS_SCOPE "unspecified"
 #endif
 
 namespace qvo {
@@ -400,6 +407,7 @@ void write_env(std::ostream &j) {
     j << "    \"compiler_version\": " << quoted(QVO_COMPILER_VERSION) << ",\n";
     j << "    \"build_type\": " << quoted(QVO_BUILD_TYPE) << ",\n";
     j << "    \"cxx_flags\": " << quoted(QVO_CXX_FLAGS) << ",\n";
+    j << "    \"cxx_flags_scope\": " << quoted(QVO_CXX_FLAGS_SCOPE) << ",\n";
     j << "    \"utc\": " << quoted(iso_utc_now()) << "\n";
     j << "  },\n";
 }
