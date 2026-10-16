@@ -45,7 +45,7 @@ the thing whose cost was measured; the sections say where the rest lives.
 **qb.** A `throw` out of `on(Event&)` is not caught at the actor: dispatch is
 `_router.route(*event, ...)` with no `try` around it (`core/VirtualCore.cpp:205`), and the only
 handler is at the thread body, which logs and records `VirtualCore::Error::ExceptionThrown`
-(`core/Main.cpp:373`, `:394`, `:398`; the enum at `core/VirtualCore.h:130`). **One throwing
+(`core/Main.cpp:373`, `:394`, `:398`; the enum at `core/VirtualCore.h:138`). **One throwing
 handler terminates that VirtualCore thread and every actor pinned to it.** Two places do contain
 an exception: a throwing `onInit()` is an init failure the engine reports (`core/VirtualCore.cpp:535`),
 and an unhandled coroutine exception is logged by `report_unhandled_coroutine_exception`
@@ -132,7 +132,7 @@ third-party packages.
 ## 5. Scheduling
 
 **qb.** One worker thread per `VirtualCore`; every actor is created on a core before `start()`
-(`core/Main.h:245`, `:681`) or on the calling core at runtime (`core/VirtualCore.h:1068`), and
+(`core/Main.h:245`, `:681`) or on the calling core at runtime (`core/VirtualCore.h:1080`), and
 "an actor never migrates between cores" (`core/Actor.h:215`). `setAffinity` (`core/Main.h:273`),
 `setLatency` (`:286`) and `setIdleSpin` (`:303`) are the only knobs. No work stealing — the word
 does not occur in `core/`.
@@ -152,9 +152,9 @@ does not move between dispatchers; within a pool the thread is chosen per demand
 
 ## 6. Priorities, filters, limits
 
-**qb.** `EventQOS0` (`core/Event.h:543`) marks an event droppable under cross-core backpressure
-(`core/Event.h:505`); `EventQOS1` and `EventQOS2` are both aliases of `Event` (`:510`, `:520`)
-— "there is no middle QoS level to select" (`:503`). No ordering by priority, no filters, no
+**qb.** `EventQOS0` (`core/Event.h:572`) marks an event droppable under cross-core backpressure
+(`core/Event.h:506`); `EventQOS1` and `EventQOS2` are both aliases of `Event` (`:511`, `:521`)
+— "there is no middle QoS level to select" (`:504`). No ordering by priority, no filters, no
 per-actor limits. `push` is ordered, `send` is documented unordered (`core/Actor.h:932`).
 
 **CAF.** `message_priority::{high, normal}` (`libcaf_core/caf/message_priority.hpp:15`); a
@@ -233,9 +233,9 @@ actors (`libcaf_core/caf/actor_registry.hpp:32`, `:77`). Groups were **removed i
 **qb.** Before `start()`: `CoreInitializer::addActor` / `builder()` (`core/Main.h:245`, `:259`),
 `Main::addActor(CoreId, ...)` (`:725`). At runtime: `Actor::addRefActor<T>` (`core/Actor.h:1174`)
 creates on the **calling core only** — `VirtualCore::_handler` is the thread-local current core
-(`core/VirtualCore.h:1068`) — and `Main::core(id)` is setup-phase only (`core/Main.h:681`).
+(`core/VirtualCore.h:1080`) — and `Main::core(id)` is setup-phase only (`core/Main.h:681`).
 Creating an actor on another core at runtime is done by messaging a factory actor already there;
-the framework has no call for it. Actor allocation is a customisation point (`core/VirtualCore.h:807`).
+the framework has no call for it. Actor allocation is a customisation point (`core/VirtualCore.h:815`).
 
 **CAF.** `spawn` from the system or from any actor, on any worker, at any time; the pool
 places it.
@@ -284,7 +284,7 @@ This row is the one that explains `REPORT.md`, so it is stated in full.
 
 **qb** has **no per-actor mailbox**. The inbound queue is one MPSC ring per **destination core**
 (`core/Main.h:382`, owned at `:497`), written through one staging pipe per (source core,
-destination core) pair (`core/Event.h:716`, `core/VirtualCore.h:480`, flushed at `:535`), and
+destination core) pair (`core/Event.h:745`, `core/VirtualCore.h:488`, flushed at `:543`), and
 the actor is resolved only after dequeue (`core/VirtualCore.cpp:205`). Every event occupies a
 whole number of 64-byte buckets (`utility/prefix.h:68`, `:138`). Consequences, all visible in the
 tables: the 120-writer contention of `savina/big` collapses to a 2-writer pipe; a same-core hop
@@ -310,10 +310,10 @@ where any of them would become a plan:
 3. **No typed actor interfaces** — an event nobody registered is a logged drop
    (`system/event/router.h:926`).
 4. **No distribution** — no node id, no wire format, no reflection (`core/ActorId.h:401`).
-5. **No message priorities** — `EventQOS1 == EventQOS2 == Event` (`core/Event.h:510`–`509`).
+5. **No message priorities** — `EventQOS1 == EventQOS2 == Event` (`core/Event.h:511`–`509`).
 6. **No migration, no rebalancing** — actors are pinned for life (`core/Actor.h:215`); a hot
    actor on a cold core stays there.
-7. **No cross-core dynamic spawn** (`core/VirtualCore.h:1068`, `core/Main.h:681`).
+7. **No cross-core dynamic spawn** (`core/VirtualCore.h:1080`, `core/Main.h:681`).
 8. **No configuration layer** in core.
 
 What qb has that the others do not — a coroutine-first asynchronous model, a real I/O loop with
