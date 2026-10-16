@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Regression controls for the runner's result-file provenance.
+"""Regression controls for collection provenance, units and rendered distributions.
 
-The synthetic .exe is never executed: subprocess is replaced at the process boundary, so these
-controls exercise the same runner on POSIX and Windows without building a benchmark or measuring
-on a busy host.
+Runner and census controls replace subprocess at the process boundary and work on POSIX and
+Windows. Sweep controls run the real Bash entry points against tiny Python producers on POSIX;
+they explicitly skip native Windows. Result-contract and renderer controls need no shell.
+No control builds or executes a framework benchmark or measures performance.
 """
 
 from __future__ import annotations
@@ -670,6 +671,688 @@ class RunnerProvenanceTest(unittest.TestCase):
         self.assertNotIn("More than one version", rendered)
         self.assertIn("| `caf` | 1.1.0 | 1 |", rendered)
         self.assertIn("| `qb` | test | 1 |", rendered)
+
+
+class SweepResultContractTest(unittest.TestCase):
+    """The existing process-boundary validator remains testable without Bash (QB-877)."""
+
+    def test_sweep_result_requires_the_requested_identity_parameters_and_success(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "attempt.json"
+            for framework, repetitions in (("sobjectizer", 7), ("caf", 5)):
+                for fault in (None, "benchmark", "framework", "cores", "wait", "messages",
+                              "verified", "repetitions", "warmup", "exit", "missing", "malformed"):
+                    with self.subTest(framework=framework, fault=fault):
+                        doc = RunnerProvenanceTest.doc(verified=True)
+                        params = {"cores": 2, "wait": 1, "messages": 1000000}
+                        doc.update(framework=framework, params=dict(params), repetitions=repetitions,
+                                   warmup=2, work_ns=[111000000.0] * repetitions,
+                                   summary={"work_p50": 111000000.0})
+                        if fault in ("benchmark", "framework"):
+                            doc[fault] = "wrong"
+                        elif fault in params:
+                            doc["params"][fault] += 1
+                        elif fault == "verified":
+                            doc["verified"] = False
+                        elif fault in ("repetitions", "warmup"):
+                            doc[fault] += 1
+                        path.write_text("{" if fault == "malformed" else json.dumps(doc), encoding="utf-8")
+                        if fault == "missing":
+                            path.unlink()
+                        accepted, reason = run.read_attempt(
+                            path, "savina/ping-pong", framework, params,
+                            42 if fault == "exit" else 0, repetitions, 2)
+                        if fault is None:
+                            self.assertEqual(accepted, doc)
+                            self.assertEqual(reason, "")
+                        else:
+                            self.assertIsNone(accepted)
+                            self.assertTrue(reason)
+
+
+@unittest.skipUnless(os.name == "posix" and shutil.which("bash"),
+                     "real sweep entry points need POSIX Bash; portable result/report controls still run")
+class SweepEntrypointTest(unittest.TestCase):
+    """QB-877/852: execute the shipped shell scripts, never a copied loop or a real benchmark."""
+
+    PRODUCER = '''#!/usr/bin/env python3
+import json, os, pathlib, statistics, sys
+args = sys.argv[1:]
+params = {}
+for i, arg in enumerate(args):
+    if arg == "--param":
+        key, value = args[i + 1].split("=", 1)
+        params[key] = int(value)
+name = pathlib.Path(sys.argv[0]).name
+framework = "caf" if name.startswith("qvo-caf-") else "sobjectizer"
+shape = "counting" if "counting" in name else "ping-pong"
+out = pathlib.Path(args[args.index("--out") + 1])
+repetitions = int(args[args.index("--repetitions") + 1])
+warmup = int(args[args.index("--warmup") + 1])
+log = pathlib.Path(os.environ["QVO_TEST_LAUNCHES"])
+first = not log.exists()
+fault = os.environ["QVO_TEST_FIRST_FAULT"] if first else "valid"
+with log.open("a", encoding="utf-8") as f:
+    f.write(json.dumps({"framework": framework, "shape": shape, "out": str(out),
+                        "params": params, "fault": fault}) + "\\n")
+if fault in ("exit", "missing"):
+    sys.exit(42 if fault == "exit" else 0)
+if fault == "malformed":
+    out.write_text("{", encoding="utf-8")
+    sys.exit(0)
+samples = [111000000.0] * repetitions
+doc = {"schema": "qvo/result/1", "benchmark": "savina/" + shape,
+       "framework": framework, "framework_version": "fixture", "verified": True,
+       "params": params, "repetitions": repetitions, "warmup": warmup,
+       "work_unit": "round trip" if shape == "ping-pong" else "message",
+       "work_units": params["messages"],
+       "expected_messages": params["messages"] * (2 if shape == "ping-pong" else 1),
+       "work_ns": samples, "summary": {"work_min": min(samples),
+       "work_p50": statistics.median(samples), "work_p99": max(samples), "work_iqr": 0},
+       "failures": [], "caveats": [], "pinned": True, "cpus": "0,2"}
+if fault in ("benchmark", "framework"):
+    doc[fault] = "wrong"
+elif fault in ("cores", "wait", "messages"):
+    doc["params"][fault] += 1
+elif fault == "verified":
+    doc["verified"] = False
+    doc["failures"] = ["fixture did not verify"]
+out.write_text(json.dumps(doc), encoding="utf-8")
+'''
+
+    def setUp(self) -> None:
+        temp = tempfile.TemporaryDirectory(prefix="qvo sweep controls ")
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.repo = Path(__file__).resolve().parent.parent
+        self.invocations = 0
+
+    def invoke(self, framework: str, fault: str = "valid", *, retained: bool = False,
+               relative_binary: bool = False):
+        self.invocations += 1
+        cwd = self.root / str(self.invocations)
+        cwd.mkdir()
+        shim = cwd / "interpreters"
+        shim.mkdir()
+        (shim / "python3").symlink_to(sys.executable)
+        if framework == "sobjectizer":
+            bindir, out = cwd / "fake binaries", cwd / "sweep results"
+            script = self.repo / "tools/so-sweep.sh"
+            argv = [str(bindir), str(out)]
+            names = ["qvo-sobjectizer-savina-ping-pong", "qvo-sobjectizer-savina-counting"]
+            first_name = "ping-pong-profile-10s.json"
+        else:
+            # Preserve CAF's historical default cwd interface, without rewriting the script.
+            bindir, out = cwd / "build/final/bin", cwd / "build/caf-sweep"
+            script = self.repo / "results/desktop-win11-msvc19/caf-spin-sweep/caf-sweep.sh"
+            argv, names, first_name = [], ["qvo-caf-savina-ping-pong.exe"], "poll100-steal10.json"
+        if relative_binary:
+            bindir = cwd
+            argv = ["." if framework == "sobjectizer" else "./" + names[0], str(out)]
+        else:
+            bindir.mkdir(parents=True)
+        for name in names:
+            exe = bindir / name
+            exe.write_text(self.PRODUCER, encoding="utf-8")
+            exe.chmod(0o755)
+        dest = out / first_name
+        old = None
+        if retained:
+            out.mkdir(parents=True)
+            previous = RunnerProvenanceTest.doc(verified=True)
+            repetitions = 7 if framework == "sobjectizer" else 5
+            previous.update(framework=framework, repetitions=repetitions, warmup=2,
+                            params={"messages": 1000000, "cores": 2, "wait": 1},
+                            work_ns=[777000000.0] * repetitions,
+                            summary={"work_min": 777000000.0, "work_p50": 777000000.0,
+                                     "work_p99": 777000000.0, "work_iqr": 0},
+                            work_unit="round trip", work_units=1000000,
+                            expected_messages=2000000, pinned=True, cpus="0,2",
+                            retained_marker="old-only")
+            old = (json.dumps(previous) + "\n").encode()
+            dest.write_bytes(old)
+        launches = cwd / "launches.jsonl"
+        # Never let a basename find the fixture through PATH: './exe' must mean this cwd.
+        env = dict(os.environ, PATH=str(shim) + os.pathsep + os.defpath,
+                   QVO_TEST_FIRST_FAULT=fault, QVO_TEST_LAUNCHES=str(launches),
+                   PYTHONDONTWRITEBYTECODE="1")
+        result = subprocess.run([shutil.which("bash"), str(script), *argv], cwd=cwd, env=env,
+                                capture_output=True, text=True, check=False, timeout=60)
+        calls = [json.loads(line) for line in launches.read_text().splitlines()] if launches.exists() else []
+        return result, dest, old, calls, out
+
+    def test_failed_relaunch_cannot_relabel_retained_json(self) -> None:
+        for framework in ("sobjectizer", "caf"):
+            with self.subTest(framework=framework):
+                result, dest, old, _calls, _out = self.invoke(framework, "exit", retained=True)
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(dest.read_bytes(), old)
+                self.assertNotIn("777.0", result.stdout)
+
+    def test_fresh_failure_cannot_be_hidden_by_later_success(self) -> None:
+        for framework in ("sobjectizer", "caf"):
+            with self.subTest(framework=framework):
+                result, _dest, _old, calls, _out = self.invoke(framework, "exit")
+                self.assertTrue(calls, result.stdout + result.stderr)
+                self.assertEqual(calls[0]["fault"], "exit")
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_missing_malformed_or_unverified_result_is_rejected(self) -> None:
+        for framework in ("sobjectizer", "caf"):
+            for fault in ("missing", "malformed", "verified"):
+                with self.subTest(framework=framework, fault=fault):
+                    result, _dest, _old, calls, _out = self.invoke(framework, fault)
+                    self.assertTrue(calls, result.stdout + result.stderr)
+                    self.assertEqual(calls[0]["fault"], fault)
+                    self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_wrong_identity_or_parameters_are_rejected(self) -> None:
+        for framework in ("sobjectizer", "caf"):
+            for fault in ("benchmark", "framework", "cores", "wait", "messages"):
+                with self.subTest(framework=framework, fault=fault):
+                    result, _dest, _old, calls, _out = self.invoke(framework, fault)
+                    self.assertTrue(calls, result.stdout + result.stderr)
+                    self.assertEqual(calls[0]["fault"], fault)
+                    self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_successful_sweeps_keep_every_requested_cell(self) -> None:
+        for framework, expected in (("sobjectizer", 20), ("caf", 10)):
+            with self.subTest(framework=framework):
+                result, _dest, _old, calls, out = self.invoke(framework)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(len(calls), expected)
+                docs = [json.loads(path.read_text()) for path in out.glob("*.json")]
+                measured = [doc for doc in docs if doc.get("schema") == "qvo/result/1"]
+                self.assertEqual(len(measured), expected)
+                self.assertTrue(all(doc["verified"] and doc["framework"] == framework for doc in measured))
+                self.assertTrue(all(call["params"] == {"messages": 1000000, "cores": 2, "wait": 1}
+                                    for call in calls))
+
+    def test_relative_binary_arguments_execute_the_selected_local_producer(self) -> None:
+        for framework, expected in (("sobjectizer", 20), ("caf", 10)):
+            with self.subTest(framework=framework):
+                result, _dest, _old, calls, out = self.invoke(framework, relative_binary=True)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(len(calls), expected)
+                manifest = json.loads((out / "run.json").read_text())
+                self.assertEqual(manifest["status"], "complete")
+                self.assertTrue(all(Path(cell["command"][0]).is_absolute()
+                                    for cell in manifest["cells"]))
+
+    def test_ping_pong_and_counting_use_their_declared_work_units(self) -> None:
+        result, _dest, _old, _calls, _out = self.invoke("sobjectizer")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for shape, unit in (("ping-pong", "round trip"), ("counting", "message")):
+            rows = [line for line in result.stdout.splitlines() if line.startswith(shape + "-")]
+            self.assertEqual(len(rows), 10, result.stdout)
+            for line in rows:
+                self.assertRegex(line, r"p50=\s*111\.0\b")
+                self.assertIn("ns/" + unit, line)
+
+
+class SweepHelperTest(unittest.TestCase):
+    """Portable collection controls: real validation and files, only the child process replaced."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "spin_sweep_control", Path(__file__).with_name("spin-sweep.py"))
+        assert spec is not None and spec.loader is not None
+        cls.sweep = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.sweep)
+
+    def setUp(self) -> None:
+        temp = tempfile.TemporaryDirectory(prefix="qvo-sweep-helper-")
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.invocations = 0
+
+    @staticmethod
+    def document(mode: str, index: int) -> dict:
+        doc = RunnerProvenanceTest.doc(verified=True)
+        shape = "counting" if mode == "so" and index >= 10 else "ping-pong"
+        repetitions = 7 if mode == "so" else 5
+        doc.update(framework="sobjectizer" if mode == "so" else "caf",
+                   benchmark="savina/" + shape,
+                   params={"messages": 1000000, "cores": 2, "wait": 1},
+                   repetitions=repetitions, warmup=2, pinned=True, cpus="0,2",
+                   work_unit="message" if shape == "counting" else "round trip",
+                   work_units=1000000, expected_messages=1000000 if shape == "counting" else 2000000,
+                   work_ns=[111000000.0] * repetitions,
+                   total_ns=[112000000.0] * repetitions,
+                   outside_window_ns=[1000000.0] * repetitions,
+                   summary={"work_min": 111000000.0, "work_p50": 111000000.0,
+                            "work_p99": 111000000.0, "work_iqr": 0}, failures=[], caveats=[])
+        return doc
+
+    def invoke(self, mode="caf", behavior=None, *, out=None):
+        self.invocations += 1
+        out = out or self.root / f"out-{self.invocations}"
+        binary = self.root / "binaries" if mode == "so" else self.root / "qvo-caf-savina-ping-pong.exe"
+        calls = []
+        # Explicit inherited values detect accidental environment clearing as well as a wrong
+        # override. Profile cells historically inherit QVO_SO_SPIN_WAIT_US; budget cells set it.
+        inherited = {"QVO_TEST_KEEP": "untouched", "QVO_SO_SPIN_WAIT_US": "77",
+                     "QVO_CAF_AGGRESSIVE_POLL": "88", "QVO_CAF_STEAL_INTERVAL": "99"}
+
+        def child(cmd, *, stdout, stderr, env, timeout):
+            index = len(calls)
+            attempt = Path(cmd[cmd.index("--out") + 1])
+            self.assertFalse(attempt.exists(), "each launch must receive a fresh result path")
+            call = {"command": list(cmd), "environment": dict(env), "timeout": timeout,
+                    "attempt": attempt}
+            calls.append(call)
+            stdout.write(b"fixture stdout\n")
+            stderr.write(b"fixture stderr\n")
+            doc = self.document(mode, index)
+            try:
+                if behavior is not None:
+                    return behavior(attempt, doc, index, cmd)
+                attempt.write_text(json.dumps(doc), encoding="utf-8")
+                return subprocess.CompletedProcess(cmd, 0)
+            finally:
+                call["raw_bytes"] = attempt.read_bytes() if attempt.exists() else None
+
+        captured, errors = io.StringIO(), io.StringIO()
+        with patch.dict(os.environ, inherited, clear=True), \
+                patch.object(self.sweep.subprocess, "run", side_effect=child), \
+                contextlib.redirect_stdout(captured), contextlib.redirect_stderr(errors):
+            rc = self.sweep.main([mode, str(binary), str(out), "--timeout", "0.25"])
+        return rc, out, captured.getvalue(), errors.getvalue(), calls, inherited
+
+    def assert_failed_first_attempt(self, result) -> None:
+        rc, out, _stdout, stderr, calls, _inherited = result
+        self.assertEqual(rc, 1, stderr)
+        manifest = json.loads((out / "run.json").read_text())
+        self.assertEqual(manifest["status"], "failed")
+        first = manifest["cells"][0]
+        self.assertEqual(first["status"], "failed")
+        canonical = json.loads((out / f"{first['label']}.json").read_text())
+        self.assertIs(canonical["verified"], False)
+        self.assertEqual(canonical["work_ns"], [])
+        self.assertEqual(canonical["summary"], {})
+        raw = out / first["attempt"]
+        self.assertEqual((raw / "stderr.txt").read_bytes(), b"fixture stderr\n")
+        self.assertEqual((raw / "stdout.txt").read_bytes(), b"fixture stdout\n")
+        if calls[0]["raw_bytes"] is None:
+            self.assertFalse((raw / "result.json").exists())
+        else:
+            self.assertEqual((raw / "result.json").read_bytes(), calls[0]["raw_bytes"])
+        self.assertFalse((out / ".run.lock").exists())
+
+    def test_so_arguments_order_and_environment_match_the_established_matrix(self) -> None:
+        # Independent list of the historical experiment, not imported from cells/SO_BUDGETS.
+        expected = [
+            ("ping-pong-profile-10s", "ping-pong", "77"),
+            ("ping-pong-simple-lock", "ping-pong", "0"),
+            ("ping-pong-wait1us", "ping-pong", "1"),
+            ("ping-pong-wait10us", "ping-pong", "10"),
+            ("ping-pong-wait100us", "ping-pong", "100"),
+            ("ping-pong-wait1ms-default", "ping-pong", "1000"),
+            ("ping-pong-wait10ms", "ping-pong", "10000"),
+            ("ping-pong-wait100ms", "ping-pong", "100000"),
+            ("ping-pong-wait10s-b", "ping-pong", "10000000"),
+            ("ping-pong-profile-10s-b", "ping-pong", "77"),
+            ("counting-profile-10s", "counting", "77"),
+            ("counting-simple-lock", "counting", "0"),
+            ("counting-wait1us", "counting", "1"),
+            ("counting-wait10us", "counting", "10"),
+            ("counting-wait100us", "counting", "100"),
+            ("counting-wait1ms-default", "counting", "1000"),
+            ("counting-wait10ms", "counting", "10000"),
+            ("counting-wait100ms", "counting", "100000"),
+            ("counting-wait10s-b", "counting", "10000000"),
+            ("counting-profile-10s-b", "counting", "77"),
+        ]
+        rc, out, _stdout, stderr, calls, inherited = self.invoke("so")
+        self.assertEqual(rc, 0, stderr)
+        manifest = json.loads((out / "run.json").read_text())
+        self.assertEqual(manifest["status"], "complete")
+        self.assertEqual([cell["label"] for cell in manifest["cells"]], [e[0] for e in expected])
+        self.assertEqual(len(calls), len(expected))
+        for (label, shape, budget), call in zip(expected, calls):
+            with self.subTest(label=label):
+                self.assertEqual(call["command"], [
+                    str((self.root / "binaries" / f"qvo-sobjectizer-savina-{shape}").resolve()),
+                    "--repetitions", "7", "--warmup", "2", "--cpus", "0,2",
+                    "--param", "messages=1000000", "--param", "cores=2", "--param", "wait=1",
+                    "--out", str(call["attempt"])])
+                self.assertEqual(call["environment"], dict(inherited, QVO_SO_SPIN_WAIT_US=budget))
+                self.assertEqual(call["timeout"], 0.25)
+                self.assertEqual(call["attempt"].read_bytes(), call["raw_bytes"])
+                self.assertTrue(json.loads((out / f"{label}.json").read_text())["verified"])
+
+    def test_caf_arguments_order_and_environment_match_the_established_matrix(self) -> None:
+        expected = [
+            ("poll100-steal10", "100", "10"), ("poll1e3-steal10", "1000", "10"),
+            ("poll1e4-steal10", "10000", "10"), ("poll1e5-steal10", "100000", "10"),
+            ("poll1e6-steal10", "1000000", "10"), ("poll1e4-steal1", "10000", "1"),
+            ("poll1e4-steal100", "10000", "100"), ("poll1e4-steal1e3", "10000", "1000"),
+            ("poll1e6-steal1e6", "1000000", "1000000"), ("poll100-steal10-b", "100", "10"),
+        ]
+        rc, out, _stdout, stderr, calls, inherited = self.invoke()
+        self.assertEqual(rc, 0, stderr)
+        manifest = json.loads((out / "run.json").read_text())
+        self.assertEqual([cell["label"] for cell in manifest["cells"]], [e[0] for e in expected])
+        self.assertEqual(len(calls), len(expected))
+        for (label, poll, steal), call in zip(expected, calls):
+            with self.subTest(label=label):
+                self.assertEqual(call["command"], [
+                    str((self.root / "qvo-caf-savina-ping-pong.exe").resolve()),
+                    "--repetitions", "5", "--warmup", "2", "--cpus", "0,2",
+                    "--param", "messages=1000000", "--param", "cores=2", "--param", "wait=1",
+                    "--out", str(call["attempt"])])
+                self.assertEqual(call["environment"], dict(
+                    inherited, QVO_CAF_AGGRESSIVE_POLL=poll, QVO_CAF_STEAL_INTERVAL=steal))
+                self.assertEqual(call["timeout"], 0.25)
+
+    def test_pin_cpu_and_work_unit_mismatches_never_promote_a_timing(self) -> None:
+        for field, value in (("pinned", False), ("pinned", 1), ("cpus", "2,0"),
+                             ("work_unit", "message"), ("work_units", 2000000)):
+            with self.subTest(field=field, value=value):
+                def behavior(attempt, doc, index, cmd):
+                    if index == 0:
+                        doc[field] = value
+                    attempt.write_text(json.dumps(doc), encoding="utf-8")
+                    return subprocess.CompletedProcess(cmd, 0)
+                self.assert_failed_first_attempt(self.invoke(behavior=behavior))
+
+    def test_boolean_negative_and_nonfinite_numbers_are_not_timings_or_units(self) -> None:
+        for field in ("work_ns", "total_ns", "outside_window_ns", "work_p50", "work_units"):
+            for value in (True, -1, float("nan"), float("inf")):
+                with self.subTest(field=field, value=value):
+                    def behavior(attempt, doc, index, cmd):
+                        if index == 0:
+                            if field in ("work_ns", "total_ns", "outside_window_ns"):
+                                doc[field][0] = value
+                            elif field == "work_p50":
+                                doc["summary"][field] = value
+                            else:
+                                doc[field] = value
+                        attempt.write_text(json.dumps(doc), encoding="utf-8")
+                        return subprocess.CompletedProcess(cmd, 0)
+                    self.assert_failed_first_attempt(self.invoke(behavior=behavior))
+
+    def test_legacy_caf_expected_messages_accepts_absent_optional_metadata(self) -> None:
+        def legacy(attempt, doc, index, cmd):
+            for field in ("work_unit", "work_units", "total_ns", "outside_window_ns", "caveats"):
+                doc.pop(field)
+            if index % 2:
+                doc.pop("failures")
+            else:
+                doc["failures"] = None
+            # Older files have the checksum/message contract, before explicit work-unit fields.
+            doc["summary"] = {"work_p50": 111000000.0}
+            attempt.write_text(json.dumps(doc), encoding="utf-8")
+            return subprocess.CompletedProcess(cmd, 0)
+
+        rc, out, stdout, stderr, calls, _inherited = self.invoke(behavior=legacy)
+        self.assertEqual(rc, 0, stderr)
+        self.assertEqual(len(calls), 10)
+        self.assertEqual(stdout.count("ns/round trip"), 10)
+        self.assertIn("111.0", stdout)
+        doc = json.loads((out / "poll100-steal10.json").read_text())
+        self.assertEqual(doc["expected_messages"], 2000000)
+        self.assertNotIn("work_units", doc)
+        self.assertNotIn("work_min", doc["summary"])
+
+    def test_legacy_caf_requires_the_expected_round_trip_denominator(self) -> None:
+        for messages in (True, 0, 1000000, 2000001):
+            with self.subTest(expected_messages=messages):
+                def legacy(attempt, doc, index, cmd):
+                    if index == 0:
+                        doc.pop("work_unit")
+                        doc.pop("work_units")
+                        doc["expected_messages"] = messages
+                    attempt.write_text(json.dumps(doc), encoding="utf-8")
+                    return subprocess.CompletedProcess(cmd, 0)
+                self.assert_failed_first_attempt(self.invoke(behavior=legacy))
+
+    def test_timeout_and_launch_error_keep_raw_output_and_diagnostics(self) -> None:
+        for fault in ("timeout", "launch"):
+            with self.subTest(fault=fault):
+                def behavior(attempt, doc, index, cmd):
+                    if index == 0:
+                        if fault == "timeout":
+                            attempt.write_bytes(b'{"unfinished":')
+                            raise subprocess.TimeoutExpired(cmd, 0.25)
+                        raise OSError("fixture launch failed")
+                    attempt.write_text(json.dumps(doc), encoding="utf-8")
+                    return subprocess.CompletedProcess(cmd, 0)
+                result = self.invoke(behavior=behavior)
+                self.assert_failed_first_attempt(result)
+                self.assertEqual(len(result[4]), 10)
+                self.assertIn("timed out" if fault == "timeout" else "fixture launch failed", result[3])
+
+    def test_interrupt_records_incomplete_campaign_and_preserves_the_last_attempt(self) -> None:
+        def interrupted(attempt, _doc, _index, _cmd):
+            attempt.write_bytes(b'{"interrupted":')
+            raise KeyboardInterrupt("fixture interrupted")
+
+        rc, out, _stdout, stderr, calls, _inherited = self.invoke(behavior=interrupted)
+        self.assertEqual(rc, 130, stderr)
+        self.assertEqual(len(calls), 1)
+        manifest = json.loads((out / "run.json").read_text())
+        self.assertEqual(manifest["status"], "interrupted")
+        self.assertEqual(manifest["cells"][0]["status"], "interrupted")
+        raw = out / manifest["cells"][0]["attempt"]
+        self.assertEqual((raw / "result.json").read_bytes(), b'{"interrupted":')
+        self.assertEqual((raw / "stderr.txt").read_bytes(), b"fixture stderr\n")
+        self.assertEqual((raw / "stdout.txt").read_bytes(), b"fixture stdout\n")
+        self.assertIs(json.loads((out / "poll100-steal10.json").read_text())["verified"], False)
+        self.assertFalse((out / ".run.lock").exists())
+
+    def test_populated_output_and_another_owners_lock_refuse_every_launch(self) -> None:
+        for existing in ("old.json", ".run.lock/owner.txt"):
+            with self.subTest(existing=existing):
+                out = self.root / f"retained-{self.invocations}"
+                retained = out / existing
+                retained.parent.mkdir(parents=True)
+                retained.write_bytes(b"prior campaign bytes\n")
+                before = sorted(str(p.relative_to(out)) for p in out.rglob("*"))
+                rc, _out, _stdout, stderr, calls, _inherited = self.invoke(out=out)
+                self.assertEqual(rc, 2, stderr)
+                self.assertEqual(calls, [])
+                self.assertEqual(retained.read_bytes(), b"prior campaign bytes\n")
+                self.assertEqual(sorted(str(p.relative_to(out)) for p in out.rglob("*")), before)
+
+    def test_files_appearing_while_admitting_a_campaign_are_not_overwritten(self) -> None:
+        out = self.root / "admission-race"
+        mkdir = Path.mkdir
+        planted = []
+
+        def raced(path, *args, **kwargs):
+            result = mkdir(path, *args, **kwargs)
+            if path.resolve() == (out / ".run.lock").resolve():
+                (out / "prior.json").write_bytes(b"another campaign finished\n")
+                planted.append(path)
+            return result
+
+        with patch.object(Path, "mkdir", new=raced):
+            rc, _out, _stdout, stderr, calls, _inherited = self.invoke(out=out)
+        self.assertEqual(len(planted), 1, "the admission-race fixture must actually land")
+        self.assertEqual(rc, 2, stderr)
+        self.assertEqual(calls, [])
+        self.assertEqual((out / "prior.json").read_bytes(), b"another campaign finished\n")
+        self.assertFalse((out / ".run.lock").exists())
+        self.assertFalse((out / "run.json").exists())
+
+
+class ReportDistributionTest(unittest.TestCase):
+    """QB-883/884: semantic oracles independent of a renderer-generated golden file."""
+
+    def setUp(self) -> None:
+        temp = tempfile.TemporaryDirectory(prefix="qvo-report-distribution-")
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+
+    def write(self, doc: dict) -> None:
+        dest = self.root / doc["benchmark"].replace("/", "-") / f"{doc['framework']}.json"
+        dest.parent.mkdir(exist_ok=True)
+        dest.write_text(json.dumps(doc), encoding="utf-8")
+
+    @staticmethod
+    def measured(framework: str, samples: list[float], summary: dict) -> dict:
+        doc = RunnerProvenanceTest.doc(verified=True)
+        doc.update(framework=framework, repetitions=len(samples), work_ns=samples,
+                   summary=summary, work_unit="round trip", work_units=10)
+        return doc
+
+    def uniform_field(self) -> None:
+        # These are durations in ns, ten work units each. All three statistics differ, and
+        # values after normalization differ too: rendering the median as min cannot pass.
+        for framework, offset in (("qb", 0), ("caf", 200), ("baseline", 100)):
+            self.write(self.measured(framework, [100 + offset, 110 + offset, 120 + offset,
+                                                130 + offset, 140 + offset],
+                                     {"work_min": 100 + offset, "work_p50": 120 + offset,
+                                      "work_p99": 139.6 + offset, "work_iqr": 20}))
+
+    def saved_fib(self) -> None:
+        source = Path(__file__).resolve().parent.parent / "results/desktop-win11-msvc19/savina-fib"
+        dest = self.root / "savina-fib"
+        dest.mkdir()
+        for framework in ("baseline", "qb", "caf"):
+            path = source / f"{framework}__2c-spin.json"
+            # Copy retained bytes into the sandbox; no rewrite of a historical input.
+            (dest / path.name).write_bytes(path.read_bytes())
+
+    def table(self, rendered: str, config: str = "1c-spin") -> list[list[str]]:
+        section = rendered.split(f"### {config}\n", 1)[1]
+        rows = []
+        for line in section.lstrip().splitlines():
+            if not line.startswith("|"):
+                break
+            rows.append([cell.strip() for cell in line.strip("|").split("|")])
+        self.assertTrue(rows)
+        return rows
+
+    def minimum_column(self, header: list[str]) -> int:
+        columns = [i for i, name in enumerate(header) if name == "minimum"]
+        self.assertEqual(len(columns), 1, header)
+        return columns[0]
+
+    def assert_no_floor_ranking(self, rendered: str) -> None:
+        # Ignore JSON-authored caveats and table values; inspect conclusions from the renderer.
+        conclusions = "\n".join(line for line in rendered.split("<details>", 1)[0].splitlines()
+                                if not line.startswith("|"))
+        self.assertNotIn("below the floor", conclusions)
+        self.assertNotRegex(conclusions, r"\d+(?:\.\d+)?x(?:\*\*)? the floor")
+        self.assertNotRegex(conclusions, r"floor[^\n]*\d+(?:\.\d+)?x")
+
+    def test_saved_bimodal_floor_cannot_produce_a_unique_ratio(self) -> None:
+        self.saved_fib()
+        rendered = report.render(self.root)
+        self.assertIn("**bimodal**", rendered)
+        self.assertIn("`baseline`", rendered)
+        self.assert_no_floor_ranking(rendered)
+
+    def test_each_bimodal_side_suppresses_floor_ordering(self) -> None:
+        for bimodal in ("baseline", "qb"):
+            with self.subTest(bimodal=bimodal):
+                self.uniform_field()
+                self.write(self.measured(bimodal, [100, 110, 120, 900, 950],
+                                         {"work_min": 100, "work_p50": 120,
+                                          "work_p99": 948, "work_iqr": 790}))
+                rendered = report.render(self.root)
+                self.assertIn("**bimodal**", rendered)
+                self.assert_no_floor_ranking(rendered)
+                if bimodal == "qb":
+                    self.assertNotRegex(rendered, r"`qb` is \*\*\d+(?:\.\d+)?x\*\* faster")
+
+    def test_unimodal_field_retains_framework_and_floor_comparisons(self) -> None:
+        self.uniform_field()
+        rendered = report.render(self.root)
+        self.assertNotIn("**bimodal**", rendered)
+        self.assertIn("`qb` is **2.67x** faster than `caf`", rendered)
+        self.assertIn("below the floor", rendered)
+        self.assertIn("0.55x", rendered)
+        self.write(self.measured("baseline", [50, 55, 60, 65, 70],
+                                 {"work_min": 50, "work_p50": 60, "work_p99": 69.8, "work_iqr": 10}))
+        self.assertIn("**2.00x the floor**", report.render(self.root))
+
+    def test_bimodal_second_framework_does_not_make_best_the_fastest(self) -> None:
+        self.uniform_field()
+        self.write(self.measured("caf", [90, 100, 300, 310, 320],
+                                 {"work_min": 90, "work_p50": 300, "work_p99": 319.6,
+                                  "work_iqr": 210}))
+        rendered = report.render(self.root)
+        self.assertIn("**No ordering is claimed between `qb` and `caf`**", rendered)
+        self.assertIn("below the floor", rendered)
+        self.assertIn("0.55x", rendered)
+        self.assertNotIn("fastest framework", rendered.lower())
+
+    def test_absent_failed_or_unavailable_floor_does_not_produce_a_comparison(self) -> None:
+        for state in ("absent", "failed", "unavailable"):
+            with self.subTest(state=state):
+                self.uniform_field()
+                floor = self.root / "savina-ping-pong/baseline.json"
+                if state == "absent":
+                    floor.unlink()
+                else:
+                    doc = RunnerProvenanceTest.doc(
+                        verified=False, reason="fixture floor unavailable" if state == "unavailable" else None)
+                    doc["framework"] = "baseline"
+                    self.write(doc)
+                rendered = report.render(self.root)
+                self.assert_no_floor_ranking(rendered)
+                self.assertIn("`qb` is **2.67x** faster than `caf`", rendered)
+
+    def test_minimum_uses_total_duration_and_not_median_or_normalized_value(self) -> None:
+        self.uniform_field()
+        rows = self.table(report.render(self.root))
+        header, minimum = rows[0], self.minimum_column(rows[0])
+        qb = next(row for row in rows[2:] if row[0].startswith("`qb`"))
+        self.assertEqual(qb[minimum], "100 ns")
+        self.assertEqual(qb[header.index("median")], "120 ns")
+        self.assertEqual(qb[header.index("p99")], "140 ns")
+        self.assertEqual(qb[header.index("per round trip")], "12 ns")
+
+    def test_saved_minimum_is_read_from_its_own_summary(self) -> None:
+        self.saved_fib()
+        rows = self.table(report.render(self.root), "2c-spin")
+        header, minimum = rows[0], self.minimum_column(rows[0])
+        floor = next(row for row in rows[2:] if row[0].startswith("`baseline`"))
+        # Independent expectations from the retained JSON: 2,526,500 / 25,557,600 / 53,856,084 ns.
+        self.assertEqual(floor[minimum], "2.53 ms")
+        self.assertEqual(floor[header.index("median")], "25.56 ms")
+        self.assertEqual(floor[header.index("p99")], "53.86 ms")
+
+    def test_missing_minimum_is_unavailable_not_zero_or_reconstructed(self) -> None:
+        self.uniform_field()
+        doc = self.measured("qb", [100, 110, 120, 130, 140],
+                            {"work_p50": 120, "work_p99": 139.6, "work_iqr": 20})
+        self.write(doc)
+        rows = self.table(report.render(self.root))
+        minimum = self.minimum_column(rows[0])
+        qb = next(row for row in rows[2:] if row[0].startswith("`qb`"))
+        self.assertEqual(qb[minimum], "—")
+        self.assertEqual(qb[rows[0].index("median")], "120 ns")
+
+    def test_minimum_column_aligns_failed_na_bimodal_and_observation_rows(self) -> None:
+        self.uniform_field()
+        bimodal = self.measured("qb", [100, 110, 120, 900, 950],
+                                {"work_min": 100, "work_p50": 120, "work_p99": 948, "work_iqr": 790})
+        bimodal["observed"] = {"visits": {"samples": [2, 3, 4], "min": 2, "p50": 3, "max": 4}}
+        self.write(bimodal)
+        failed = RunnerProvenanceTest.doc(verified=False)
+        failed["framework"] = "caf"
+        self.write(failed)
+        unavailable = RunnerProvenanceTest.doc(verified=False, reason="fixture has no spin profile")
+        unavailable["framework"] = "sobjectizer"
+        self.write(unavailable)
+        rendered = report.render(self.root)
+        rows = self.table(rendered)
+        minimum = self.minimum_column(rows[0])
+        self.assertEqual(len(rows[0]), 7)
+        for row in rows[1:]:
+            self.assertEqual(len(row), len(rows[0]), row)
+        for framework, verdict in (("caf", "**FAILED**"), ("sobjectizer", "n/a")):
+            row = next(row for row in rows[2:] if row[0].startswith(f"`{framework}`"))
+            self.assertEqual(row[1], verdict)
+            self.assertEqual(row[minimum], "—")
+        for text in ("current attempt failed", "fixture has no spin profile", "**bimodal**",
+                     "**observed, not asserted**"):
+            self.assertIn(text, rendered)
 
 
 class LaunchCensusPlanTest(unittest.TestCase):

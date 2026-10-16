@@ -4,6 +4,8 @@
 
 Read [FAIRNESS.md](../../FAIRNESS.md) before reading any table below. In particular: these numbers measure message plumbing, not applications, and the spin/park axis moves them further than any architectural difference they show.
 
+Median, minimum, IQR and p99 are total durations per repetition; the per-unit column is the median divided by the declared work units. A missing minimum is shown as unavailable.
+
 ## Run
 
 - host: `desktop-x86`
@@ -30,21 +32,21 @@ Read [FAIRNESS.md](../../FAIRNESS.md) before reading any table below. In particu
 
 ### 1c-park
 
-| framework | verified | median | per node | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 5.63 ms | 274 ns | 118.82 us | 6.09 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 6.11 ms | 298 ns | 108.46 us | 6.77 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 6.18 ms | 301 ns | 144.21 us | 6.47 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,602 [1,602–1,602] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 5.59 ms | 273 ns | 42.70 us | 5.76 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per node | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 5.63 ms | 274 ns | 5.61 ms | 118.82 us | 6.09 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 6.11 ms | 298 ns | 6.02 ms | 108.46 us | 6.77 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 6.18 ms | 301 ns | 6.11 ms | 144.21 us | 6.47 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,602 [1,602–1,602] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 5.59 ms | 273 ns | 5.53 ms | 42.70 us | 5.76 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 **`qb` and `sobjectizer` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
 
-The fastest framework costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -75,21 +77,21 @@ The fastest framework costs **1.01x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per node | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 5.79 ms | 282 ns | 350.09 us | 6.06 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 6.20 ms | 302 ns | 194.49 us | 6.48 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 6.25 ms | 304 ns | 194.91 us | 6.57 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,602 [1,602–1,602] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 5.72 ms | 279 ns | 166.64 us | 6.25 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per node | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 5.79 ms | 282 ns | 5.60 ms | 350.09 us | 6.06 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 6.20 ms | 302 ns | 6.07 ms | 194.49 us | 6.48 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 6.25 ms | 304 ns | 6.15 ms | 194.91 us | 6.57 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,602 [1,602–1,602] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 5.72 ms | 279 ns | 5.67 ms | 166.64 us | 6.25 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,790 [1,790–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.07x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -120,21 +122,21 @@ The fastest framework costs **1.01x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per node | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 3.11 ms | 151 ns | 19.53 us | 3.21 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,399 [1,308–1,566] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 4.22 ms | 206 ns | 734.11 us | 6.34 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,477 [1,403–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 4.28 ms | 208 ns | 157.11 us | 4.51 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,757 [1,738–1,802] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 3.19 ms | 156 ns | 80.01 us | 3.47 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,475 [1,287–1,577] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per node | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 3.11 ms | 151 ns | 3.09 ms | 19.53 us | 3.21 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,399 [1,308–1,566] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 4.22 ms | 206 ns | 3.75 ms | 734.11 us | 6.34 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,477 [1,403–1,790] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 4.28 ms | 208 ns | 4.20 ms | 157.11 us | 4.51 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,757 [1,738–1,802] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 3.19 ms | 156 ns | 3.11 ms | 80.01 us | 3.47 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,475 [1,287–1,577] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.36x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.97x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.97x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -165,21 +167,21 @@ The fastest framework sits **below the floor** (0.97x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per node | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 3.07 ms | 149 ns | 17.57 us | 3.18 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,349 [1,330–1,627] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 3.74 ms | 182 ns | 258.02 us | 4.70 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,455 [1,379–1,662] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 4.21 ms | 205 ns | 105.97 us | 4.49 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,757 [1,538–1,829] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 5.22 ms | 254 ns | 230.04 us | 5.63 ms |
-| | <sub>**observed, not asserted**: `work_messages` median 1,336 [1,326–1,544] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per node | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 3.07 ms | 149 ns | 3.06 ms | 17.57 us | 3.18 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,349 [1,330–1,627] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 3.74 ms | 182 ns | 3.60 ms | 258.02 us | 4.70 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,455 [1,379–1,662] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 4.21 ms | 205 ns | 4.15 ms | 105.97 us | 4.49 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,757 [1,538–1,829] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 5.22 ms | 254 ns | 4.93 ms | 230.04 us | 5.63 ms |
+| | <sub>**observed, not asserted**: `work_messages` median 1,336 [1,326–1,544] over 9 repetitions (asserted ≥ 21) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.22x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.59x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.59x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -212,17 +214,17 @@ The fastest framework sits **below the floor** (0.59x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per transfer | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 7.27 ms | 145 ns | 138.16 us | 7.41 ms |
-| `sobjectizer` 5.8.5.1 | yes | 20.38 ms | 408 ns | 533.68 us | 20.98 ms |
-| `caf` 1.1.0 | yes | 37.40 ms | 748 ns | 499.95 us | 38.42 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 2.61 ms | 52 ns | 257.15 us | 2.96 ms |
+| framework | verified | median | per transfer | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 7.27 ms | 145 ns | 6.95 ms | 138.16 us | 7.41 ms |
+| `sobjectizer` 5.8.5.1 | yes | 20.38 ms | 408 ns | 20.03 ms | 533.68 us | 20.98 ms |
+| `caf` 1.1.0 | yes | 37.40 ms | 748 ns | 36.67 ms | 499.95 us | 38.42 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 2.61 ms | 52 ns | 2.56 ms | 257.15 us | 2.96 ms |
 
 `qb` is **2.80x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **2.78x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **2.78x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -255,17 +257,17 @@ The fastest framework costs **2.78x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per transfer | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 7.22 ms | 144 ns | 231.52 us | 7.62 ms |
-| `sobjectizer` 5.8.5.1 | yes | 19.32 ms | 386 ns | 206.64 us | 19.72 ms |
-| `caf` 1.1.0 | yes | 37.75 ms | 755 ns | 613.75 us | 38.59 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 1.12 ms | 22 ns | 25.77 us | 1.19 ms |
+| framework | verified | median | per transfer | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 7.22 ms | 144 ns | 6.61 ms | 231.52 us | 7.62 ms |
+| `sobjectizer` 5.8.5.1 | yes | 19.32 ms | 386 ns | 19.11 ms | 206.64 us | 19.72 ms |
+| `caf` 1.1.0 | yes | 37.75 ms | 755 ns | 37.09 ms | 613.75 us | 38.59 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 1.12 ms | 22 ns | 1.07 ms | 25.77 us | 1.19 ms |
 
 `qb` is **2.67x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **6.48x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **6.48x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -298,17 +300,17 @@ The fastest framework costs **6.48x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per transfer | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 4.14 ms | 83 ns | 217.18 us | 4.52 ms |
-| `sobjectizer` 5.8.5.1 | yes | 28.38 ms | 568 ns | 2.61 ms | 31.19 ms |
-| `caf` 1.1.0 | yes | 35.94 ms | 719 ns | 382.03 us | 36.54 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 5.17 ms | 103 ns | 482.07 us | 5.45 ms |
+| framework | verified | median | per transfer | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 4.14 ms | 83 ns | 4.08 ms | 217.18 us | 4.52 ms |
+| `sobjectizer` 5.8.5.1 | yes | 28.38 ms | 568 ns | 26.28 ms | 2.61 ms | 31.19 ms |
+| `caf` 1.1.0 | yes | 35.94 ms | 719 ns | 34.32 ms | 382.03 us | 36.54 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 5.17 ms | 103 ns | 4.66 ms | 482.07 us | 5.45 ms |
 
 `qb` is **6.85x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.80x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.80x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -341,17 +343,17 @@ The fastest framework sits **below the floor** (0.80x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per transfer | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 3.98 ms | 80 ns | 361.05 us | 4.28 ms |
-| `sobjectizer` 5.8.5.1 | yes | 24.51 ms | 490 ns | 861.32 us | 26.04 ms |
-| `caf` 1.1.0 | yes | 35.62 ms | 712 ns | 2.22 ms | 37.86 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 6.22 ms | 124 ns | 640.34 us | 6.35 ms |
+| framework | verified | median | per transfer | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 3.98 ms | 80 ns | 3.77 ms | 361.05 us | 4.28 ms |
+| `sobjectizer` 5.8.5.1 | yes | 24.51 ms | 490 ns | 24.00 ms | 861.32 us | 26.04 ms |
+| `caf` 1.1.0 | yes | 35.62 ms | 712 ns | 33.51 ms | 2.22 ms | 37.86 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 6.22 ms | 124 ns | 2.83 ms | 640.34 us | 6.35 ms |
 
 `qb` is **6.15x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.64x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.64x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -386,21 +388,21 @@ The fastest framework sits **below the floor** (0.64x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per haircut | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 14.28 ms | 2.86 us | 184.02 us | 14.49 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 23.55 ms | 4.71 us | 1.35 ms | 25.67 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 30.38 ms | 6.08 us | 2.51 ms | 36.73 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 13.51 ms | 2.70 us | 108.78 us | 13.89 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per haircut | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 14.28 ms | 2.86 us | 13.98 ms | 184.02 us | 14.49 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 23.55 ms | 4.71 us | 23.07 ms | 1.35 ms | 25.67 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 30.38 ms | 6.08 us | 28.67 ms | 2.51 ms | 36.73 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 13.51 ms | 2.70 us | 13.42 ms | 108.78 us | 13.89 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.65x** faster than `caf` in this configuration.
 
-The fastest framework costs **1.06x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.06x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -432,21 +434,21 @@ The fastest framework costs **1.06x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per haircut | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 14.54 ms | 2.91 us | 188.71 us | 14.69 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 23.45 ms | 4.69 us | 393.83 us | 27.59 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 30.07 ms | 6.01 us | 1.74 ms | 31.98 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 13.49 ms | 2.70 us | 249.23 us | 13.66 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per haircut | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 14.54 ms | 2.91 us | 14.19 ms | 188.71 us | 14.69 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 23.45 ms | 4.69 us | 23.08 ms | 393.83 us | 27.59 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 30.07 ms | 6.01 us | 28.75 ms | 1.74 ms | 31.98 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 13.49 ms | 2.70 us | 13.30 ms | 249.23 us | 13.66 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.61x** faster than `caf` in this configuration.
 
-The fastest framework costs **1.08x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.08x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -478,21 +480,21 @@ The fastest framework costs **1.08x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per haircut | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 13.93 ms | 2.79 us | 299.44 us | 14.05 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 5 [5–19] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 23.92 ms | 4.78 us | 2.44 ms | 26.84 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 27.65 ms | 5.53 us | 2.46 ms | 35.67 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 549 [324–939] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 15.92 ms | 3.18 us | 1.12 ms | 17.12 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 2 [2–3] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per haircut | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 13.93 ms | 2.79 us | 13.68 ms | 299.44 us | 14.05 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 5 [5–19] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 23.92 ms | 4.78 us | 23.31 ms | 2.44 ms | 26.84 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 27.65 ms | 5.53 us | 20.75 ms | 2.46 ms | 35.67 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 549 [324–939] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 15.92 ms | 3.18 us | 12.93 ms | 1.12 ms | 17.12 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 2 [2–3] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.72x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.87x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.87x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -524,21 +526,21 @@ The fastest framework sits **below the floor** (0.87x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per haircut | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 13.76 ms | 2.75 us | 86.71 us | 14.26 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 5 [2–8] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 23.84 ms | 4.77 us | 2.02 ms | 26.89 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 27.72 ms | 5.54 us | 4.39 ms | 38.96 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1,750 [1,460–3,072] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 11.71 ms | 2.34 us | 539.89 us | 12.07 ms |
-| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 2 [2–2] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per haircut | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 13.76 ms | 2.75 us | 13.56 ms | 86.71 us | 14.26 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 5 [2–8] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 23.84 ms | 4.77 us | 23.14 ms | 2.02 ms | 26.89 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1 [1–1] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 27.72 ms | 5.54 us | 22.41 ms | 4.39 ms | 38.96 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 1,750 [1,460–3,072] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 11.71 ms | 2.34 us | 10.87 ms | 539.89 us | 12.07 ms |
+| | <sub>**observed, not asserted**: `rejections` median 0 [0–0] over 9 repetitions; `wakeups` median 2 [2–2] over 9 repetitions (asserted ≥ 1) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.73x** faster than `caf` in this configuration.
 
-The fastest framework costs **1.18x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.18x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -572,17 +574,17 @@ The fastest framework costs **1.18x the floor** — that multiple is what being 
 
 ### 1c-park
 
-| framework | verified | median | per round trip | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 42.37 ms | 18 ns | 1.03 ms | 42.98 ms |
-| `sobjectizer` 5.8.5.1 | yes | 341.46 ms | 142 ns | 5.13 ms | 345.79 ms |
-| `caf` 1.1.0 | yes | 691.13 ms | 288 ns | 1.07 ms | 696.14 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 35.53 ms | 15 ns | 873.98 us | 37.31 ms |
+| framework | verified | median | per round trip | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 42.37 ms | 18 ns | 41.71 ms | 1.03 ms | 42.98 ms |
+| `sobjectizer` 5.8.5.1 | yes | 341.46 ms | 142 ns | 337.62 ms | 5.13 ms | 345.79 ms |
+| `caf` 1.1.0 | yes | 691.13 ms | 288 ns | 687.47 ms | 1.07 ms | 696.14 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 35.53 ms | 15 ns | 31.14 ms | 873.98 us | 37.31 ms |
 
 `qb` is **8.06x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.19x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.19x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -611,17 +613,17 @@ The fastest framework costs **1.19x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per round trip | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 42.01 ms | 18 ns | 502.28 us | 43.58 ms |
-| `sobjectizer` 5.8.5.1 | yes | 318.53 ms | 133 ns | 609.85 us | 320.74 ms |
-| `caf` 1.1.0 | yes | 698.55 ms | 291 ns | 3.83 ms | 700.85 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 17.07 ms | 7 ns | 147.10 us | 17.69 ms |
+| framework | verified | median | per round trip | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 42.01 ms | 18 ns | 41.42 ms | 502.28 us | 43.58 ms |
+| `sobjectizer` 5.8.5.1 | yes | 318.53 ms | 133 ns | 314.60 ms | 609.85 us | 320.74 ms |
+| `caf` 1.1.0 | yes | 698.55 ms | 291 ns | 693.41 ms | 3.83 ms | 700.85 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 17.07 ms | 7 ns | 17.05 ms | 147.10 us | 17.69 ms |
 
 `qb` is **7.58x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **2.46x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **2.46x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -650,17 +652,17 @@ The fastest framework costs **2.46x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per round trip | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 42.06 ms | 18 ns | 1.12 ms | 44.04 ms |
-| `caf` 1.1.0 | yes | 593.17 ms | 247 ns | 4.92 ms | 598.74 ms |
-| `sobjectizer` 5.8.5.1 | yes | 667.92 ms | 278 ns | 91.84 ms | 768.38 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 124.23 ms | 52 ns | 2.49 ms | 127.86 ms |
+| framework | verified | median | per round trip | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 42.06 ms | 18 ns | 41.55 ms | 1.12 ms | 44.04 ms |
+| `caf` 1.1.0 | yes | 593.17 ms | 247 ns | 589.30 ms | 4.92 ms | 598.74 ms |
+| `sobjectizer` 5.8.5.1 | yes | 667.92 ms | 278 ns | 642.55 ms | 91.84 ms | 768.38 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 124.23 ms | 52 ns | 117.60 ms | 2.49 ms | 127.86 ms |
 
 `qb` is **14.10x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.34x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.34x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -689,17 +691,17 @@ The fastest framework sits **below the floor** (0.34x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per round trip | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 43.05 ms | 18 ns | 1.04 ms | 44.95 ms |
-| `sobjectizer` 5.8.5.1 | yes | 527.79 ms | 220 ns | 15.83 ms | 533.75 ms |
-| `caf` 1.1.0 | yes | 592.79 ms | 247 ns | 3.43 ms | 598.72 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 59.24 ms | 25 ns | 1.73 ms | 60.89 ms |
+| framework | verified | median | per round trip | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 43.05 ms | 18 ns | 42.23 ms | 1.04 ms | 44.95 ms |
+| `sobjectizer` 5.8.5.1 | yes | 527.79 ms | 220 ns | 499.88 ms | 15.83 ms | 533.75 ms |
+| `caf` 1.1.0 | yes | 592.79 ms | 247 ns | 591.09 ms | 3.43 ms | 598.72 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 59.24 ms | 25 ns | 56.11 ms | 1.73 ms | 60.89 ms |
 
 `qb` is **12.26x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.73x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.73x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -730,21 +732,21 @@ The fastest framework sits **below the floor** (0.73x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per item | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 523.19 ms | 13.08 us | 1.80 ms | 525.83 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 532.15 ms | 13.30 us | 1.54 ms | 535.36 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 546.59 ms | 13.66 us | 2.45 ms | 552.32 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 10 [10–10] over 9 repetitions; `consumer_waits` median 1,600 [1,600–1,600] over 9 repetitions; `producer_waits` median 38,040 [38,040–38,040] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 518.53 ms | 12.96 us | 2.07 ms | 526.12 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per item | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 523.19 ms | 13.08 us | 522.22 ms | 1.80 ms | 525.83 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 532.15 ms | 13.30 us | 529.61 ms | 1.54 ms | 535.36 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 546.59 ms | 13.66 us | 542.97 ms | 2.45 ms | 552.32 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 10 [10–10] over 9 repetitions; `consumer_waits` median 1,600 [1,600–1,600] over 9 repetitions; `producer_waits` median 38,040 [38,040–38,040] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 518.53 ms | 12.96 us | 513.41 ms | 2.07 ms | 526.12 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.02x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -773,21 +775,21 @@ The fastest framework costs **1.01x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per item | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 522.84 ms | 13.07 us | 2.20 ms | 527.41 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 531.08 ms | 13.28 us | 1.91 ms | 532.68 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 545.59 ms | 13.64 us | 1.39 ms | 548.58 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 10 [10–10] over 9 repetitions; `consumer_waits` median 1,600 [1,600–1,600] over 9 repetitions; `producer_waits` median 38,040 [38,040–38,040] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 519.24 ms | 12.98 us | 1.78 ms | 523.33 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per item | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 522.84 ms | 13.07 us | 520.43 ms | 2.20 ms | 527.41 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 531.08 ms | 13.28 us | 528.66 ms | 1.91 ms | 532.68 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 545.59 ms | 13.64 us | 543.32 ms | 1.39 ms | 548.58 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 10 [10–10] over 9 repetitions; `consumer_waits` median 1,600 [1,600–1,600] over 9 repetitions; `producer_waits` median 38,040 [38,040–38,040] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 519.24 ms | 12.98 us | 515.70 ms | 1.78 ms | 523.33 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.02x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -816,21 +818,21 @@ The fastest framework costs **1.01x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per item | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 267.20 ms | 6.68 us | 829.88 us | 267.89 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 10 [10–10] over 9 repetitions; `consumer_waits` median 16,232 [15,563–17,065] over 9 repetitions; `producer_waits` median 11 [1–876] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 290.11 ms | 7.25 us | 1.52 ms | 291.70 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 6 [5–9] over 9 repetitions; `consumer_waits` median 10,995 [7,008–13,686] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 296.23 ms | 7.41 us | 8.90 ms | 312.86 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 45 [40–49] over 9 repetitions; `consumer_waits` median 333 [237–435] over 9 repetitions; `producer_waits` median 34,139 [29,933–36,661] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 544.62 ms | 13.62 us | 3.78 ms | 555.13 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per item | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 267.20 ms | 6.68 us | 266.11 ms | 829.88 us | 267.89 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 10 [10–10] over 9 repetitions; `consumer_waits` median 16,232 [15,563–17,065] over 9 repetitions; `producer_waits` median 11 [1–876] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 290.11 ms | 7.25 us | 289.33 ms | 1.52 ms | 291.70 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 6 [5–9] over 9 repetitions; `consumer_waits` median 10,995 [7,008–13,686] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 296.23 ms | 7.41 us | 285.71 ms | 8.90 ms | 312.86 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 45 [40–49] over 9 repetitions; `consumer_waits` median 333 [237–435] over 9 repetitions; `producer_waits` median 34,139 [29,933–36,661] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 544.62 ms | 13.62 us | 539.26 ms | 3.78 ms | 555.13 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.09x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.49x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.49x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -859,21 +861,21 @@ The fastest framework sits **below the floor** (0.49x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per item | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 267.55 ms | 6.69 us | 1.04 ms | 268.26 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 10 [10–10] over 9 repetitions; `consumer_waits` median 16,175 [15,426–16,363] over 9 repetitions; `producer_waits` median 372 [11–868] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 282.98 ms | 7.07 us | 1.02 ms | 283.99 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 5 [4–7] over 9 repetitions; `consumer_waits` median 9,627 [6,748–13,517] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 297.51 ms | 7.44 us | 7.09 ms | 313.06 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 39 [31–49] over 9 repetitions; `consumer_waits` median 384 [296–539] over 9 repetitions; `producer_waits` median 34,428 [32,010–35,496] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 446.92 ms | 11.17 us | 1.03 ms | 448.51 ms |
-| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per item | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 267.55 ms | 6.69 us | 266.05 ms | 1.04 ms | 268.26 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 10 [10–10] over 9 repetitions; `consumer_waits` median 16,175 [15,426–16,363] over 9 repetitions; `producer_waits` median 372 [11–868] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 282.98 ms | 7.07 us | 281.92 ms | 1.02 ms | 283.99 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 5 [4–7] over 9 repetitions; `consumer_waits` median 9,627 [6,748–13,517] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 297.51 ms | 7.44 us | 292.13 ms | 7.09 ms | 313.06 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 39 [31–49] over 9 repetitions; `consumer_waits` median 384 [296–539] over 9 repetitions; `producer_waits` median 34,428 [32,010–35,496] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 446.92 ms | 11.17 us | 446.15 ms | 1.03 ms | 448.51 ms |
+| | <sub>**observed, not asserted**: `buffer_peak` median 0 [0–0] over 9 repetitions; `consumer_waits` median 40,000 [40,000–40,000] over 9 repetitions; `producer_waits` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.06x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.60x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.60x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -904,17 +906,17 @@ The fastest framework sits **below the floor** (0.60x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per meeting | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 5.31 ms | 27 ns | 124.75 us | 5.47 ms |
-| `sobjectizer` 5.8.5.1 | yes | 56.23 ms | 281 ns | 730.56 us | 57.02 ms |
-| `caf` 1.1.0 | yes | 116.45 ms | 582 ns | 758.27 us | 118.88 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 5.44 ms | 27 ns | 77.58 us | 5.56 ms |
+| framework | verified | median | per meeting | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 5.31 ms | 27 ns | 5.08 ms | 124.75 us | 5.47 ms |
+| `sobjectizer` 5.8.5.1 | yes | 56.23 ms | 281 ns | 55.67 ms | 730.56 us | 57.02 ms |
+| `caf` 1.1.0 | yes | 116.45 ms | 582 ns | 115.26 ms | 758.27 us | 118.88 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 5.44 ms | 27 ns | 5.37 ms | 77.58 us | 5.56 ms |
 
 `qb` is **10.59x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.98x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.98x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -943,17 +945,17 @@ The fastest framework sits **below the floor** (0.98x) — which means it is not
 
 ### 1c-spin
 
-| framework | verified | median | per meeting | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 5.11 ms | 26 ns | 113.64 us | 5.33 ms |
-| `sobjectizer` 5.8.5.1 | yes | 52.14 ms | 261 ns | 455.79 us | 52.91 ms |
-| `caf` 1.1.0 | yes | 116.31 ms | 582 ns | 1.12 ms | 119.79 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 2.83 ms | 14 ns | 125.41 us | 3.01 ms |
+| framework | verified | median | per meeting | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 5.11 ms | 26 ns | 4.90 ms | 113.64 us | 5.33 ms |
+| `sobjectizer` 5.8.5.1 | yes | 52.14 ms | 261 ns | 51.88 ms | 455.79 us | 52.91 ms |
+| `caf` 1.1.0 | yes | 116.31 ms | 582 ns | 114.45 ms | 1.12 ms | 119.79 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 2.83 ms | 14 ns | 2.75 ms | 125.41 us | 3.01 ms |
 
 `qb` is **10.20x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.81x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.81x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -982,17 +984,17 @@ The fastest framework costs **1.81x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per meeting | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 8.88 ms | 44 ns | 170.50 us | 9.18 ms |
-| `caf` 1.1.0 | yes | 117.05 ms | 585 ns | 1.46 ms | 119.35 ms |
-| `sobjectizer` 5.8.5.1 | yes | 200.41 ms | 1.00 us | 20.91 ms | 212.89 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 59.53 ms | 298 ns | 3.08 ms | 63.80 ms |
+| framework | verified | median | per meeting | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 8.88 ms | 44 ns | 8.65 ms | 170.50 us | 9.18 ms |
+| `caf` 1.1.0 | yes | 117.05 ms | 585 ns | 116.01 ms | 1.46 ms | 119.35 ms |
+| `sobjectizer` 5.8.5.1 | yes | 200.41 ms | 1.00 us | 173.75 ms | 20.91 ms | 212.89 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 59.53 ms | 298 ns | 56.63 ms | 3.08 ms | 63.80 ms |
 
 `qb` is **13.18x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.15x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.15x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1021,17 +1023,17 @@ The fastest framework sits **below the floor** (0.15x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per meeting | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 8.91 ms | 45 ns | 333.37 us | 10.39 ms |
-| `caf` 1.1.0 | yes | 116.81 ms | 584 ns | 472.16 us | 118.92 ms |
-| `sobjectizer` 5.8.5.1 | yes | 135.68 ms | 678 ns | 10.04 ms | 141.43 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 29.73 ms | 149 ns | 4.82 ms | 31.29 ms |
+| framework | verified | median | per meeting | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 8.91 ms | 45 ns | 8.64 ms | 333.37 us | 10.39 ms |
+| `caf` 1.1.0 | yes | 116.81 ms | 584 ns | 116.26 ms | 472.16 us | 118.92 ms |
+| `sobjectizer` 5.8.5.1 | yes | 135.68 ms | 678 ns | 115.90 ms | 10.04 ms | 141.43 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 29.73 ms | 149 ns | 25.28 ms | 4.82 ms | 31.29 ms |
 
 `qb` is **13.10x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.30x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.30x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1062,17 +1064,17 @@ The fastest framework sits **below the floor** (0.30x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per round | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 67.60 ms | 1.35 us | 1.35 ms | 69.18 ms |
-| `sobjectizer` 5.8.5.1 | yes | 73.81 ms | 1.48 us | 691.45 us | 74.81 ms |
-| `caf` 1.1.0 | yes | 80.98 ms | 1.62 us | 219.80 us | 81.20 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 66.82 ms | 1.34 us | 1.10 ms | 67.34 ms |
+| framework | verified | median | per round | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 67.60 ms | 1.35 us | 66.71 ms | 1.35 ms | 69.18 ms |
+| `sobjectizer` 5.8.5.1 | yes | 73.81 ms | 1.48 us | 73.10 ms | 691.45 us | 74.81 ms |
+| `caf` 1.1.0 | yes | 80.98 ms | 1.62 us | 80.19 ms | 219.80 us | 81.20 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 66.82 ms | 1.34 us | 65.91 ms | 1.10 ms | 67.34 ms |
 
 `qb` is **1.09x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1101,17 +1103,17 @@ The fastest framework costs **1.01x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per round | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 67.66 ms | 1.35 us | 893.78 us | 68.76 ms |
-| `sobjectizer` 5.8.5.1 | yes | 72.76 ms | 1.46 us | 702.46 us | 73.58 ms |
-| `caf` 1.1.0 | yes | 82.95 ms | 1.66 us | 1.26 ms | 84.47 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 66.72 ms | 1.33 us | 538.09 us | 68.07 ms |
+| framework | verified | median | per round | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 67.66 ms | 1.35 us | 66.86 ms | 893.78 us | 68.76 ms |
+| `sobjectizer` 5.8.5.1 | yes | 72.76 ms | 1.46 us | 72.18 ms | 702.46 us | 73.58 ms |
+| `caf` 1.1.0 | yes | 82.95 ms | 1.66 us | 80.80 ms | 1.26 ms | 84.47 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 66.72 ms | 1.33 us | 66.32 ms | 538.09 us | 68.07 ms |
 
 `qb` is **1.08x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1140,17 +1142,17 @@ The fastest framework costs **1.01x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per round | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 57.65 ms | 1.15 us | 293.12 us | 58.59 ms |
-| `caf` 1.1.0 | yes | 82.08 ms | 1.64 us | 1.05 ms | 83.99 ms |
-| `sobjectizer` 5.8.5.1 | yes | 87.12 ms | 1.74 us | 3.15 ms | 94.68 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 668.25 ms | 13.37 us | 3.10 ms | 683.23 ms |
+| framework | verified | median | per round | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 57.65 ms | 1.15 us | 57.47 ms | 293.12 us | 58.59 ms |
+| `caf` 1.1.0 | yes | 82.08 ms | 1.64 us | 81.37 ms | 1.05 ms | 83.99 ms |
+| `sobjectizer` 5.8.5.1 | yes | 87.12 ms | 1.74 us | 81.33 ms | 3.15 ms | 94.68 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 668.25 ms | 13.37 us | 658.68 ms | 3.10 ms | 683.23 ms |
 
 `qb` is **1.42x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.09x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.09x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1179,17 +1181,17 @@ The fastest framework sits **below the floor** (0.09x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per round | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `sobjectizer` 5.8.5.1 | yes | 45.89 ms | 918 ns | 607.94 us | 46.77 ms |
-| `qb` 3.2.1 | yes | 57.69 ms | 1.15 us | 541.99 us | 58.38 ms |
-| `caf` 1.1.0 | yes | 82.31 ms | 1.65 us | 665.90 us | 83.38 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 58.76 ms | 1.18 us | 3.27 ms | 62.25 ms |
+| framework | verified | median | per round | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `sobjectizer` 5.8.5.1 | yes | 45.89 ms | 918 ns | 45.32 ms | 607.94 us | 46.77 ms |
+| `qb` 3.2.1 | yes | 57.69 ms | 1.15 us | 57.25 ms | 541.99 us | 58.38 ms |
+| `caf` 1.1.0 | yes | 82.31 ms | 1.65 us | 81.67 ms | 665.90 us | 83.38 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 58.76 ms | 1.18 us | 58.12 ms | 3.27 ms | 62.25 ms |
 
 `sobjectizer` is **1.26x** faster than `qb` in this configuration.
 
-The fastest framework sits **below the floor** (0.78x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`sobjectizer` sits **below the floor** (0.78x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1220,17 +1222,17 @@ The fastest framework sits **below the floor** (0.78x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per operation | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 8.51 ms | 43 ns | 425.60 us | 9.34 ms |
-| `sobjectizer` 5.8.5.1 | yes | 35.11 ms | 176 ns | 914.27 us | 39.51 ms |
-| `caf` 1.1.0 | yes | 73.56 ms | 368 ns | 3.88 ms | 78.40 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 5.55 ms | 28 ns | 77.78 us | 8.60 ms |
+| framework | verified | median | per operation | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 8.51 ms | 43 ns | 8.11 ms | 425.60 us | 9.34 ms |
+| `sobjectizer` 5.8.5.1 | yes | 35.11 ms | 176 ns | 34.33 ms | 914.27 us | 39.51 ms |
+| `caf` 1.1.0 | yes | 73.56 ms | 368 ns | 72.22 ms | 3.88 ms | 78.40 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 5.55 ms | 28 ns | 5.35 ms | 77.78 us | 8.60 ms |
 
 `qb` is **4.13x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.53x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.53x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1268,17 +1270,17 @@ The fastest framework costs **1.53x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per operation | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 8.20 ms | 41 ns | 793.43 us | 10.31 ms |
-| `sobjectizer` 5.8.5.1 | yes | 34.35 ms | 172 ns | 2.53 ms | 41.69 ms |
-| `caf` 1.1.0 | yes | 73.26 ms | 366 ns | 3.25 ms | 80.08 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 5.10 ms | 26 ns | 787.92 us | 5.98 ms |
+| framework | verified | median | per operation | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 8.20 ms | 41 ns | 8.00 ms | 793.43 us | 10.31 ms |
+| `sobjectizer` 5.8.5.1 | yes | 34.35 ms | 172 ns | 32.47 ms | 2.53 ms | 41.69 ms |
+| `caf` 1.1.0 | yes | 73.26 ms | 366 ns | 70.30 ms | 3.25 ms | 80.08 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 5.10 ms | 26 ns | 4.67 ms | 787.92 us | 5.98 ms |
 
 `qb` is **4.19x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.61x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.61x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1316,17 +1318,17 @@ The fastest framework costs **1.61x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per operation | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 9.82 ms | 49 ns | 1.69 ms | 12.63 ms |
-| `caf` 1.1.0 | yes | 75.74 ms | 379 ns | 4.94 ms | 81.12 ms |
-| `sobjectizer` 5.8.5.1 | yes | 103.01 ms | 515 ns | 9.83 ms | 115.14 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 261.88 ms | 1.31 us | 10.14 ms | 267.87 ms |
+| framework | verified | median | per operation | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 9.82 ms | 49 ns | 9.27 ms | 1.69 ms | 12.63 ms |
+| `caf` 1.1.0 | yes | 75.74 ms | 379 ns | 73.65 ms | 4.94 ms | 81.12 ms |
+| `sobjectizer` 5.8.5.1 | yes | 103.01 ms | 515 ns | 92.70 ms | 9.83 ms | 115.14 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 261.88 ms | 1.31 us | 247.07 ms | 10.14 ms | 267.87 ms |
 
 `qb` is **7.71x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.04x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.04x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1364,17 +1366,17 @@ The fastest framework sits **below the floor** (0.04x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per operation | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 10.28 ms | 51 ns | 1.20 ms | 13.70 ms |
-| `sobjectizer` 5.8.5.1 | yes | 69.99 ms | 350 ns | 3.22 ms | 73.10 ms |
-| `caf` 1.1.0 | yes | 74.42 ms | 372 ns | 8.04 ms | 83.60 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 10.68 ms | 53 ns | 442.44 us | 11.79 ms |
+| framework | verified | median | per operation | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 10.28 ms | 51 ns | 9.29 ms | 1.20 ms | 13.70 ms |
+| `sobjectizer` 5.8.5.1 | yes | 69.99 ms | 350 ns | 67.94 ms | 3.22 ms | 73.10 ms |
+| `caf` 1.1.0 | yes | 74.42 ms | 372 ns | 71.36 ms | 8.04 ms | 83.60 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 10.68 ms | 53 ns | 10.07 ms | 442.44 us | 11.79 ms |
 
 `qb` is **6.81x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.96x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.96x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1414,21 +1416,21 @@ The fastest framework sits **below the floor** (0.96x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per request | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 3,356.13 ms | 20.98 us | 4.75 ms | 3,381.61 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 3,380.17 ms | 21.13 us | 27.04 ms | 3,390.90 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 3,449.23 ms | 21.56 us | 16.53 ms | 3,482.80 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,159,996,386 [1,159,996,386–1,159,996,386] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 80,759 [80,759–80,759] over 9 repetitions (asserted ≥ 65); `write_walk` median 65,183,103 [65,183,103–65,183,103] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 3,327.30 ms | 20.80 us | 24.06 ms | 3,359.39 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per request | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 3,356.13 ms | 20.98 us | 3,352.57 ms | 4.75 ms | 3,381.61 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 3,380.17 ms | 21.13 us | 3,348.16 ms | 27.04 ms | 3,390.90 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 3,449.23 ms | 21.56 us | 3,430.52 ms | 16.53 ms | 3,482.80 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,159,996,386 [1,159,996,386–1,159,996,386] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 80,759 [80,759–80,759] over 9 repetitions (asserted ≥ 65); `write_walk` median 65,183,103 [65,183,103–65,183,103] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 3,327.30 ms | 20.80 us | 3,310.55 ms | 24.06 ms | 3,359.39 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 **`qb` and `sobjectizer` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
 
-The fastest framework costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1460,21 +1462,21 @@ The fastest framework costs **1.01x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per request | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `sobjectizer` 5.8.5.1 | yes | 3,363.44 ms | 21.02 us | 8.68 ms | 3,406.38 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `qb` 3.2.1 | yes | 3,375.86 ms | 21.10 us | 45.61 ms | 3,406.36 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 3,441.08 ms | 21.51 us | 11.83 ms | 3,466.31 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,159,996,386 [1,159,996,386–1,159,996,386] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 80,759 [80,759–80,759] over 9 repetitions (asserted ≥ 65); `write_walk` median 65,183,103 [65,183,103–65,183,103] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 3,344.01 ms | 20.90 us | 18.65 ms | 3,372.22 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per request | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `sobjectizer` 5.8.5.1 | yes | 3,363.44 ms | 21.02 us | 3,351.00 ms | 8.68 ms | 3,406.38 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `qb` 3.2.1 | yes | 3,375.86 ms | 21.10 us | 3,355.08 ms | 45.61 ms | 3,406.36 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 3,441.08 ms | 21.51 us | 3,433.66 ms | 11.83 ms | 3,466.31 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,159,996,386 [1,159,996,386–1,159,996,386] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 80,759 [80,759–80,759] over 9 repetitions (asserted ≥ 65); `write_walk` median 65,183,103 [65,183,103–65,183,103] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 3,344.01 ms | 20.90 us | 3,318.49 ms | 18.65 ms | 3,372.22 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 **`sobjectizer` and `qb` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
 
-The fastest framework costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
+`sobjectizer` costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1506,21 +1508,21 @@ The fastest framework costs **1.01x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per request | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 3,424.69 ms | 21.40 us | 23.70 ms | 3,454.08 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 3,487.41 ms | 21.80 us | 30.32 ms | 3,520.24 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,158,348,121 [1,156,232,675–1,159,492,129] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 10,042 [7,695–13,527] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,828,252 [64,724,032–64,912,077] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 4,542.73 ms | 28.39 us | 19.92 ms | 4,559.98 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,510 [1,155,674,562–1,155,678,772] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,235 [1,232–1,236] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,369 [64,958,281–64,958,661] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 4,422.44 ms | 27.64 us | 11.87 ms | 4,450.67 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per request | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 3,424.69 ms | 21.40 us | 3,413.91 ms | 23.70 ms | 3,454.08 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 3,487.41 ms | 21.80 us | 3,476.35 ms | 30.32 ms | 3,520.24 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,158,348,121 [1,156,232,675–1,159,492,129] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 10,042 [7,695–13,527] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,828,252 [64,724,032–64,912,077] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 4,542.73 ms | 28.39 us | 4,523.01 ms | 19.92 ms | 4,559.98 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,510 [1,155,674,562–1,155,678,772] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,235 [1,232–1,236] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,369 [64,958,281–64,958,661] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 4,422.44 ms | 27.64 us | 4,406.02 ms | 11.87 ms | 4,450.67 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.02x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.77x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.77x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1552,21 +1554,21 @@ The fastest framework sits **below the floor** (0.77x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per request | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 3,388.91 ms | 21.18 us | 6.02 ms | 3,422.15 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 3,465.82 ms | 21.66 us | 17.76 ms | 3,483.46 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,423 [1,155,675,997–1,155,676,971] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,228–1,236] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,395 [64,958,347–64,958,464] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 3,517.72 ms | 21.99 us | 29.85 ms | 3,540.88 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,156,857,784 [1,156,025,482–1,159,292,708] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 9,806 [8,140–11,416] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,863,159 [64,785,990–64,988,507] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 3,360.40 ms | 21.00 us | 15.83 ms | 3,391.45 ms |
-| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per request | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 3,388.91 ms | 21.18 us | 3,380.83 ms | 6.02 ms | 3,422.15 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 3,465.82 ms | 21.66 us | 3,423.09 ms | 17.76 ms | 3,483.46 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,423 [1,155,675,997–1,155,676,971] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,228–1,236] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,395 [64,958,347–64,958,464] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 3,517.72 ms | 21.99 us | 3,462.73 ms | 29.85 ms | 3,540.88 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,156,857,784 [1,156,025,482–1,159,292,708] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 9,806 [8,140–11,416] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,863,159 [64,785,990–64,988,507] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 3,360.40 ms | 21.00 us | 3,351.60 ms | 15.83 ms | 3,391.45 ms |
+| | <sub>**observed, not asserted**: `contains_found` median 0 [0–0] over 9 repetitions; `contains_walk` median 1,155,676,458 [1,155,676,458–1,155,676,458] over 9 repetitions (asserted ≥ 57,777,849); `size_walk` median 1,234 [1,234–1,234] over 9 repetitions (asserted ≥ 65); `write_walk` median 64,958,357 [64,958,357–64,958,357] over 9 repetitions (asserted ≥ 3,248,656) — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **1.02x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.01x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1600,17 +1602,17 @@ The fastest framework costs **1.01x the floor** — that multiple is what being 
 
 ### 1c-park
 
-| framework | verified | median | per message | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 7.79 ms | 8 ns | 627.58 us | 9.75 ms |
-| `sobjectizer` 5.8.5.1 | yes | 112.77 ms | 113 ns | 2.47 ms | 120.64 ms |
-| `caf` 1.1.0 | yes | 113.55 ms | 114 ns | 1.98 ms | 176.24 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 7.77 ms | 8 ns | 96.18 us | 7.91 ms |
+| framework | verified | median | per message | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 7.79 ms | 8 ns | 7.57 ms | 627.58 us | 9.75 ms |
+| `sobjectizer` 5.8.5.1 | yes | 112.77 ms | 113 ns | 109.56 ms | 2.47 ms | 120.64 ms |
+| `caf` 1.1.0 | yes | 113.55 ms | 114 ns | 112.10 ms | 1.98 ms | 176.24 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 7.77 ms | 8 ns | 7.73 ms | 96.18 us | 7.91 ms |
 
 `qb` is **14.48x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.00x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.00x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1634,17 +1636,17 @@ The fastest framework costs **1.00x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per message | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 7.37 ms | 7 ns | 97.17 us | 7.56 ms |
-| `sobjectizer` 5.8.5.1 | yes | 104.99 ms | 105 ns | 1.34 ms | 108.19 ms |
-| `caf` 1.1.0 | yes | 114.35 ms | 114 ns | 5.35 ms | 159.28 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 2.81 ms | 3 ns | 49.39 us | 2.89 ms |
+| framework | verified | median | per message | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 7.37 ms | 7 ns | 7.26 ms | 97.17 us | 7.56 ms |
+| `sobjectizer` 5.8.5.1 | yes | 104.99 ms | 105 ns | 104.03 ms | 1.34 ms | 108.19 ms |
+| `caf` 1.1.0 | yes | 114.35 ms | 114 ns | 112.37 ms | 5.35 ms | 159.28 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 2.81 ms | 3 ns | 2.77 ms | 49.39 us | 2.89 ms |
 
 `qb` is **14.25x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **2.62x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **2.62x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1668,17 +1670,17 @@ The fastest framework costs **2.62x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per message | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 9.08 ms | 9 ns | 132.85 us | 9.18 ms |
-| `caf` 1.1.0 | yes | 167.03 ms | 167 ns | 4.20 ms | 170.57 ms |
-| `sobjectizer` 5.8.5.1 | yes | 185.09 ms | 185 ns | 9.48 ms | 193.57 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 67.48 ms | 67 ns | 2.73 ms | 73.66 ms |
+| framework | verified | median | per message | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 9.08 ms | 9 ns | 8.72 ms | 132.85 us | 9.18 ms |
+| `caf` 1.1.0 | yes | 167.03 ms | 167 ns | 155.90 ms | 4.20 ms | 170.57 ms |
+| `sobjectizer` 5.8.5.1 | yes | 185.09 ms | 185 ns | 175.26 ms | 9.48 ms | 193.57 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 67.48 ms | 67 ns | 61.98 ms | 2.73 ms | 73.66 ms |
 
 `qb` is **18.39x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.13x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.13x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1702,17 +1704,17 @@ The fastest framework sits **below the floor** (0.13x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per message | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 9.07 ms | 9 ns | 112.47 us | 9.75 ms |
-| `caf` 1.1.0 | yes | 164.55 ms | 165 ns | 2.29 ms | 172.45 ms |
-| `sobjectizer` 5.8.5.1 | yes | 171.17 ms | 171 ns | 2.28 ms | 172.68 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 20.76 ms | 21 ns | 7.37 ms | 39.60 ms |
+| framework | verified | median | per message | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 9.07 ms | 9 ns | 8.91 ms | 112.47 us | 9.75 ms |
+| `caf` 1.1.0 | yes | 164.55 ms | 165 ns | 158.33 ms | 2.29 ms | 172.45 ms |
+| `sobjectizer` 5.8.5.1 | yes | 171.17 ms | 171 ns | 162.33 ms | 2.28 ms | 172.68 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 20.76 ms | 21 ns | 19.49 ms | 7.37 ms | 39.60 ms |
 
 `qb` is **18.14x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.44x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.44x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1738,17 +1740,17 @@ The fastest framework sits **below the floor** (0.44x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per actor | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 7.04 ms | 123 ns | 204.97 us | 7.98 ms |
-| `caf` 1.1.0 | yes | 65.60 ms | 1.14 us | 249.81 us | 66.34 ms |
-| `sobjectizer` 5.8.5.1 | yes | 131.45 ms | 2.29 us | 1.52 ms | 136.12 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 3.06 ms | 53 ns | 39.01 us | 3.12 ms |
+| framework | verified | median | per actor | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 7.04 ms | 123 ns | 6.92 ms | 204.97 us | 7.98 ms |
+| `caf` 1.1.0 | yes | 65.60 ms | 1.14 us | 65.06 ms | 249.81 us | 66.34 ms |
+| `sobjectizer` 5.8.5.1 | yes | 131.45 ms | 2.29 us | 130.64 ms | 1.52 ms | 136.12 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 3.06 ms | 53 ns | 2.97 ms | 39.01 us | 3.12 ms |
 
 `qb` is **9.31x** faster than `caf` in this configuration.
 
-The fastest framework costs **2.31x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **2.31x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1779,17 +1781,17 @@ The fastest framework costs **2.31x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per actor | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 7.12 ms | 124 ns | 137.36 us | 7.27 ms |
-| `caf` 1.1.0 | yes | 64.09 ms | 1.12 us | 650.92 us | 72.53 ms |
-| `sobjectizer` 5.8.5.1 | yes | 129.08 ms | 2.25 us | 1.09 ms | 130.24 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 1.62 ms | 28 ns | 32.33 us | 2.04 ms |
+| framework | verified | median | per actor | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 7.12 ms | 124 ns | 6.88 ms | 137.36 us | 7.27 ms |
+| `caf` 1.1.0 | yes | 64.09 ms | 1.12 us | 63.41 ms | 650.92 us | 72.53 ms |
+| `sobjectizer` 5.8.5.1 | yes | 129.08 ms | 2.25 us | 128.48 ms | 1.09 ms | 130.24 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 1.62 ms | 28 ns | 1.58 ms | 32.33 us | 2.04 ms |
 
 `qb` is **9.01x** faster than `caf` in this configuration.
 
-The fastest framework costs **4.38x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **4.38x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1820,17 +1822,17 @@ The fastest framework costs **4.38x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per actor | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 4.77 ms | 83 ns | 108.09 us | 4.96 ms |
-| `caf` 1.1.0 | yes | 35.47 ms | 619 ns | 327.51 us | 36.24 ms |
-| `sobjectizer` 5.8.5.1 | yes | 248.43 ms | 4.33 us | 21.73 ms | 298.60 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 3.42 ms | 60 ns | 32.14 us | 3.49 ms |
+| framework | verified | median | per actor | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 4.77 ms | 83 ns | 4.65 ms | 108.09 us | 4.96 ms |
+| `caf` 1.1.0 | yes | 35.47 ms | 619 ns | 34.81 ms | 327.51 us | 36.24 ms |
+| `sobjectizer` 5.8.5.1 | yes | 248.43 ms | 4.33 us | 217.59 ms | 21.73 ms | 298.60 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 3.42 ms | 60 ns | 3.38 ms | 32.14 us | 3.49 ms |
 
 `qb` is **7.44x** faster than `caf` in this configuration.
 
-The fastest framework costs **1.39x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.39x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1861,17 +1863,17 @@ The fastest framework costs **1.39x the floor** — that multiple is what being 
 
 ### 2c-spin
 
-| framework | verified | median | per actor | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 4.81 ms | 84 ns | 54.68 us | 5.12 ms |
-| `caf` 1.1.0 | yes | 35.74 ms | 624 ns | 542.68 us | 36.19 ms |
-| `sobjectizer` 5.8.5.1 | yes | 305.00 ms | 5.32 us | 53.31 ms | 324.42 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 3.59 ms | 63 ns | 225.72 us | 6.38 ms |
+| framework | verified | median | per actor | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 4.81 ms | 84 ns | 4.76 ms | 54.68 us | 5.12 ms |
+| `caf` 1.1.0 | yes | 35.74 ms | 624 ns | 34.78 ms | 542.68 us | 36.19 ms |
+| `sobjectizer` 5.8.5.1 | yes | 305.00 ms | 5.32 us | 243.48 ms | 53.31 ms | 324.42 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 3.59 ms | 63 ns | 3.34 ms | 225.72 us | 6.38 ms |
 
 `qb` is **7.43x** faster than `caf` in this configuration.
 
-The fastest framework costs **1.34x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.34x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1904,17 +1906,17 @@ The fastest framework costs **1.34x the floor** — that multiple is what being 
 
 ### 1c-park
 
-| framework | verified | median | per message | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 4.31 ms | 7 ns | 87.02 us | 4.53 ms |
-| `sobjectizer` 5.8.5.1 | yes | 64.23 ms | 107 ns | 1.86 ms | 69.69 ms |
-| `caf` 1.1.0 | yes | 140.61 ms | 234 ns | 76.67 ms | 183.07 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 4.24 ms | 7 ns | 342.63 us | 5.93 ms |
+| framework | verified | median | per message | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 4.31 ms | 7 ns | 4.21 ms | 87.02 us | 4.53 ms |
+| `sobjectizer` 5.8.5.1 | yes | 64.23 ms | 107 ns | 63.09 ms | 1.86 ms | 69.69 ms |
+| `caf` 1.1.0 | yes | 140.61 ms | 234 ns | 84.74 ms | 76.67 ms | 183.07 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 4.24 ms | 7 ns | 4.14 ms | 342.63 us | 5.93 ms |
 
 `qb` is **14.91x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.02x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.02x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1943,17 +1945,17 @@ The fastest framework costs **1.02x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per message | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 4.89 ms | 8 ns | 401.46 us | 4.99 ms |
-| `sobjectizer` 5.8.5.1 | yes | 61.65 ms | 103 ns | 1.39 ms | 67.16 ms |
-| `caf` 1.1.0 | yes | 155.12 ms | 259 ns | 59.90 ms | 184.82 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 1.93 ms | 3 ns | 58.03 us | 2.04 ms |
+| framework | verified | median | per message | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 4.89 ms | 8 ns | 4.31 ms | 401.46 us | 4.99 ms |
+| `sobjectizer` 5.8.5.1 | yes | 61.65 ms | 103 ns | 52.64 ms | 1.39 ms | 67.16 ms |
+| `caf` 1.1.0 | yes | 155.12 ms | 259 ns | 90.03 ms | 59.90 ms | 184.82 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 1.93 ms | 3 ns | 1.91 ms | 58.03 us | 2.04 ms |
 
 `qb` is **12.60x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **2.53x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **2.53x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -1982,17 +1984,17 @@ The fastest framework costs **2.53x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per message | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 4.79 ms | 8 ns | 45.42 us | 4.93 ms |
-| `caf` 1.1.0 | yes | 114.74 ms | 191 ns | 21.02 ms | 123.87 ms |
-| `sobjectizer` 5.8.5.1 | yes | 189.97 ms | 317 ns | 6.61 ms | 199.08 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 24.78 ms | 41 ns | 2.30 ms | 25.95 ms |
+| framework | verified | median | per message | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 4.79 ms | 8 ns | 4.71 ms | 45.42 us | 4.93 ms |
+| `caf` 1.1.0 | yes | 114.74 ms | 191 ns | 90.37 ms | 21.02 ms | 123.87 ms |
+| `sobjectizer` 5.8.5.1 | yes | 189.97 ms | 317 ns | 177.22 ms | 6.61 ms | 199.08 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 24.78 ms | 41 ns | 22.65 ms | 2.30 ms | 25.95 ms |
 
 `qb` is **23.96x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.19x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.19x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2021,17 +2023,17 @@ The fastest framework sits **below the floor** (0.19x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per message | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 4.88 ms | 8 ns | 132.03 us | 5.61 ms |
-| `caf` 1.1.0 | yes | 121.34 ms | 202 ns | 10.24 ms | 134.16 ms |
-| `sobjectizer` 5.8.5.1 | yes | 172.14 ms | 287 ns | 8.44 ms | 181.35 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 14.72 ms | 25 ns | 992.49 us | 18.35 ms |
+| framework | verified | median | per message | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 4.88 ms | 8 ns | 4.70 ms | 132.03 us | 5.61 ms |
+| `caf` 1.1.0 | yes | 121.34 ms | 202 ns | 87.97 ms | 10.24 ms | 134.16 ms |
+| `sobjectizer` 5.8.5.1 | yes | 172.14 ms | 287 ns | 163.87 ms | 8.44 ms | 181.35 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 14.72 ms | 25 ns | 10.94 ms | 992.49 us | 18.35 ms |
 
 `qb` is **24.87x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.33x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.33x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2062,17 +2064,17 @@ The fastest framework sits **below the floor** (0.33x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per actor | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 2.48 ms | 62 ns | 72.69 us | 2.54 ms |
-| `caf` 1.1.0 | yes | 36.97 ms | 924 ns | 2.81 ms | 53.04 ms |
-| `sobjectizer` 5.8.5.1 | yes | 54.33 ms | 1.36 us | 564.50 us | 57.08 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 1.77 ms | 44 ns | 85.00 us | 2.08 ms |
+| framework | verified | median | per actor | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 2.48 ms | 62 ns | 2.35 ms | 72.69 us | 2.54 ms |
+| `caf` 1.1.0 | yes | 36.97 ms | 924 ns | 36.18 ms | 2.81 ms | 53.04 ms |
+| `sobjectizer` 5.8.5.1 | yes | 54.33 ms | 1.36 us | 53.76 ms | 564.50 us | 57.08 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 1.77 ms | 44 ns | 1.72 ms | 85.00 us | 2.08 ms |
 
 `qb` is **14.90x** faster than `caf` in this configuration.
 
-The fastest framework costs **1.40x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.40x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2105,17 +2107,17 @@ The fastest framework costs **1.40x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per actor | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 2.46 ms | 62 ns | 109.11 us | 2.54 ms |
-| `caf` 1.1.0 | yes | 37.14 ms | 929 ns | 2.19 ms | 64.24 ms |
-| `sobjectizer` 5.8.5.1 | yes | 53.73 ms | 1.34 us | 602.11 us | 54.64 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 1.50 ms | 38 ns | 75.55 us | 1.98 ms |
+| framework | verified | median | per actor | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 2.46 ms | 62 ns | 2.35 ms | 109.11 us | 2.54 ms |
+| `caf` 1.1.0 | yes | 37.14 ms | 929 ns | 35.42 ms | 2.19 ms | 64.24 ms |
+| `sobjectizer` 5.8.5.1 | yes | 53.73 ms | 1.34 us | 52.40 ms | 602.11 us | 54.64 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 1.50 ms | 38 ns | 1.45 ms | 75.55 us | 1.98 ms |
 
 `qb` is **15.07x** faster than `caf` in this configuration.
 
-The fastest framework costs **1.64x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.64x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2148,17 +2150,17 @@ The fastest framework costs **1.64x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per actor | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 1.19 ms | 30 ns | 64.25 us | 1.29 ms |
-| `caf` 1.1.0 | yes | 22.89 ms | 572 ns | 309.42 us | 27.82 ms |
-| `sobjectizer` 5.8.5.1 | yes | 144.93 ms | 3.62 us | 8.55 ms | 157.91 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 1.81 ms | 45 ns | 13.13 us | 1.89 ms |
+| framework | verified | median | per actor | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 1.19 ms | 30 ns | 1.14 ms | 64.25 us | 1.29 ms |
+| `caf` 1.1.0 | yes | 22.89 ms | 572 ns | 22.30 ms | 309.42 us | 27.82 ms |
+| `sobjectizer` 5.8.5.1 | yes | 144.93 ms | 3.62 us | 127.29 ms | 8.55 ms | 157.91 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 1.81 ms | 45 ns | 1.79 ms | 13.13 us | 1.89 ms |
 
 `qb` is **19.16x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.66x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.66x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2191,18 +2193,18 @@ The fastest framework sits **below the floor** (0.66x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per actor | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 1.24 ms | 31 ns | 68.59 us | 1.34 ms |
-| `caf` 1.1.0 | yes | 23.06 ms | 577 ns | 679.66 us | 28.05 ms |
-| `sobjectizer` 5.8.5.1 | yes | 143.37 ms | 3.58 us | 8.70 ms | 160.61 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 2.25 ms | 56 ns | 435.90 us | 5.73 ms |
-| | <sub>**bimodal**: 8 of 9 repetitions at ~55 ns per actor, 1 at ~150 ns. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
+| framework | verified | median | per actor | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 1.24 ms | 31 ns | 1.15 ms | 68.59 us | 1.34 ms |
+| `caf` 1.1.0 | yes | 23.06 ms | 577 ns | 22.14 ms | 679.66 us | 28.05 ms |
+| `sobjectizer` 5.8.5.1 | yes | 143.37 ms | 3.58 us | 121.68 ms | 8.70 ms | 160.61 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 2.25 ms | 56 ns | 2.09 ms | 435.90 us | 5.73 ms |
+| | <sub>**bimodal**: 8 of 9 repetitions at ~55 ns per actor, 1 at ~150 ns. The median above is whichever mode won this run; quote both, never the median</sub> | | | | | |
 
 `qb` is **18.67x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.55x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+**No ordering or ratio is claimed between `qb` and `baseline`** — one of them is bimodal; quote its modes instead of a ratio of their medians.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2237,21 +2239,21 @@ The fastest framework sits **below the floor** (0.55x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per term | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 4.95 ms | 20 ns | 439.55 us | 5.73 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 51.09 ms | 204 ns | 570.43 us | 51.99 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 122.60 ms | 490 ns | 11.79 ms | 141.32 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 5.42 ms | 22 ns | 377.83 us | 5.74 ms |
-| | <sub>**observed, not asserted**: `held` median 249,960 [249,960–249,960] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per term | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 4.95 ms | 20 ns | 4.78 ms | 439.55 us | 5.73 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 51.09 ms | 204 ns | 50.71 ms | 570.43 us | 51.99 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 122.60 ms | 490 ns | 106.36 ms | 11.79 ms | 141.32 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 5.42 ms | 22 ns | 5.27 ms | 377.83 us | 5.74 ms |
+| | <sub>**observed, not asserted**: `held` median 249,960 [249,960–249,960] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **10.32x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.91x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.91x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2285,21 +2287,21 @@ The fastest framework sits **below the floor** (0.91x) — which means it is not
 
 ### 1c-spin
 
-| framework | verified | median | per term | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 4.98 ms | 20 ns | 136.51 us | 5.12 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 48.40 ms | 194 ns | 1.33 ms | 49.63 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 124.91 ms | 500 ns | 8.74 ms | 140.89 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 2.91 ms | 12 ns | 40.46 us | 3.00 ms |
-| | <sub>**observed, not asserted**: `held` median 249,960 [249,960–249,960] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per term | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 4.98 ms | 20 ns | 4.69 ms | 136.51 us | 5.12 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 48.40 ms | 194 ns | 47.39 ms | 1.33 ms | 49.63 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 124.91 ms | 500 ns | 98.10 ms | 8.74 ms | 140.89 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 2.91 ms | 12 ns | 2.83 ms | 40.46 us | 3.00 ms |
+| | <sub>**observed, not asserted**: `held` median 249,960 [249,960–249,960] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **9.72x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.71x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.71x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2333,21 +2335,21 @@ The fastest framework costs **1.71x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per term | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 3.79 ms | 15 ns | 94.61 us | 4.05 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 54.21 ms | 217 ns | 1.56 ms | 57.04 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 82.89 ms | 332 ns | 2.99 ms | 85.23 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 10.37 ms | 41 ns | 459.78 us | 10.89 ms |
-| | <sub>**observed, not asserted**: `held` median 249,975 [249,975–249,980] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per term | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 3.79 ms | 15 ns | 3.74 ms | 94.61 us | 4.05 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 54.21 ms | 217 ns | 52.04 ms | 1.56 ms | 57.04 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 82.89 ms | 332 ns | 77.56 ms | 2.99 ms | 85.23 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 10.37 ms | 41 ns | 9.93 ms | 459.78 us | 10.89 ms |
+| | <sub>**observed, not asserted**: `held` median 249,975 [249,975–249,980] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **14.30x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.37x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.37x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2381,21 +2383,21 @@ The fastest framework sits **below the floor** (0.37x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per term | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 3.77 ms | 15 ns | 69.70 us | 3.89 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 53.32 ms | 213 ns | 1.78 ms | 55.10 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,989–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 82.57 ms | 330 ns | 2.29 ms | 85.50 ms |
-| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 9.70 ms | 39 ns | 3.93 ms | 12.21 ms |
-| | <sub>**observed, not asserted**: `held` median 249,945 [249,920–249,980] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per term | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 3.77 ms | 15 ns | 3.72 ms | 69.70 us | 3.89 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 53.32 ms | 213 ns | 51.87 ms | 1.78 ms | 55.10 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,989–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 82.57 ms | 330 ns | 81.14 ms | 2.29 ms | 85.50 ms |
+| | <sub>**observed, not asserted**: `held` median 249,990 [249,990–249,990] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 9.70 ms | 39 ns | 5.96 ms | 3.93 ms | 12.21 ms |
+| | <sub>**observed, not asserted**: `held` median 249,945 [249,920–249,980] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **14.13x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.39x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.39x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2431,17 +2433,17 @@ The fastest framework sits **below the floor** (0.39x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per solution | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 190.97 ms | 13.45 us | 1.83 ms | 194.11 ms |
-| `sobjectizer` 5.8.5.1 | yes | 194.57 ms | 13.70 us | 1.24 ms | 195.06 ms |
-| `caf` 1.1.0 | yes | 226.32 ms | 15.94 us | 811.27 us | 231.33 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 214.04 ms | 15.07 us | 1.65 ms | 216.89 ms |
+| framework | verified | median | per solution | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 190.97 ms | 13.45 us | 190.17 ms | 1.83 ms | 194.11 ms |
+| `sobjectizer` 5.8.5.1 | yes | 194.57 ms | 13.70 us | 192.98 ms | 1.24 ms | 195.06 ms |
+| `caf` 1.1.0 | yes | 226.32 ms | 15.94 us | 225.49 ms | 811.27 us | 231.33 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 214.04 ms | 15.07 us | 213.13 ms | 1.65 ms | 216.89 ms |
 
 **`qb` and `sobjectizer` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
 
-The fastest framework sits **below the floor** (0.89x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.89x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2470,17 +2472,17 @@ The fastest framework sits **below the floor** (0.89x) — which means it is not
 
 ### 1c-spin
 
-| framework | verified | median | per solution | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 192.05 ms | 13.52 us | 896.66 us | 193.12 ms |
-| `sobjectizer` 5.8.5.1 | yes | 194.70 ms | 13.71 us | 1.48 ms | 195.73 ms |
-| `caf` 1.1.0 | yes | 227.94 ms | 16.05 us | 618.93 us | 229.06 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 214.40 ms | 15.10 us | 819.83 us | 215.41 ms |
+| framework | verified | median | per solution | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 192.05 ms | 13.52 us | 191.22 ms | 896.66 us | 193.12 ms |
+| `sobjectizer` 5.8.5.1 | yes | 194.70 ms | 13.71 us | 193.06 ms | 1.48 ms | 195.73 ms |
+| `caf` 1.1.0 | yes | 227.94 ms | 16.05 us | 226.26 ms | 618.93 us | 229.06 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 214.40 ms | 15.10 us | 212.22 ms | 819.83 us | 215.41 ms |
 
 **`qb` and `sobjectizer` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
 
-The fastest framework sits **below the floor** (0.90x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.90x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2509,17 +2511,17 @@ The fastest framework sits **below the floor** (0.90x) — which means it is not
 
 ### 2c-park
 
-| framework | verified | median | per solution | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `sobjectizer` 5.8.5.1 | yes | 100.94 ms | 7.11 us | 1.26 ms | 102.36 ms |
-| `qb` 3.2.1 | yes | 109.32 ms | 7.70 us | 18.34 ms | 119.39 ms |
-| `caf` 1.1.0 | yes | 118.90 ms | 8.37 us | 668.43 us | 119.91 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 113.72 ms | 8.01 us | 2.02 ms | 116.37 ms |
+| framework | verified | median | per solution | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `sobjectizer` 5.8.5.1 | yes | 100.94 ms | 7.11 us | 100.36 ms | 1.26 ms | 102.36 ms |
+| `qb` 3.2.1 | yes | 109.32 ms | 7.70 us | 98.62 ms | 18.34 ms | 119.39 ms |
+| `caf` 1.1.0 | yes | 118.90 ms | 8.37 us | 118.60 ms | 668.43 us | 119.91 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 113.72 ms | 8.01 us | 110.37 ms | 2.02 ms | 116.37 ms |
 
 **`sobjectizer` and `qb` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
 
-The fastest framework sits **below the floor** (0.89x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`sobjectizer` sits **below the floor** (0.89x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2548,17 +2550,17 @@ The fastest framework sits **below the floor** (0.89x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per solution | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 99.62 ms | 7.02 us | 18.86 ms | 118.97 ms |
-| `sobjectizer` 5.8.5.1 | yes | 101.29 ms | 7.13 us | 1.36 ms | 102.64 ms |
-| `caf` 1.1.0 | yes | 120.08 ms | 8.46 us | 2.98 ms | 122.72 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 111.33 ms | 7.84 us | 2.26 ms | 114.02 ms |
+| framework | verified | median | per solution | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 99.62 ms | 7.02 us | 98.82 ms | 18.86 ms | 118.97 ms |
+| `sobjectizer` 5.8.5.1 | yes | 101.29 ms | 7.13 us | 100.05 ms | 1.36 ms | 102.64 ms |
+| `caf` 1.1.0 | yes | 120.08 ms | 8.46 us | 115.44 ms | 2.98 ms | 122.72 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 111.33 ms | 7.84 us | 109.98 ms | 2.26 ms | 114.02 ms |
 
 **`qb` and `sobjectizer` show no measurable difference here** — their sample ranges overlap, so the ordering above is not a result.
 
-The fastest framework sits **below the floor** (0.89x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.89x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2589,21 +2591,21 @@ The fastest framework sits **below the floor** (0.89x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per meal | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 10.31 ms | 52 ns | 76.00 us | 10.46 ms |
-| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 82.54 ms | 413 ns | 1.08 ms | 83.34 ms |
-| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 89.30 ms | 447 ns | 540.94 us | 90.17 ms |
-| | <sub>**observed, not asserted**: `refused` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 8.71 ms | 44 ns | 358.31 us | 9.17 ms |
-| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per meal | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 10.31 ms | 52 ns | 10.02 ms | 76.00 us | 10.46 ms |
+| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 82.54 ms | 413 ns | 80.93 ms | 1.08 ms | 83.34 ms |
+| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 89.30 ms | 447 ns | 88.48 ms | 540.94 us | 90.17 ms |
+| | <sub>**observed, not asserted**: `refused` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 8.71 ms | 44 ns | 8.67 ms | 358.31 us | 9.17 ms |
+| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **8.00x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.18x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.18x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2636,21 +2638,21 @@ The fastest framework costs **1.18x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per meal | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 10.25 ms | 51 ns | 101.01 us | 10.39 ms |
-| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 76.41 ms | 382 ns | 1.06 ms | 78.18 ms |
-| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 89.86 ms | 449 ns | 1.25 ms | 92.89 ms |
-| | <sub>**observed, not asserted**: `refused` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 4.52 ms | 23 ns | 311.36 us | 5.05 ms |
-| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per meal | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 10.25 ms | 51 ns | 10.20 ms | 101.01 us | 10.39 ms |
+| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 76.41 ms | 382 ns | 75.74 ms | 1.06 ms | 78.18 ms |
+| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 89.86 ms | 449 ns | 88.56 ms | 1.25 ms | 92.89 ms |
+| | <sub>**observed, not asserted**: `refused` median 0 [0–0] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 4.52 ms | 23 ns | 4.46 ms | 311.36 us | 5.05 ms |
+| | <sub>**observed, not asserted**: `refused` median 285,670 [285,670–285,670] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **7.45x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **2.27x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **2.27x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2683,21 +2685,21 @@ The fastest framework costs **2.27x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per meal | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 25.38 ms | 127 ns | 1.44 ms | 28.48 ms |
-| | <sub>**observed, not asserted**: `refused` median 322,094 [305,735–327,330] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 161.77 ms | 809 ns | 19.50 ms | 175.42 ms |
-| | <sub>**observed, not asserted**: `refused` median 256,775 [200,028–305,564] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 187.37 ms | 937 ns | 12.21 ms | 197.02 ms |
-| | <sub>**observed, not asserted**: `refused` median 100,963 [100,770–121,290] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 567.22 ms | 2.84 us | 10.87 ms | 576.08 ms |
-| | <sub>**observed, not asserted**: `refused` median 204,622 [200,118–215,234] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per meal | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 25.38 ms | 127 ns | 23.89 ms | 1.44 ms | 28.48 ms |
+| | <sub>**observed, not asserted**: `refused` median 322,094 [305,735–327,330] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 161.77 ms | 809 ns | 147.31 ms | 19.50 ms | 175.42 ms |
+| | <sub>**observed, not asserted**: `refused` median 256,775 [200,028–305,564] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 187.37 ms | 937 ns | 177.42 ms | 12.21 ms | 197.02 ms |
+| | <sub>**observed, not asserted**: `refused` median 100,963 [100,770–121,290] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 567.22 ms | 2.84 us | 544.94 ms | 10.87 ms | 576.08 ms |
+| | <sub>**observed, not asserted**: `refused` median 204,622 [200,118–215,234] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **6.37x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.04x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.04x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2730,21 +2732,21 @@ The fastest framework sits **below the floor** (0.04x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per meal | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.2.1 | yes | 23.84 ms | 119 ns | 528.00 us | 25.31 ms |
-| | <sub>**observed, not asserted**: `refused` median 329,633 [321,666–331,830] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 143.62 ms | 718 ns | 3.91 ms | 161.40 ms |
-| | <sub>**observed, not asserted**: `refused` median 123,281 [112,584–156,219] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| `caf` 1.1.0 | yes | 153.14 ms | 766 ns | 20.67 ms | 181.12 ms |
-| | <sub>**observed, not asserted**: `refused` median 223,218 [131,834–328,621] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 40.86 ms | 204 ns | 1.34 ms | 41.88 ms |
-| | <sub>**observed, not asserted**: `refused` median 283,689 [276,836–287,578] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | |
+| framework | verified | median | per meal | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.2.1 | yes | 23.84 ms | 119 ns | 23.19 ms | 528.00 us | 25.31 ms |
+| | <sub>**observed, not asserted**: `refused` median 329,633 [321,666–331,830] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 143.62 ms | 718 ns | 140.37 ms | 3.91 ms | 161.40 ms |
+| | <sub>**observed, not asserted**: `refused` median 123,281 [112,584–156,219] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| `caf` 1.1.0 | yes | 153.14 ms | 766 ns | 128.28 ms | 20.67 ms | 181.12 ms |
+| | <sub>**observed, not asserted**: `refused` median 223,218 [131,834–328,621] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 40.86 ms | 204 ns | 38.18 ms | 1.34 ms | 41.88 ms |
+| | <sub>**observed, not asserted**: `refused` median 283,689 [276,836–287,578] over 9 repetitions — work that depends on the interleaving; read it before comparing this row with another</sub> | | | | | |
 
 `qb` is **6.02x** faster than `sobjectizer` in this configuration.
 
-The fastest framework sits **below the floor** (0.58x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.58x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2779,18 +2781,18 @@ The fastest framework sits **below the floor** (0.58x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per round trip | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 22.45 ms | 22 ns | 180.85 us | 22.81 ms |
-| `sobjectizer` 5.8.5.1 | yes | 162.72 ms | 163 ns | 1.03 ms | 164.58 ms |
-| `caf` 1.1.0 | yes | 276.08 ms | 276 ns | 1.44 ms | 277.38 ms |
-| `caf-detached` 1.1.0 | yes | 3,306.45 ms | 3.31 us | 242.54 ms | 3,536.50 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 1.64 ms | 2 ns | 41.78 us | 1.77 ms |
+| framework | verified | median | per round trip | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 22.45 ms | 22 ns | 22.10 ms | 180.85 us | 22.81 ms |
+| `sobjectizer` 5.8.5.1 | yes | 162.72 ms | 163 ns | 162.27 ms | 1.03 ms | 164.58 ms |
+| `caf` 1.1.0 | yes | 276.08 ms | 276 ns | 271.10 ms | 1.44 ms | 277.38 ms |
+| `caf-detached` 1.1.0 | yes | 3,306.45 ms | 3.31 us | 3,092.64 ms | 242.54 ms | 3,536.50 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 1.64 ms | 2 ns | 1.61 ms | 41.78 us | 1.77 ms |
 
 `qb` is **7.25x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **13.69x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **13.69x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2815,19 +2817,19 @@ The fastest framework costs **13.69x the floor** — that multiple is what being
 
 ### 1c-spin
 
-| framework | verified | median | per round trip | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 22.32 ms | 22 ns | 141.22 us | 22.90 ms |
-| `sobjectizer` 5.8.5.1 | yes | 138.77 ms | 139 ns | 787.36 us | 140.22 ms |
-| `caf` 1.1.0 | yes | 275.49 ms | 275 ns | 5.90 ms | 278.94 ms |
-| `caf-detached` 1.1.0 | n/a | — | — | — | — |
-| | <sub>caf::detached actors park on a condition variable between messages (caf/detail/private_thread.cpp); CAF has no spin mode for a private thread, so wait=1 has no honest counterpart here -- read the caf row for CAF's spin profile and this row for its cross-core park cost</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 1.65 ms | 2 ns | 62.18 us | 1.78 ms |
+| framework | verified | median | per round trip | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 22.32 ms | 22 ns | 22.24 ms | 141.22 us | 22.90 ms |
+| `sobjectizer` 5.8.5.1 | yes | 138.77 ms | 139 ns | 138.11 ms | 787.36 us | 140.22 ms |
+| `caf` 1.1.0 | yes | 275.49 ms | 275 ns | 270.20 ms | 5.90 ms | 278.94 ms |
+| `caf-detached` 1.1.0 | n/a | — | — | — | — | — |
+| | <sub>caf::detached actors park on a condition variable between messages (caf/detail/private_thread.cpp); CAF has no spin mode for a private thread, so wait=1 has no honest counterpart here -- read the caf row for CAF's spin profile and this row for its cross-core park cost</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 1.65 ms | 2 ns | 1.61 ms | 62.18 us | 1.78 ms |
 
 `qb` is **6.22x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **13.51x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **13.51x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2852,19 +2854,19 @@ The fastest framework costs **13.51x the floor** — that multiple is what being
 
 ### 2c-park
 
-| framework | verified | median | per round trip | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 153.40 ms | 153 ns | 5.15 ms | 161.87 ms |
-| `caf` 1.1.0 | yes | 279.95 ms | 280 ns | 2.41 ms | 283.43 ms |
-| `caf-detached` 1.1.0 | yes | 25,314.15 ms | 25.31 us | 42.18 ms | 25,405.75 ms |
-| | <sub>**bimodal**: 1 of 9 repetitions at ~3.34 us per round trip, 8 at ~25.32 us. The median above is whichever mode won this run; quote both, never the median</sub> | | | | |
-| `sobjectizer` 5.8.5.1 | yes | 26,207.98 ms | 26.21 us | 79.29 ms | 26,310.61 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 24,818.37 ms | 24.82 us | 224.51 ms | 24,995.59 ms |
+| framework | verified | median | per round trip | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 153.40 ms | 153 ns | 149.72 ms | 5.15 ms | 161.87 ms |
+| `caf` 1.1.0 | yes | 279.95 ms | 280 ns | 277.75 ms | 2.41 ms | 283.43 ms |
+| `caf-detached` 1.1.0 | yes | 25,314.15 ms | 25.31 us | 3,343.84 ms | 42.18 ms | 25,405.75 ms |
+| | <sub>**bimodal**: 1 of 9 repetitions at ~3.34 us per round trip, 8 at ~25.32 us. The median above is whichever mode won this run; quote both, never the median</sub> | | | | | |
+| `sobjectizer` 5.8.5.1 | yes | 26,207.98 ms | 26.21 us | 25,991.01 ms | 79.29 ms | 26,310.61 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 24,818.37 ms | 24.82 us | 24,599.76 ms | 224.51 ms | 24,995.59 ms |
 
 `qb` is **1.82x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.01x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.01x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2889,19 +2891,19 @@ The fastest framework sits **below the floor** (0.01x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per round trip | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 159.81 ms | 160 ns | 9.73 ms | 163.05 ms |
-| `caf` 1.1.0 | yes | 283.59 ms | 284 ns | 15.90 ms | 299.17 ms |
-| `sobjectizer` 5.8.5.1 | yes | 665.90 ms | 666 ns | 5.29 ms | 716.91 ms |
-| `caf-detached` 1.1.0 | n/a | — | — | — | — |
-| | <sub>caf::detached actors park on a condition variable between messages (caf/detail/private_thread.cpp); CAF has no spin mode for a private thread, so wait=1 has no honest counterpart here -- read the caf row for CAF's spin profile and this row for its cross-core park cost</sub> | | | | |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 185.18 ms | 185 ns | 4.17 ms | 189.96 ms |
+| framework | verified | median | per round trip | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 159.81 ms | 160 ns | 150.48 ms | 9.73 ms | 163.05 ms |
+| `caf` 1.1.0 | yes | 283.59 ms | 284 ns | 277.72 ms | 15.90 ms | 299.17 ms |
+| `sobjectizer` 5.8.5.1 | yes | 665.90 ms | 666 ns | 659.62 ms | 5.29 ms | 716.91 ms |
+| `caf-detached` 1.1.0 | n/a | — | — | — | — | — |
+| | <sub>caf::detached actors park on a condition variable between messages (caf/detail/private_thread.cpp); CAF has no spin mode for a private thread, so wait=1 has no honest counterpart here -- read the caf row for CAF's spin profile and this row for its cross-core park cost</sub> | | | | | |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 185.18 ms | 185 ns | 181.38 ms | 4.17 ms | 189.96 ms |
 
 `qb` is **1.77x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.86x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.86x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2928,17 +2930,17 @@ The fastest framework sits **below the floor** (0.86x) — which means it is not
 
 ### 1c-park
 
-| framework | verified | median | per hop | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 16.77 ms | 17 ns | 209.27 us | 16.99 ms |
-| `sobjectizer` 5.8.5.1 | yes | 81.73 ms | 82 ns | 1.47 ms | 85.74 ms |
-| `caf` 1.1.0 | yes | 139.01 ms | 139 ns | 1.38 ms | 139.82 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 12.96 ms | 13 ns | 122.33 us | 13.17 ms |
+| framework | verified | median | per hop | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 16.77 ms | 17 ns | 16.62 ms | 209.27 us | 16.99 ms |
+| `sobjectizer` 5.8.5.1 | yes | 81.73 ms | 82 ns | 79.36 ms | 1.47 ms | 85.74 ms |
+| `caf` 1.1.0 | yes | 139.01 ms | 139 ns | 137.94 ms | 1.38 ms | 139.82 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 12.96 ms | 13 ns | 12.79 ms | 122.33 us | 13.17 ms |
 
 `qb` is **4.87x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **1.29x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.29x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -2967,17 +2969,17 @@ The fastest framework costs **1.29x the floor** — that multiple is what being 
 
 ### 1c-spin
 
-| framework | verified | median | per hop | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 16.85 ms | 17 ns | 103.68 us | 17.08 ms |
-| `sobjectizer` 5.8.5.1 | yes | 69.60 ms | 70 ns | 728.95 us | 71.22 ms |
-| `caf` 1.1.0 | yes | 137.77 ms | 138 ns | 1.66 ms | 139.22 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 2.85 ms | 3 ns | 147.18 us | 3.08 ms |
+| framework | verified | median | per hop | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 16.85 ms | 17 ns | 16.68 ms | 103.68 us | 17.08 ms |
+| `sobjectizer` 5.8.5.1 | yes | 69.60 ms | 70 ns | 69.18 ms | 728.95 us | 71.22 ms |
+| `caf` 1.1.0 | yes | 137.77 ms | 138 ns | 135.15 ms | 1.66 ms | 139.22 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 2.85 ms | 3 ns | 2.74 ms | 147.18 us | 3.08 ms |
 
 `qb` is **4.13x** faster than `sobjectizer` in this configuration.
 
-The fastest framework costs **5.91x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **5.91x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -3006,17 +3008,17 @@ The fastest framework costs **5.91x the floor** — that multiple is what being 
 
 ### 2c-park
 
-| framework | verified | median | per hop | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 75.07 ms | 75 ns | 2.40 ms | 76.56 ms |
-| `caf` 1.1.0 | yes | 140.05 ms | 140 ns | 1.34 ms | 141.22 ms |
-| `sobjectizer` 5.8.5.1 | yes | 245.36 ms | 245 ns | 26.20 ms | 267.83 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 12,627.13 ms | 12.63 us | 55.69 ms | 12,716.02 ms |
+| framework | verified | median | per hop | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 75.07 ms | 75 ns | 71.81 ms | 2.40 ms | 76.56 ms |
+| `caf` 1.1.0 | yes | 140.05 ms | 140 ns | 139.37 ms | 1.34 ms | 141.22 ms |
+| `sobjectizer` 5.8.5.1 | yes | 245.36 ms | 245 ns | 224.50 ms | 26.20 ms | 267.83 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 12,627.13 ms | 12.63 us | 12,561.63 ms | 55.69 ms | 12,716.02 ms |
 
 `qb` is **1.87x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.01x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.01x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
@@ -3045,17 +3047,17 @@ The fastest framework sits **below the floor** (0.01x) — which means it is not
 
 ### 2c-spin
 
-| framework | verified | median | per hop | IQR | p99 |
-|---|---|---:|---:|---:|---:|
-| `qb` 3.1.0 | yes | 73.37 ms | 73 ns | 1.36 ms | 80.22 ms |
-| `caf` 1.1.0 | yes | 140.53 ms | 141 ns | 1.13 ms | 142.85 ms |
-| `sobjectizer` 5.8.5.1 | yes | 275.65 ms | 276 ns | 9.56 ms | 286.82 ms |
-| | | | | | |
-| `baseline` in-tree *(floor)* | yes | 102.18 ms | 102 ns | 2.41 ms | 105.03 ms |
+| framework | verified | median | per hop | minimum | IQR | p99 |
+|---|---|---:|---:|---:|---:|---:|
+| `qb` 3.1.0 | yes | 73.37 ms | 73 ns | 71.50 ms | 1.36 ms | 80.22 ms |
+| `caf` 1.1.0 | yes | 140.53 ms | 141 ns | 139.37 ms | 1.13 ms | 142.85 ms |
+| `sobjectizer` 5.8.5.1 | yes | 275.65 ms | 276 ns | 266.11 ms | 9.56 ms | 286.82 ms |
+| | | | | | | |
+| `baseline` in-tree *(floor)* | yes | 102.18 ms | 102 ns | 95.53 ms | 2.41 ms | 105.03 ms |
 
 `qb` is **1.92x** faster than `caf` in this configuration.
 
-The fastest framework sits **below the floor** (0.72x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`qb` sits **below the floor** (0.72x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 

@@ -4,7 +4,7 @@
 Every figure this repository publishes comes from here. Nothing is typed by hand, which is what
 makes `tools/check-report.py` able to assert that no hand-written number has crept in.
 
-Two rules are enforced by this renderer rather than left to the reader's charity:
+These rules are enforced by this renderer rather than left to the reader's charity:
 
   1. A framework whose run did not VERIFY is shown as failed, never omitted. An omitted row reads
      as if the framework had not been measured.
@@ -244,7 +244,7 @@ def observed_note(d: dict) -> str | None:
         parts.append(part)
     return ("| | <sub>**observed, not asserted**: " + "; ".join(parts)
             + " — work that depends on the interleaving; read it before comparing this row "
-              "with another</sub> | | | | |")
+              "with another</sub> | | | | | |")
 
 
 def overlapping(a: dict, b: dict) -> bool:
@@ -294,6 +294,9 @@ def render(results: Path, out_path: Path | None = None) -> str:
     out.append(f"Read [FAIRNESS.md]({fairness}) before reading any table below. In particular: "
                "these numbers measure message plumbing, not applications, and the spin/park axis "
                "moves them further than any architectural difference they show.\n")
+    out.append("Median, minimum, IQR and p99 are total durations per repetition; "
+               "the per-unit column is the median divided by the declared work units. "
+               "A missing minimum is shown as unavailable.\n")
 
     if run:
         out.append("## Run\n")
@@ -364,8 +367,8 @@ def render(results: Path, out_path: Path | None = None) -> str:
                          f"({sorted(units)}) -- one table cannot divide its rows by different "
                          "things; re-run the cell whose adapter predates the spec's declaration")
             unit = next(iter(units)) if units else "repetition"
-            out.append(f"| framework | verified | median | per {unit} | IQR | p99 |")
-            out.append("|---|---|---:|---:|---:|---:|")
+            out.append(f"| framework | verified | median | per {unit} | minimum | IQR | p99 |")
+            out.append("|---|---|---:|---:|---:|---:|---:|")
 
             ranked = [f for f in fws if f != FLOOR]
             ranked.sort(key=lambda f: per_op(fws[f]) or float("inf"))
@@ -373,18 +376,19 @@ def render(results: Path, out_path: Path | None = None) -> str:
                 d = fws[fw]
                 s = d.get("summary", {})
                 if d.get("not_applicable"):
-                    out.append(f"| {row_label(fw, d)} | n/a | — | — | — | — |")
-                    out.append(f"| | <sub>{d['not_applicable']}</sub> | | | | |")
+                    out.append(f"| {row_label(fw, d)} | n/a | — | — | — | — | — |")
+                    out.append(f"| | <sub>{d['not_applicable']}</sub> | | | | | |")
                     continue
                 if not d.get("verified"):
                     why = "; ".join(d.get("failures", [])) or "did not verify"
-                    out.append(f"| {row_label(fw, d)} | **FAILED** | — | — | — | — |")
-                    out.append(f"| | <sub>{why}</sub> | | | | |")
+                    out.append(f"| {row_label(fw, d)} | **FAILED** | — | — | — | — | — |")
+                    out.append(f"| | <sub>{why}</sub> | | | | | |")
                     continue
                 if fw == FLOOR:
-                    out.append("| | | | | | |")
+                    out.append("| | | | | | | |")
                 out.append(f"| {row_label(fw, d)}{' *(floor)*' if fw == FLOOR else ''} | yes | "
                            f"{fmt_ns(s.get('work_p50', 0))} | {fmt_ns(per_op(d))} | "
+                           f"{fmt_ns(s['work_min']) if s.get('work_min') is not None else '—'} | "
                            f"{fmt_ns(s.get('work_iqr', 0))} | {fmt_ns(s.get('work_p99', 0))} |")
                 m = modes(d)
                 if m:
@@ -392,7 +396,7 @@ def render(results: Path, out_path: Path | None = None) -> str:
                     out.append(f"| | <sub>**bimodal**: {nlo} of {nlo + nhi} repetitions at "
                                f"~{fmt_ns(vlo)} per {unit}, {nhi} at ~{fmt_ns(vhi)}. The "
                                "median above is whichever mode won this run; quote both, never "
-                               "the median</sub> | | | | |")
+                               "the median</sub> | | | | | |")
                 note = observed_note(d)
                 if note:
                     out.append(note)
@@ -414,19 +418,24 @@ def render(results: Path, out_path: Path | None = None) -> str:
                     out.append(f"`{best}` is **{ratio:.2f}x** faster than `{second}` in this "
                                "configuration.\n")
                 if FLOOR in fws and fws[FLOOR].get("verified"):
-                    fr = per_op(fws[best]) / per_op(fws[FLOOR])
-                    if fr < 1.0:
-                        # A framework below the floor is not beating raw threads: it is not
-                        # doing what the floor does (here, typically, crossing a core and waking
-                        # a parked thread). Saying "0.01x the floor" would read as a triumph.
-                        out.append(f"The fastest framework sits **below the floor** "
-                                   f"({fr:.2f}x) — which means it is not paying the cost the "
-                                   "floor measures, not that it beats raw threads at it; its "
-                                   "caveats below say what it does instead.\n")
+                    if modes(fws[best]) or modes(fws[FLOOR]):
+                        out.append(f"**No ordering or ratio is claimed between `{best}` and "
+                                   f"`{FLOOR}`** — one of them is bimodal; quote its modes "
+                                   "instead of a ratio of their medians.\n")
                     else:
-                        out.append(f"The fastest framework costs **{fr:.2f}x the floor** — that "
-                                   "multiple is what being a framework costs on this "
-                                   "workload.\n")
+                        fr = per_op(fws[best]) / per_op(fws[FLOOR])
+                        if fr < 1.0:
+                            # A framework below the floor is not beating raw threads: it is not
+                            # doing what the floor does (here, typically, crossing a core and waking
+                            # a parked thread). Saying "0.01x the floor" would read as a triumph.
+                            out.append(f"`{best}` sits **below the floor** "
+                                       f"({fr:.2f}x) — which means it is not paying the cost the "
+                                       "floor measures, not that it beats raw threads at it; its "
+                                       "caveats below say what it does instead.\n")
+                        else:
+                            out.append(f"`{best}` costs **{fr:.2f}x the floor** — that "
+                                       "multiple is what being a framework costs on this "
+                                       "workload.\n")
 
             caveats = {}
             for fw, d in fws.items():

@@ -650,6 +650,25 @@ python tools/report.py --results results/<host-id> > REPORT.md
 `--cpus` is not optional in spirit. On a hybrid CPU an unpinned run is not a measurement, and the
 harness **aborts** rather than report a number when a requested pin cannot be read back.
 
+**Spin-profile sweeps (QB-877/852).** `tools/so-sweep.sh <bin-dir> <out-dir>` and
+`results/desktop-win11-msvc19/caf-spin-sweep/caf-sweep.sh [binary out-dir]` use the same
+checked collector, `tools/spin-sweep.py`; run them from a complete checkout. The CAF wrapper's
+zero-argument paths remain `build/final/bin/qvo-caf-savina-ping-pong.exe` and `build/caf-sweep`,
+relative to the caller. The workload, profile order, warmups, repetitions and CPU set are unchanged.
+Use a new or empty output directory; an existing campaign is refused before any child is launched.
+Keep a `tee` log beside that directory, since creating it inside would make the directory nonempty.
+Each fresh attempt retains its original JSON, stdout and stderr under `.attempts/`. Only a successful,
+verified result matching the requested identity, parameters, repetitions, pinning and work unit is
+published as a timing. Failures, timeouts and unavailable profiles make the sweep exit nonzero and
+leave their diagnostics and campaign state visible in `run.json`. The outer timeout defaults to
+1,800 seconds per process; the collector's `--timeout` option changes that bound, not the workload.
+Output uses `ns/round trip` for ping-pong and `ns/message` for counting. Historical JSON and logs
+are not rewritten by these fixes; the original drivers remain in the history before this change.
+
+The generated report includes median, minimum, IQR and p99 as total durations per repetition,
+plus the median per declared work unit. A missing minimum remains unavailable. If a framework or
+the raw-thread floor is bimodal, their comparison has no single ordering or ratio (QB-883/884).
+
 Three things about a run worth knowing before reading its output:
 
 - **A cell has three verdicts, not two.** `ok` (every repetition verified), `FAILED` (a

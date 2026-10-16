@@ -144,9 +144,12 @@ in the pinned 5.8.5.1), whose default is 1 ms. The adapter's `wait=1` profile se
 `simple_lock_factory` (no spin at all). `QVO_SO_SPIN_WAIT_US` overrides the budget for a sweep
 and for nothing else — a document measured under it carries `SWEEP DOCUMENT, NOT A TABLE CELL`
 as its first caveat, like CAF's. `tools/so-sweep.sh` drives it: `savina/ping-pong` and
-`savina/counting`, cores=2 wait=1, CPUs 0 and 2, 7 repetitions + 2 warmup, 1 000 000 messages,
+`savina/counting`, cores=2 wait=1, CPUs 0 and 2, 7 repetitions + 2 warmup, 1 000 000 work units,
 the profile measured first and last as the drift control, each host in its own quiet session
-(`results/<host>/sobjectizer-spin-sweep/`). ns per message, p50 [min, max]:
+(`results/<host>/sobjectizer-spin-sweep/`). Ping-pong values are ns per round trip (two delivered
+messages); counting values are ns per message, each shown as p50 [min, max]. The saved logs retain
+the original `ns/msg` label for ping-pong; that label was corrected by QB-852 without rescaling
+any retained value or changing the raw JSON:
 
 | budget | Windows / MSVC ping-pong | WSL2 / g++ ping-pong | Windows counting | WSL2 counting |
 |---|---:|---:|---:|---:|
