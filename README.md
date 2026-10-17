@@ -767,3 +767,5 @@ Its emitted timings are not performance evidence. It can produce the ordinary re
 unavailable-result path (`--param unavailable=1`) to verify that both record the same build.
 
 The lightweight Python document guards do not invoke this build-dependent check automatically.
+
+The [actor population memory probe](docs/ACTOR-MEMORY.md) reports process RSS around verified live populations and names the different allocator/runtime layers separately. It is a memory instrument, not a Savina timing result or RSS divided by actor count.

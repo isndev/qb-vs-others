@@ -105,6 +105,13 @@ if(WIN32)
     target_link_libraries(qvo-probe-memory PUBLIC psapi)
 endif()
 
+# Memory population proof/formatting is separate from the timing harness.
+add_library(qvo-actor-memory STATIC EXCLUDE_FROM_ALL harness/src/actor-memory.cpp)
+target_include_directories(qvo-actor-memory PUBLIC harness/include
+    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/qvo-build-metadata/$<CONFIG>")
+find_package(Threads REQUIRED)
+target_link_libraries(qvo-actor-memory PUBLIC qvo-probe-memory Threads::Threads)
+
 if(NOT MSVC)
     find_package(Threads REQUIRED)
     target_link_libraries(qvo-harness PUBLIC Threads::Threads)
@@ -150,6 +157,11 @@ if(QVO_BUILD_CONTROLS)
     set_target_properties(qvoctl-process-memory PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "controls")
+
+    add_executable(qvoctl-actor-memory-ledger tools/control/actor-memory-subject.cpp)
+    target_link_libraries(qvoctl-actor-memory-ledger PRIVATE qvo-actor-memory)
+    set_target_properties(qvoctl-actor-memory-ledger PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin" FOLDER "controls")
 
     if("qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
         add_executable(qvoctl-qb-caveats tools/control/qb-caveats-subject.cpp)
@@ -201,7 +213,7 @@ if(QVO_BUILD_CONTROLS)
 endif()
 
 # -------------------------------------------------------------------------------------------
-# Probes: qb-only instruments behind docs/TUNING.md
+# Probes: mechanism instruments plus the separate live-population memory protocol
 # -------------------------------------------------------------------------------------------
 #
 # A probe measures one qb mechanism that has no counterpart in the other frameworks -- section 10's
@@ -209,7 +221,7 @@ endif()
 # them, and neither CAF nor SObjectizer owns a socket. Named `qvoprobe-` and NOT declared through
 # qvo_add_benchmark, for the same reason as the control subject: tools/run.py cannot discover it
 # and a probe's figure can never be mistaken for a cross-framework cell.
-option(QVO_BUILD_PROBES "Build the qb-only probes behind docs/TUNING.md" ON)
+option(QVO_BUILD_PROBES "Build mechanism and live-population memory probes" ON)
 if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     add_executable(qvoprobe-parked-io-wake tools/probes/parked-io-wake.cpp)
     target_link_libraries(qvoprobe-parked-io-wake PRIVATE qb::core)
@@ -287,6 +299,46 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     set_target_properties(qvoprobe-raw-ring PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "probes")
+endif()
+
+
+# Live-population memory probes: one executable per framework, no timing roster entry.
+# Only the floor's own Mesh is used by baseline; caf-detached is deliberately excluded.
+if(QVO_BUILD_PROBES)
+    foreach(_fw qb caf sobjectizer baseline)
+        if(NOT "${_fw}" IN_LIST QVO_ENABLED_FRAMEWORKS)
+            continue()
+        endif()
+        string(TOUPPER "${_fw}" _FW)
+        set(_memory_libs qvo-actor-memory qvo-harness)
+        if(_fw STREQUAL "qb")
+            list(APPEND _memory_libs qb::core)
+        elseif(_fw STREQUAL "caf")
+            list(APPEND _memory_libs CAF::core)
+        elseif(_fw STREQUAL "sobjectizer")
+            list(APPEND _memory_libs sobjectizer::StaticLib)
+        endif()
+        set(_memory_targets "qvoprobe-actor-memory-${_fw}")
+        if(QVO_BUILD_CONTROLS)
+            list(APPEND _memory_targets "qvoctl-actor-memory-missing-${_fw}")
+        endif()
+        foreach(_target IN LISTS _memory_targets)
+            add_executable(${_target} "tools/probes/actor-memory-${_fw}.cpp")
+            target_link_libraries(${_target} PRIVATE ${_memory_libs})
+            target_compile_definitions(${_target} PRIVATE QVO_FRAMEWORK_VERSION="${QVO_${_FW}_VERSION}")
+            if(_target MATCHES "^qvoctl-")
+                target_compile_definitions(${_target} PRIVATE QVO_MEMORY_CONTROL_DROP_LAST=1)
+            endif()
+            set_target_properties(${_target} PROPERTIES
+                RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin" FOLDER "probes/memory")
+            if(WIN32)
+                add_custom_command(TARGET ${_target} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E $<IF:$<BOOL:$<TARGET_RUNTIME_DLLS:${_target}>>,copy_if_different,true>
+                            $<TARGET_RUNTIME_DLLS:${_target}> $<TARGET_FILE_DIR:${_target}>
+                    COMMAND_EXPAND_LISTS)
+            endif()
+        endforeach()
+    endforeach()
 endif()
 
 

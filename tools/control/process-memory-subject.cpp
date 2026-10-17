@@ -35,7 +35,7 @@ int main() {
     failed_without_eof.setstate(std::ios::failbit);
     if (qvo::probe::parse_linux_memory_status(failed_without_eof).value)
         return 1;
-#if !defined(_WIN32) && !defined(__linux__)
+#if !defined(_WIN32) && !defined(__linux__) && !defined(__APPLE__)
     const auto unsupported = qvo::probe::read_process_memory();
     if (unsupported.value || !unsupported.error)
         return 1;

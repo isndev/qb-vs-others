@@ -19,15 +19,16 @@
 //              a pool never shrinks on its own.
 //
 // The figures are the process's resident set and a platform-specific secondary metric (Linux: VmRSS / VmHWM from
-// /proc/self/status; Windows: WorkingSetSize / PrivateUsage), read from the main thread once the
+// /proc/self/status; Windows: WorkingSetSize / PrivateUsage; macOS: resident_size / resident_size_max),
+// read from the main thread once the
 // engine has settled (the actors are parked at `latency` -- this is a memory probe, not a timing
 // one), then again after the engine stopped and its cores were destroyed, so what is RETURNED is
 // measured too. Every line also carries the arithmetic the reading is compared against.
 //
 //   qvoprobe-pipe-footprint <cores> <idle|broadcast|mesh> [settle_ms=1000] [latency_us=100]
 //
-// Each phase says whether memory is available. Valid readings retain the historical private_kb
-// field; secondary_metric identifies private commit (Windows) or RSS high-water mark (Linux).
+// Each phase says whether memory is available. secondary_kb is labelled by secondary_metric:
+// private commit (Windows) or RSS high-water mark (Linux/macOS). Historical raw files are unchanged.
 // Unavailable readings carry no numeric memory fields and make the probe fail.
 
 #include <qvo/process-memory.h>
@@ -99,7 +100,7 @@ print(char const *phase, unsigned cores, char const *mode, MemoryReading const &
     }
     const auto &m = *reading.value;
     const auto &base = *baseline.value;
-    std::printf("phase=%s cores=%u mode=%s rss_kb=%llu private_kb=%llu delta_rss_kb=%lld delta_private_kb=%lld model_kb=%llu received=%llu available=true secondary_metric=%s\n",
+    std::printf("phase=%s cores=%u mode=%s rss_kb=%llu secondary_kb=%llu delta_rss_kb=%lld delta_secondary_kb=%lld model_kb=%llu received=%llu available=true secondary_metric=%s\n",
                 phase, cores, mode, static_cast<unsigned long long>(m.rss_kb), static_cast<unsigned long long>(m.secondary_kb),
                 static_cast<long long>(m.rss_kb) - static_cast<long long>(base.rss_kb),
                 static_cast<long long>(m.secondary_kb) - static_cast<long long>(base.secondary_kb), static_cast<unsigned long long>(model_kb),

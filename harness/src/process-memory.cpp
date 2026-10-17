@@ -13,6 +13,8 @@
 #endif
 #include <windows.h>
 #include <psapi.h>
+#elif defined(__APPLE__)
+#include <mach/mach.h>
 #endif
 
 namespace qvo::probe {
@@ -70,6 +72,14 @@ MemoryReading read_process_memory() {
         return {std::nullopt, "GetProcessMemoryInfo failed"};
     return {ProcessMemory{pmc.WorkingSetSize / 1024u, pmc.PrivateUsage / 1024u,
                           SecondaryMemoryMetric::private_commit}, nullptr};
+#elif defined(__APPLE__)
+    mach_task_basic_info_data_t info{};
+    mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+    if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO, reinterpret_cast<task_info_t>(&info), &count) != KERN_SUCCESS
+        || count < MACH_TASK_BASIC_INFO_COUNT)
+        return {std::nullopt, "task_info(MACH_TASK_BASIC_INFO) failed"};
+    return {ProcessMemory{info.resident_size / 1024u, info.resident_size_max / 1024u,
+                          SecondaryMemoryMetric::resident_high_water}, nullptr};
 #elif defined(__linux__)
     std::ifstream status("/proc/self/status");
     return parse_linux_memory_status(status);

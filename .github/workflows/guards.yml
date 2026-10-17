@@ -28,3 +28,5 @@ jobs:
         run: python3 tools/guards-negative-control.py
       - name: runner rejects stale or contradictory process output
         run: python3 tools/test_run.py
+      - name: actor memory schema rejects incomplete populations and misleading metrics
+        run: python3 tools/actor-memory-control.py --self-test
