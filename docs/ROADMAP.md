@@ -99,7 +99,7 @@ is left of the pipeline is the train itself.
    five-benchmark grid plus a launch census as the regression check — no cell slower beyond the
    instrument's spread, the two cross-core `2c-spin` cells on Windows read through the census
    (§9.11). Suites on MSVC and g++ (release, ASan+UBSan, TSan) run before the numbers were
-   quoted. The `Pipe.h:118` contract is retired by it; `PushReferenceStability.*` asserts the
+   quoted. The [`Pipe.h` L118](https://github.com/isndev/qb/blob/830ea2442f8fbe5944290758148371edece2c10c/src/qb/core/Pipe.h#L118) contract is retired by it; `PushReferenceStability.*` asserts the
    opposite.
 3. **macOS + Linux** — before the merge, on the maintainer's macOS: the full suite (`release`,
    `sanitize`, `sanitize-thread`) and qb's own `dev/bench` gate against
@@ -258,9 +258,14 @@ the JDK unpacks from a zip, and Erlang is the awkward one.
   that pretended to verify them would verify nothing. Each subsection names the directory its
   numbers came from; a marker grammar for "this figure is `<document>.summary.work_p50 /
   work_units`" would close it and has not been written.
-- **The qb-side findings in `docs/TUNING.md` §9 are not tied to a qb commit.** A finding that
-  names `VirtualCore.cpp:209` is true of qb 3.1.0 and of the branch at `32b28130`, and already
-  false of the branch at `230c5035` (axis M moved `__flush_all__`; §9 says so in prose, which
-  is all it can do); nothing here re-checks the citation when either moves. the qb development tree's `llm-guard.py` does exactly that for its own
-  docs and does not read this repository.
+- **The qb-side findings in `docs/TUNING.md` §9 are checked from the qb development tree only.**
+  Each `where` cell is a link to the exact line at the qb revision it is true of: the 3.1.0
+  release commit for the shipped engine (`_router.route` is [L201 there](https://github.com/isndev/qb/blob/830ea2442f8fbe5944290758148371edece2c10c/src/qb/core/VirtualCore.cpp#L201), and
+  [L199 at `32b28130`](https://github.com/isndev/qb/blob/32b28130b216e4f9ea95317b1a1916910e308f3b/src/qb/core/VirtualCore.cpp#L199)), `230c5035` for a symbol only the branch has
+  (`kFlushRunBuckets`, [L277](https://github.com/isndev/qb/blob/230c50359d263bdfe5e5278fcbdf51f2bcd80e45/src/qb/core/VirtualCore.cpp#L277)). A pinned line moves with nothing: the
+  qb tree's citation sweep re-coordinated the bare line 199 of `VirtualCore.cpp` this bullet used
+  to carry four times, to the head's line, which made it false of every revision it named (Huly
+  QB-1094). The qb development tree's `check-doc-link-paths.py` resolves each pinned line
+  offline -- the file at the ref, the line inside it and not blank. This repository's own CI
+  does not: it holds no qb clone to resolve them against.
 - **A footprint probe.** See "Actor creation cost and memory footprint".
