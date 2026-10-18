@@ -130,6 +130,7 @@ public:
 // coroutine reads the count once, after its last answer, to report it.
 struct AskState {
     std::uint64_t received{0};
+    std::uint64_t completed{0};  // advanced by the coroutine, only after a successful ask
 };
 
 class Worker final : public qb::Actor {
@@ -149,6 +150,7 @@ class Worker final : public qb::Actor {
             for (std::uint64_t j = 0; j < shape.messages; ++j) {
                 const Operation o      = operation(shape, index, j);
                 const auto      answer = co_await ask_dictionary(ctx, dictionary, o);
+                ++st->completed;
                 fold += reply_key(index, j, answer.value);
             }
             ctx.push_to<Done>(master, index, fold, st->received);
@@ -201,8 +203,12 @@ public:
 
     // form=1: every answer belongs to the coroutine's pending ask.
     void on(OpAsk &event) {
-        ++_st->received;
-        if (!resolve_ask(event)) fail("an answer no ask of this worker waits for");
+        AskState *const st = _st.get();
+        const auto before  = st->completed;
+        ++st->received;
+        // A live one-shot ask resumes inline. Consuming an obsolete own reply does not.
+        if (!resolve_ask(event) || st->completed != before + 1)
+            fail("an answer did not complete exactly one pending ask");
     }
 };
 

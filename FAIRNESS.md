@@ -62,6 +62,13 @@ closed form after the window, and the deliveries were counted rather than declar
 
 ## 1. The seven mechanisms
 
+For qb's `concdict` and `concsll` coroutine form (`form=1`), a received answer must
+advance exactly one live one-shot ask. The adapter checks a completion counter advanced by
+the coroutine, in addition to the resolver's boolean: `resolve_ask()` can also consume an
+obsolete response without resuming anything. The counter occupies the existing per-worker
+state and allocates nothing per request. Comparisons of framework revisions must compile
+this same oracle on both sides; historical results from an older adapter remain historical.
+
 ### 1.1 Idiomatic implementation, sourced from the framework's own documentation
 
 Every implementation carries a header block naming the framework document, example or test it is

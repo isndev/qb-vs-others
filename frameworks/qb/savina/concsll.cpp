@@ -149,6 +149,7 @@ public:
 // receives, the coroutine reads the count once, after its last answer, to report it.
 struct AskState {
     std::uint64_t received{0};
+    std::uint64_t completed{0};  // advanced by the coroutine, only after a successful ask
 };
 
 class Worker final : public qb::Actor {
@@ -177,6 +178,7 @@ class Worker final : public qb::Actor {
                 const Request       asked  = script.next();
                 const std::uint64_t id     = request_id(index, j);
                 const ListAsk       answer = co_await ask_list(ctx, list, id, asked);
+                ++st->completed;
                 acc += answer_term(id, asked, answer.request, answer.kind, answer.value, *written);
             }
             ctx.push_to<End>(master, acc, st->received);
@@ -239,8 +241,12 @@ public:
 
     // form=1: every answer belongs to the coroutine's pending ask.
     void on(ListAsk &answer) {
-        ++_st->received;
-        if (!resolve_ask(answer)) fail("an answer no ask of this worker waits for");
+        AskState *const st = _st.get();
+        const auto before  = st->completed;
+        ++st->received;
+        // A live one-shot ask resumes inline. Consuming an obsolete own reply does not.
+        if (!resolve_ask(answer) || st->completed != before + 1)
+            fail("an answer did not complete exactly one pending ask");
     }
 };
 
