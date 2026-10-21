@@ -73,12 +73,12 @@ three-way split (below, equal to, above the pivot) is built for. `--param max=16
 
 qb's event rule decides the carrier. An event wider than the cross-core mailbox ring (1 023 64-byte
 buckets, ~64 KiB) is a compile error (`static_assert(event_fits_ring<T>)`, qb
-`src/qb/core/Event.h:1198`), and an `allocated_push` tail must fit that ring together with its event
+`src/qb/core/Event.h:1200`), and an `allocated_push` tail must fit that ring together with its event
 or the flush drops it as a dead letter (`DeadLetterReason::oversize`, `src/qb/core/DeadLetter.h:58`):
 the first split alone hands each seed ~500 000 values, ~4 MB. So **qb's Sort and Result carry the
 values behind a pointer member**, a `std::unique_ptr<std::vector<uint64_t>>` — eight bytes through
 the pipe; the sender moves its vector in, the receiver moves it out of the event, and the receiving
-core runs the event's destructor exactly once (`Event.h:1190`), so the event may own heap. The other
+core runs the event's destructor exactly once (`Event.h:1192`), so the event may own heap. The other
 three are given the same movement — the sequence's buffer changes owner, the elements are never
 copied in transit:
 
