@@ -2,9 +2,9 @@
 // @framework     caf 1.1.0
 // @idiom-source  the ping-pong adapter beside this file (function-based behaviors,
 //                stateful_actor, one handshake outside the window) and CAF's built-in atoms in
-//                caf/type_id.hpp: `(add_atom, ...)` is the tag CAF's own calculator example
-//                dispatches on (examples/message_passing/calculator.cpp:37, `self->mail(add_atom_v,
-//                x, y)` at :82); `get_atom` / `ok_atom` come from the same built-in list.
+//                caf/type_id.hpp. CAF 1.1.0's calculator dispatch and mail request are pinned here:
+//                https://github.com/actor-framework/actor-framework/blob/97e03500422f0ac48e35fee510d570e16b43a65e/examples/message_passing/calculator.cpp#L32-L79
+//                `get_atom` / `ok_atom` come from the same built-in atom list.
 // @idiom-note    Increments are `(add_atom, uint64)`, the retrieve is `(get_atom)`, the answer
 //                `(ok_atom, uint64, uint64)`. The atom is the handler selector CAF is built
 //                around; a bare uint64 would need a second message type for the retrieve anyway.
