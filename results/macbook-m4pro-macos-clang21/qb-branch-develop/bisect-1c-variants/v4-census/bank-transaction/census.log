@@ -1,0 +1,26 @@
+
+savina/bank-transaction: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  1c-spin
+    shipped1     median-of-medians     87.1   min     81.1   max     92.1   n=12   [84 86 84 92 88 81 91 85 88 90 88 86]
+    shipped2     median-of-medians     87.4   min     84.1   max     96.7   n=12   [85 84 87 92 85 85 94 95 92 88 87 97]
+    shipped3     median-of-medians     90.0   min     84.0   max    100.1   n=12   [84 84 85 92 92 86 92 94 95 100 88 88]
+    11141        median-of-medians     98.2   min     95.0   max    105.7   n=12   [96 98 100 100 105 95 101 106 98 96 97 96]
+    11142        median-of-medians     97.4   min     93.2   max    106.3   n=12   [93 96 94 100 98 104 106 97 102 97 96 96]
+    11143        median-of-medians    102.3   min     95.6   max    111.6   n=12   [111 96 105 104 98 96 96 105 109 101 98 112]
+    vfour1       median-of-medians     85.7   min     81.1   max     96.5   n=12   [84 87 84 94 88 81 94 94 96 84 85 82]
+    vfour2       median-of-medians     88.3   min     84.5   max     98.4   n=12   [93 85 86 88 85 86 90 96 98 91 88 89]
+    vfour3       median-of-medians     87.3   min     82.6   max    122.0   n=12   [122 83 87 92 89 85 88 92 87 89 85 83]
+
+  1c-park
+    shipped1     median-of-medians     88.7   min     82.8   max     92.2   n=12   [88 92 90 86 90 92 83 89 91 84 88 85]
+    shipped2     median-of-medians     87.0   min     84.6   max     91.8   n=12   [90 87 90 92 88 86 85 87 91 86 86 87]
+    shipped3     median-of-medians     88.4   min     79.9   max    101.0   n=12   [91 80 88 89 92 88 86 85 91 89 101 84]
+    11141        median-of-medians    103.2   min     96.5   max    106.0   n=12   [106 103 104 104 104 104 103 98 104 99 97 97]
+    11142        median-of-medians     96.4   min     93.2   max    107.3   n=12   [93 94 102 107 100 105 96 97 96 102 95 96]
+    11143        median-of-medians    100.1   min     94.2   max    110.2   n=12   [103 110 94 109 101 105 94 99 104 98 96 97]
+    vfour1       median-of-medians     87.3   min     83.4   max     99.5   n=12   [97 88 94 99 92 87 84 87 88 87 87 83]
+    vfour2       median-of-medians     86.4   min     82.2   max    101.0   n=12   [87 85 86 90 96 88 82 86 91 86 101 83]
+    vfour3       median-of-medians     85.1   min     79.9   max     93.9   n=12   [80 84 89 92 94 85 85 87 85 85 84 86]
+
+launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/qb1154/v4-census/bank-transaction

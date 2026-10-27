@@ -1,0 +1,69 @@
+worker cycles: A 1.56 G, B 1.47 G
+
+leaf symbol                                                                                    A %     B %  B-A pts
+mach_continuous_time                                                                         19.43   18.81    -0.62
+qb::ask_emplace_operation<savina_bank_transaction_qb::Deposit, unsigned long long, unsigne    2.29   16.75   +14.46
+savina_bank_transaction_qb::Account::start(savina_bank_transaction_qb::Pending)::'lambda'(    9.80    9.23    -0.56
+qb::VirtualCore::__receive_events__(std::__1::span<EventBucket, 18446744073709551615ul>)      4.72    3.41    -1.31
+_xzm_free                                                                                     3.62    3.29    -0.33
+_tlv_get_addr                                                                                 3.72    3.02    -0.70
+savina_bank_transaction_qb::Account::on(savina_bank_transaction_qb::TransferEvent const&)     3.51    3.21    -0.30
+qb::detail::ask_awaiter<savina_bank_transaction_qb::Deposit>& std::__1::optional<qb::detai    3.97    2.62    -1.35
+qb::detail::ask_unregister(unsigned long long)                                                3.53    2.64    -0.89
+qb::detail::ask_deliver(unsigned long long, qb::ActorId, qb::Event&)                          2.22    2.13    -0.08
+qb::detail::ask_take(qb::ActorId, qb::detail::ask_slot*)                                      2.33    1.74    -0.59
+savina_bank_transaction_qb::Teller::on(savina_bank_transaction_qb::Ready const&)              2.01    1.82    -0.19
+_xzm_xzone_malloc_tiny                                                                        1.84    1.87    +0.02
+<deduplicated_symbol>                                                                         2.01    1.65    -0.36
+qb::detail::ask_awaiter<savina_bank_transaction_qb::Deposit>::await_resume()                  1.92    1.72    -0.21
+_platform_memset                                                                              1.91    1.24    -0.67
+qb::detail::ask_awaiter<savina_bank_transaction_qb::Deposit>::deliver_thunk(void*, qb::Eve    1.57    1.32    -0.26
+qb::io::async::cancellation_token::release(qb::io::async::cancellation_token::state*)         1.15    0.95    -0.20
+qb::router::memh<qb::Event, true, void>::EventResolver<savina_bank_transaction_qb::Transfe    0.78    1.11    +0.33
+_free                                                                                         0.73    1.03    +0.30
+_platform_memmove                                                                             1.20    0.51    -0.68
+nanolog::is_logged(nanolog::LogLevel)                                                         0.93    0.75    -0.18
+qb::VirtualCore::__init__actors__()                                                           0.96    0.69    -0.27
+qb::VirtualCore::reply_local(qb::Event&)                                                      0.90    0.71    -0.20
+qb::VirtualCore::appendActor(std::__1::unique_ptr<qb::Actor, std::__1::default_delete<qb::    0.90    0.69    -0.21
+savina_bank_transaction_qb::Teller::on(savina_bank_transaction_qb::Ack const&)                0.96    0.60    -0.35
+savina_bank_transaction_qb::Account::onInit() (.resume)                                       0.70    0.81    +0.11
+clock_gettime_nsec_np                                                                         0.60    0.79    +0.19
+mach_absolute_time                                                                            1.05    0.33    -0.72
+qb::detail::ask_awaiter<savina_bank_transaction_qb::Deposit>::await_suspend(std::__1::coro    0.69    0.68    -0.02
+
+[A] await_suspend: +0x28=1.61%  +0x100=0.23%  +0xcc=0.20%  +0x18=0.17%  +0x34=0.13%  +0x64=0.12%  +0x20=0.10%  +0xc0=0.08%  +0x14=0.08%  +0x94=0.07%
+
+[B] await_suspend: +0x104=14.54%  +0x28=0.79%  +0x34=0.37%  +0xcc=0.36%  +0x100=0.21%  +0x64=0.17%  +0x94=0.14%  +0x18=0.13%  +0x84=0.09%  +0x14=0.09%
+
+[A] ask_take: +0x20=0.68%  +0xc=0.38%  +0x70=0.27%  +0x10c=0.21%  +0x3c=0.19%  +0x9c=0.18%  +0x38=0.09%  +0x88=0.06%  +0xc4=0.06%  +0x44=0.06%
+
+[B] ask_take: +0x1c=0.56%  +0x74=0.34%  +0x104=0.14%  +0x34=0.14%  +0x94=0.12%  +0x28=0.07%  +0x40=0.07%  +0xc0=0.07%  +0x24=0.07%  +0x80=0.06%
+
+[A] ask_unregister: +0x2c=0.68%  +0x150=0.62%  +0x174=0.44%  +0xf8=0.34%  +0x14=0.34%  +0x5c=0.29%  +0x4c=0.24%  +0x140=0.21%  +0x38=0.14%  +0xc8=0.11%
+
+[B] ask_unregister: +0x14=0.45%  +0x128=0.39%  +0x188=0.28%  +0x5c=0.25%  +0xc8=0.18%  +0x2c=0.17%  +0xf4=0.14%  +0xcc=0.14%  +0xd8=0.11%  +0x164=0.10%
+
+[A] ask_deliver: +0x8=0.45%  +0x64=0.25%  +0x2c=0.23%  +0x44=0.20%  +0x88=0.13%  +0x94=0.13%  +0xd0=0.12%  +0x0=0.11%  +0x8c=0.11%  +0x6c=0.08%
+
+[B] ask_deliver: +0x44=0.40%  +0x8=0.37%  +0x2c=0.29%  +0x0=0.19%  +0x80=0.14%  +0x70=0.13%  +0x8c=0.13%  +0x9c=0.13%  +0xbc=0.11%  +0x14=0.07%
+
+[A] _tlv_get_addr: +0x187558394=1.93%  +0x18755839c=1.65%  +0x1875583a4=0.13%  +0x1875583a0=0.00%  +0x187558398=0.00%  +0x187558388=0.00%
+
+[B] _tlv_get_addr: +0x187558394=1.47%  +0x18755839c=1.39%  +0x187558388=0.08%  +0x187558398=0.07%  +0x1875583a4=0.01%  +0x1875583a0=0.00%
+
+[A] __receive_events__: +0x144=1.07%  +0x12c=0.73%  +0x88=0.59%  +0x114=0.56%  +0xa4=0.52%  +0xc0=0.25%  +0xb8=0.18%  +0x124=0.12%  +0x134=0.07%  +0x150=0.06%
+
+[B] __receive_events__: +0x144=0.89%  +0xa4=0.53%  +0x88=0.43%  +0xc0=0.28%  +0x114=0.27%  +0xb8=0.26%  +0x12c=0.21%  +0xac=0.15%  +0x124=0.08%  +0x9c=0.07%
+
+[A] Teller::on: +0x154=0.46%  +0x80=0.33%  +0x1d0=0.25%  +0x1a8=0.23%  +0x1ac=0.20%  +0x1b8=0.17%  +0x140=0.15%  +0x20=0.14%  +0x130=0.12%  +0x134=0.11%
+
+[B] Teller::on: +0x154=0.80%  +0x118=0.27%  +0x1a8=0.22%  +0x80=0.13%  +0x30=0.12%  +0x1ac=0.12%  +0xf0=0.11%  +0x140=0.09%  +0x1d0=0.07%  +0x7c=0.07%
+
+[A] Account::on: +0x2c=0.82%  +0xbc=0.70%  +0x68=0.49%  +0xc8=0.36%  +0x24=0.25%  +0x28=0.19%  +0xc0=0.18%  +0x28=0.18%  +0xb4=0.17%  +0xc4=0.14%
+
+[B] Account::on: +0x2c=0.86%  +0xbc=0.77%  +0x24=0.40%  +0xc8=0.20%  +0x58=0.19%  +0xc8=0.19%  +0x50=0.19%  +0x58=0.18%  +0x28=0.14%  +0x38=0.13%
+
+[A] Account::start: +0x1d0=2.92%  +0x178=1.23%  +0x1f8=1.20%  +0x114=1.07%  +0x284=1.01%  +0x134=0.72%  +0xc0=0.23%  +0x94=0.17%  +0x16c=0.16%  +0x20=0.16%
+
+[B] Account::start: +0x178=1.73%  +0x1d0=1.60%  +0x114=1.52%  +0x134=0.93%  +0x1f8=0.90%  +0x3c=0.44%  +0xa4=0.30%  +0x118=0.29%  +0x284=0.21%  +0x110=0.21%

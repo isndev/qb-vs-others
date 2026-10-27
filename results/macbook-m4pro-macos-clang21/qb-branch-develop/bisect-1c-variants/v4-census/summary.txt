@@ -1,0 +1,12 @@
+
+== bank-transaction
+  1c-park shipped      88.21 [   79.86..  100.96] n=36  copies 88.70 87.01 88.41  (A/A spread 1.9%)
+  1c-park 1114        100.39 [   93.19..  110.17] n=36  copies 103.22 96.43 100.08  (A/A spread 7.0%)
+  1c-park vfour        86.82 [   79.86..  101.01] n=36  copies 87.34 86.42 85.11  (A/A spread 2.6%)
+  1c-park 1114/shipped: +13.8%  CI [+9.6% .. +18.0%]  SEPARATE
+  1c-park vfour/shipped: -1.6%  CI [-3.5% .. +0.4%]  overlap
+  1c-spin shipped      87.84 [   81.09..  100.14] n=36  copies 87.09 87.43 90.00  (A/A spread 3.3%)
+  1c-spin 1114         98.06 [   93.23..  111.60] n=36  copies 98.16 97.37 102.34  (A/A spread 5.1%)
+  1c-spin vfour        87.76 [   81.06..  121.96] n=36  copies 85.71 88.33 87.25  (A/A spread 3.1%)
+  1c-spin 1114/shipped: +11.6%  CI [+8.3% .. +15.6%]  SEPARATE
+  1c-spin vfour/shipped: -0.1%  CI [-3.7% .. +2.7%]  overlap

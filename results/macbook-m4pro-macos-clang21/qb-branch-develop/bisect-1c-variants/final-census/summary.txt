@@ -1,0 +1,58 @@
+
+== a-star
+  1c-park shipped     291.86 [  277.72..  314.16] n=36  copies 292.46 291.38 292.18  (A/A spread 0.4%)
+  1c-park 1114        287.92 [  275.62..  305.64] n=36  copies 287.47 289.49 288.04  (A/A spread 0.7%)
+  1c-park vfinal      289.09 [  276.38..  311.64] n=36  copies 289.05 288.01 290.36  (A/A spread 0.8%)
+  1c-park 1114/shipped: -1.3%  CI [-2.2% .. -0.5%]  SEPARATE
+  1c-park vfinal/shipped: -0.9%  CI [-2.1% .. +0.0%]  overlap
+  1c-spin shipped     292.75 [  277.56..  307.30] n=36  copies 291.35 294.48 292.22  (A/A spread 1.1%)
+  1c-spin 1114        287.95 [  275.39..  407.94] n=36  copies 288.33 287.05 289.95  (A/A spread 1.0%)
+  1c-spin vfinal      288.42 [  271.21..  353.42] n=36  copies 289.25 290.14 285.73  (A/A spread 1.5%)
+  1c-spin 1114/shipped: -1.6%  CI [-2.6% .. -0.7%]  SEPARATE
+  1c-spin vfinal/shipped: -1.5%  CI [-2.5% .. -0.4%]  SEPARATE
+
+== bank-transaction
+  1c-park shipped      85.66 [   82.59..   90.07] n=36  copies 86.04 85.76 85.25  (A/A spread 0.9%)
+  1c-park 1114         96.98 [   94.12..  103.02] n=36  copies 96.98 97.08 96.69  (A/A spread 0.4%)
+  1c-park vfinal       85.33 [   82.80..   87.73] n=36  copies 85.71 85.52 84.44  (A/A spread 1.5%)
+  1c-park 1114/shipped: +13.2%  CI [+12.0% .. +14.5%]  SEPARATE
+  1c-park vfinal/shipped: -0.4%  CI [-1.7% .. +0.6%]  overlap
+  1c-spin shipped      86.41 [   82.26..   90.81] n=36  copies 85.76 86.40 87.89  (A/A spread 2.5%)
+  1c-spin 1114         96.90 [   91.70..  108.63] n=36  copies 98.48 96.36 97.53  (A/A spread 2.2%)
+  1c-spin vfinal       85.78 [   83.13..   97.74] n=36  copies 86.13 85.49 85.41  (A/A spread 0.8%)
+  1c-spin 1114/shipped: +12.1%  CI [+11.3% .. +13.9%]  SEPARATE
+  1c-spin vfinal/shipped: -0.7%  CI [-1.7% .. +0.3%]  overlap
+  2c-park shipped      64.17 [   61.87..   72.63] n=36  copies 64.03 63.85 64.29  (A/A spread 0.7%)
+  2c-park 1114         65.88 [   63.13..   74.43] n=36  copies 66.03 65.44 65.88  (A/A spread 0.9%)
+  2c-park vfinal       64.96 [   61.54..   69.18] n=36  copies 64.31 65.13 65.59  (A/A spread 2.0%)
+  2c-park 1114/shipped: +2.7%  CI [+1.6% .. +4.1%]  SEPARATE
+  2c-park vfinal/shipped: +1.2%  CI [-0.2% .. +3.0%]  overlap
+  2c-spin shipped      63.58 [   60.91..   68.83] n=36  copies 63.52 63.39 63.70  (A/A spread 0.5%)
+  2c-spin 1114         65.44 [   63.03..   72.70] n=36  copies 65.25 65.44 65.37  (A/A spread 0.3%)
+  2c-spin vfinal       64.45 [   61.80..   71.44] n=36  copies 64.82 64.46 64.09  (A/A spread 1.1%)
+  2c-spin 1114/shipped: +2.9%  CI [+0.8% .. +4.3%]  SEPARATE
+  2c-spin vfinal/shipped: +1.4%  CI [+0.4% .. +3.0%]  SEPARATE
+
+== bitonicsort
+  1c-park shipped       7.13 [    6.86..    7.92] n=36  copies 7.18 7.15 7.09  (A/A spread 1.3%)
+  1c-park 1114          7.23 [    7.01..    8.15] n=36  copies 7.18 7.30 7.21  (A/A spread 1.7%)
+  1c-park vfinal        7.12 [    6.87..    8.30] n=36  copies 7.16 7.07 7.13  (A/A spread 1.2%)
+  1c-park 1114/shipped: +1.4%  CI [+0.1% .. +2.3%]  SEPARATE
+  1c-park vfinal/shipped: -0.1%  CI [-1.5% .. +0.8%]  overlap
+  1c-spin shipped       7.10 [    6.89..    7.61] n=36  copies 7.15 7.07 7.04  (A/A spread 1.5%)
+  1c-spin 1114          7.22 [    7.03..    8.04] n=36  copies 7.17 7.22 7.24  (A/A spread 0.9%)
+  1c-spin vfinal        7.09 [    6.84..    8.49] n=36  copies 7.09 7.10 7.10  (A/A spread 0.2%)
+  1c-spin 1114/shipped: +1.6%  CI [+0.3% .. +2.9%]  SEPARATE
+  1c-spin vfinal/shipped: -0.2%  CI [-1.2% .. +1.2%]  overlap
+
+== fib
+  1c-park shipped      63.90 [   62.14..   65.87] n=36  copies 63.75 64.14 63.83  (A/A spread 0.6%)
+  1c-park 1114         64.04 [   62.72..   65.01] n=36  copies 64.06 63.98 64.09  (A/A spread 0.2%)
+  1c-park vfinal       63.80 [   61.80..   66.22] n=36  copies 63.84 64.00 63.64  (A/A spread 0.6%)
+  1c-park 1114/shipped: +0.2%  CI [-0.5% .. +0.8%]  overlap
+  1c-park vfinal/shipped: -0.2%  CI [-0.8% .. +0.7%]  overlap
+  1c-spin shipped      64.23 [   62.52..   73.05] n=36  copies 63.91 64.40 64.51  (A/A spread 1.0%)
+  1c-spin 1114         64.30 [   61.84..   74.48] n=36  copies 64.37 63.99 64.41  (A/A spread 0.6%)
+  1c-spin vfinal       64.44 [   61.94..   97.74] n=36  copies 64.49 64.35 64.47  (A/A spread 0.2%)
+  1c-spin 1114/shipped: +0.1%  CI [-1.4% .. +0.9%]  overlap
+  1c-spin vfinal/shipped: +0.3%  CI [-1.3% .. +1.4%]  overlap

@@ -1,0 +1,26 @@
+
+savina/fib: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  1c-spin
+    shipped1     median-of-medians     63.9   min     63.3   max     73.0   n=12   [64 65 64 63 65 66 66 64 64 64 73 64]
+    shipped2     median-of-medians     64.4   min     62.5   max     67.3   n=12   [64 66 63 65 64 66 64 65 63 64 67 65]
+    shipped3     median-of-medians     64.5   min     63.1   max     68.1   n=12   [64 64 63 64 67 67 63 65 64 66 68 65]
+    11141        median-of-medians     64.4   min     61.8   max     70.1   n=12   [66 66 63 63 65 64 62 65 65 70 64 64]
+    11142        median-of-medians     64.0   min     62.2   max     74.5   n=12   [65 64 63 64 62 63 63 65 62 74 66 64]
+    11143        median-of-medians     64.4   min     63.6   max     66.0   n=12   [66 65 64 64 64 64 64 65 65 64 64 64]
+    vfinal1      median-of-medians     64.5   min     62.3   max     65.6   n=12   [64 65 66 64 64 65 65 64 62 65 64 65]
+    vfinal2      median-of-medians     64.3   min     62.6   max     71.4   n=12   [71 64 64 63 64 70 64 63 65 69 71 63]
+    vfinal3      median-of-medians     64.5   min     61.9   max     97.7   n=12   [98 64 63 65 63 66 66 64 67 65 62 62]
+
+  1c-park
+    shipped1     median-of-medians     63.8   min     62.1   max     65.2   n=12   [65 62 64 64 65 64 63 64 63 64 62 63]
+    shipped2     median-of-medians     64.1   min     62.6   max     65.9   n=12   [65 65 64 64 63 63 66 64 65 63 64 64]
+    shipped3     median-of-medians     63.8   min     62.7   max     65.5   n=12   [64 63 64 63 64 64 64 65 64 65 63 64]
+    11141        median-of-medians     64.1   min     62.7   max     64.8   n=12   [65 64 65 63 64 64 64 64 64 64 63 64]
+    11142        median-of-medians     64.0   min     63.1   max     64.9   n=12   [63 65 64 65 64 64 64 64 63 64 63 63]
+    11143        median-of-medians     64.1   min     62.7   max     65.0   n=12   [65 65 63 64 64 63 64 64 65 63 63 63]
+    vfinal1      median-of-medians     63.8   min     63.2   max     64.5   n=12   [63 64 65 64 64 63 64 64 64 64 63 64]
+    vfinal2      median-of-medians     64.0   min     62.6   max     66.2   n=12   [64 64 66 65 63 64 64 64 64 64 64 64]
+    vfinal3      median-of-medians     63.6   min     61.8   max     65.6   n=12   [66 65 65 64 62 64 64 62 64 63 63 62]
+
+launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/qb1154/final-census/fib

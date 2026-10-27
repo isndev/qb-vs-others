@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bitonicsort",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 2270309388473169468,
+  "expected_messages": 541869,
+  "work_unit": "message",
+  "work_units": 541869,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"cores": 1, "max": 1152921504606846976, "n": 1024, "seed": 2048, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T09:51:30Z"
+  },
+  "idiom": {
+    "source": "the thread-ring adapter (ids shared before start, tallies in the actor) + qb/src/qb/core/Actor.h push_forward()",
+    "note": "one actor class per kind of the reference network; a value passing through unchanged is push_forward()ed in place, a compare-exchange, a joiner and a ValueDataAdapter push a new event; every hop ordered"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "with cores=2 the network's steps are cut into two contiguous halves of equal message weight (bitonicsort.h placement(): the cut before step 27 of 55 at the defaults), each step whole on one VirtualCore, so a value crosses a core once; CAF and SObjectizer receive the same budget and their schedulers place every actor -- see benchmarks/savina/bitonicsort.md", "qb's actor id is a 16-bit slot per VirtualCore (65 534 actors): the reference network is 44 772 actors at n=1024, 104 720 at 2048 and 241 984 at Savina's 4096, which neither one core nor two can hold -- the reason the parameter deviates from Savina's 4096; a cell whose network does not fit is declared not applicable"],
+  "failures": [],
+  "work_ns": [4354625.0, 4479792.0, 4252333.0],
+  "total_ns": [9935291.0, 9532875.0, 9461417.0],
+  "outside_window_ns": [5580666.0, 5053083.0, 5209084.0],
+  "summary": {
+    "work_min": 4252333.0,
+    "work_p50": 4354625.0,
+    "work_p99": 4477288.7,
+    "work_iqr": 113729.5
+  }
+}

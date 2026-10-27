@@ -3585,6 +3585,34 @@ cost. fib's +5 % was the same reading with less contrast. **bitonicsort's +1.9 %
 — a shape with no ask, 541 869 pushes a repetition, +0.13 ns a message with a tight interval, which is
 what a recompiled `Actor.cpp` costs by layout as often as by work; it is recorded, not attributed.
 
+**Attributed, and fixed, the same morning (QB-1154 → qb `b67ac7b8`).** What the branch tip paid on
+bank-transaction was read with three instruments and settled with four variants, all on the same
+three-copies census (`bisect-1c-variants/`, 09:00–10:3x UTC, 12 launches of 3 + 1 per configuration,
+bootstrap 95 % of the ratio of medians against shipped 3.3.0 in the same census):
+
+| instrument / variant | what it said |
+|---|---|
+| `/usr/bin/time -l`, 20 repetitions in one process | **instructions per transfer identical** (shipped 1 345–1 351, `c16f1fa9` 1 353–1 358, the tip 1 349–1 353) and **cycles per transfer +40–75** (404–417 → 452–481 → 434–446): a stall, not work |
+| `sample` (1 ms, 8 s) | the hot leaf moves to the asking coroutine's `ask_emplace_operation<Deposit>::await_suspend`, 1.5 → 6.7 % of all samples, its first instruction (`+ 0`) 14 → 101 samples; `ask_take` itself 0.9 % on both |
+| Instruments, CPU Profiler (PMU, 1 M-cycle samples) | one PC carries the whole delta: `await_suspend + 0x104`, the caller's epilogue right after `ask_awaiter<Deposit>::await_suspend` returns — 14.5 % of the worker's cycles on `c16f1fa9`, 0.0 % on shipped; the ask functions themselves and `deadline_arm` (byte-identical) flat on both |
+| listings | `ask_take` 106 → 84 instructions, `ask_unregister` and `ask_deliver` equivalent, every access the same width; the TLS wrapper tests the same destructor guard on both (the `constinit` removes no guard on Apple clang: a thread_local with a destructor keeps one) |
+| `-falign-functions=64` on both sides | +9.9 / +11.7 %: not function alignment |
+| two code paddings (256 and 768 bytes of never-executed code before the registry) | +8.3 / +9.1 % and +8.0 / +9.2 %: three points of the twelve are layout, the rest is the path |
+| the dynamically-initialised TLS of 3.3.0 around the 1114 registry | +11.2 / +9.6 %: not the TLS shape |
+| **V4: the 1114 directories under the 3.3.0 control shape** — one inline `owner_queue` (select the core, grow the directory, create the page on `[[unlikely]]` branches that call out of line), `take` pops from it, `release` pushes to it after the other-core test | **−0.1 / −1.6 % (overlapping)**; two cores −1.6 / −0.8 %; bitonicsort +1.8 % overlapping where `c16f1fa9` read +4.7 % |
+
+So the cost is the **shape** of QB-1114's warm path — a lookup returning null when the core, the directory
+or the page is not the current one, then an out-of-line `admit` — and not its data (the constant-initialised
+table, the raw-pointer directories), which V4 keeps. What the M4 pays for that shape, by the PMU, is a
+~50-cycle stall at a return site in unchanged code two calls later; which front-end or memory mechanism
+that is, this host's command-line Instruments cannot count (the CPU Counters template records no event
+without a GUI configuration), and the fix does not need it: the single-step resolution is what the 3.3.0
+registry had, what the MSVC listing of QB-1114 asked for (`QB_MSVC_FORCEINLINE` stays on it), and it reads
+level here. The MSVC side is the pilot's to re-read on the fixed shape; the g++ side was level on both.
+The fix is qb `b67ac7b8` on the branch (`src/qb/core/Actor.cpp`, 54 citations swept with the lines), its
+CHANGELOG entry beside QB-1114's; the final census of the committed shape (`final-census/`, 09:51–09:52 UTC, three copies a side: bank-transaction 1c-spin +12.1 % → −0.7 %, 1c-park +13.2 % → −0.4 % against shipped, both overlapping it; 2c-spin +2.9 → +1.4 %, 2c-park +2.7 → +1.2 %; bitonicsort +1.6 / +1.4 → −0.2 / −0.1 %; a-star and fib level on both). Suites on the fix, macOS: qb standalone 246 / 246 / 0, root release 477 / 476 / 1, sanitize 478 / 477 / 1 (0 reports), sanitize-thread 477 / 476 / 1 (0 reports) — registered / executed / skipped, the one skip the redis unix-socket self-skip of this host.
+
+
 | cell (ns per unit, p50) | shipped 3.3.0 (field) | `3a771d3b` leg A | leg A2 | census (2c) |
 |---|---:|---:|---:|---:|
 | bank-transaction 1c-spin / 1c-park | 83.2 / 82.0 | 89.8 / 92.7 | 94.4 / 90.8 | — |

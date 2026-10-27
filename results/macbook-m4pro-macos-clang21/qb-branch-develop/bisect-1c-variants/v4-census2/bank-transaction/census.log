@@ -1,0 +1,26 @@
+
+savina/bank-transaction: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  2c-spin
+    shipped1     median-of-medians     65.8   min     63.5   max     86.7   n=12   [67 67 68 87 65 65 65 64 67 66 64 65]
+    shipped2     median-of-medians     66.2   min     62.6   max     76.1   n=12   [66 64 76 71 66 66 68 65 66 63 66 65]
+    shipped3     median-of-medians     66.2   min     61.6   max     72.7   n=12   [64 62 63 67 66 73 67 70 68 66 66 66]
+    11141        median-of-medians     68.1   min     62.5   max     79.1   n=12   [68 66 70 64 69 63 67 62 79 68 69 69]
+    11142        median-of-medians     66.1   min     64.2   max     71.2   n=12   [64 66 67 69 65 71 66 66 66 68 64 65]
+    11143        median-of-medians     67.4   min     64.7   max     80.3   n=12   [69 65 71 80 66 67 68 67 71 65 67 65]
+    vfour1       median-of-medians     64.6   min     61.6   max     68.6   n=12   [64 66 65 64 62 63 65 66 62 69 63 66]
+    vfour2       median-of-medians     64.3   min     62.8   max     72.3   n=12   [64 67 63 64 66 64 66 66 72 64 63 63]
+    vfour3       median-of-medians     66.3   min     63.4   max     69.0   n=12   [63 67 67 69 69 63 65 64 67 66 64 67]
+
+  2c-park
+    shipped1     median-of-medians     67.6   min     64.2   max     77.5   n=12   [66 69 68 68 68 66 75 64 72 65 68 78]
+    shipped2     median-of-medians     66.6   min     62.6   max     69.3   n=12   [69 67 67 63 67 69 69 63 66 65 66 65]
+    shipped3     median-of-medians     66.2   min     62.7   max     68.4   n=12   [64 67 65 68 67 67 68 66 63 64 68 64]
+    11141        median-of-medians     67.6   min     64.8   max     71.7   n=12   [67 68 70 71 69 65 66 66 66 66 70 72]
+    11142        median-of-medians     66.5   min     63.8   max     81.7   n=12   [68 67 66 66 66 67 66 64 65 70 82 70]
+    11143        median-of-medians     67.1   min     63.7   max     74.3   n=12   [65 74 64 67 66 67 68 65 66 67 71 67]
+    vfour1       median-of-medians     67.0   min     63.8   max     72.7   n=12   [66 67 68 67 68 73 64 64 67 67 69 67]
+    vfour2       median-of-medians     65.6   min     62.9   max     69.3   n=12   [65 64 66 65 68 68 66 69 63 65 66 65]
+    vfour3       median-of-medians     66.2   min     63.6   max     81.5   n=12   [64 64 71 64 81 67 76 65 66 66 76 65]
+
+launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/qb1154/v4-census2/bank-transaction
