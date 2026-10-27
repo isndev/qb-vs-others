@@ -1,0 +1,40 @@
+== builds 14:07Z
+  bench binaries built; isb in __pace__: 0, dmb: 2
+  harness built 14:07Z
+[2026-10-27T14:07:38Z] before-probe QUIET(10/40s): idle 88.4% over 10s, load [2.55, 2.62, 3.92], forbidden 0, docker VM 0.0%, vz VM 0.4%, fseventsd 0.0%, mem 72% free
+{"tag": "before-probe", "verdict": "QUIET(10/40s)", "utc": "2026-10-27T14:07:38Z", "window_s": 10, "idle_pct": 88.4, "busy_pct": 12.76, "load": [2.55, 2.62, 3.92], "forbidden": [], "docker_vm_cpu_pct": 0.0, "vz_vm_cpu_pct": 0.4, "fseventsd_cpu_pct": 0.0, "memory": "72% free", "top": ["590 33.4 WindowServer", "0 6.6 kernel_task", "94888 5.9 top", "41096 5.9 claude", "78664 5.2 Docker Desktop H", "78556 3.6 com.docker.backe", "17139 2.9 Claude Helper (R", "47372 2.8 Google Chrome He"]}
+    top: 590 33.4 WindowServer | 0 6.6 kernel_task | 94888 5.9 top | 41096 5.9 claude | 78664 5.2 Docker Desktop H | 78556 3.6 com.docker.backe | 17139 2.9 Claude Helper (R | 47372 2.8 Google Chrome He
+[2026-10-27T14:07:51Z] before-probe QUIET(20/40s): idle 88.4% over 10s, load [2.6, 2.62, 3.9], forbidden 0, docker VM 0.0%, vz VM 0.3%, fseventsd 0.2%, mem 71% free
+{"tag": "before-probe", "verdict": "QUIET(20/40s)", "utc": "2026-10-27T14:07:51Z", "window_s": 10, "idle_pct": 88.43, "busy_pct": 11.55, "load": [2.6, 2.62, 3.9], "forbidden": [], "docker_vm_cpu_pct": 0.0, "vz_vm_cpu_pct": 0.3, "fseventsd_cpu_pct": 0.2, "memory": "71% free", "top": ["590 41.5 WindowServer", "0 8.0 kernel_task", "41096 6.2 claude", "58743 5.7 Slack Helper (Re", "94942 5.6 top", "58738 3.7 Slack", "58739 3.0 Slack Helper", "47372 2.4 Google Chrome He"]}
+    top: 590 41.5 WindowServer | 0 8.0 kernel_task | 41096 6.2 claude | 58743 5.7 Slack Helper (Re | 94942 5.6 top | 58738 3.7 Slack | 58739 3.0 Slack Helper | 47372 2.4 Google Chrome He
+[2026-10-27T14:08:05Z] before-probe QUIET(30/40s): idle 85.8% over 10s, load [2.42, 2.59, 3.87], forbidden 0, docker VM 0.0%, vz VM 0.3%, fseventsd 0.0%, mem 73% free
+{"tag": "before-probe", "verdict": "QUIET(30/40s)", "utc": "2026-10-27T14:08:05Z", "window_s": 10, "idle_pct": 85.79, "busy_pct": 14.19, "load": [2.42, 2.59, 3.87], "forbidden": [], "docker_vm_cpu_pct": 0.0, "vz_vm_cpu_pct": 0.3, "fseventsd_cpu_pct": 0.0, "memory": "73% free", "top": ["590 31.0 WindowServer", "0 6.1 kernel_task", "41096 5.1 claude", "95001 5.1 top", "1265 3.2 Finder", "77831 3.1 claude", "47372 2.4 Google Chrome He", "17139 2.3 Claude Helper (R"]}
+    top: 590 31.0 WindowServer | 0 6.1 kernel_task | 41096 5.1 claude | 95001 5.1 top | 1265 3.2 Finder | 77831 3.1 claude | 47372 2.4 Google Chrome He | 17139 2.3 Claude Helper (R
+[2026-10-27T14:08:19Z] before-probe QUIET(40/40s): idle 92.5% over 10s, load [2.25, 2.54, 3.83], forbidden 0, docker VM 0.0%, vz VM 14.1%, fseventsd 0.0%, mem 72% free
+{"tag": "before-probe", "verdict": "QUIET(40/40s)", "utc": "2026-10-27T14:08:19Z", "window_s": 10, "idle_pct": 92.47, "busy_pct": 7.51, "load": [2.25, 2.54, 3.83], "forbidden": [], "docker_vm_cpu_pct": 0.0, "vz_vm_cpu_pct": 14.1, "fseventsd_cpu_pct": 0.0, "memory": "72% free", "top": ["590 30.9 WindowServer", "0 5.9 kernel_task", "41096 5.9 claude", "95046 5.5 top", "1 5.3 launchd", "47372 2.3 Google Chrome He", "78664 2.3 Docker Desktop H", "32668 1.8 claude"]}
+    top: 590 30.9 WindowServer | 0 5.9 kernel_task | 41096 5.9 claude | 95046 5.5 top | 1 5.3 launchd | 47372 2.3 Google Chrome He | 78664 2.3 Docker Desktop H | 32668 1.8 claude
+== (a) probe, 4 interleaved passes x 3 launches 14:08Z
+== (b) dev/bench A/B: 8ff79c9a / 31ccd720 / vdmb x 3 copies, 6 rounds 14:08Z
+  round 1 done 14:10:35Z
+  round 2 done 14:12:39Z
+  round 3 done 14:14:43Z
+  round 4 done 14:16:47Z
+  round 5 done 14:18:50Z
+  round 6 done 14:20:53Z
+== (c) Savina 2c census: tip-before-181 (b67) / 181 (31c) / vdmb x 3 copies, 12 x (3+1) 14:20Z
+[2026-10-27T14:21:04Z] before-census QUIET(10/30s): idle 88.1% over 10s, load [3.28, 2.71, 3.12], forbidden 0, docker VM 0.0%, vz VM 0.0%, fseventsd 0.0%, mem 72% free
+{"tag": "before-census", "verdict": "QUIET(10/30s)", "utc": "2026-10-27T14:21:04Z", "window_s": 10, "idle_pct": 88.12, "busy_pct": 11.860000000000001, "load": [3.28, 2.71, 3.12], "forbidden": [], "docker_vm_cpu_pct": 0.0, "vz_vm_cpu_pct": 0.0, "fseventsd_cpu_pct": 0.0, "memory": "72% free", "top": ["590 48.9 WindowServer", "17139 17.5 Claude Helper (R", "0 14.1 kernel_task", "17120 12.6 Claude Helper", "54816 8.7 Codex (Renderer)", "41096 8.1 claude", "53729 6.1 Codex (Service)", "98652 5.6 top"]}
+    top: 590 48.9 WindowServer | 17139 17.5 Claude Helper (R | 0 14.1 kernel_task | 17120 12.6 Claude Helper | 54816 8.7 Codex (Renderer) | 41096 8.1 claude | 53729 6.1 Codex (Service) | 98652 5.6 top
+[2026-10-27T14:21:17Z] before-census QUIET(20/30s): idle 85.8% over 10s, load [3.51, 2.79, 3.14], forbidden 0, docker VM 0.0%, vz VM 0.0%, fseventsd 0.0%, mem 72% free
+{"tag": "before-census", "verdict": "QUIET(20/30s)", "utc": "2026-10-27T14:21:17Z", "window_s": 10, "idle_pct": 85.85, "busy_pct": 14.13, "load": [3.51, 2.79, 3.14], "forbidden": [], "docker_vm_cpu_pct": 0.0, "vz_vm_cpu_pct": 0.0, "fseventsd_cpu_pct": 0.0, "memory": "72% free", "top": ["4668 58.5 com.apple.WebKit", "590 48.4 WindowServer", "17120 16.1 Claude Helper", "0 13.4 kernel_task", "15690 13.2 com.apple.Virtua", "17139 10.6 Claude Helper (R", "54816 7.2 Codex (Renderer)", "1 5.9 launchd"]}
+    top: 4668 58.5 com.apple.WebKit | 590 48.4 WindowServer | 17120 16.1 Claude Helper | 0 13.4 kernel_task | 15690 13.2 com.apple.Virtua | 17139 10.6 Claude Helper (R | 54816 7.2 Codex (Renderer) | 1 5.9 launchd
+[2026-10-27T14:21:31Z] before-census QUIET(30/30s): idle 87.7% over 10s, load [3.5, 2.82, 3.15], forbidden 0, docker VM 0.0%, vz VM 0.8%, fseventsd 0.0%, mem 72% free
+{"tag": "before-census", "verdict": "QUIET(30/30s)", "utc": "2026-10-27T14:21:31Z", "window_s": 10, "idle_pct": 87.68, "busy_pct": 12.31, "load": [3.5, 2.82, 3.15], "forbidden": [], "docker_vm_cpu_pct": 0.0, "vz_vm_cpu_pct": 0.8, "fseventsd_cpu_pct": 0.0, "memory": "72% free", "top": ["590 46.5 WindowServer", "17120 14.1 Claude Helper", "0 11.9 kernel_task", "17139 11.2 Claude Helper (R", "54816 8.8 Codex (Renderer)", "53729 5.4 Codex (Service)", "98790 5.3 top", "41096 4.3 claude"]}
+    top: 590 46.5 WindowServer | 17120 14.1 Claude Helper | 0 11.9 kernel_task | 17139 11.2 Claude Helper (R | 54816 8.8 Codex (Renderer) | 53729 5.4 Codex (Service) | 98790 5.3 top | 41096 4.3 claude
+[14:23:32] ping-pong     118s  launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/gate340/dmb/census/ping-pong
+[14:24:39] thread-ring    67s  launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/gate340/dmb/census/thread-ring
+[14:25:17] big            38s  launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/gate340/dmb/census/big
+[2026-10-27T14:25:28Z] after QUIET: idle 85.3% over 10s, load [4.28, 3.72, 3.46], forbidden 0, docker VM 0.0%, vz VM 0.5%, fseventsd 0.1%, mem 72% free
+{"tag": "after", "verdict": "QUIET", "utc": "2026-10-27T14:25:28Z", "window_s": 10, "idle_pct": 85.3, "busy_pct": 14.69, "load": [4.28, 3.72, 3.46], "forbidden": [], "docker_vm_cpu_pct": 0.0, "vz_vm_cpu_pct": 0.5, "fseventsd_cpu_pct": 0.1, "memory": "72% free", "top": ["590 49.3 WindowServer", "17139 18.9 Claude Helper (R", "17120 11.7 Claude Helper", "0 11.3 kernel_task", "2363 5.5 top", "78664 5.2 Docker Desktop H", "41096 5.1 claude", "78556 3.7 com.docker.backe"]}
+    top: 590 49.3 WindowServer | 17139 18.9 Claude Helper (R | 17120 11.7 Claude Helper | 0 11.3 kernel_task | 2363 5.5 top | 78664 5.2 Docker Desktop H | 41096 5.1 claude | 78556 3.7 com.docker.backe
+DMB DONE 14:25Z

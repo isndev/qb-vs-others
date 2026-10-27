@@ -1,0 +1,112 @@
+{
+  "context": {
+    "date": "2026-10-27T14:51:34+01:00",
+    "host_name": "macbook-m4pro",
+    "executable": "/private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/gate340/attrib/copies/8ff79c9a-3/qb-core-bench-pipeline-chain-latency",
+    "num_cpus": 14,
+    "mhz_per_cpu": 24,
+    "cpu_scaling_enabled": false,
+    "caches": [
+      {
+        "type": "Data",
+        "level": 1,
+        "size": 65536,
+        "num_sharing": 0
+      },
+      {
+        "type": "Instruction",
+        "level": 1,
+        "size": 131072,
+        "num_sharing": 0
+      },
+      {
+        "type": "Unified",
+        "level": 2,
+        "size": 4194304,
+        "num_sharing": 1
+      }
+    ],
+    "load_avg": [2.12744,2.88281,6.8623],
+    "library_version": "v1.9.5",
+    "library_build_type": "release",
+    "json_schema_version": 1
+  },
+  "benchmarks": [
+    {
+      "name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time_mean",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "mean",
+      "aggregate_unit": "time",
+      "iterations": 5,
+      "real_time": 2.3274620529264212e+01,
+      "cpu_time": 5.5980000000002882e-02,
+      "time_unit": "ms",
+      "deliveries_per_s": 6.4448029636206247e+07,
+      "latency_samples": 1.5000000000000000e+05,
+      "mean_rtt_ns": 1.3352621462222220e+02,
+      "source_events_per_s": 6.4448029636206245e+06
+    },
+    {
+      "name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time_median",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "median",
+      "aggregate_unit": "time",
+      "iterations": 5,
+      "real_time": 2.3268293077126145e+01,
+      "cpu_time": 5.4733333333345513e-02,
+      "time_unit": "ms",
+      "deliveries_per_s": 6.4465407712892026e+07,
+      "latency_samples": 1.5000000000000000e+05,
+      "mean_rtt_ns": 1.3352625422222221e+02,
+      "source_events_per_s": 6.4465407712892033e+06
+    },
+    {
+      "name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time_stddev",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "stddev",
+      "aggregate_unit": "time",
+      "iterations": 5,
+      "real_time": 3.9382861662716255e-02,
+      "cpu_time": 5.1096640463470901e-03,
+      "time_unit": "ms",
+      "deliveries_per_s": 1.0898280860415555e+05,
+      "latency_samples": 0.0000000000000000e+00,
+      "mean_rtt_ns": 2.0676549354794591e-01,
+      "source_events_per_s": 1.0898280860433477e+04
+    },
+    {
+      "name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time_cv",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "cv",
+      "aggregate_unit": "percentage",
+      "iterations": 5,
+      "real_time": 1.6920946837005761e-03,
+      "cpu_time": 9.1276599613198048e-02,
+      "time_unit": "ms",
+      "deliveries_per_s": 1.6910184720826612e-03,
+      "latency_samples": 0.0000000000000000e+00,
+      "mean_rtt_ns": 1.5485011249134505e-03,
+      "source_events_per_s": 1.6910184720854420e-03
+    }
+  ]
+}

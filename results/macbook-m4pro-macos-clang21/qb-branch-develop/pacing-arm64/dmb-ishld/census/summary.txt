@@ -1,0 +1,36 @@
+
+== big
+  2c-park tip          16.56 [   12.82..   18.79] n=36  copies 16.95 17.03 16.53  (A/A spread 3.1%)
+  2c-park final        17.02 [   12.55..   19.84] n=36  copies 16.40 16.69 17.60  (A/A spread 7.3%)
+  2c-park vdmb         16.95 [   13.37..   22.02] n=36  copies 16.41 18.33 16.88  (A/A spread 11.7%)
+  2c-park final/tip: +2.8%  CI [-5.6% .. +8.3%]  overlap
+  2c-park vdmb/tip: +2.3%  CI [-4.0% .. +9.9%]  overlap
+  2c-spin tip          15.60 [   12.94..   18.84] n=36  copies 15.60 15.41 16.24  (A/A spread 5.4%)
+  2c-spin final        15.76 [   13.04..   19.82] n=36  copies 16.14 15.60 15.59  (A/A spread 3.5%)
+  2c-spin vdmb         15.48 [   12.98..   18.73] n=36  copies 15.44 15.36 15.88  (A/A spread 3.4%)
+  2c-spin final/tip: +1.0%  CI [-4.6% .. +4.6%]  overlap
+  2c-spin vdmb/tip: -0.8%  CI [-6.5% .. +6.5%]  overlap
+
+== ping-pong
+  2c-park tip         131.54 [  117.59..  174.40] n=36  copies 142.98 127.53 141.19  (A/A spread 12.1%)
+  2c-park final       133.87 [  111.84..  167.77] n=36  copies 133.59 133.98 131.78  (A/A spread 1.7%)
+  2c-park vdmb        138.45 [  117.71..  174.21] n=36  copies 140.39 141.63 137.37  (A/A spread 3.1%)
+  2c-park final/tip: +1.8%  CI [-11.9% .. +9.6%]  overlap
+  2c-park vdmb/tip: +5.3%  CI [-10.4% .. +12.2%]  overlap
+  2c-spin tip         123.49 [  118.31..  160.73] n=36  copies 123.46 127.35 122.65  (A/A spread 3.8%)
+  2c-spin final       112.90 [  109.18..  152.63] n=36  copies 115.25 112.38 111.67  (A/A spread 3.2%)
+  2c-spin vdmb        129.77 [  118.28..  186.29] n=36  copies 127.72 133.54 130.99  (A/A spread 4.6%)
+  2c-spin final/tip: -8.6%  CI [-12.5% .. -6.6%]  SEPARATE
+  2c-spin vdmb/tip: +5.1%  CI [+0.6% .. +9.5%]  SEPARATE
+
+== thread-ring
+  2c-park tip          77.49 [   64.89..   92.51] n=36  copies 74.08 76.86 79.19  (A/A spread 6.9%)
+  2c-park final        78.10 [   67.66..   98.01] n=36  copies 78.99 78.55 75.91  (A/A spread 4.1%)
+  2c-park vdmb         80.94 [   62.99..   91.87] n=36  copies 80.97 81.99 78.49  (A/A spread 4.5%)
+  2c-park final/tip: +0.8%  CI [-3.5% .. +5.8%]  overlap
+  2c-park vdmb/tip: +4.5%  CI [+0.4% .. +8.3%]  SEPARATE
+  2c-spin tip          67.31 [   57.62..   85.17] n=36  copies 73.20 66.04 66.68  (A/A spread 10.8%)
+  2c-spin final        74.68 [   60.50..   91.44] n=36  copies 69.21 74.96 76.79  (A/A spread 10.9%)
+  2c-spin vdmb         67.97 [   60.02..   83.36] n=36  copies 73.54 65.80 66.54  (A/A spread 11.8%)
+  2c-spin final/tip: +11.0%  CI [+0.9% .. +17.5%]  SEPARATE
+  2c-spin vdmb/tip: +1.0%  CI [-6.9% .. +8.5%]  overlap

@@ -1,0 +1,19 @@
+bench-cells -- the three dev/bench cells the integration gate flagged on the branch tip (macOS baseline of the 3.3.0 composite, root 5f4e4ef7 / qb 8ff79c9a), attributed:
+qb built standalone at four revisions (benchmarks on, native arch, Release; 7 objects each), THREE physical copies a side, 6 rounds in a seeded order, 5 repetitions a launch;
+pooled median of 18 launches per side, copies' medians (the A/A), bootstrap 95 % of the ratio of medians against the baseline's own qb. reread-*.json: the tip's preset binaries re-read on a quiet host first.
+
+== BM_Ask_RoundTrip_SameCore/real_time
+  8ff79c9a the baseline's qb (3.3.0 composite)       4.142 ms  copies 4.146 4.131 4.188 (A/A 1.4 %)  +0.0 % [-0.6 .. +0.6] overlapping
+  b67ac7b8 the pre-lot-6 tip                         4.154 ms  copies 4.151 4.182 4.140 (A/A 1.0 %)  +0.3 % [-0.4 .. +0.8] overlapping
+  5b306879 QB-1111                                   4.141 ms  copies 4.138 4.142 4.159 (A/A 0.5 %)  -0.0 % [-0.6 .. +0.4] overlapping
+  31ccd720 the plain counter read (withdrawn)        4.137 ms  copies 4.142 4.131 4.138 (A/A 0.3 %)  -0.1 % [-0.7 .. +0.3] overlapping
+== BM_Ask_RoundTrip_CrossCore/real_time
+  8ff79c9a the baseline's qb (3.3.0 composite)       9.494 ms  copies 9.713 9.208 9.539 (A/A 5.5 %)  +0.0 % [-3.8 .. +3.9] overlapping
+  b67ac7b8 the pre-lot-6 tip                         9.540 ms  copies 9.725 9.486 9.429 (A/A 3.1 %)  +0.5 % [-2.6 .. +4.0] overlapping
+  5b306879 QB-1111                                   9.525 ms  copies 9.539 9.441 9.561 (A/A 1.3 %)  +0.3 % [-2.4 .. +3.3] overlapping
+  31ccd720 the plain counter read (withdrawn)       10.079 ms  copies 10.274 9.918 10.079 (A/A 3.6 %)  +6.2 % [+2.6 .. +9.4] SEPARATE
+== BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time
+  8ff79c9a the baseline's qb (3.3.0 composite)      23.347 ms  copies 23.538 23.319 23.353 (A/A 0.9 %)  +0.0 % [-1.4 .. +1.4] overlapping
+  b67ac7b8 the pre-lot-6 tip                        23.411 ms  copies 23.430 23.421 23.350 (A/A 0.3 %)  +0.3 % [-1.2 .. +0.9] overlapping
+  5b306879 QB-1111                                  23.442 ms  copies 23.488 23.615 23.442 (A/A 0.7 %)  +0.4 % [-1.0 .. +1.7] overlapping
+  31ccd720 the plain counter read (withdrawn)       24.303 ms  copies 24.203 25.127 24.341 (A/A 3.8 %)  +4.1 % [+2.6 .. +6.2] SEPARATE

@@ -1,0 +1,112 @@
+{
+  "context": {
+    "date": "2026-10-27T14:54:47+01:00",
+    "host_name": "macbook-m4pro",
+    "executable": "/private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/gate340/attrib/copies/8ff79c9a-1/qb-core-bench-pipeline-chain-latency",
+    "num_cpus": 14,
+    "mhz_per_cpu": 24,
+    "cpu_scaling_enabled": false,
+    "caches": [
+      {
+        "type": "Data",
+        "level": 1,
+        "size": 65536,
+        "num_sharing": 0
+      },
+      {
+        "type": "Instruction",
+        "level": 1,
+        "size": 131072,
+        "num_sharing": 0
+      },
+      {
+        "type": "Unified",
+        "level": 2,
+        "size": 4194304,
+        "num_sharing": 1
+      }
+    ],
+    "load_avg": [2.65918,2.68262,5.95068],
+    "library_version": "v1.9.5",
+    "library_build_type": "release",
+    "json_schema_version": 1
+  },
+  "benchmarks": [
+    {
+      "name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time_mean",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "mean",
+      "aggregate_unit": "time",
+      "iterations": 5,
+      "real_time": 2.4012897734840713e+01,
+      "cpu_time": 5.6300000000004680e-02,
+      "time_unit": "ms",
+      "deliveries_per_s": 6.2467963560494117e+07,
+      "latency_samples": 1.5000000000000000e+05,
+      "mean_rtt_ns": 1.3839009106666668e+02,
+      "source_events_per_s": 6.2467963560494110e+06
+    },
+    {
+      "name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time_median",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "median",
+      "aggregate_unit": "time",
+      "iterations": 5,
+      "real_time": 2.3953301366418600e+01,
+      "cpu_time": 5.5833333333314229e-02,
+      "time_unit": "ms",
+      "deliveries_per_s": 6.2621848114136338e+07,
+      "latency_samples": 1.5000000000000000e+05,
+      "mean_rtt_ns": 1.3787325422222224e+02,
+      "source_events_per_s": 6.2621848114136336e+06
+    },
+    {
+      "name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time_stddev",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "stddev",
+      "aggregate_unit": "time",
+      "iterations": 5,
+      "real_time": 1.3325130404128344e-01,
+      "cpu_time": 2.9229931387146179e-03,
+      "time_unit": "ms",
+      "deliveries_per_s": 3.4540828867443238e+05,
+      "latency_samples": 0.0000000000000000e+00,
+      "mean_rtt_ns": 8.4947035063116294e-01,
+      "source_events_per_s": 3.4540828867550670e+04
+    },
+    {
+      "name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time_cv",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time",
+      "run_type": "aggregate",
+      "repetitions": 5,
+      "threads": 1,
+      "aggregate_name": "cv",
+      "aggregate_unit": "percentage",
+      "iterations": 5,
+      "real_time": 5.5491555210326364e-03,
+      "cpu_time": 5.1918172978940948e-02,
+      "time_unit": "ms",
+      "deliveries_per_s": 5.5293668784310249e-03,
+      "latency_samples": 0.0000000000000000e+00,
+      "mean_rtt_ns": 6.1382310256732717e-03,
+      "source_events_per_s": 5.5293668784482239e-03
+    }
+  ]
+}

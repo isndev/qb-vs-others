@@ -1,0 +1,26 @@
+
+savina/thread-ring: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261028, unpinned
+
+  2c-spin
+    tip1         median-of-medians     73.2   min     63.0   max     84.9   n=12   [80 63 75 64 80 72 67 75 66 76 85 64]
+    tip2         median-of-medians     66.0   min     57.6   max     74.0   n=12   [59 58 70 73 73 70 74 64 67 65 63 60]
+    tip3         median-of-medians     66.7   min     60.3   max     85.2   n=12   [75 60 85 65 67 66 65 68 63 72 75 65]
+    final1       median-of-medians     69.2   min     60.5   max     81.8   n=12   [81 61 64 68 64 74 70 67 69 82 82 70]
+    final2       median-of-medians     75.0   min     65.4   max     91.4   n=12   [80 71 82 78 70 73 72 65 77 91 81 69]
+    final3       median-of-medians     76.8   min     65.6   max     87.2   n=12   [80 75 85 76 77 76 74 78 66 68 87 81]
+    vdmb1        median-of-medians     73.5   min     61.2   max     81.9   n=12   [61 77 76 66 71 78 82 68 65 70 78 77]
+    vdmb2        median-of-medians     65.8   min     61.6   max     83.4   n=12   [64 65 66 68 65 83 74 66 64 62 76 80]
+    vdmb3        median-of-medians     66.5   min     60.0   max     76.6   n=12   [77 65 73 64 70 65 65 60 67 66 72 70]
+
+  2c-park
+    tip1         median-of-medians     74.1   min     64.9   max     89.8   n=12   [90 82 70 78 84 65 70 90 75 73 74 72]
+    tip2         median-of-medians     76.9   min     68.1   max     86.6   n=12   [86 76 78 75 81 77 69 78 87 68 73 68]
+    tip3         median-of-medians     79.2   min     70.6   max     92.5   n=12   [82 71 78 81 90 77 93 75 76 77 86 86]
+    final1       median-of-medians     79.0   min     69.2   max     89.9   n=12   [72 80 90 83 69 86 78 87 80 74 75 77]
+    final2       median-of-medians     78.6   min     71.2   max     98.0   n=12   [80 71 77 74 98 82 83 78 89 73 77 79]
+    final3       median-of-medians     75.9   min     67.7   max     84.7   n=12   [83 76 80 68 72 84 69 85 71 76 84 72]
+    vdmb1        median-of-medians     81.0   min     69.9   max     90.3   n=12   [83 71 90 80 79 79 85 85 82 90 70 75]
+    vdmb2        median-of-medians     82.0   min     63.0   max     91.9   n=12   [85 82 63 82 81 69 81 81 88 82 92 84]
+    vdmb3        median-of-medians     78.5   min     75.7   max     87.9   n=12   [76 76 78 79 76 79 76 79 83 88 83 78]
+
+launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/gate340/dmb/census/thread-ring

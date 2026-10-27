@@ -1,0 +1,33 @@
+dmb-ishld -- the middle form of the arm64 pacing read: `dmb ishld` before the plain counter read (a load-load barrier, no instruction synchronisation).
+ab-*.json: the dev/bench cells, the baseline's qb (isb) / the plain read / dmb, three copies a side, 6 rounds, 5 repetitions a launch; census/: the savina 2c cells, tip (isb) / plain (final) / dmb, three copies, 12 x (3+1); probe.txt: the probe's four interleaved passes with the dmb mode.
+
+== BM_Ask_RoundTrip_SameCore/real_time
+  the baseline's qb (isb)         4.193 ms  copies 4.195 4.194 4.187 (A/A 0.2 %)  vs isb +0.0 % [-0.3 .. +0.3] overlapping
+  the plain read (withdrawn)      4.186 ms  copies 4.182 4.191 4.203 (A/A 0.5 %)  vs isb -0.2 % [-0.4 .. +0.2] overlapping
+  dmb ishld + mrs                 4.279 ms  copies 4.284 4.276 4.291 (A/A 0.3 %)  vs isb +2.1 % [+1.4 .. +3.9] SEPARATE
+== BM_Ask_RoundTrip_CrossCore/real_time
+  the baseline's qb (isb)         9.417 ms  copies 9.232 9.575 9.558 (A/A 3.7 %)  vs isb +0.0 % [-4.8 .. +5.1] overlapping
+  the plain read (withdrawn)     10.219 ms  copies 10.090 10.282 10.289 (A/A 2.0 %)  vs isb +8.5 % [+3.8 .. +10.9] SEPARATE
+  dmb ishld + mrs                 9.648 ms  copies 9.824 9.516 9.676 (A/A 3.2 %)  vs isb +2.4 % [-3.0 .. +8.4] overlapping
+== BM_Pipeline_Chain_Latency<RoutedLatencyEvent>/NB_EVENTS:150000/NB_ACTORS:10/NB_CORE:1/real_time
+  the baseline's qb (isb)        23.811 ms  copies 23.797 24.078 23.720 (A/A 1.5 %)  vs isb +0.0 % [-1.3 .. +1.3] overlapping
+  the plain read (withdrawn)     24.878 ms  copies 24.713 24.955 25.229 (A/A 2.1 %)  vs isb +4.5 % [+2.9 .. +6.4] SEPARATE
+  dmb ishld + mrs                23.974 ms  copies 23.955 23.952 24.048 (A/A 0.4 %)  vs isb +0.7 % [-0.4 .. +1.5] overlapping
+
+== the probe, four interleaved passes x 3 launches (ns a round trip, median)
+  pass1 tight    min
+  pass1 ordered  min
+  pass1 dmb      min
+  pass1 wfe      min
+  pass2 tight    min
+  pass2 ordered  min
+  pass2 dmb      min
+  pass2 wfe      min
+  pass3 tight    min
+  pass3 ordered  min
+  pass3 dmb      min
+  pass3 wfe      min
+  pass4 tight    min
+  pass4 ordered  min
+  pass4 dmb      min
+  pass4 wfe      min

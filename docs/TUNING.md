@@ -3778,49 +3778,58 @@ three physical copies a side where a difference is claimed, a seeded launch orde
 intervals of the ratio of medians. Nothing here is a cross-framework cell; the directories are under
 `results/macbook-m4pro-macos-clang21/qb-branch-develop/` and the instruments are qb-only probes.
 
-### 23.1 The idle poll by primitive (QB-181): the `isb` that orders arm64's counter read costs the spin cells 6-8 %, and `wfe` is a power form
+### 23.1 The idle poll by primitive (QB-181): the `isb`-ordered read stays — a plain read wins a ping-pong and loses a streaming producer, on the M4 as on the i9
 
 `tools/probes/wait-primitives.cpp` is two threads and two lines, a ping-pong of two million round
-trips with ONE thing varied: what sits between two loads of the peer's line (`idle-wait-m4/`, two
-quiet sessions of the host, unpinned):
+trips with ONE thing varied: what sits between two loads of the peer's line (`idle-wait-m4/`, three
+quiet sessions of the host, unpinned; medians over launches, loads of the peer's line per trip):
 
-| between two loads of the peer's line | 10:25 UTC, 5 launches: ns a round trip (min–max), loads a trip | 11:34 UTC, 4 interleaved passes × 3 launches: medians |
-|---|---|---|
-| nothing — the tight poll | 72.0 (71.0–84.4), 133 | 85.7 · 71.1 · 71.9 · 71.5 |
-| `isb; mrs cntvct_el0` — qb's pacing read at floor 0 (`VirtualCore::__pace__`) | 67.4 (66.7–86.9), 4 | **84.3 · 85.9 · 84.5 · 88.0** |
-| `yield` — `qb::spin_loop_pause()` on arm64 | 71.6 (69.8–75.6), 132 | 70.6 · 77.1 · 71.9 · 70.9 |
-| `ldaxr` on the line, then `wfe` | 70.3 (69.3–88.0), 1.1 | 73.6 · 70.2 · 73.6 · 71.5 |
+| between two loads of the peer's line | 10:25 UTC, 5 launches | 11:34 UTC, 4 interleaved passes | 14:08 UTC, 4 interleaved passes | loads a trip |
+|---|---|---|---|---|
+| nothing — the tight poll | 72.0 | 85.7 · 71.1 · 71.9 · 71.5 | 73.6 (pass 4) | 133–143 |
+| `isb; mrs cntvct_el0` — qb's pacing read at floor 0 (`VirtualCore::__pace__`) | **67.4** | **84.3 · 85.9 · 84.5 · 88.0** | **67.2** (pass 4) | 4–6 |
+| `yield` — `qb::spin_loop_pause()` on arm64 | 71.6 | 70.6 · 77.1 · 71.9 · 70.9 | — | 132–140 |
+| `dmb ishld; mrs` — the load-load barrier without `isb` | — | — | 73.8 (pass 4) | — |
+| `ldaxr` on the line, then `wfe` | 70.3 | 73.6 · 70.2 · 73.6 · 71.5 | 73.6 (pass 4) | 1.1 |
 
-Three readings, one of them a fix. `yield` does nothing on Apple Silicon — 132–140 loads a trip, the
-tight loop's round trip — so `spin_loop_pause()` paces nothing there (it only serves the flush
-backoff). The ordered counter read, qb's pacing of the idle pass since 3.3, is NOT the fastest form
-on the M4: it read 67.4 once and 84–88 in six later passes of two binaries, against 71–72 for the
-tight poll — the x86 finding of §16.2 (a `lfence; rdtsc` between two polls issues the next poll late
-and once, and the round trip wins) does not transfer to arm64's `isb`, a full
-instruction-synchronisation barrier, four to six of which cost a round trip more than the late poll
-gains. Put to qb itself (`pacing-arm64/`, 11:36 UTC: the tip against the same tree whose arm64 read
-drops the `isb`, three physical copies a side, 12 launches of 3 + 1 in one seeded order):
+The probe answers two of the ticket's three questions and refuses the third. `yield` does nothing
+on Apple Silicon (132–140 loads a trip, the tight loop's round trip): `spin_loop_pause()` paces
+nothing there, it only serves the flush backoff. `wfe` wakes on the peer's store at the tight loop's
+latency with the core asleep in between, and without a store it sleeps 1.3 µs (the generic-timer
+event stream: 2 000 samples, p10 1 291, p90 1 334, max two periods) — a mailbox with N − 1 producer
+rings needs one line every producer writes after its push before `wfe` can carry its idle pass, and
+what it buys is the power of a waiting core, not its latency: a design decision, not a lot's. But the
+ordered read, qb's pacing since 3.3, is **bimodal across sessions on this unpinned host** — 67 ns
+a round trip in two sessions, 84–88 in one, the other modes within 3 ns of each other throughout —
+so the probe cannot rank it; the cells can.
 
-| cell (ns per unit, pooled median; copies' spread) | tip `b67ac7b8` | without the `isb` | ratio, bootstrap 95 % |
+**Put to qb, on both instruments.** The same tree with the plain counter read in `__pace__` on Apple
+Silicon (no `isb`), three physical copies a side, 12 launches of 3 + 1 in a seeded order:
+
+| cell | tip `b67ac7b8` (`isb`) | plain read | ratio, bootstrap 95 % |
 |---|---|---|---|
-| thread-ring 2c-spin | 64.49 (1.3 %) | 60.65 (1.0 %) | **−5.9 %** [−7.4 .. −4.6], separate |
-| thread-ring 2c-park | 61.16 (2.5 %) | 60.51 (3.7 %) | −1.1 % [−2.8 .. +2.5], overlapping |
-| ping-pong 2c-spin | 120.15 (1.9 %) | 110.85 (1.4 %) | **−7.7 %** [−8.3 .. −5.8], separate |
-| ping-pong 2c-park | 120.87 (0.9 %) | 111.10 (0.8 %) | **−8.1 %** [−9.2 .. −6.0], separate |
-| big 2c-spin / 2c-park | — | — | +0.0 / +1.0 %, overlapping |
-| thread-ring, ping-pong, big at 1c (spin and park) | — | — | −0.3 … +0.8 %, all overlapping |
+| savina ping-pong 2c-spin / 2c-park (`pacing-arm64/`) | 120.15 / 120.87 ns a hop | 110.85 / 111.10 | **−7.7 % / −8.1 %**, separate (−7.2 / −8.0 % again in `final-census/`) |
+| savina thread-ring 2c-spin / 2c-park | 64.49 / 61.16 | 60.65 / 60.51 | −5.9 % separate / −1.1 % overlapping — then +0.6 % / +1.9 % in `recensus-thread-ring/`: unresolved within that cell's between-session spread (the tip itself 58–64 ns a hop) |
+| savina big 2c, every 1c cell | — | — | level |
+| `dev/bench` `BM_Ask_RoundTrip_CrossCore` (`pacing-arm64/bench-cells/`, 6 rounds) | 9.49 ms | 10.08 ms | **+6.2 %** [+2.6 .. +9.4], separate; **+8.5 %** [+3.8 .. +10.9] in the second session |
+| `dev/bench` `BM_Pipeline_Chain_Latency<Routed>` 1c | 23.35 ms | 24.30 ms | **+4.1 %** [+2.6 .. +6.2], separate; +4.5 % [+2.9 .. +6.4] again |
+| `dev/bench` `BM_Ask_RoundTrip_SameCore` | 4.14 ms | 4.14 ms | level |
 
-So on Apple Silicon `VirtualCore::__pace__` reads the plain counter (qb `31ccd720`, the x86 read
-and Linux arm64 unchanged — the guest was off, its reading is open); the committed shape's own
-census is `pacing-arm64/final-census/`: ping-pong 2c-spin -7.2 % [-8.4 .. -5.7] and 2c-park -8.0 % [-9.0 .. -6.4] again (separate), big and fib level at one and two cores, thread-ring 1c level; thread-ring 2c read +4.8 % (overlapping) / +3.0 % [+0.3 .. +7.7] on a host at 82-86 % idle with the desktop active (the tip's own copies 8 % apart), and, re-read on a quiet host with 24 launches a copy (`recensus-thread-ring/`), 2c-spin +0.6 % [-0.7 .. +3.0] overlapping, 2c-park +1.9 % [+1.2 .. +3.1] -- three readings of that cell spanning -5.9 .. +1.9 % (spin) and -1.1 .. +3.0 % (park) while the tip itself read 58.4-64.5 ns a hop across them: unresolved by this instrument on this unpinned host, within its between-census spread; the robust finding is ping-pong's. And `wfe` wakes on the peer's store at the
-tight loop's latency with the core asleep in between; without a store it sleeps 1.3 µs (the
-generic-timer event stream: 2 000 samples, p10 1 291, p90 1 334, max two periods). A spinning core
-could wait in `wfe` on arm64 at no latency cost on the ONE line it monitors — and at up to 1.3 µs on
-any other producer's — which is the design constraint QB-181 named: a mailbox with N − 1 producer
-rings needs one line every producer writes after its push (a doorbell, one more store per cross-core
-push) before `wfe` can carry its idle pass, and what it buys is the power of a waiting core, not its
-latency (level). This host cannot count power (`powermetrics` needs root); that form is a
-maintainer's decision. The x86 half (WAITPKG) stays the x86 session's.
+The integration gate found the loss (`dev/bench` against the macOS baseline of the 3.3.0
+composite: 7 metrics over threshold on the branch tip; a four-revision A/B put every one of them on
+the one commit that changed the read, the baseline's own qb, the pre-lot tip and QB-1111 reading
+level). A tight poll wins a ping-pong and loses a streaming producer — §16.2's mechanism, on arm64
+too: the next poll's load, issued speculatively into the gap, keeps the producer's line snooped while
+it publishes. The middle form, `dmb ishld` before the read (`pacing-arm64/dmb-ishld/`: the ordering
+of loads without the instruction synchronisation), is level on those two cells (cross-core +2.4 %
+[−3.0 .. +8.4], chain +0.7 % [−0.4 .. +1.5]) and **loses the same-core round trip +2.1 %**
+[+1.4 .. +3.9], and the savina census taken beside it (`dmb-ishld/census/`, the desktop active, wide
+intervals) read the plain read's ping-pong 2c-spin −8.6 % again but its 2c-park +1.8 % overlapping and
+thread-ring 2c-spin +11 % [+0.9 .. +17.5], the `dmb` form's ping-pong 2c-spin +5.1 % — the two-core cells of
+this unpinned host move with its sessions where the `dev/bench` losses held across two. So the ordered read
+stays on every architecture; the change was withdrawn before
+integration, the measurements are the deliverable, and Linux arm64 (its guest was off) has nothing
+to widen. The x86 half of the ticket (WAITPKG) stays as QB-183/184 left it.
 
 ### 23.2 The launch regime (QB-1020): one regime per cell on the M4
 

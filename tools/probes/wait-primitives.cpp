@@ -12,6 +12,8 @@
 //   yield    one `yield` between two loads -- what `qb::spin_loop_pause()` is on arm64.
 //   wfe      `ldaxr` on the line, then `wfe`: the exclusive monitor arms on the load and a store
 //            to the line by the peer clears it, which is an event; the core sleeps in between.
+//   dmb      one `dmb ishld; mrs cntvct_el0` between two loads -- a load-load barrier before the
+//            counter read, the ordering without `isb`'s instruction synchronisation.
 //   bound    `wfe` with nobody storing to the line, 2000 samples: how long it sleeps before the
 //            generic-timer event stream (or an interrupt) wakes it -- the wake bound of a wait on
 //            the wrong line, and the reason a Mailbox with several producers needs one doorbell
@@ -22,7 +24,7 @@
 // four primitives are arm64 instructions; macOS pins nothing, so the two threads are not placed);
 // elsewhere it prints why and exits 2.
 //
-//   qvoprobe-wait-primitives [rounds=2000000] [launches=5] [mode=all|tight|ordered|yield|wfe|bound]
+//   qvoprobe-wait-primitives [rounds=2000000] [launches=5] [mode=all|tight|ordered|yield|wfe|dmb|bound]
 //
 // One line per mode on stdout: the mode, the median / min / max over the launches of ns per round
 // trip, and the loads of the peer's line per round trip on each side; for `bound`, the quantiles
@@ -49,12 +51,19 @@ struct alignas(128) Line {
 };
 Line line_a, line_b;
 
-enum class Wait { Tight, Ordered, Yield, Wfe };
+enum class Wait { Tight, Ordered, Yield, Wfe, Dmb };
 
 inline std::uint64_t
 ordered_counter() {
     std::uint64_t val;
     __asm__ __volatile__("isb\n\tmrs %0, cntvct_el0" : "=r"(val) : : "memory");
+    return val;
+}
+
+inline std::uint64_t
+dmb_counter() {
+    std::uint64_t val;
+    __asm__ __volatile__("dmb ishld\n\tmrs %0, cntvct_el0" : "=r"(val) : : "memory");
     return val;
 }
 
@@ -77,6 +86,12 @@ wait_for(Line &line, std::uint64_t const want, Wait const w) {
             while (line.v.load(std::memory_order_acquire) != want) {
                 ++polls;
                 __asm__ volatile("yield" ::: "memory");
+            }
+            return polls;
+        case Wait::Dmb:
+            while (line.v.load(std::memory_order_acquire) != want) {
+                ++polls;
+                (void) dmb_counter();
             }
             return polls;
         case Wait::Wfe: {
@@ -151,7 +166,7 @@ main(int argc, char **argv) {
         const char *name;
         Wait        w;
     };
-    const Mode modes[] = {{"tight", Wait::Tight}, {"ordered", Wait::Ordered}, {"yield", Wait::Yield}, {"wfe", Wait::Wfe}};
+    const Mode modes[] = {{"tight", Wait::Tight}, {"ordered", Wait::Ordered}, {"yield", Wait::Yield}, {"wfe", Wait::Wfe}, {"dmb", Wait::Dmb}};
     for (const auto &m : modes) {
         if (only != "all" && only != m.name)
             continue;
