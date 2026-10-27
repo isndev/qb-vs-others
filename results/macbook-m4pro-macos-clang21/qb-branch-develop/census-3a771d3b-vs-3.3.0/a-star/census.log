@@ -1,0 +1,14 @@
+
+savina/a-star: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    cand         median-of-medians    163.7   min    154.5   max    164.3   n=12   [154 164 163 164 164 164 164 164 162 164 164 164]
+    shipped      median-of-medians    163.8   min    155.1   max    164.2   n=12   [155 164 164 164 164 164 164 163 164 164 164 164]
+    cand vs shipped: 163.7 vs 163.8 (-0.1%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians    163.6   min    163.1   max    164.4   n=12   [164 164 163 164 164 163 163 163 163 164 164 164]
+    shipped      median-of-medians    163.5   min    163.1   max    164.6   n=12   [164 163 164 164 163 165 163 163 164 163 163 165]
+    cand vs shipped: 163.6 vs 163.5 (+0.0%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/a-star

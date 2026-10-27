@@ -19,10 +19,11 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:18:02Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:58:21Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +31,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Workers are slots of a vector, a job is one ring push and one ring pop, and nothing balances load: the floor for a fire-and-forget dispatch, not for scheduling 60 runnable actors on 2 threads", "worker w lives on thread w % cores, so with cores=2 half the jobs stay on the master's own thread (drained inline when its ring fills) and half cross a core", "cores=1 is one thread pushing every job into its own 65536-slot ring and draining it inline whenever it is full -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
   "failures": [],
-  "work_ns": [16460541.0, 12735541.0, 21646750.0, 19638041.0, 21812375.0, 15948083.0, 14071750.0, 15788541.0, 17159459.0],
-  "total_ns": [16480042.0, 12744542.0, 21655750.0, 19647583.0, 21823791.0, 15959291.0, 14092166.0, 15797000.0, 17168750.0],
-  "outside_window_ns": [19501.0, 9001.0, 9000.0, 9542.0, 11416.0, 11208.0, 20416.0, 8459.0, 9291.0],
+  "work_ns": [11910833.0, 11906417.0, 11818000.0, 12043625.0, 12218459.0, 11876375.0, 11878292.0, 11867791.0, 11740875.0],
+  "total_ns": [11918791.0, 11913584.0, 11825208.0, 12050709.0, 12225500.0, 11883584.0, 11887209.0, 11874834.0, 11749000.0],
+  "outside_window_ns": [7958.0, 7167.0, 7208.0, 7084.0, 7041.0, 7209.0, 8917.0, 7043.0, 8125.0],
   "summary": {
-    "work_min": 12735541.0,
-    "work_p50": 16460541.0,
-    "work_p99": 21799125.0,
-    "work_iqr": 3849500.0
+    "work_min": 11740875.0,
+    "work_p50": 11878292.0,
+    "work_p99": 12204472.3,
+    "work_iqr": 43042.0
   }
 }

@@ -1,0 +1,26 @@
+
+savina/bitonicsort: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  1c-spin
+    shipped1     median-of-medians      6.7   min      6.7   max      7.3   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    shipped2     median-of-medians      6.7   min      6.5   max      7.5   n=12   [7 7 7 7 8 7 7 7 7 7 6 7]
+    shipped3     median-of-medians      6.7   min      6.7   max      7.3   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    11141        median-of-medians      6.8   min      6.8   max      7.0   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    11142        median-of-medians      6.8   min      6.8   max      7.0   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    11143        median-of-medians      6.8   min      6.8   max      7.6   n=12   [7 8 7 7 7 7 7 7 7 7 7 7]
+    cand1        median-of-medians      6.8   min      6.8   max      7.3   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    cand2        median-of-medians      6.8   min      6.8   max      7.4   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    cand3        median-of-medians      6.8   min      6.8   max     10.2   n=12   [10 8 7 7 7 7 7 7 7 7 7 7]
+
+  1c-park
+    shipped1     median-of-medians      6.7   min      6.7   max      6.8   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    shipped2     median-of-medians      6.7   min      6.7   max      7.1   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    shipped3     median-of-medians      6.7   min      6.6   max      6.7   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    11141        median-of-medians      6.8   min      6.8   max      7.3   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    11142        median-of-medians      6.8   min      6.8   max      6.9   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    11143        median-of-medians      6.8   min      6.8   max      6.9   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    cand1        median-of-medians      6.8   min      6.8   max      7.0   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    cand2        median-of-medians      6.8   min      6.8   max      7.0   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    cand3        median-of-medians      6.8   min      6.8   max      7.4   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+
+launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/bisect-1c/bitonicsort

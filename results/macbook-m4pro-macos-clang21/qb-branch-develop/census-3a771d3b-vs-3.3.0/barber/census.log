@@ -1,0 +1,14 @@
+
+savina/barber: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    cand         median-of-medians   2162.0   min   2078.6   max   2192.6   n=12   [2154 2185 2172 2160 2151 2164 2156 2193 2192 2191 2159 2079]
+    shipped      median-of-medians   2174.9   min   2057.1   max   2194.7   n=12   [2195 2162 2162 2188 2187 2161 2157 2191 2190 2190 2057 2145]
+    cand vs shipped: 2162.0 vs 2174.9 (-0.6%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians   2171.7   min   2134.0   max   2197.8   n=12   [2153 2192 2191 2157 2174 2195 2159 2165 2134 2189 2169 2198]
+    shipped      median-of-medians   2161.5   min   1997.8   max   2194.3   n=12   [2088 2155 2161 2163 2162 2194 2165 2161 2162 2163 1998 2158]
+    cand vs shipped: 2171.7 vs 2161.5 (+0.5%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/barber

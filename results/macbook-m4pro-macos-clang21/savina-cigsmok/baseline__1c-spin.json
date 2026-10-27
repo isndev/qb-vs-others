@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/cigsmok",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 17266270140101833701,
+  "expected_messages": 100401,
+  "work_unit": "round",
+  "work_units": 50000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "rounds": 50000, "smoke": 1000, "smokers": 200, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:55:00Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the arbiter is actor 0 on worker 0, smoker j actor j + 1 on worker (j + 1) % cores; the acknowledgement is pushed before the smoke; not an actor framework"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A round is one ring push to the chosen smoker and one back, a smoker's state one cache line: the floor for what this coordination costs", "the arbiter is on worker 0 and smoker j on worker (j + 1) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [71872417.0, 71915834.0, 71870250.0, 71875750.0, 71885125.0, 72012125.0, 71886167.0, 71902417.0, 72455541.0],
+  "total_ns": [71881834.0, 71929625.0, 71879375.0, 71884792.0, 71894292.0, 72021417.0, 71895375.0, 71911625.0, 72464458.0],
+  "outside_window_ns": [9417.0, 13791.0, 9125.0, 9042.0, 9167.0, 9292.0, 9208.0, 9208.0, 8917.0],
+  "summary": {
+    "work_min": 71870250.0,
+    "work_p50": 71886167.0,
+    "work_p99": 72420067.7,
+    "work_iqr": 40084.0
+  }
+}

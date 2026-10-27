@@ -1,0 +1,41 @@
+[2026-10-27T06:47:28Z] before-origcopy QUIET(10/30s): idle 94.2% over 10s, load [1.51, 1.66, 1.89], forbidden 0, docker VM 0.0%, vz VM 0.1%, fseventsd 0.0%, mem 79% free
+{"tag": "before-origcopy", "verdict": "QUIET(10/30s)", "utc": "2026-10-27T06:47:28Z", "window_s": 10, "idle_pct": 94.15, "busy_pct": 5.84, "load": [1.51, 1.66, 1.89], "forbidden": [], "docker_vm_cpu_pct": 0.0, "vz_vm_cpu_pct": 0.1, "fseventsd_cpu_pct": 0.0, "memory": "79% free", "top": ["41096 6.5 claude", "58708 6.1 top", "0 4.1 kernel_task", "17139 3.9 Claude Helper (R", "32668 3.1 claude", "67988 2.0 PerfPowerService", "590 1.6 WindowServer", "45805 1.5 Windows App"]}
+    top: 41096 6.5 claude | 58708 6.1 top | 0 4.1 kernel_task | 17139 3.9 Claude Helper (R | 32668 3.1 claude | 67988 2.0 PerfPowerService | 590 1.6 WindowServer | 45805 1.5 Windows App
+[2026-10-27T06:47:41Z] before-origcopy QUIET(20/30s): idle 94.6% over 10s, load [1.97, 1.76, 1.92], forbidden 0, docker VM 0.0%, vz VM 0.2%, fseventsd 0.0%, mem 79% free
+{"tag": "before-origcopy", "verdict": "QUIET(20/30s)", "utc": "2026-10-27T06:47:41Z", "window_s": 10, "idle_pct": 94.59, "busy_pct": 5.4, "load": [1.97, 1.76, 1.92], "forbidden": [], "docker_vm_cpu_pct": 0.0, "vz_vm_cpu_pct": 0.2, "fseventsd_cpu_pct": 0.0, "memory": "79% free", "top": ["44484 15.7 UsageTrackingAge", "15690 13.6 com.apple.Virtua", "32668 8.3 claude", "41096 6.0 claude", "0 5.0 kernel_task", "58780 4.8 top", "84958 3.9 cloudd", "17139 2.2 Claude Helper (R"]}
+    top: 44484 15.7 UsageTrackingAge | 15690 13.6 com.apple.Virtua | 32668 8.3 claude | 41096 6.0 claude | 0 5.0 kernel_task | 58780 4.8 top | 84958 3.9 cloudd | 17139 2.2 Claude Helper (R
+[2026-10-27T06:47:55Z] before-origcopy QUIET(30/30s): idle 93.2% over 10s, load [1.75, 1.72, 1.91], forbidden 0, docker VM 0.0%, vz VM 4.9%, fseventsd 0.0%, mem 79% free
+{"tag": "before-origcopy", "verdict": "QUIET(30/30s)", "utc": "2026-10-27T06:47:55Z", "window_s": 10, "idle_pct": 93.23, "busy_pct": 6.76, "load": [1.75, 1.72, 1.91], "forbidden": [], "docker_vm_cpu_pct": 0.0, "vz_vm_cpu_pct": 4.9, "fseventsd_cpu_pct": 0.0, "memory": "79% free", "top": ["78664 17.1 Docker Desktop H", "4668 15.7 com.apple.WebKit", "32668 7.4 claude", "41096 5.9 claude", "58875 5.7 top", "17139 4.1 Claude Helper (R", "0 3.6 kernel_task", "77831 2.2 claude"]}
+    top: 78664 17.1 Docker Desktop H | 4668 15.7 com.apple.WebKit | 32668 7.4 claude | 41096 5.9 claude | 58875 5.7 top | 17139 4.1 Claude Helper (R | 0 3.6 kernel_task | 77831 2.2 claude
+[06:48:02] a-star             launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/bisect-1c-original/a-star
+    cand-orig    median-of-medians    264.3   min    263.1   max    305.2   n=12   [263 264 305 264 264 264 265 264 264 264 265 265]
+    cand-copy    median-of-medians    264.8   min    264.1   max    307.9   n=12   [264 308 301 264 264 266 264 265 266 264 265 265]
+    shipped-orig median-of-medians    264.3   min    263.8   max    293.8   n=12   [293 264 294 266 264 264 264 265 264 264 264 268]
+    shipped-copy median-of-medians    264.7   min    263.6   max    295.4   n=12   [266 265 295 265 264 264 264 265 265 264 264 265]
+    cand-orig    median-of-medians    265.2   min    264.0   max    304.7   n=12   [264 264 264 264 266 265 264 283 297 297 305 266]
+    cand-copy    median-of-medians    264.9   min    263.7   max    302.8   n=12   [264 264 264 265 301 266 264 265 299 303 303 265]
+    shipped-orig median-of-medians    266.3   min    264.0   max    298.9   n=12   [264 264 270 287 293 265 265 267 294 265 299 264]
+    shipped-copy median-of-medians    265.1   min    263.6   max    307.0   n=12   [265 265 265 264 287 264 266 265 307 264 303 264]
+[06:48:04] fib                launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/bisect-1c-original/fib
+    cand-orig    median-of-medians     60.9   min     60.5   max     62.4   n=12   [61 61 61 61 61 61 61 61 61 61 60 62]
+    cand-copy    median-of-medians     61.2   min     59.4   max     62.3   n=12   [61 62 60 61 61 61 61 61 59 61 62 62]
+    shipped-orig median-of-medians     61.1   min     59.2   max     61.3   n=12   [59 61 61 61 61 61 61 61 61 61 61 61]
+    shipped-copy median-of-medians     60.6   min     60.0   max     64.7   n=12   [60 60 60 61 61 60 61 60 61 60 62 65]
+    cand-orig    median-of-medians     60.8   min     60.2   max     61.4   n=12   [61 61 61 60 61 61 61 61 61 61 61 61]
+    cand-copy    median-of-medians     61.1   min     60.3   max     61.8   n=12   [62 61 61 61 61 61 60 61 62 62 61 61]
+    shipped-orig median-of-medians     60.8   min     58.7   max     61.9   n=12   [61 61 61 59 59 61 61 60 61 61 62 61]
+    shipped-copy median-of-medians     60.7   min     59.1   max     61.8   n=12   [61 61 62 60 61 61 61 59 60 60 61 59]
+[06:48:06] bank-transaction   launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/bisect-1c-original/bank-transaction
+    cand-orig    median-of-medians     91.3   min     87.8   max    102.0   n=12   [88 91 91 94 102 91 91 90 93 92 93 88]
+    cand-copy    median-of-medians     91.2   min     88.3   max    100.5   n=12   [91 92 88 92 101 89 89 90 94 91 95 93]
+    shipped-orig median-of-medians     81.1   min     79.4   max     87.0   n=12   [80 79 81 82 81 81 82 81 81 82 87 83]
+    shipped-copy median-of-medians     82.1   min     79.6   max     89.0   n=12   [80 83 81 80 83 82 82 80 82 89 87 83]
+    cand-orig    median-of-medians     89.9   min     87.5   max     93.6   n=12   [93 88 93 89 90 91 90 90 90 92 88 94]
+    cand-copy    median-of-medians     89.7   min     86.4   max     94.0   n=12   [86 89 90 90 88 92 90 88 91 89 90 94]
+    shipped-orig median-of-medians     81.7   min     79.8   max     84.0   n=12   [82 84 81 81 83 80 82 82 80 82 81 80]
+    shipped-copy median-of-medians     81.8   min     79.6   max     84.7   n=12   [85 81 83 82 82 81 82 80 80 83 83 82]
+ccf34388d6c8c8aba77f119d40f639551b0d51ab9cf0678b6369b4574afc95ed  /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/build-cand/bin/qvo-qb-savina-a-star
+ccf34388d6c8c8aba77f119d40f639551b0d51ab9cf0678b6369b4574afc95ed  /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/copies/cand-1/qvo-qb-savina-a-star
+[2026-10-27T06:48:17Z] after-origcopy QUIET: idle 94.9% over 10s, load [1.68, 1.7, 1.9], forbidden 0, docker VM 0.0%, vz VM 0.2%, fseventsd 0.0%, mem 79% free
+{"tag": "after-origcopy", "verdict": "QUIET", "utc": "2026-10-27T06:48:17Z", "window_s": 10, "idle_pct": 94.88, "busy_pct": 5.1, "load": [1.68, 1.7, 1.9], "forbidden": [], "docker_vm_cpu_pct": 0.0, "vz_vm_cpu_pct": 0.2, "fseventsd_cpu_pct": 0.0, "memory": "79% free", "top": ["1 9.0 launchd", "59321 6.1 top", "77831 5.9 claude", "0 3.4 kernel_task", "41096 3.4 claude", "45805 1.6 Windows App", "590 1.6 WindowServer", "32668 1.1 claude"]}
+    top: 1 9.0 launchd | 59321 6.1 top | 77831 5.9 claude | 0 3.4 kernel_task | 41096 3.4 claude | 45805 1.6 Windows App | 590 1.6 WindowServer | 32668 1.1 claude

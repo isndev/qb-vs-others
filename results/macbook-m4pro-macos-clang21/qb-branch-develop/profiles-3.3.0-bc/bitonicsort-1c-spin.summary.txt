@@ -1,0 +1,18 @@
+== bitonicsort-1c-spin.sample.txt: 25604 samples at the roots (every thread), self time by function:
+   25.7%   6588  __psynch_cvwait  [libsystem_kernel.dylib]
+   21.2%   5422  __semwait_signal  (in libsystem_kernel.dylib) + 8,4  [0x18791b308,0x18791b304]  []
+   13.8%   3539  __ulock_wait  (in libsystem_kernel.dylib) + 8,4  [0x187919af8,0x187919af4]  []
+    8.3%   2121  __semwait_signal  [libsystem_kernel.dylib]
+    4.4%   1137  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4  [0x187917c34,0x187917c30]  []
+    2.3%    578  qb::Actor::push_forward(qb::ActorId, qb::Event&) const  [qvo-qb-savina-bitonicsort]
+    1.4%    363  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)  [qvo-qb-savina-bitonicsort]
+    1.3%    345  qvospec::savina::bitonicsort::Joiner::accept<savina_bitonicsort_qb::JoinerActor::on(savina_bitonicsort_qb::Data const&):  [qvo-qb-savina-bitonicsort]
+  inclusive, qb / qvo / adapter frames:
+   25.7%   6588  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.7%   6588  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   13.9%   3559  qb::Main::join()
+    9.0%   2293  qb::Main::start(bool)
+    7.3%   1878  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+    3.3%    847  qb::Main::start_thread(qb::CoreSpawnerParameter const&)
+    2.8%    728  qb::VirtualCore::__drive_init__(qb::Actor&, qb::io::async::task<bool>&)
+    2.6%    673  qb::Actor::push_forward(qb::ActorId, qb::Event&) const

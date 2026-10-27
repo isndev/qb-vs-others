@@ -93,7 +93,7 @@ class NodeActor final : public qb::Actor {
                                                       _depth + 1, comp, i, urgent && i == urgent_child);
             if (!child.valid())
                 qvo::fail("savina/uct qb: addRefActor returned an invalid handle -- the "
-                          "VirtualCore's 16-bit actor id pool is exhausted (see "
+                          "VirtualCore's ordinary actor-id pool is exhausted (see "
                           "benchmarks/savina/uct.md)");
             _children.push_back(child.id());
         }
@@ -344,9 +344,11 @@ int main(int argc, char **argv) {
         "Plant event per core (created before the window, not counted in the messages): qb's way "
         "to create an actor on another VirtualCore");
     spec.caveats.emplace_back(
-        "every node is alive until the tree's report wave, and qb's actor id is a 16-bit slot per "
-        "VirtualCore (65 534 live actors): the default 60 000 nodes fit on one core; Savina's "
-        "200 000 do not, which is why the cap deviates for every framework");
+        "every node is alive until the tree's report wave; the cap of 60 000 nodes is the common "
+        "comparison cell for every framework: qb 3.2.1's actor id was a 16-bit slot per VirtualCore "
+        "(65 534 live actors), which held the default and not Savina's 200 000; since 3.3.0 the id is "
+        "64-bit with a 24-bit ordinary slot per VirtualCore (16 711 679), and the canonical 200 000 "
+        "verifies as a separate document (--param nodes=200000) -- see benchmarks/savina/uct.md");
 
     return qvo::run(argc, argv, std::move(spec), savina_uct_qb::body);
 }

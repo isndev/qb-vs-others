@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/quicksort",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 7393384507177721426,
+  "expected_messages": 3878,
+  "work_unit": "value",
+  "work_units": 1000000,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"cores": 2, "max": 1152921504606846976, "n": 1000000, "seed": 1024, "threshold": 2048, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T06:17:15Z"
+  },
+  "idiom": {
+    "source": "the fib adapter (addRefActor same-core child + kill()) + qb.llm.md Events: bulk data behind a smart-pointer member",
+    "note": "Sort and Result carry a unique_ptr<vector<uint64_t>>; a splitting actor creates its children with addRefActor, the root's two are seeds created before the window on VirtualCore s % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "qb has no cross-core spawn: a child is created on its parent's VirtualCore, so with cores=2 each half of the first split is sorted on its seed's core and never rebalanced -- the window closes when the larger half and the root's last join are done", "the values travel behind a std::unique_ptr in the event (8 bytes through the pipe); an allocated_push tail would have to fit the ~64 KiB cross-core ring with its event, and the first split hands each seed ~4 MB -- see benchmarks/savina/quicksort.md"],
+  "failures": [],
+  "work_ns": [25115208.0, 24967834.0, 25171833.0],
+  "total_ns": [27082291.0, 26997292.0, 27168041.0],
+  "outside_window_ns": [1967083.0, 2029458.0, 1996208.0],
+  "summary": {
+    "work_min": 24967834.0,
+    "work_p50": 25115208.0,
+    "work_p99": 25170700.5,
+    "work_iqr": 101999.5
+  }
+}

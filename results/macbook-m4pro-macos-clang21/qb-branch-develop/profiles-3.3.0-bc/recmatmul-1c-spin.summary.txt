@@ -1,0 +1,18 @@
+== recmatmul-1c-spin.sample.txt: 26384 samples at the roots (every thread), self time by function:
+   25.0%   6600  __psynch_cvwait  [libsystem_kernel.dylib]
+   24.9%   6579  __ulock_wait  [libsystem_kernel.dylib]
+   22.7%   5981  qvospec::savina::recmatmul::multiply(qvospec::savina::recmatmul::Matrices const&, qvospec::savina::recmatmul::Task const  []
+   20.4%   5376  __semwait_signal  (in libsystem_kernel.dylib) + 8,4  [0x18791b308,0x18791b304]  []
+    3.6%    956  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4,...  [0x187917c34,0x187917c30,...]  []
+    1.9%    496  qvospec::savina::recmatmul::multiply(qvospec::savina::recmatmul::Matrices const&, qvospec::savina::recmatmul::Task const  []
+    0.4%    102  qvospec::savina::recmatmul::multiply(qvospec::savina::recmatmul::Matrices const&, qvospec::savina::recmatmul::Task const  []
+    0.2%     48  std::this_thread::sleep_for(std::chrono::duration<long long, std::ratio<1l, 1000000000l>> const&)  (in libc++.1.dylib) +  []
+  inclusive, qb / qvo / adapter frames:
+   25.0%   6600  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.0%   6600  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   24.9%   6579  qb::Main::join()
+   24.9%   6579  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+   24.9%   6579  savina_recmatmul_qb::WorkerActor::on(savina_recmatmul_qb::Work const&)
+   22.7%   5981  qvospec::savina::recmatmul::multiply(qvospec::savina::recmatmul::Matrices const&, qvospec::savina::recmatmul::Task const
+    1.9%    496  qvospec::savina::recmatmul::multiply(qvospec::savina::recmatmul::Matrices const&, qvospec::savina::recmatmul::Task const
+    0.4%    102  qvospec::savina::recmatmul::multiply(qvospec::savina::recmatmul::Matrices const&, qvospec::savina::recmatmul::Task const

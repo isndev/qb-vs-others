@@ -1,0 +1,26 @@
+
+savina/sieve: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  1c-spin
+    shipped1     median-of-medians    508.5   min    507.2   max    510.8   n=12   [508 510 509 510 507 508 508 511 509 507 507 509]
+    shipped2     median-of-medians    508.5   min    506.7   max    510.6   n=12   [508 510 509 508 508 508 507 509 509 511 508 509]
+    shipped3     median-of-medians    508.3   min    506.1   max    515.6   n=12   [509 508 506 506 507 509 509 508 508 516 511 507]
+    11141        median-of-medians    508.7   min    507.7   max    525.8   n=12   [508 508 508 508 511 511 508 508 509 509 526 510]
+    11142        median-of-medians    508.9   min    506.4   max    519.8   n=12   [520 507 509 506 509 511 509 508 508 510 519 509]
+    11143        median-of-medians    508.9   min    506.8   max    549.2   n=12   [512 508 509 507 549 520 509 508 507 514 508 510]
+    cand1        median-of-medians    508.1   min    506.5   max    518.5   n=12   [508 508 509 519 511 508 507 508 507 509 509 507]
+    cand2        median-of-medians    508.9   min    508.1   max    510.0   n=12   [509 509 508 509 510 508 509 509 510 509 509 509]
+    cand3        median-of-medians    508.7   min    507.1   max    518.2   n=12   [517 508 511 513 508 508 507 518 508 510 509 507]
+
+  1c-park
+    shipped1     median-of-medians    509.1   min    507.0   max    523.0   n=12   [508 509 509 509 510 508 511 509 507 523 509 509]
+    shipped2     median-of-medians    508.6   min    507.1   max    516.0   n=12   [516 507 508 509 508 508 514 509 510 508 509 508]
+    shipped3     median-of-medians    509.3   min    507.4   max    518.6   n=12   [509 513 508 519 510 508 509 507 509 508 507 510]
+    11141        median-of-medians    509.4   min    508.0   max    525.9   n=12   [511 509 510 509 508 510 510 508 526 509 509 509]
+    11142        median-of-medians    509.3   min    505.6   max    555.5   n=12   [509 509 507 556 510 515 509 508 512 508 506 515]
+    11143        median-of-medians    509.6   min    505.9   max    523.4   n=12   [510 509 515 510 510 506 510 508 508 509 510 523]
+    cand1        median-of-medians    509.7   min    504.9   max    518.4   n=12   [505 507 510 508 513 511 514 514 508 518 509 509]
+    cand2        median-of-medians    508.8   min    507.0   max    521.8   n=12   [507 522 510 507 510 509 509 513 509 508 508 512]
+    cand3        median-of-medians    508.6   min    505.8   max    512.1   n=12   [512 510 510 507 508 508 511 510 506 509 507 508]
+
+launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/bisect-1c/sieve

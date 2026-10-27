@@ -1,0 +1,14 @@
+
+savina/concsll: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    cand         median-of-medians  22025.0   min  21675.6   max  22629.6   n=12   [22104 22140 22158 22043 22007 22630 21815 21820 22481 21777 21710 21676]
+    shipped      median-of-medians  21965.2   min  21723.2   max  22842.8   n=12   [22190 22134 22065 22843 22029 21901 22739 21737 21799 21736 21832 21723]
+    cand vs shipped: 22025.0 vs 21965.2 (+0.3%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians  22708.9   min  22595.4   max  23586.9   n=12   [22722 22775 22595 23587 22676 23465 22698 22705 22677 22784 22713 22700]
+    shipped      median-of-medians  22735.1   min  22625.2   max  23502.6   n=12   [23503 22728 22711 22742 22637 22625 22863 23471 22780 23417 22674 22697]
+    cand vs shipped: 22708.9 vs 22735.1 (-0.1%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/concsll

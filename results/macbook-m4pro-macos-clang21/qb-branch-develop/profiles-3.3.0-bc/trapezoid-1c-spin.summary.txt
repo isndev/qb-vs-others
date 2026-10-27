@@ -1,0 +1,18 @@
+== trapezoid-1c-spin.sample.txt: 26672 samples at the roots (every thread), self time by function:
+   25.0%   6668  __psynch_cvwait  [libsystem_kernel.dylib]
+   24.3%   6468  __ulock_wait  [libsystem_kernel.dylib]
+   20.1%   5357  __semwait_signal  (in libsystem_kernel.dylib) + 8,4,...  [0x18791b308,0x18791b304,...]  []
+    3.6%    949  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4,...  [0x187917c34,0x187917c30,...]  []
+    2.9%    776  pow  (in libsystem_m.dylib) + 328,348,...  [0x197714148,0x19771415c,...]  []
+    2.6%    706  pow  (in libsystem_m.dylib) + 304,348,...  [0x197714130,0x19771415c,...]  []
+    1.9%    498  pow  (in libsystem_m.dylib) + 348,304,...  [0x19771415c,0x197714130,...]  []
+    1.7%    447  pow  (in libsystem_m.dylib) + 328,304,...  [0x197714148,0x197714130,...]  []
+  inclusive, qb / qvo / adapter frames:
+   25.0%   6668  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.0%   6668  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   25.0%   6657  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+   25.0%   6657  savina_trapezoid_qb::WorkerActor::on(savina_trapezoid_qb::Work const&)
+   24.3%   6468  qb::Main::join()
+   23.5%   6277  qvospec::savina::trapezoid::integrate(unsigned long long, unsigned long long, double, double)
+    1.2%    323  DYLD-STUB$$sin  (in qvo-qb-savina-trapezoid) + 4,0  [0x10271ef94,0x10271ef90]
+    0.7%    200  qb::Main::start(bool)

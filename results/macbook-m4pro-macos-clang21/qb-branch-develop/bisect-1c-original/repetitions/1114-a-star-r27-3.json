@@ -1,0 +1,47 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/a-star",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 4796879656839427763,
+  "expected_messages": 0,
+  "work_unit": "node",
+  "work_units": 20515,
+  "repetitions": 27,
+  "warmup": 2,
+  "params": {"cores": 1, "grid": 30, "threshold": 1024, "wait": 1, "work": 100, "workers": 20},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T06:50:45Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md: forward(dest, e) from a non-const on(Event &) + the big adapter's statically placed field",
+    "note": "the master relays each handed-back Work with forward() to the next worker round-robin; a worker pushes its frontier back as Work events then one Ack on the same pipe; actor a on VirtualCore a % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "actor a lives on VirtualCore a % cores (master = 0, search worker w = w + 1), fixed before start: the only redistribution is the master's round-robin, Savina's own, so with cores=2 a node handed back crosses a core whenever its next worker lives on the other one", "the claim slots are shared memory every worker CASes, as in Savina's own implementation -- the one input not passed by message, identical for every framework (a-star.h, Claims)"],
+  "failures": [],
+  "work_ns": [5457041.0, 5433959.0, 5402250.0, 5427291.0, 5486334.0, 5388625.0, 5411833.0, 5403125.0, 5418291.0, 5406583.0, 5462292.0, 5402375.0, 5427084.0, 5408708.0, 5403250.0, 5427333.0, 5454875.0, 5406875.0, 5390709.0, 5415000.0, 5391500.0, 5421208.0, 5419166.0, 5446875.0, 5417625.0, 5419583.0, 5401083.0],
+  "total_ns": [6320084.0, 6303166.0, 6233334.0, 6255917.0, 6312417.0, 6337666.0, 6226000.0, 6209167.0, 6229875.0, 6207500.0, 6275000.0, 6359917.0, 6339834.0, 6301292.0, 6274375.0, 6268125.0, 6301458.0, 6248459.0, 6228083.0, 6230209.0, 6202208.0, 6229917.0, 6227458.0, 6255875.0, 6398917.0, 6353500.0, 6295459.0],
+  "outside_window_ns": [863043.0, 869207.0, 831084.0, 828626.0, 826083.0, 949041.0, 814167.0, 806042.0, 811584.0, 800917.0, 812708.0, 957542.0, 912750.0, 892584.0, 871125.0, 840792.0, 846583.0, 841584.0, 837374.0, 815209.0, 810708.0, 808709.0, 808292.0, 809000.0, 981292.0, 933917.0, 894376.0],
+  "observed": {
+    "work_messages": {"samples": [1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790, 1790], "min": 1790, "p50": 1790.0, "max": 1790}
+  },
+  "observed_at_least": {"work_messages": 21},
+  "summary": {
+    "work_min": 5388625.0,
+    "work_p50": 5417625.0,
+    "work_p99": 5480083.1,
+    "work_iqr": 24124.5
+  }
+}

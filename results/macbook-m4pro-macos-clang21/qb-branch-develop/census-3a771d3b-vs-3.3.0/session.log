@@ -1,0 +1,100 @@
+== E1 candidate vs shipped, 12 x (3+1), AB/BA, unpinned -- 2026-10-27T05:41:56Z
+[05:41:57] a-star                1s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/a-star
+          cand vs shipped: 163.7 vs 163.8 (-0.1%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 163.6 vs 163.5 (+0.0%) -- distributions OVERLAP: no measurable difference
+[05:41:59] apsp                  2s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/apsp
+          cand vs shipped: 303.5 vs 299.0 (+1.5%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 303.5 vs 299.1 (+1.5%) -- distributions OVERLAP: no measurable difference
+[05:42:00] bank-transaction      1s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/bank-transaction
+          cand vs shipped: 64.6 vs 64.1 (+0.8%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 66.4 vs 65.7 (+1.0%) -- distributions OVERLAP: no measurable difference
+[05:42:03] barber                3s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/barber
+          cand vs shipped: 2162.0 vs 2174.9 (-0.6%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 2171.7 vs 2161.5 (+0.5%) -- distributions OVERLAP: no measurable difference
+[05:42:09] big                   6s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/big
+          cand vs shipped: 13.0 vs 12.8 (+1.6%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 12.7 vs 12.8 (-0.1%) -- distributions OVERLAP: no measurable difference
+[05:42:11] bitonicsort           2s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/bitonicsort
+          cand vs shipped: 7.0 vs 6.9 (+1.3%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 6.9 vs 6.8 (+2.2%) -- distributions OVERLAP: no measurable difference
+[05:43:50] bndbuffer            99s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/bndbuffer
+          cand vs shipped: 8947.0 vs 8938.5 (+0.1%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 8947.7 vs 8932.2 (+0.2%) -- distributions OVERLAP: no measurable difference
+[05:43:52] chameneos             2s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/chameneos
+          cand vs shipped: 37.3 vs 36.8 (+1.5%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 37.7 vs 36.8 (+2.6%) -- distributions OVERLAP: no measurable difference
+[05:44:10] cigsmok              18s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/cigsmok
+          cand vs shipped: 1486.7 vs 1485.5 (+0.1%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 1485.8 vs 1487.5 (-0.1%) -- distributions OVERLAP: no measurable difference
+[05:44:14] concdict              4s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/concdict
+          cand vs shipped: 29.6 vs 29.8 (-0.7%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 30.8 vs 30.8 (-0.1%) -- distributions OVERLAP: no measurable difference
+[05:55:47] concsll             693s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/concsll
+          cand vs shipped: 22025.0 vs 21965.2 (+0.3%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 22708.9 vs 22735.1 (-0.1%) -- distributions OVERLAP: no measurable difference
+[05:55:49] counting              2s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/counting
+          cand vs shipped: 5.2 vs 5.2 (+0.1%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 5.2 vs 5.2 (+0.6%) -- distributions OVERLAP: no measurable difference
+[05:55:51] facloc                2s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/facloc
+          cand vs shipped: 82.2 vs 82.6 (-0.5%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 83.1 vs 83.3 (-0.2%) -- distributions OVERLAP: no measurable difference
+[05:55:52] fib                   1s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/fib
+          cand vs shipped: 40.1 vs 39.8 (+0.7%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 40.1 vs 39.9 (+0.5%) -- distributions OVERLAP: no measurable difference
+[05:59:50] filterbank          238s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/filterbank
+          cand vs shipped: 24008.6 vs 24102.7 (-0.4%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 23998.4 vs 24073.3 (-0.3%) -- distributions OVERLAP: no measurable difference
+[05:59:51] fork-join             1s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/fork-join
+          cand vs shipped: 5.2 vs 5.3 (-1.2%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 5.4 vs 5.4 (-0.4%) -- distributions OVERLAP: no measurable difference
+[05:59:51] fork-join-create      0s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/fork-join-create
+          cand vs shipped: 28.5 vs 28.7 (-0.8%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 28.5 vs 29.0 (-1.7%) -- distributions OVERLAP: no measurable difference
+[05:59:52] logmap                1s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/logmap
+          cand vs shipped: 12.6 vs 12.6 (+0.1%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 12.5 vs 12.5 (+0.2%) -- distributions OVERLAP: no measurable difference
+[06:00:11] nqueens              19s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/nqueens
+          cand vs shipped: 5366.1 vs 5382.4 (-0.3%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 5435.6 vs 5976.1 (-9.0%) -- distributions OVERLAP: no measurable difference
+[06:00:15] philosophers          4s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/philosophers
+          cand vs shipped: 95.5 vs 95.6 (-0.1%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 96.5 vs 95.3 (+1.3%) -- distributions OVERLAP: no measurable difference
+[06:00:39] ping-pong            24s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/ping-pong
+          cand vs shipped: 119.0 vs 119.2 (-0.2%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 119.4 vs 119.5 (-0.0%) -- distributions OVERLAP: no measurable difference
+[06:00:45] piprecision           6s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/piprecision
+          cand vs shipped: 4963.7 vs 4963.9 (-0.0%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 4956.3 vs 4954.4 (+0.0%) -- distributions OVERLAP: no measurable difference
+[06:00:52] quicksort             7s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/quicksort
+          cand vs shipped: 25.2 vs 25.1 (+0.4%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 25.1 vs 25.2 (-0.3%) -- distributions OVERLAP: no measurable difference
+[06:00:59] radixsort             7s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/radixsort
+          cand vs shipped: 5.8 vs 5.8 (-0.1%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 5.8 vs 5.8 (+0.0%) -- distributions OVERLAP: no measurable difference
+[06:02:06] recmatmul            67s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/recmatmul
+          cand vs shipped: 670661.9 vs 670241.9 (+0.1%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 673148.2 vs 674259.4 (-0.2%) -- distributions OVERLAP: no measurable difference
+[06:02:11] sieve                 5s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/sieve
+          cand vs shipped: 508.9 vs 508.8 (+0.0%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 509.9 vs 509.9 (-0.0%) -- distributions OVERLAP: no measurable difference
+[06:02:14] sor                   3s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/sor
+          cand vs shipped: 18.6 vs 18.5 (+0.7%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 18.7 vs 18.6 (+0.4%) -- distributions OVERLAP: no measurable difference
+[06:02:26] thread-ring          12s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/thread-ring
+          cand vs shipped: 56.7 vs 57.3 (-1.0%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 57.9 vs 57.5 (+0.8%) -- distributions OVERLAP: no measurable difference
+[06:02:58] trapezoid            32s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/trapezoid
+          cand vs shipped: 11.1 vs 11.1 (+0.0%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 11.1 vs 11.1 (-0.1%) -- distributions OVERLAP: no measurable difference
+[06:03:00] uct                   2s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/uct
+          cand vs shipped: 90.6 vs 92.3 (-1.9%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 91.1 vs 92.6 (-1.7%) -- distributions OVERLAP: no measurable difference
+== E1 done -- 2026-10-27T06:03:00Z (30 shapes, 1 440 launches, 0 not verified; the script's closing line failed to parse because its file was edited during the run -- every shape above completed before that)
+== E1 candidate vs shipped, 12 x (3+1), AB/BA, unpinned -- 2026-10-27T06:30:48Z
+[06:30:50] uct                   2s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/uct
+          cand vs shipped: 95.2 vs 93.4 (+1.9%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 95.0 vs 93.1 (+2.1%) -- distributions OVERLAP: no measurable difference
+[06:30:55] sieve                 5s  launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/sieve
+          cand vs shipped: 509.6 vs 508.3 (+0.3%) -- distributions OVERLAP: no measurable difference
+          cand vs shipped: 510.3 vs 508.4 (+0.4%) -- distributions OVERLAP: no measurable difference
+== E1 done -- 2026-10-27T06:30:55Z

@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/trapezoid",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 18366218599158302744,
+  "expected_messages": 200,
+  "work_unit": "trapezoid",
+  "work_units": 10000000,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"cores": 2, "left": 1, "pieces": 10000000, "right": 5, "wait": 0, "workers": 100},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T06:14:43Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the master (actor 0, thread 0) sends one range per worker actor w (id cores + w) on thread w % cores -- qb's placement; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A work message is one ring message carrying the range, a result one ring message carrying the area's bits, and the integration is the same shared kernel every framework runs: the floor for a fan-out and fan-in of pure computation", "worker w is owned by thread w % cores and the master by thread 0, fixed before the window -- qb's placement exactly: with cores=2 each thread integrates the ranges of the workers it owns, so this floor bounds the placing frameworks and NOT the pools", "cores=1 is one thread with every actor's messages in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [108757708.0, 108771250.0, 108978750.0],
+  "total_ns": [108832333.0, 108836916.0, 109058791.0],
+  "outside_window_ns": [74625.0, 65666.0, 80041.0],
+  "summary": {
+    "work_min": 108757708.0,
+    "work_p50": 108771250.0,
+    "work_p99": 108974600.0,
+    "work_iqr": 110521.0
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bndbuffer",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 13580315395847872333,
+  "expected_messages": 160080,
+  "work_unit": "item",
+  "work_units": 40000,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"buffer": 50, "cons_cost": 25, "consumers": 40, "cores": 2, "items": 1000, "prod_cost": 25, "producers": 40, "wait": 0},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:43:05Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md: send<T>() (into the peer's ring at once, not at the pass's flush) + kill() + broadcast<qb::KillEvent>(); the bank-transaction adapter's Ready handshake and fixed placement",
+    "note": "Savina's manager, producers and consumers one for one; the bounded buffer is the manager's FIFO and Savina's park/un-park protocol (qb has no bounded mailbox or credit primitive between actors); every hand-over is send<>; manager on VirtualCore 0, producer i on core (1 + i) % cores, consumer j on (1 + producers + j) % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "every hand-over is send<>, which publishes a cross-core event into the peer's ring at once; a push would be published by the pass's flush, after every busy-work handler the pass runs -- each actor has at most one message in flight to or from the manager, so the unordered primitive changes no outcome", "placement is fixed before start: the manager on VirtualCore 0, producer i on core (1 + i) % cores, consumer j on core (1 + producers + j) % cores, so with cores=2 half of each kind shares the manager's core and about half the hand-overs cross a core; the manager answers only between the busy-work handlers of its own core -- the pools place freely"],
+  "failures": [],
+  "work_ns": [358505416.0, 358232625.0, 358251500.0],
+  "total_ns": [358808375.0, 358561042.0, 358546542.0],
+  "outside_window_ns": [302959.0, 328417.0, 295042.0],
+  "observed": {
+    "buffer_peak": {"samples": [10, 10, 10], "min": 10, "p50": 10.0, "max": 10},
+    "consumer_waits": {"samples": [16439, 16475, 16670], "min": 16439, "p50": 16475.0, "max": 16670},
+    "producer_waits": {"samples": [11, 11, 11], "min": 11, "p50": 11.0, "max": 11}
+  },
+  "summary": {
+    "work_min": 358232625.0,
+    "work_p50": 358251500.0,
+    "work_p99": 358500337.7,
+    "work_iqr": 136395.5
+  }
+}

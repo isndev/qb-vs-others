@@ -60,6 +60,13 @@ are all in this repository.
   - [21.6 The fork-join-create regression: cause, fix, and the same-session A/B](#216-the-fork-join-create-regression-cause-fix-and-the-same-session-ab)
   - [21.7 The cigsmok two-core cell: placement, not cost (QB-1010)](#217-the-cigsmok-two-core-cell-placement-not-cost-qb-1010)
   - [21.8 The barber's blocked flush (QB-979): the stall rule, measured](#218-the-barbers-blocked-flush-qb-979-the-stall-rule-measured)
+- [22. The whole suite on macOS — thirty shapes, shipped 3.3.0 and the 3.4.0 branch tip (2026-10-27)](#22-the-whole-suite-on-macos-thirty-shapes-shipped-330-and-the-340-branch-tip-2026-10-27)
+  - [22.1 The sessions](#221-the-sessions)
+  - [22.2 The field, shape by shape — twenty-two shapes new to this host](#222-the-field-shape-by-shape-twenty-two-shapes-new-to-this-host)
+  - [22.3 The 3.4.0 branch tip against shipped 3.3.0](#223-the-340-branch-tip-against-shipped-330)
+  - [22.4 The forms the adapters declared, measured on macOS](#224-the-forms-the-adapters-declared-measured-on-macos)
+  - [22.5 The first profile of each new shape](#225-the-first-profile-of-each-new-shape)
+  - [22.6 What the session leaves](#226-what-the-session-leaves)
 
 ---
 
@@ -3310,3 +3317,426 @@ took 97 %); the floor, whose rings
 never fill at 5 000 customers, gains 13 % with the same placement — its missing overlap is the floor's own
 question, not qb's. `pace=1` was level before and is level after: the throttle only ever cost the
 reference's form.
+
+## 22. The whole suite on macOS — thirty shapes, shipped 3.3.0 and the 3.4.0 branch tip (2026-10-27)
+
+Savina waves B (Huly QB-246: `radixsort`, `filterbank`, `sieve`, `trapezoid`, `piprecision`,
+`recmatmul`, `quicksort`, `bitonicsort`) and C (QB-247: `apsp`, `sor`, `uct`, `facloc`) closed the
+roster at thirty shapes on 2026-10-13 — source, pages, four adapters each, controls — without a
+measurement anywhere (ROADMAP: "source coverage is not a claim of validated or published coverage").
+This is the first: the twelve, the ten of wave A (never run on this host) and the eight this host had
+measured at the 3.2.0 candidate, all with **shipped qb 3.3.0** as the qb column — v3.3.0 as released
+on 2026-10-26 (`e18022dd`), the qb a user installs — and the 3.4.0 branch tip beside it, on the macOS
+M4 Pro, unpinned (`results/macbook-m4pro-macos-clang21/`, Huly QB-244 / QB-246 / QB-247, lot 5 of the
+3.4.0 programme QB-1143). The x86 hosts are the Windows machine's session, not this one.
+
+### 22.1 The sessions
+
+Apple M4 Pro (10 performance + 4 efficiency cores, 48 GB, on AC), macOS 26.6.2, AppleClang 21.0.0
+(clang-2100.3.34.2), CMake 4.4.3, `-O3 -DNDEBUG`, 9 repetitions + 2 warmup, `--no-pin` (every
+document `pinned:false`, FAIRNESS.md 1.4). Two harness builds from ONE tree, qb-vs-others `13169b7d`
+(the `qb-3.3.0-field` tag, frozen by `git archive` with the whole superproject at the 3.3.0 release
+`4fe42fec` and checked file by file against the commit): `build-shipped` — qb v3.3.0 `e18022dd` (768
+blobs identical to the tag), CAF 1.1.0, SObjectizer 5.8.5.1, the floor, the probes, 121 binaries, 0
+warnings — and `build-cand` — qb `3a771d3b`, the shared 3.4.0 branch tip (768 blobs identical to the
+commit; five commits over v3.3.0, §22.3), qb only, 30 binaries, 0 warnings — the same flags on both
+(`-O3 -DNDEBUG -std=c++20`, `QB_VERSION "3.3.0"` on both: a branch build reports the last tag). Before
+the quiet window: every cell of the field once at one repetition (484 / 484 verified, the functional
+verdict of 2026-10-13 on its third host), the candidate's 120 cells once, and `tools/negative-control.py
+--build build-shipped`: **151 CAUGHT / 43 CONFIRMED / 0 MISSED**, 194 identities — the 2026-10-13
+census, on the released qb (04:44–04:45 UTC). Then the session, each leg behind a guard that measured
+the host quiet for 60 s (leg A) or 30 s (the others) before starting and sampled it after
+(`qb-branch-develop/grid-3a771d3b/session.log`: CPU idle over ten seconds, load, a census of our own
+process names, the top consumers); nothing of ours ran beside a leg; the Linux guest was powered off.
+
+| leg | what | UTC | documents |
+|---|---|---|---|
+| A | the branch tip, `--only qb` → `qb-branch-develop/grid-3a771d3b/` | 04:48:28–04:53:29 | 120 |
+| C | the field, every framework, shipped 3.3.0 as qb → `savina-<shape>/` | 04:54:23–05:21:46 | 484 (2 `n/a`) |
+| A2 | the branch tip again → `grid-3a771d3b-pass2/` | 05:22:41–05:27:35 | 120 |
+| D | the declared forms on the shipped build → `wave-bc-form-sweep/` (§22.4) | 05:28:29–05:39:04 | 58 |
+| E1 | the interleaved census, branch tip against shipped, every shape, two cores, 12 × (3 + 1) in AB/BA order → `qb-branch-develop/census-3a771d3b-vs-3.3.0/` | 05:41:56–06:03:00 | 1 440 launches |
+| E2 | the field census on the twelve B/C shapes, qb / CAF / SObjectizer / floor, two cores, 12 × (3 + 1) in a seeded order → `qb-branch-develop/census-3.3.0-field-bc/` | 06:03:55–06:20:08 | 1 152 launches |
+| C2, A-2, D2, E1-2, E2-2 | **the second session**: the uct and sieve rows again — field, both grids, forms, both censuses — after the two qb adapters' caveats were amended (below) | 06:21:49–06:32:08 | 32 + 16 + 36 + 192 launches |
+| B | the one-core bisection census of §22.3: three builds (shipped, `c16f1fa9`, `3a771d3b`) × three physical copies, nine shapes, 12 launches of 3 + 1 in a seeded order → `qb-branch-develop/bisect-1c/` | 06:33:50–06:41:02 | 1 944 launches |
+| P | the first `sample` profile of each B/C shape, qb at one core (§22.5) — not a timing | 06:41:17 (radixsort), 06:45:30–06:47:17 | 12 |
+
+Every document verified: 0 unverified over 2 × 120 + 484 + 58 documents and the launches above, and
+every `run.py` cell count read from its own log. The idle state at each guard: 86 % idle and load 2.96
+before A (after 60 s under the bar), 95 % and 1.37 before C, 93–95 % and 1.4–2.6 before the others
+(§22.1's host README has the residual load: the window server and the desktop apps of the
+maintainer's session, Docker Desktop's idle guest, nothing of ours). Two things the session had to
+redo, both in the log: leg E1's first launch ran 0 launches (its script redirected into a directory it
+had not created; re-run in full, 30 shapes), and the uct and sieve rows were re-measured in a second
+session because **the two qb adapters' caveat lines were false of 3.3.0** — "qb's actor id is a 16-bit
+slot per VirtualCore (65 534 live actors)" was 3.2.1's identity; 3.3.0's is 64-bit with a 24-bit
+ordinary slot (`ActorId.h` at `e18022dd`, `MaxOrdinarySlot`), and leg D had just measured 199 990
+live nodes verifying — so the caveats were rewritten (`frameworks/qb/savina/uct.cpp`, `sieve.cpp`, the
+spec comment of `uct.h`; nothing a measurement depends on), the builds relinked (six targets in the
+field build, three in the candidate's; `fib` byte-identical before and after) and every document of
+both rows re-produced under the amended text, the logmap precedent of §21.4. The harness battery was
+run again on the rebuilt field build at the end: **151 / 43 / 0**, 194 identities (06:32:22–06:32:56 UTC).
+
+### 22.2 The field, shape by shape — twenty-two shapes new to this host
+
+Per unit of work, p50, spin unless said, one unpinned session (`results/macbook-m4pro-macos-clang21/savina-<shape>/`;
+`REPORT.md` has every cell, every distribution and every observation sub-row; README.md's macOS tables
+the 1c-spin and 2c-spin columns). A one-core cell here is steadier than a two-core one, not steady
+(the host README): "separate" below means the two [min, p99] ranges do not overlap over nine
+repetitions, and a two-core verdict is read from the censuses of §22.3 where the grid left doubt.
+
+**Wave B — pipelines and data parallelism (QB-246).**
+
+- **radixsort** (a message: 6.1 M of them down sixty stages) — qb **5.8 / 5.8 ns** at one core
+  against SObjectizer's 28.6 / 32.3 and CAF's 73–74, and under the floor's 10.1 / 10.3; at two
+  cores 6.0 / 5.8 ns against CAF's 77 and SObjectizer's 102, the floor at 10.9 / 11.3 — qb below
+  the raw-thread floor in every cell (0.51–0.57), the floor's per-stage ring costing more than
+  qb's per-core pipe for a value that crosses a core once.
+- **filterbank** (a sample through eight chains of seven) — the FIR work is the cell: 45.6 / 45.3
+  µs at one core, level with CAF (45.4 / 45.5) and SObjectizer (43.8 / 43.5, overlapping), the floor
+  40.9; at two cores 24.1 / 24.0 against CAF's 23.3 / 23.4 (overlapping) and the floor's 21.1. Every
+  framework halves its time with the second core; qb sits 1.1–1.14 × the floor.
+- **sieve** (a candidate; 46 M trial divisions, nine creations) — at one core 508 / 506 ns, 1.11 /
+  1.12 × SObjectizer (562 / 566), CAF 618 / 619, the floor 492 / 494. **At two cores qb loses**: 506 /
+  523 ns against CAF's 382 / 389 (0.76 / 0.74 ×) and SObjectizer's 425 / 438 — the reference's
+  `place=0` puts every filter on the first filter's core and the second core runs only the producer,
+  so qb's two-core cell is its one-core cell; the pools spread the chain. `place=1` does not recover
+  it (§22.4: +9 / +1 %), and the floor, with qb's placement, reads the same 499 / 492 — the floor
+  spread by `place=1` reads 299 / 300, −40 %.
+- **trapezoid** (a trapezoid; 10 M of them over 100 workers) — 22.6 / 22.5 ns at one core against
+  21.5 for CAF, SObjectizer and the floor alike (0.95 ×, separate: +5 % on a 21.5-ns integrand,
+  with 200 messages per repetition); at two cores 11.1 / 11.2 against 10.9–11.0, overlapping. A
+  compute cell: 1.1 ns per trapezoid is what qb's one core pays that the others' do not, and the
+  profile of §22.5 says where.
+- **piprecision** (a term of the series; 20 workers, big-number arithmetic) — 8.23 / 8.24 µs at one
+  core against CAF's 7.57 / 7.56 (0.92 ×, separate), SObjectizer 7.96 / 7.94, the floor 8.40 / 7.72;
+  at two cores 4.85 / 4.96 against CAF's 4.55 / 4.06 (0.94 × overlapping / 0.82 × separate) and
+  SObjectizer's 4.81 / 4.31. The `terms` sub-row says part of it: a run needs 4 147 terms, and the
+  master keeps handing out until the bound is reached — CAF's interleaving computes 4 156 (nine past
+  it) where qb, SObjectizer and the floor compute 4 346 (199 past it): not the same work, read
+  beside the number.
+- **recmatmul** (a leaf of the recursive 1 024 × 1 024 product) — 1.149 / 1.146 ms at one core
+  against SObjectizer's 1.086 / 1.088 and the floor's 1.086 / 1.085 (0.95 ×, separate); at two cores
+  **671 / 677 µs against SObjectizer's 551 / 560 and CAF's 593 / 553 (0.82 ×)**, the floor 654 / 653:
+  the pools balance the 20 workers' leaves across both threads, qb's static `w % cores` placement
+  and the floor's do not — the two placing implementations read the same.
+- **quicksort** (a value of a million, three-way splits down to leaves of 2 048) — 42.0 / 41.9 ns at
+  one core, level with CAF (41.7 / 42.1) and the floor (40.3 / 40.5); at two cores 26.0 / 25.7
+  against CAF's 23.0 / 22.8 (0.88 ×, separate) and the floor's 24.1 / 23.6: the two seeds split the
+  input unevenly and a placing framework keeps each half on its core.
+- **bitonicsort** (a message of the sorting network, 541 869 per repetition) — qb **6.7 / 6.7 ns** at
+  one core against SObjectizer's 56.7 / 58.9 and CAF's 90.5 / 91.2 (8.5 / 8.8 ×), under the floor's
+  7.1 / 7.2; at two cores 7.0 / 6.7 against CAF's 59.8 / 59.6 and SObjectizer's 112 / 120, the floor
+  7.4 / 7.1 — below the floor in all four cells.
+
+**Wave C — computation and graphs (QB-247).**
+
+- **apsp** (a block phase; 36 blocks, 300 generations, every tile a pointer) — qb **573 / 572 ns** at
+  one core against SObjectizer's 1.14 / 1.19 µs and CAF's 1.52 / 1.53 (2.0 ×), the floor 550 / 556;
+  at two cores **289 / 291 ns** against SObjectizer's 1.43 / 1.41 µs and CAF's 1.59 (4.9 ×), under
+  the floor's 300 / 298. The `ahead` sub-row (a block receiving a tile of a generation it has not
+  reached) is 0 for qb in every cell and 27 700–29 900 for CAF: CAF's pool runs some blocks a
+  generation ahead of their neighbours, qb's pass order does not.
+- **sor** (an update of the 80 × 80 red-black grid, 100 iterations) — 35.9 / 36.0 ns at one core
+  against SObjectizer's 292 / 295 and CAF's 462 / 467 (8.1 ×), on the floor (34.7 / 35.9); at two
+  cores 24.0 / 24.1 against 588 / 595 and 701 / 703 (24 ×), the floor 20.1 / 20.5 (1.2 ×). The qb
+  two-core cells read 18.5 ns on their best repetitions and 24 by median — one launch; the census
+  (§22.3) is the figure.
+- **uct** (a node of the 59 991-node cobweb; 60 000 the common cap) — qb **129 / 129 ns** per node
+  at one core against CAF's 1.21 / 1.24 µs and SObjectizer's 1.26 / 1.29 (9.4 / 9.6 ×), the floor's
+  heap node 58.7 / 57.7; at two cores 91.8 / 90.8 against 1.16 / 1.13 µs (12.6 / 12.5 ×), the floor
+  62.5 / 60.3. Savina's canonical 200 000 nodes, which qb 3.2.1's 16-bit actor id refused, verify
+  with 3.3.0 in every configuration (§22.4).
+- **facloc** (a customer of 100 000; 1 365 quadrants, 665 514 messages) — qb **75.7 / 75.8 ns** at
+  one core against SObjectizer's 501 / 537 and CAF's 696 / 667 (6.6 / 7.1 ×), the floor 70.7 / 72.9;
+  at two cores 85.2 / 84.0 against CAF's 939 / 425 and SObjectizer's 1.53 / 1.52 µs (11 / 5 ×), the
+  floor 71.9 / 71.8 (1.18 ×): a second core costs qb 12 % on a shape whose quadtree splits are
+  created on the splitting quadrant's core.
+
+**Wave A on macOS for the first time (ten shapes measured on the two x86 hosts on 2026-10-11, §21).**
+
+- **fork-join-create** (an actor) — 54.8 / 55.1 ns at one core against SObjectizer's 464 / 485 and
+  CAF's 675 / 692 (8.5 / 8.8 ×), the floor's node 30.2 / 28.5; at two cores 29.5 / 29.6 against
+  CAF's 689 / 772 (23 / 26 ×), level with the floor (27.3 / 28.7). On WSL2 shipped 3.2.1 read
+  62 / 31 ns, on Windows 103 / 54.
+- **nqueens** (a solution) — the search is the cell: 10.67 / 10.81 µs against SObjectizer's 10.43
+  and CAF's 10.52 (0.97–0.98 ×), the floor 10.23; at two cores 5.41 / 5.41 against CAF's 5.47 / 5.45
+  (overlapping) and the floor's 5.28.
+- **a-star** (a node) — 265 / 265 ns at one core, level with SObjectizer (267 / 269) and CAF (269 /
+  270), the floor 250 / 275; at two cores 163 / 165 against CAF's 150 / 150 (0.92 ×, separate) and
+  SObjectizer's 158 / 162, the floor 151 / 154. The `work_messages` sub-row: 1 790 at one core for qb,
+  SObjectizer and the floor against 1 602 for CAF (one thread, its worker's order); at two cores
+  qb 1 358 / 1 351, CAF 1 558 / 1 574 — CAF's two-core cells do more node work per solution and
+  still finish first.
+- **philosophers** (a meal) — 47.5 / 47.2 ns at one core against SObjectizer's 380 and CAF's 397–424
+  (8.0 / 8.4 ×), on the floor (46.2 / 47.1); at two cores 103 / 99 ns against SObjectizer's 964 / 831
+  (9.4 / 8.4 ×), under the floor's 183 / 595 (the parked floor is the condition variable). `refused`
+  285 670 on one thread for the three static ones, 0 for CAF; at two cores qb 293–295 k, CAF 151–154 k,
+  SObjectizer 101–103 k: not the same work.
+- **barber** (a haircut) — 3.26 / 3.25 µs at one core against CAF's 4.45 / 4.51 and SObjectizer's
+  5.10 / 4.78 (1.37 / 1.39 ×), the floor 3.46 / 2.99; at two cores **2.15 / 2.15 µs** against CAF's
+  4.43 / 4.29 (2.1 / 2.0 ×), the floor 1.51 / 1.52: the stall rule of §21.8 gives qb 34 % from the
+  second core here (x86: 31 %), the floor 56 %. `wakeups` at two cores: qb 22, CAF 1, SObjectizer
+  1 238 / 826, the floor 166 / 158.
+- **bndbuffer** (an item) — the 2 500-step work is the cell: 15.5 / 15.6 µs at one core against
+  SObjectizer's 14.8 / 14.7 and CAF's 15.0 / 15.1 (0.95 / 0.94 ×, separate), the floor 14.4 / 14.7;
+  at two cores 8.90 / 8.74 against CAF's 7.93 / 7.92 (0.89 / 0.91 ×, overlapping), the floor 13.65 /
+  13.58. qb's `consumer_waits` 16 635 / 16 450 at two cores against CAF's 406 / 427 and SObjectizer's
+  25 105 / 30 130 (`producer_waits` 36 646 for CAF, 0–11 for the others): three different
+  interleavings of the same 40 000 items.
+- **cigsmok** (a round) — 1.58 / 1.65 µs at one core, level with SObjectizer (1.62 / 1.61,
+  overlapping), the floor 1.44 / 1.45; at two cores **1.48 / 1.49 µs against SObjectizer's 1.01
+  (2c-spin, 0.68 ×) and CAF's 1.24 (0.84 ×)** — the QB-1010 class of §21.7 (placement: the arbiter
+  and the 200 smokers on one core, the busy work on the other) on its third host, wider than on
+  x86 (1.04–1.26 ×). The floor's 2c-park cell is the condition variable, 3.91 µs.
+- **concdict** (an operation) — qb **21.5 / 21.6 ns** at one core against SObjectizer's 92.6 / 101
+  and CAF's 294 / 276 (4.3 / 4.7 ×), under the floor's 23.5 / 24.7; at two cores 29.5 / 28.3 against
+  SObjectizer's 422 / 359 (14 / 13 ×), the floor 55 / 268.
+- **concsll** (a request; the walk is the cell) — **20.75 / 20.76 µs against SObjectizer's 18.58 /
+  18.60 and the floor's 18.97 / 18.99 (0.90 ×, separate)** at one core, CAF 19.2; at two cores 21.97 /
+  22.73 against 20.45 / 22.68 and the floor's 20.54 / 22.26 (0.93 / 0.94 ×). The `contains_walk`,
+  `write_walk` and `size_walk` sub-rows are identical for qb, SObjectizer and the floor
+  (1 155 676 458 / 64 958 357 / 1 234): the same walk, 9–10 % slower in qb's binary — on the two x86
+  hosts the same cell was level (21.12 against 21.10 µs on Windows). §22.5 profiles it.
+- **logmap** (a term) — qb **16.5 / 16.5 ns** at one core against SObjectizer's 102 / 118 and CAF's
+  348 / 349 (6.2 / 7.2 ×), under the floor's 34.2 / 35.2; at two cores 13.7 / 13.5 against
+  SObjectizer's grouped 192 / 191 (14 ×), the floor 21.5 / 30.9.
+
+**The eight shapes this host had measured before**, with shipped 3.3.0 for the first time (the
+2026-09-19 field, qb = the 3.2.0 candidate `174e515a`, is in git history; a cross-session comparison
+is not a measurement, §13.9's figures are quoted for orientation only): ping-pong 22.5 / 23.0 ns at
+one core (25 / 25 on 2026-09-19), 126 / 126 at two (195–208 then, the grid; 196 by census);
+counting 3.8 / 3.8 (5 / 5), 5.4 / 5.3 at two cores (7 / 7); thread-ring 11.4 / 11.3 (19 / 19), 60.2 /
+60.7 (89 / 92); fork-join 4.8 / 5.0 (6 / 6), 5.3 / 5.0 (6 / 6); big 12.1 / 12.0 (13 / 13), 12.6 / 12.8
+(17 / 16); fib 61.0 / 60.8 (70 / 73), 38.8 / 38.6 (45 / 50); chameneos 23.7 / 23.7 (25 / 24), 36.9 /
+36.6 (40 / 46); bank-transaction 83.2 / 82.0 (82 / 83), 62.2 / 63.0 (77 / 67). Every ratio to CAF,
+SObjectizer and the floor in those eight rows is from this session (FAIRNESS.md §1.4).
+
+### 22.3 The 3.4.0 branch tip against shipped 3.3.0
+
+qb `3a771d3b` is five commits over v3.3.0 — two timing tests (QB-1150, QB-1141), a benchmark (QB-248)
+and two that change `src/`: `c16f1fa9` (QB-1114, `Actor.cpp`: the ask registry constant-initialised
+and its warm path inline) and `3a771d3b` itself (QB-1151, `system/allocator/pipe.h` + `io/pipe.cpp`:
+the character pipe formats integers in place; the template every event pipe instantiates). Legs A
+and A2 against the field's qb cells, then the census on every two-core cell (the full tables, 30 rows,
+at the end of `results/macbook-m4pro-macos-clang21/qb-branch-develop/README.md`):
+
+**Two cores: level everywhere.** Over the 60 two-core cells the census reads −1.9 to +2.6 % by
+median of twelve launch medians, every pair of distributions overlapping (the widest, nqueens
+2c-park, −9.0 % with a shipped side that visited a slow mode in two launches; sor, whose grid cell
+read 24.0 ns for shipped against the candidate's 18.5, reads 18.5 against 18.6 by census — the grid's
+figure was one slow launch). The grids alone would have said chameneos 2c-spin −17 % (leg A) and
++3 % (leg A2), uct 2c +5–8 % (both legs; +1.9 / +2.1 % by census, overlapping): a two-core grid cell
+is one launch here.
+
+**One core: sixteen cells slower with separate ranges, none faster.** Over the 60 one-core cells, leg A
+reads 44 overlapping, 16 slower beyond the overlap of [min, p99] over nine repetitions, 0 faster.
+Thirteen of the sixteen are a +1–3 % tail that leg A2 does not reproduce (bitonicsort 1c-spin +3.3
+then +1.7 %, trapezoid +1.6 / +1.9 then 0.0 / +0.4, uct 1c-park +8.8 then +0.4, piprecision,
+nqueens, barber, logmap, thread-ring, ping-pong, philosophers, recmatmul at 1c-park); three are not a
+tail: **bank-transaction
++8.0 / +13.4 % (1c-spin, legs A / A2) and +13.0 / +10.7 % (1c-park), a-star +8.1 / +14.4 % and +12.5 /
++14.9 %, fib +5.2 / +5.9 % and +4.4 / +5.4 %** — the same sign in both passes, 20–50 minutes apart,
+on the three shapes whose one-core cell is a request/reply (`qb::ask` per transfer), a master
+distributing work and a recursive creation. **The bisection** (`qb-branch-develop/bisect-1c/`, 06:33–06:41 UTC, after the second session): a third
+qb-only build at `c16f1fa9` (768 blobs identical to the commit: v3.3.0 plus the two tests and QB-1114,
+nothing of QB-1151), **three physical copies of each side's binary** (`cp`, byte-identical within a side,
+never a link: a link is one file and one layout), the nine copies in one seeded launch order per
+configuration, 12 launches of 3 + 1 each — 216 launches a shape, 0 unverified — on the nine shapes the
+grid had moved; the copies' spread is the A/A (0.0–0.8 % by median of twelve launches, 1.0–3.2 % on
+bank-transaction), the verdict a bootstrap 95 % interval of the ratio of medians over 36 launches:
+
+| cell (ns per unit, median of 36 launch medians) | shipped 3.3.0 | `c16f1fa9` (QB-1114) | `3a771d3b` (+ QB-1151) |
+|---|---:|---:|---:|
+| bank-transaction 1c-spin | 81.55 | **92.05 (+12.9 %, CI +11.7..+14.3, separate)** | 90.23 (+10.7 %, CI +9.6..+11.8, separate) |
+| bank-transaction 1c-park | 81.44 | **93.18 (+14.4 %, CI +12.6..+15.5, separate)** | 90.63 (+11.3 %, CI +10.4..+12.1, separate) |
+| bitonicsort 1c-spin / 1c-park | 6.70 / 6.69 | 6.82 / 6.81 (+1.9 / +1.8 %, separate) | 6.82 / 6.82 (+1.9 / +1.9 %, separate) |
+| thread-ring 1c-spin / 1c-park | 11.42 / 11.42 | 11.46 / 11.46 (+0.4 / +0.3 %, overlapping) | 11.48 / 11.52 (+0.5 / +0.8 %, CI touching 0) |
+| a-star 1c-spin / 1c-park | 264.9 / 265.2 | 265.6 / 265.2 (+0.3 / 0.0 %) | 264.7 / 264.5 (−0.1 / −0.2 %) |
+| fib 1c-spin / 1c-park | 61.03 / 61.11 | 61.18 / 61.23 (+0.2 %) | 61.22 / 61.14 (+0.3 / 0.0 %) |
+| piprecision, sieve, trapezoid, ping-pong | — | ±0.3 %, overlapping | ±0.9 %, overlapping |
+
+**bank-transaction's loss is QB-1114's, whole.** `c16f1fa9` — the ask registry constant-initialised
+(`constinit thread_local`), its per-core directories raw pointers on the cold path, the warm path (the
+owner's FIFO on the current core: a core compare, the band test, a page load, a pop) inline in
+`ask_take` and `ask_unregister` — costs **+13–14 % per transfer** at one core on Apple clang 21 / arm64,
+on a shape that is one `qb::ask` from a coroutine per transfer, 50 000 a repetition; QB-1151 gives back
+two points (90.2 against 92.1, both separate from shipped). The commit's own A/B read it on MSVC
+(−1.4 % on the same-core round trip, −4.4 % on an 8-wide scatter) and level on g++ 14; this compiler
+was not in it, and this host's `xburst` probe of lot 3 (an 8-wide `ask_any` from a long-lived engine,
+QB-1153) read QB-1114 at parity — a scatter is not a single-target ask from a coroutine's frame. The
+loss is constant from the first repetition (86–92 ns against 80 on three, nine and twenty-seven
+repetitions in one process), not a growth: the registry's directories live in the VirtualCore thread's
+TLS and a thread lives one engine. What costs is not read here (no differential listing of `ask_take`
+on this compiler, no instruction count per transfer); it is the next thing to read, by whoever takes
+the ticket — Huly QB-1154, under QB-244's merge rule.
+
+**a-star and fib: not the candidate.** The nine-copy census reads the three builds level, so does a
+census of each side's original file against its copy (`bisect-1c-original/`: cand-orig 264.3 / 265.2,
+cand-copy 264.8 / 264.9, shipped-orig 264.3 / 266.3, shipped-copy 264.7 / 265.1 on a-star; 60.6–61.2 on
+fib) — and 27 repetitions in one process, three runs per build (`bisect-1c-original/repetitions/`), show
+a-star's one-core cell **bimodal by repetition on every build**: shipped 3.3.0 reads 303–310 ns for its
+first eight repetitions of one run and 264 after, 287–309 for two repetitions of another, 264 throughout
+the third; `c16f1fa9` 359 → 262 → 311 in one run; the branch tip 264 in all three. A repetition sits in
+one of two modes, ~264 or ~300–310 ns per node (+14 %), and stays for a while — the host's, since every
+build visits both; the grid's two passes caught the candidate in the slow mode four launches out of
+four (both configurations, both passes), which a one-launch cell of nine repetitions cannot tell from a
+cost. fib's +5 % was the same reading with less contrast. **bitonicsort's +1.9 % is in `c16f1fa9` too**
+— a shape with no ask, 541 869 pushes a repetition, +0.13 ns a message with a tight interval, which is
+what a recompiled `Actor.cpp` costs by layout as often as by work; it is recorded, not attributed.
+
+| cell (ns per unit, p50) | shipped 3.3.0 (field) | `3a771d3b` leg A | leg A2 | census (2c) |
+|---|---:|---:|---:|---:|
+| bank-transaction 1c-spin / 1c-park | 83.2 / 82.0 | 89.8 / 92.7 | 94.4 / 90.8 | — |
+| a-star 1c-spin / 1c-park | 265.4 / 265.2 | 287.0 / 298.4 | 303.7 / 304.8 | — |
+| fib 1c-spin / 1c-park | 61.0 / 60.8 | 64.1 / 63.4 | 64.6 / 64.1 | — |
+| bank-transaction 2c-spin / 2c-park | 62.2 / 63.0 | 63.7 / 64.0 | 65.3 / 66.7 | 64.6 vs 64.1 / 66.4 vs 65.7 |
+| a-star 2c-spin / 2c-park | 163.3 / 164.7 | 173.4 / 156.9 | 163.9 / 163.0 | 163.7 vs 163.8 / 163.6 vs 163.5 |
+| fib 2c-spin / 2c-park | 38.8 / 38.6 | 40.9 / 41.4 | 40.5 / 40.6 | 40.1 vs 39.8 / 40.1 vs 39.9 |
+| sor 2c-spin / 2c-park | 24.0 / 24.1 | 18.5 / 18.6 | 18.8 / 18.7 | 18.6 vs 18.5 / 18.7 vs 18.6 |
+| uct 2c-spin / 2c-park | 91.8 / 90.8 | 96.5 / 98.5 | 99.3 / 97.0 | 95.2 vs 93.4 / 95.0 vs 93.1 |
+
+**The field census on the twelve B/C shapes, two cores** (`qb-branch-develop/census-3.3.0-field-bc/`:
+qb / CAF / SObjectizer / floor of the shipped build, 12 launches of 3 + 1 each in one seeded order per
+configuration, 1 152 launches, 0 unverified; median of the twelve launch medians, ns per unit, spin
+/ park — the figure to quote for a two-core cell on this host; uct and sieve from the second session):
+
+| shape | qb | CAF | SObjectizer | floor | ranking (spin) |
+|---|---:|---:|---:|---:|---|
+| radixsort | **5.8 / 5.8** | 74.1 / 72.7 | 99.3 / 104.8 | 10.8 / 11.3 | qb < floor < CAF < SObjectizer |
+| filterbank | 23 650 / 23 748 | 24 357 / 24 243 | 28 013 / 27 827 | **21 963 / 21 988** | floor < qb < CAF < SObjectizer |
+| sieve | 507.6 / 506.6 | **392.4 / 395.3** | 427.8 / 439.0 | 497.2 / 490.2 | CAF < SObjectizer < floor < qb |
+| trapezoid | 11.1 / 11.1 | 11.0 / 11.0 | **10.9 / 10.9** | 10.9 / 10.9 | SObjectizer ≈ floor < CAF < qb (0.2 ns) |
+| piprecision | 4 964 / 4 956 | **4 152 / 4 093** | 4 420 / 4 406 | 8 303 / 7 755 | CAF < SObjectizer < qb < floor |
+| recmatmul | 670 328 / 674 293 | 589 955 / 587 969 | **550 126 / 551 478** | 654 753 / 652 086 | SObjectizer < CAF < floor < qb |
+| quicksort | 25.0 / 25.0 | **23.2 / 23.1** | 24.7 / 24.8 | 24.2 / 24.1 | CAF < floor < SObjectizer < qb |
+| bitonicsort | **6.9 / 6.8** | 64.1 / 61.2 | 115.9 / 119.6 | 7.3 / 7.4 | qb < floor < CAF < SObjectizer |
+| apsp | **290.2 / 289.6** | 1 588 / 1 584 | 1 448 / 1 433 | 298.1 / 298.4 | qb < floor < SObjectizer < CAF |
+| sor | **18.5 / 18.6** | 704.1 / 710.9 | 585.9 / 587.1 | 20.1 / 20.6 | qb < floor < SObjectizer < CAF |
+| uct | 93.7 / 91.1 | 1 211 / 1 201 | 1 561 / 1 655 | **64.4 / 61.4** | floor < qb < CAF < SObjectizer |
+| facloc | 83.1 / 82.1 | 826.7 / 903.2 | 1 551 / 1 559 | **70.8 / 73.3** | floor < qb < CAF < SObjectizer |
+
+The census agrees with the grid in every ranking, and tightens it: the twelve launch medians of qb's
+radixsort span 5.7–6.0 ns, of its apsp 287–302, of its sor 18.3–19.3 — and the sor grid cell's 24.0
+(§22.2) is a launch the census never revisits. Where qb is first it is under the floor (radixsort,
+bitonicsort, apsp, sor); where a pool is first the floor sits with qb (sieve, quicksort, recmatmul:
+qb's placement without qb reads the same), or qb and the floor both trail (piprecision: the floor
+gains nothing from its second worker, 8.3 µs against 8.4 at one — not explained here); where the
+floor is first it is its heap node against an actor (uct, facloc) or its ring chain against a
+pipeline of actors (filterbank).
+
+### 22.4 The forms the adapters declared, measured on macOS
+
+Leg D measured every declared form in the field's session, on the shipped build, 9 + 2, unpinned
+(`results/macbook-m4pro-macos-clang21/wave-bc-form-sweep/`, side documents `report.py` never renders;
+the uct and sieve documents are from the second session, §22.1); ns per unit, p50, the field cell →
+the other form, "separate" when the [min, p99] ranges do not overlap:
+
+| form | 1c-spin | 1c-park | 2c-spin | 2c-park | verdict |
+|---|---:|---:|---:|---:|---|
+| apsp, qb `form=1` (`send` per neighbour) against the `push` cell | 572.7 → 586.6 (+2.4 %) | 572.4 → 579.1 (+1.2 %) | 289.4 → 304.1 (+5.1 %) | 290.6 → 323.9 (+11.4 %) | `form=0` stays; every pair separate |
+| sieve, qb `place=1` (filters spread by a Spawner per core) | — | — | 506.0 → 549.5 (+8.6 %) | 522.8 → 529.9 (+1.4 %, overlapping) | `place=0` stays for qb |
+| sieve, the floor at `place=1` | — | — | 498.5 → 299.4 (**−39.9 %**) | 491.6 → 299.9 (**−39.0 %**) | the floor's faster form; its cell stays `place=0` until the x86 sweep (below) |
+| sieve `local=1`, the one-filter-per-prime stress (9 591 filters, 46 M messages), qb | 507.8 → 5 403.9 | 505.8 → 5 420.3 | 506.0 → 5 894.3 | 522.8 → 5 684.2 | a labelled stress, never a cell |
+| sieve `local=1`, CAF / SObjectizer / the floor | 71.3 µs / 28.4 µs / 6.60 µs | 71.7 / 31.2 / 6.60 | 47.7 / 95.4 / 6.60 | 52.3 / 92.7 / 6.59 | qb under the raw-thread floor at every configuration (0.82–0.89 ×); CAF 8–13 ×, SObjectizer 5–16 × slower than qb |
+| uct `nodes=200000`, Savina's canonical cap, qb | 128.6 → 136.5 (+6.1 %) | 129.0 → 138.5 (+7.4 %) | 91.8 → 102.5 (+11.7 %) | 90.8 → 101.3 (+11.5 %) | **verifies in every configuration with 3.3.0**; 3.2.1 refused it (uct.md) |
+| uct `nodes=200000`, CAF / SObjectizer / the floor | 1.21 µs / 1.30 µs / 68.4 ns | 1.24 / 1.37 / 72.2 | 1.27 / 1.64 / 77.4 | 1.25 / 1.66 / 75.2 | qb 8.9–12.4 × CAF, 1.3–2.0 × the floor's heap node |
+| concdict, qb `form=1` (`qb::ask` from a coroutine per worker) | 21.5 → 40.1 (+86 %) | 21.6 → 40.1 (+86 %) | 29.5 → 35.9 (+22 %) | 28.3 → 37.3 (+32 %) | `form=0` stays, as on x86 (+30–41 % there) |
+| concdict, CAF `form=1` (`request().then()`) | 293.9 → 288.2 (−1.9 %) | 276.2 → 300.4 (+8.8 %) | 583.7 → 603.2 (+3.3 %) | 617.9 → 652.6 (+5.6 %) | level, every pair overlapping — `form=0` stays |
+| concsll, qb and CAF `form=1` | −0.7 to +1.0 % | | | | level, overlapping — the walk is the cell |
+| logmap, SObjectizer individual binding (`QVO_SO_GROUP_COOPS=0`) against the grouped cell | — | — | 192.4 → 426.1 (**2.2 ×**) | 190.7 → 425.4 (**2.2 ×**) | the grouped form of §21.4 is the faster on the third host too |
+
+Three things the sweep adds to §21.4's x86 verdicts. **qb's `send` is not a faster publication under a
+long handler**: apsp's `form=1` is slower in every configuration, most at two parked cores, so the
+pass-end flush that `push` pays is cheaper than ten unordered hand-overs per phase — the cell stays
+`form=0` on every host. **Spreading qb's sieve does not help qb and does help the floor**: at `place=1`
+qb pays a creation round trip per filter and gains nothing (+9 % spinning, +1 % parked), while the
+floor, whose rings cost nothing to spread, reads 40 % faster — the floor's `main()` still runs
+`place=0`, the reference's placement, because sieve.md's rule names the quiet-host sweep and this is
+one unpinned host; the x86 sweep decides the floor's cell. **qb 3.3.0 holds Savina's canonical uct**:
+the 64-bit actor id (`ActorId.h` at `e18022dd`: a 24-bit ordinary slot per VirtualCore, 16 711 679
+against 3.2.1's 65 534) verifies 199 990 live nodes in every configuration, 6–12 % per node over the
+60 000-node cell (the floor's node costs 16–25 % more at that size, CAF's 0–11 %), and the common cap
+stays 60 000 as the comparison cell of every host until the maintainers decide otherwise (the x86
+waves were measured at it).
+
+### 22.5 The first profile of each new shape
+
+`sample` (macOS, 1 ms, 8 s, every thread, symbols from the binary) over the qb adapter of each B/C
+shape at 1c-spin on the shipped build, plus concsll's, in a window of their own after the sessions —
+not a timing; the per-shape self-time leaders are in `qb-branch-develop/profiles-3.3.0-bc/`. The process
+has four threads and only the VirtualCore's works (the main thread joins it, the harness's deadline
+thread and nanolog's writer wait), so the worker is a quarter of every sample set and the shares below
+are of the worker's samples. qb creates one engine per repetition, so a VirtualCore thread lives one
+repetition and the call graph holds hundreds of them; the leaders are summed over all. What the twelve
+say, in three groups:
+
+- **The work is the cell, qb is not in it** (the five compute shapes). filterbank: the FIR dot product
+  (`qvospec::savina::filterbank::fir_dot`) is 100 % of the worker, qb's dispatch below the sampler's
+  floor. sieve: `locally_prime` 95 %, the trial divisions. recmatmul: `multiply` 100 %. piprecision:
+  `bbp_numerator`, the big-number arithmetic, through the worker's handler — 98 %. trapezoid: the
+  integrand, and inside it `pow` from `libsystem_m` (four distinct call sites, ~40 % of the worker)
+  — 94 % in `integrate()`; the 200 messages a repetition do not appear. So the 5 % qb's trapezoid pays
+  over CAF, SObjectizer and the floor (§22.2), and piprecision's 8 %, are not in qb's dispatch: they
+  are in how each binary compiled the same spec function into its own worker loop (every adapter
+  instantiates `qvospec::savina::trapezoid::integrate` in its own translation unit), the quantity an
+  objdump of the four `integrate` symbols would settle — not read here.
+- **concsll, the one that mattered**: `SortedList::contains` is 94 % of the worker, `SortedList::add`
+  1.4 %, the actor's `serve<ListOp>` and qb's `__receive_events__` the remaining 1.5 % between them.
+  **The 9–10 % qb's binary loses to SObjectizer's and the floor's (§22.2) is inside the walk, not around
+  it**: the same `contains_walk` count, the same inline function from the spec header, compiled into
+  three binaries — qb's loop runs 10 % slower per step. On the two x86 hosts the three were level
+  (§21.2); on Apple clang the instantiation inside qb's `serve<>` is laid out or scheduled worse than the
+  other two. That is a codegen question of the spec's inline walk in one TU, answered by diffing the
+  three `contains` loops; it moves nothing in qb and it is left as such (§22.6).
+- **The messaging shapes, where qb is the cell** (radixsort, bitonicsort, apsp, sor, uct, facloc):
+  the worker's time is spread thin over the dispatch — `__receive_events__`, the segmented pipe's
+  `pop_front`, the router's `resolve`, `push_forward` (bitonicsort's forward of a value to the next
+  comparator, 9 % of the worker, its largest single frame) — and over the adapter's handler
+  (radixsort's `StageActor::on`, the stable two-way partition, ~25 %; sor's `for_each_neighbour` and
+  `report_if_due`, the stencil's publication, ~25 %; apsp's `Block::compute` ~30 % and its `accept` and
+  publication). Two things recur across them that are qb's: **the creation of the actors each
+  repetition builds** — in uct, `NodeActor::generate` (an `addRefActor` per child, the child's
+  coroutine `onInit` driven by `__drive_init__`) is two thirds of the worker, `removeActor` and the
+  zeroing of the actor (`_platform_memset`) 4 % each, nanolog's `is_logged` level test 3 % (a VERBOSE
+  lifecycle line tested per actor, never written): the 129 ns qb pays per node against the floor's
+  58-ns heap node is the actor's lifetime; bitonicsort and facloc show the same `removeActor` /
+  `appendActor` / `memset` / `free` quartet at 2–4 % each — and **a `_tlv_get_addr` call** (dyld's
+  thread-local accessor) at 2–4 % of the worker on every messaging shape: a `thread_local` read on the
+  per-event path that Apple clang resolves through dyld's call rather than a direct TLS slot — the
+  thread-bound pipe table of `getPipe` (the 3.3.0 shape, §13.9's successor) or the event's core scope.
+  Four percent of a 6-ns message is a quarter of a nanosecond, on every push; it is a measured lead for
+  the arm64 residuals (QB-1153), not a finding against any cell.
+
+### 22.6 What the session leaves
+
+- **The x86 half of waves B and C** — Windows / MSVC and WSL2 / g++ at shipped 3.3.0, in the same
+  shape as this session (the field, the branch tip beside it, the forms, the censuses), on the
+  Windows host's calendar (Huly QB-246 / QB-247). The adapters' defaults are unchanged by this host:
+  apsp `form=0`, sieve `place=0` for qb and the floor, uct's common cap 60 000.
+- **The arm64 Linux guest** (`results/utm-debian13-arm64-g++14/`) has not run waves A, B or C, nor the
+  shipped 3.3.0 field; its last session is the 2026-09-19 candidate. It is a second quiet session on
+  the same machine once the guest is up, never concurrent with a macOS one.
+- **The floor's sieve placement**: `place=1` is the floor's faster form here (−38 %) and `place=0`
+  stays its cell until the x86 sweep says the same; a one-host, unpinned sweep does not change a
+  default the two pinned hosts measure at (sieve.md).
+- **Where the pools lead qb at two cores, and it is placement**: sieve 2c (0.78 × CAF: every filter on
+  one core by the reference's own shape), quicksort 2c (0.88 ×: two seeds, two halves of unequal
+  size, each kept on its core), recmatmul 2c (0.82 ×: twenty workers' leaves placed `w % cores`),
+  cigsmok 2c (0.68 × SObjectizer, the §21.7 class on its third host), piprecision 2c-park (0.82 ×,
+  CAF computing 190 fewer terms) and a-star 2c (0.92 ×). Each is a shape where a work-stealing pool
+  rebalances what qb's static placement cannot move, and the floor — qb's placement without qb —
+  reads the same as qb in sieve, quicksort and recmatmul: the cost is the placement, not the
+  framework. What a qb program does about it is the question of the actor-placement axis
+  (QB-216, the arena's placement effects on arm64) and of the B/C shapes' own pages; nothing here is
+  a defect of a hot path.
+- **Where qb is behind at one core on compute-dominated cells** — concsll (0.90 ×, the same walk
+  9–10 % slower in qb's binary, level on x86), trapezoid (0.95 ×, +1.1 ns on a 21.5-ns integrand),
+  recmatmul 1c (0.95 ×), bndbuffer 1c (0.94 ×), piprecision 1c (0.92 × CAF), nqueens 1c (0.98 ×) —
+  the profiles of §22.5 say whether the time is in qb or in the compiled work; concsll's is the
+  one to settle first, because its x86 cells were level.
+- **The candidate's one-core losses** are §22.3's finding, attributed there to one of the two source
+  commits of the branch (the bisection census `bisect-1c/`); under the merge rule of QB-244 what is
+  slower beyond its spread does not integrate unexplained.
+- **The first profile of each new shape** was taken this time (§22.5), on macOS only; `perf` on WSL2
+  and ETW on Windows are the x86 session's.

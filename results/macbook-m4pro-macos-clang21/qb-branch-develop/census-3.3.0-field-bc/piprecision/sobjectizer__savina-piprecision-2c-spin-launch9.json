@@ -1,0 +1,47 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/piprecision",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 17861393250455950234,
+  "expected_messages": 0,
+  "work_unit": "term",
+  "work_units": 4147,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"cores": 2, "form": 0, "precision": 5000, "wait": 1, "workers": 20},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T06:15:01Z"
+  },
+  "idiom": {
+    "source": "the nqueens adapter (direct mboxes, make_pool_binder, ready signal)",
+    "note": "one coop: the master sends msg_work to a worker's direct mbox, the worker answers a msg_result with the limbs vector moved in; thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the payload is a std::vector moved into the message (form=0): SObjectizer allocates the message object, the limbs stay in the worker's buffer and the master reads them where they are; which pool thread computes a term is the thread_pool's decision"],
+  "failures": [],
+  "work_ns": [18092625.0, 18279750.0, 18611542.0],
+  "total_ns": [18328833.0, 18503958.0, 18830500.0],
+  "outside_window_ns": [236208.0, 224208.0, 218958.0],
+  "observed": {
+    "terms": {"samples": [4346, 4346, 4346], "min": 4346, "p50": 4346.0, "max": 4346}
+  },
+  "observed_at_least": {"terms": 4147},
+  "summary": {
+    "work_min": 18092625.0,
+    "work_p50": 18279750.0,
+    "work_p99": 18604906.2,
+    "work_iqr": 259458.5
+  }
+}

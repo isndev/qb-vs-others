@@ -1,0 +1,14 @@
+
+savina/piprecision: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    cand         median-of-medians   4963.7   min   4782.7   max   4974.7   n=12   [4783 4965 4967 4964 4950 4965 4953 4964 4963 4968 4975 4964]
+    shipped      median-of-medians   4963.9   min   4780.7   max   5027.8   n=12   [4961 4964 4952 4961 4781 4892 5028 4966 4965 4973 4964 4973]
+    cand vs shipped: 4963.7 vs 4963.9 (-0.0%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians   4956.3   min   4704.8   max   4966.7   n=12   [4964 4967 4965 4959 4957 4705 4815 4962 4811 4956 4950 4948]
+    shipped      median-of-medians   4954.4   min   4905.9   max   5375.1   n=12   [4958 4954 4951 4960 4963 4958 5375 4953 4906 4950 4954 4943]
+    cand vs shipped: 4956.3 vs 4954.4 (+0.0%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/piprecision

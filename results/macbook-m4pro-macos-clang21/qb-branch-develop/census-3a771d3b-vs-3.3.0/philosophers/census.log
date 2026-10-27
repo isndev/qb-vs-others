@@ -1,0 +1,14 @@
+
+savina/philosophers: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    cand         median-of-medians     95.5   min     94.4   max    102.5   n=12   [96 94 95 95 95 102 97 100 100 96 94 96]
+    shipped      median-of-medians     95.6   min     94.7   max    155.1   n=12   [95 102 96 97 95 102 96 155 95 95 95 95]
+    cand vs shipped: 95.5 vs 95.6 (-0.1%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians     96.5   min     94.5   max    101.1   n=12   [95 95 95 96 95 101 97 100 99 97 97 95]
+    shipped      median-of-medians     95.3   min     94.6   max    141.5   n=12   [96 141 95 96 95 101 95 99 95 95 95 95]
+    cand vs shipped: 96.5 vs 95.3 (+1.3%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/philosophers

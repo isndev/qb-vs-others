@@ -51,9 +51,11 @@ inline constexpr const char *kId = "savina/uct";
 //
 // `nodes`    -- MAX_NODES, the cap on the tree's size, the root included. Savina: 200 000. The
 //               default HERE is 60 000, a DEVIATION with a recorded reason (uct.md): every node
-//               of the tree is alive until the end, and qb's actor id is a 16-bit slot per
-//               VirtualCore (65 534 live actors) -- 200 000 nodes do not fit on one core. With the
-//               default the tree has 59 991 nodes: 59 990 created inside the window.
+//               of the tree is alive until the end, and qb 3.2.1's actor id was a 16-bit slot per
+//               VirtualCore (65 534 live actors) -- 200 000 nodes did not fit on one core. Since
+//               qb 3.3.0 the id holds them (a 24-bit ordinary slot), measured; the cap stays the
+//               common cell for every framework and `nodes=200000` is a separate document. With
+//               the default the tree has 59 991 nodes: 59 990 created inside the window.
 // `binomial` -- BINOMIAL_PARAM, the children of a node that has any. Savina's own default, 10.
 // `avg`      -- AVG_COMP_SIZE, the mean computation size a grant hands the children. Savina's 500.
 // `stdev`    -- STDEV_COMP_SIZE, its standard deviation. Savina's own default, 100.

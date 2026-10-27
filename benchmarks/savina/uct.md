@@ -63,14 +63,21 @@ configuration on that delivered identity domain — measured: its qb adapter at 
 `qvo::fail()` naming the pool, where CAF, SObjectizer and the floor verify. 60 000 is a round cap
 with headroom under the per-core limit at `cores=1` (59 991 nodes against 65 534; `nodes=65000`,
 64 991 nodes, still verifies); it applies to every framework, and
-`--param nodes=200000` reproduces Savina's tree for the three that can hold it (199 990 nodes,
-19 998 grants, cap depth 7). The 60 000 case is the common comparison variant across all four
-frameworks; the canonical 200 000 case remains separate, with the delivered qb capacity failure visible.
+`--param nodes=200000` reproduces Savina's tree (199 990 nodes, 19 998 grants, cap depth 7). The
+60 000 case is the common comparison variant across all four frameworks and every host; the
+canonical 200 000 case is a separate document beside it.
 
-The ActorId64 candidate (Huly QB-970/QB-971) removes that fixed 16-bit ordinary-slot ceiling.
-Its canonical capacity validation is separate from the matched 60 000-node timing comparison;
-the common table input remains unchanged until native validation and the API/ABI decision.
-The adapter changes neither identity layout nor allocation policy itself.
+**qb 3.3.0 holds the canonical tree.** The 64-bit `ActorId` that shipped with 3.3.0 (Huly QB-970 /
+QB-971) carries a **24-bit** ordinary slot per VirtualCore —
+[`MaxOrdinarySlot`](https://github.com/isndev/qb/blob/e18022dd9cba98e3fac4a4b6c3adbdcda8567ad7/src/qb/core/ActorId.h#L438)
+at the release, 16 711 679 live actors against 3.2.1's 65 534 — and the first measurement of this
+shape (macOS, 2026-10-27, unpinned, `results/macbook-m4pro-macos-clang21/wave-bc-form-sweep/`,
+`docs/TUNING.md` §22.4) verifies qb at `nodes=200000` in every configuration: 136.5 / 138.5 ns per
+node at one core (spin / park) against 128.6 / 129.0 at the 60 000-node cell, 102.5 / 101.3 against
+91.8 / 90.8 at two — 6–12 % more per node for a tree 3.3 times larger — where CAF reads 1.21–1.27 µs,
+SObjectizer 1.30–1.66 and the floor's heap node 68–77 ns. The qb adapter's caveat says so since that
+session; the cell stays at 60 000 so that every host's table compares the same tree, the x86 waves
+having been measured at it — moving the cell to Savina's cap is a roster decision, not a host's.
 
 ### The tree, for every interleaving
 

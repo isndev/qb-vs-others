@@ -1,0 +1,18 @@
+== facloc-1c-spin.sample.txt: 26615 samples at the roots (every thread), self time by function:
+   25.1%   6693  __psynch_cvwait  [libsystem_kernel.dylib]
+   22.6%   6016  __ulock_wait  [libsystem_kernel.dylib]
+   19.1%   5079  __semwait_signal  (in libsystem_kernel.dylib) + 8,4  [0x18791b308,0x18791b304]  []
+    4.6%   1222  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4,...  [0x187917c34,0x187917c30,...]  []
+    2.2%    591  savina_facloc_qb::QuadrantActor::on(savina_facloc_qb::CustomerMsg const&)  [qvo-qb-savina-facloc]
+    1.7%    455  __semwait_signal  [libsystem_kernel.dylib]
+    1.7%    444  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)  [qvo-qb-savina-facloc]
+    1.4%    373  qvospec::savina::facloc::Quadrant::keep(qvospec::savina::facloc::Customer const&)  [qvo-qb-savina-facloc]
+  inclusive, qb / qvo / adapter frames:
+   25.1%   6693  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.1%   6693  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   22.6%   6016  qb::Main::join()
+   15.5%   4134  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+    4.5%   1210  savina_facloc_qb::QuadrantActor::on(savina_facloc_qb::CustomerMsg const&)
+    2.3%    609  savina_facloc_qb::RootActor::on(savina_facloc_qb::CustomerMsg const&)
+    2.1%    566  qvospec::savina::facloc::Quadrant::keep(qvospec::savina::facloc::Customer const&)
+    2.1%    558  qb::VirtualCore::__receive__()

@@ -1,0 +1,18 @@
+== E2 field census B/C, 12 x (3+1), seeded order 20261027, unpinned -- 2026-10-27T06:03:55Z
+[06:05:50] radixsort           115s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/radixsort
+[06:13:43] filterbank          473s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/filterbank
+[06:13:53] sieve                10s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/sieve
+[06:14:57] trapezoid            64s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/trapezoid
+[06:15:09] piprecision          12s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/piprecision
+[06:17:12] recmatmul           123s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/recmatmul
+[06:17:25] quicksort            13s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/quicksort
+[06:17:51] bitonicsort          26s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/bitonicsort
+[06:17:57] apsp                  6s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/apsp
+[06:19:19] sor                  82s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/sor
+[06:19:42] uct                  23s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/uct
+[06:20:08] facloc               26s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/facloc
+== E2 done -- 2026-10-27T06:20:08Z
+== E2 field census B/C, 12 x (3+1), seeded order 20261027, unpinned -- 2026-10-27T06:31:36Z
+[06:31:59] uct                  23s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/uct
+[06:32:08] sieve                 9s  launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/sieve
+== E2 done -- 2026-10-27T06:32:08Z

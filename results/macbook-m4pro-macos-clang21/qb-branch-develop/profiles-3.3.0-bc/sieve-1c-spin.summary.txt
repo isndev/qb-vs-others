@@ -1,0 +1,18 @@
+== sieve-1c-spin.sample.txt: 26517 samples at the roots (every thread), self time by function:
+   25.0%   6640  __psynch_cvwait  [libsystem_kernel.dylib]
+   23.7%   6276  __ulock_wait  [libsystem_kernel.dylib]
+   20.2%   5356  __semwait_signal  (in libsystem_kernel.dylib) + 8,4  [0x18791b308,0x18791b304]  []
+   17.1%   4543  qvospec::savina::sieve::locally_prime(unsigned long long, unsigned long long const*, unsigned long)  (in qvo-qb-savina-s  []
+    4.7%   1239  qvospec::savina::sieve::locally_prime(unsigned long long, unsigned long long const*, unsigned long)  (in qvo-qb-savina-s  []
+    3.9%   1022  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4,...  [0x187917c34,0x187917c30,...]  []
+    1.4%    362  qvospec::savina::sieve::locally_prime(unsigned long long, unsigned long long const*, unsigned long)  (in qvo-qb-savina-s  []
+    1.2%    313  __semwait_signal  [libsystem_kernel.dylib]
+  inclusive, qb / qvo / adapter frames:
+   25.0%   6640  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.0%   6640  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   24.6%   6530  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+   24.4%   6467  savina_sieve_qb::FilterActor::on(savina_sieve_qb::Candidate const&)
+   24.3%   6441  qvospec::savina::sieve::Filter::take(unsigned long long)
+   23.7%   6277  qb::Main::join()
+   17.1%   4543  qvospec::savina::sieve::locally_prime(unsigned long long, unsigned long long const*, unsigned long)  (in qvo-qb-savina-s
+    4.7%   1239  qvospec::savina::sieve::locally_prime(unsigned long long, unsigned long long const*, unsigned long)  (in qvo-qb-savina-s

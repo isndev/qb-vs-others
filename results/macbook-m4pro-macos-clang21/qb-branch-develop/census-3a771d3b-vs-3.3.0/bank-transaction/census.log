@@ -1,0 +1,14 @@
+
+savina/bank-transaction: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    cand         median-of-medians     64.6   min     63.1   max     67.2   n=12   [65 67 67 64 64 64 64 63 65 66 65 63]
+    shipped      median-of-medians     64.1   min     62.7   max     67.2   n=12   [63 64 67 64 63 64 63 66 64 64 64 65]
+    cand vs shipped: 64.6 vs 64.1 (+0.8%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians     66.4   min     63.1   max     68.5   n=12   [66 67 66 67 67 69 66 68 63 65 67 66]
+    shipped      median-of-medians     65.7   min     62.2   max     67.3   n=12   [62 64 66 64 65 63 65 67 66 67 67 66]
+    cand vs shipped: 66.4 vs 65.7 (+1.0%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/bank-transaction

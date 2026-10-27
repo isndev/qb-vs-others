@@ -19,24 +19,25 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:22:38Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:07:53Z"
   },
   "idiom": {
     "source": "CAF 1.1.0 examples/hello_world.cpp + examples/message_passing/dancing_kirby.cpp + caf/stateful_actor.hpp",
     "note": "function-based behaviors, stateful_actor for the cached peer, bare uint64_t on the hot path, one handshake outside the window"
   },
-  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them, which qb's actors cannot do. That is an architectural difference, and it cuts both ways: stealing costs on a two-actor ping-pong and pays on an unbalanced fan-out", "wait=1 and wait=0 are the SAME configuration for CAF on this benchmark -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10). The sweep in docs/TUNING.md section 1 found every more aggressive profile SLOWER, because on a ping-pong the receiver runs on the sender's worker and polling harder only makes the idle worker steal it; CAF's fastest ping-pong is the one where nothing ever crosses a core. The cross-core figure is the caf-detached row", "in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), so CAF's two-core ping-pong runs both actors on one thread and never pays a cross-core hand-off; read this row as CAF's best-case locality, and caf-detached as its cross-core cost", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship"],
+  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them, which qb's actors cannot do. That is an architectural difference, and it cuts both ways: stealing costs on a two-actor ping-pong and pays on an unbalanced fan-out", "wait=1 and wait=0 are the SAME configuration for CAF on this benchmark -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10). The sweep in docs/TUNING.md section 1 recorded slower results for the more aggressive profiles it compared. Those results do not count steals or prove that no message crossed a core. The caf-detached row measures an explicit worker per actor", "in the work-stealing pool the receiver of a message sent from a worker is prepended to that worker's own queue (worker::delay), favouring the sender's worker. Another worker may steal it, so the two-core row does not guarantee same-core hand-offs; caf-detached uses explicit per-actor placement", "QVO requests C++20. CAF declares C++17 as a minimum, not a separate compiler mode; the library compilation command is the authority for its effective language mode"],
   "failures": [],
-  "work_ns": [397669792.0, 389580250.0, 395772291.0, 379306208.0, 381728375.0, 385523042.0, 375290708.0, 380135167.0, 386643625.0],
-  "total_ns": [397846125.0, 389757458.0, 395946333.0, 379498292.0, 381906542.0, 385694542.0, 375458750.0, 380297083.0, 386842625.0],
-  "outside_window_ns": [176333.0, 177208.0, 174042.0, 192084.0, 178167.0, 171500.0, 168042.0, 161916.0, 199000.0],
+  "work_ns": [422310750.0, 426652250.0, 428066541.0, 422046000.0, 439293583.0, 389286209.0, 398157542.0, 407359958.0, 422302000.0],
+  "total_ns": [422497000.0, 426834375.0, 428279917.0, 422237750.0, 439455166.0, 389465875.0, 398325084.0, 407510250.0, 422495959.0],
+  "outside_window_ns": [186250.0, 182125.0, 213376.0, 191750.0, 161583.0, 179666.0, 167542.0, 150292.0, 193959.0],
   "summary": {
-    "work_min": 375290708.0,
-    "work_p50": 385523042.0,
-    "work_p99": 397517991.9,
-    "work_iqr": 9445083.0
+    "work_min": 389286209.0,
+    "work_p50": 422302000.0,
+    "work_p99": 438395419.6,
+    "work_iqr": 19292292.0
   }
 }

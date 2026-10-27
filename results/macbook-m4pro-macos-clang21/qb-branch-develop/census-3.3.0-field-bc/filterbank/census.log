@@ -1,0 +1,16 @@
+
+savina/filterbank: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  2c-spin
+    qb           median-of-medians  23650.3   min  23465.0   max  23998.8   n=12   [23608 23465 23718 23851 23520 23514 23693 23514 23594 23999 23813 23820]
+    caf          median-of-medians  24356.9   min  23883.3   max  24813.2   n=12   [24448 24185 24417 24145 24813 23883 24536 24062 24246 24456 24297 24791]
+    sobjectizer  median-of-medians  28012.6   min  27809.8   max  28638.5   n=12   [27969 28142 28138 28021 28095 28298 27890 28004 27810 28638 27917 27902]
+    floor        median-of-medians  21963.1   min  21797.6   max  22256.6   n=12   [22144 21909 21952 22257 22182 21932 21897 21798 21943 22017 22101 21974]
+
+  2c-park
+    qb           median-of-medians  23747.8   min  23393.2   max  24219.2   n=12   [23720 23755 23740 23776 23566 23884 23842 23656 24219 24029 23710 23393]
+    caf          median-of-medians  24243.4   min  23981.1   max  24585.6   n=12   [24421 24276 24304 24252 23981 24165 24205 24586 24212 24206 24234 24350]
+    sobjectizer  median-of-medians  27826.9   min  27574.2   max  28551.7   n=12   [27992 27900 28219 27574 27648 28552 27686 27717 27633 28426 27844 27810]
+    floor        median-of-medians  21987.6   min  21713.8   max  22390.7   n=12   [21874 22216 22391 21976 21714 21967 21995 22230 21902 21980 22188 22258]
+
+launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/filterbank

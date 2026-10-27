@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/sieve",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 1204055234045451859,
+  "expected_messages": 91329,
+  "work_unit": "candidate",
+  "work_units": 49999,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"cores": 1, "limit": 100000, "local": 1000, "place": 0, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T06:39:52Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md addRefActor<T>() (same-core child, onInit run synchronously) + push<T>() (ordered); the fork-join-create adapter",
+    "note": "place=0: a filter creates its successor with addRefActor, every filter on the first filter's core; place=1: filter f created on core (f + 1) % cores by that core's Spawner, the candidates held until its id arrives; every candidate pushed (ordered)"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "qb has no cross-core spawn: with place=0 -- the reference's, a filter creating its own successor -- every filter lives on the first filter's core (core 1 at cores=2, the producer on core 0); place=1 spreads them through a Spawner per core and an extra round trip per creation. The run's `place` is in its params -- see benchmarks/savina/sieve.md", "qb's actor id is a 24-bit ordinary slot per VirtualCore since 3.3.0 (16 711 679 live actors; 3.2.1's was a 16-bit slot, 65 534): with place=0 every filter is on one core, so a run needing more filters than that fails the cell"],
+  "failures": [],
+  "work_ns": [25346208.0, 25435875.0, 25451083.0],
+  "total_ns": [25768750.0, 25842917.0, 25865916.0],
+  "outside_window_ns": [422542.0, 407042.0, 414833.0],
+  "summary": {
+    "work_min": 25346208.0,
+    "work_p50": 25435875.0,
+    "work_p99": 25450778.8,
+    "work_iqr": 52437.5
+  }
+}

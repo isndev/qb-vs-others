@@ -19,10 +19,11 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:18:02Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:58:21Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +31,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Workers are slots of a vector, a job is one ring push and one ring pop, and nothing balances load: the floor for a fire-and-forget dispatch, not for scheduling 60 runnable actors on 2 threads", "worker w lives on thread w % cores, so with cores=2 half the jobs stay on the master's own thread (drained inline when its ring fills) and half cross a core", "cores=1 is one thread pushing every job into its own 65536-slot ring and draining it inline whenever it is full -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
   "failures": [],
-  "work_ns": [15157500.0, 12762459.0, 13140833.0, 14097959.0, 13718250.0, 14168792.0, 13804167.0, 12899792.0, 15031875.0],
-  "total_ns": [15222666.0, 12839125.0, 13196041.0, 14160417.0, 13839667.0, 14234166.0, 13873667.0, 12958791.0, 15097666.0],
-  "outside_window_ns": [65166.0, 76666.0, 55208.0, 62458.0, 121417.0, 65374.0, 69500.0, 58999.0, 65791.0],
+  "work_ns": [13778291.0, 12674292.0, 13422666.0, 13175125.0, 12675333.0, 12589916.0, 13226458.0, 13769292.0, 13467625.0],
+  "total_ns": [13835000.0, 12728459.0, 13479542.0, 13230375.0, 12730416.0, 12645666.0, 13279000.0, 13823459.0, 13521041.0],
+  "outside_window_ns": [56709.0, 54167.0, 56876.0, 55250.0, 55083.0, 55750.0, 52542.0, 54167.0, 53416.0],
   "summary": {
-    "work_min": 12762459.0,
-    "work_p50": 13804167.0,
-    "work_p99": 15147450.0,
-    "work_iqr": 1027959.0
+    "work_min": 12589916.0,
+    "work_p50": 13226458.0,
+    "work_p99": 13777571.1,
+    "work_iqr": 792292.0
   }
 }

@@ -1,0 +1,18 @@
+== concsll-1c-spin.sample.txt: 25735 samples at the roots (every thread), self time by function:
+   25.0%   6434  __psynch_cvwait  [libsystem_kernel.dylib]
+   25.0%   6433  __ulock_wait  [libsystem_kernel.dylib]
+   23.5%   6056  qvospec::savina::concsll::SortedList::contains(int)  (in qvo-qb-savina-concsll) + 16,28,...  [0x1047f842c,0x1047f8438,..  []
+   22.4%   5756  __semwait_signal  [libsystem_kernel.dylib]
+    2.0%    507  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4,...  [0x187917c34,0x187917c30,...]  []
+    1.4%    370  qvospec::savina::concsll::SortedList::add(int)  (in qvo-qb-savina-concsll) + 120,132,...  [0x1047f83e4,0x1047f83f0,...]  []
+    0.1%     31  nanosleep  (in libsystem_c.dylib) + 220,0,...  [0x1877f6cc0,0x1877f6be4,...]  []
+    0.1%     21  std::this_thread::sleep_for(std::chrono::duration<long long, std::ratio<1l, 1000000000l>> const&)  (in libc++.1.dylib) +  []
+  inclusive, qb / qvo / adapter frames:
+   25.0%   6434  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.0%   6434  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   25.0%   6433  qb::Main::join()
+   25.0%   6431  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+   25.0%   6426  savina_concsll_qb::ListActor::serve<savina_concsll_qb::ListOp>(savina_concsll_qb::ListOp&)
+   23.5%   6056  qvospec::savina::concsll::SortedList::contains(int)  (in qvo-qb-savina-concsll) + 16,28,...  [0x1047f842c,0x1047f8438,..
+    1.4%    370  qvospec::savina::concsll::SortedList::add(int)  (in qvo-qb-savina-concsll) + 120,132,...  [0x1047f83e4,0x1047f83f0,...]
+    0.1%     18  nanolog::NanoLogger::pop()  (in qvo-qb-savina-concsll) + 200,204,...  [0x104853dd4,0x104853dd8,...]

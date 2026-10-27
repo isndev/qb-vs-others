@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/sor",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 16753149257518799932,
+  "expected_messages": 2528162,
+  "work_unit": "update",
+  "work_units": 636800,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "iterations": 100, "size": 80, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:59:45Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the runner's half of the columns on worker 0, the peer's on worker 1; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Cells are integers, a value is one ring push and one ring pop, and a report carries only the cell's index -- the owner reads the finished cell's slot", "the runner's half of the columns lives on worker 0 and the peer's on worker 1 at cores=2 -- qb's placement: only the values across the middle column cross a core", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [12908084.0, 13046208.0, 12738208.0, 12742084.0, 12813292.0, 12787458.0, 12774958.0, 12778208.0, 12768000.0],
+  "total_ns": [13031041.0, 13180000.0, 12860709.0, 12857667.0, 12931334.0, 12904417.0, 12894750.0, 12894583.0, 12895083.0],
+  "outside_window_ns": [122957.0, 133792.0, 122501.0, 115583.0, 118042.0, 116959.0, 119792.0, 116375.0, 127083.0],
+  "summary": {
+    "work_min": 12738208.0,
+    "work_p50": 12778208.0,
+    "work_p99": 13035158.1,
+    "work_iqr": 45292.0
+  }
+}

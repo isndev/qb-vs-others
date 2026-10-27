@@ -1,0 +1,18 @@
+== quicksort-1c-spin.sample.txt: 26158 samples at the roots (every thread), self time by function:
+   25.2%   6599  __psynch_cvwait  [libsystem_kernel.dylib]
+   23.0%   6027  __ulock_wait  [libsystem_kernel.dylib]
+   19.0%   4981  __semwait_signal  (in libsystem_kernel.dylib) + 8,4  [0x18791b308,0x18791b304]  []
+    5.5%   1443  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4,...  [0x187917c34,0x187917c30,...]  []
+    2.1%    538  qvospec::savina::quicksort::sort_leaf(unsigned long long*, unsigned long)  (in qvo-qb-savina-quicksort) + 120,140,...  [  []
+    1.7%    448  qvospec::savina::quicksort::sort_leaf(unsigned long long*, unsigned long)  [qvo-qb-savina-quicksort]
+    1.4%    362  std::vector<unsigned long long>::__insert_with_size[abi:nqe220106]<std::_ClassicAlgPolicy, std::__wrap_iter<unsigned lon  [qvo-qb-savina-quicksort]
+    1.2%    324  __semwait_signal  [libsystem_kernel.dylib]
+  inclusive, qb / qvo / adapter frames:
+   25.2%   6599  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.2%   6599  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   24.1%   6309  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+   23.0%   6028  qb::Main::join()
+   22.5%   5885  qb::router::semh<savina_quicksort_qb::Sort, void>::route<true>(savina_quicksort_qb::Sort&) const
+   22.4%   5869  savina_quicksort_qb::SortActor::on(savina_quicksort_qb::Sort&)
+    9.1%   2378  qvospec::savina::quicksort::sort_leaf(unsigned long long*, unsigned long)
+    2.1%    538  qvospec::savina::quicksort::sort_leaf(unsigned long long*, unsigned long)  (in qvo-qb-savina-quicksort) + 120,140,...  [

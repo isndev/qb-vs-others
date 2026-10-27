@@ -1,0 +1,50 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/concsll",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 12205235669177764196,
+  "expected_messages": 320040,
+  "work_unit": "request",
+  "work_units": 160000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "form": 0, "messages": 8000, "size_percent": 1, "wait": 0, "workers": 20, "write_percent": 10},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:57:25Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the list is owned by thread 0 alone, the master and the workers by thread 1; a request is a push and its answer a push back; the list is the shared SortedList; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. The list and the workers are slots with no mailbox; a request is one push into a ring two threads share and its answer one push back -- the walk is the same SortedList every framework's list actor holds, so the floor bounds the messaging around it", "the list lives on thread 0 alone and the master and the workers on thread 1 -- the same placement qb's cell fixes -- so with cores=2 every request and every answer crosses a core", "cores=1 is one thread with the list, the master and the workers in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle thread on a condition variable -- at cores=2 the workers' thread has nothing to do while the list walks, so it may park between answers and be woken by the next one", "the list walk is the same source in every framework (qvospec SortedList: out of line, nodes from its own arena) and dominates the window by construction -- each request walks up to the whole list, thousands of nodes, against one message each way. What differs between the cells is the cost of workers x messages request/answer round trips, where the list actor runs (and whether it keeps its cache), and how far the interleaving lets the list grow before each walk: the walks are reported beside the cell as observations, each with an asserted lower bound"],
+  "failures": [],
+  "work_ns": [3038442875.0, 3056640209.0, 3026128625.0, 3044855583.0, 3016280792.0, 3056416750.0, 2999779500.0, 3430247958.0, 3031578875.0],
+  "total_ns": [3038935042.0, 3057129250.0, 3026624667.0, 3045344375.0, 3016805042.0, 3056917666.0, 3000378292.0, 3430837584.0, 3032075042.0],
+  "outside_window_ns": [492167.0, 489041.0, 496042.0, 488792.0, 524250.0, 500916.0, 598792.0, 589626.0, 496167.0],
+  "observed": {
+    "contains_found": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0},
+    "contains_walk": {"samples": [1155676458, 1155676458, 1155676458, 1155676458, 1155676458, 1155676458, 1155676458, 1155676458, 1155676458], "min": 1155676458, "p50": 1155676458.0, "max": 1155676458},
+    "size_walk": {"samples": [1234, 1234, 1234, 1234, 1234, 1234, 1234, 1234, 1234], "min": 1234, "p50": 1234.0, "max": 1234},
+    "write_walk": {"samples": [64958357, 64958357, 64958357, 64958357, 64958357, 64958357, 64958357, 64958357, 64958357], "min": 64958357, "p50": 64958357.0, "max": 64958357}
+  },
+  "observed_at_least": {"contains_walk": 57777849, "size_walk": 65, "write_walk": 3248656},
+  "summary": {
+    "work_min": 2999779500.0,
+    "work_p50": 3038442875.0,
+    "work_p99": 3400359338.1,
+    "work_iqr": 30288125.0
+  }
+}

@@ -33,17 +33,17 @@ argument it exists to win:
 
 | | state |
 |---|---|
-| Harness, verification, pinning, reporting | Last complete **base** negative-control census: 28 CAUGHT / 11 CONFIRMED / **0 MISSED** (WSL2 g++-14 and Windows MSVC, 2026-10-12). The merged B/C battery passed on macOS arm64 (CLT 21, 2026-10-13): **151 CAUGHT / 43 CONFIRMED / 0 MISSED**, 194 unique executed controls; floors derived from that export. Windows/WSL merged validation remains pending. The battery preserves A–K and adds L–W, actual APSP/SOR qb/floor plants and functional Mesh controls for both owner workers. `--census-out` records executed case identities. See [FAIRNESS.md](FAIRNESS.md). |
+| Harness, verification, pinning, reporting | Last complete **base** negative-control census: 28 CAUGHT / 11 CONFIRMED / **0 MISSED** (WSL2 g++-14 and Windows MSVC, 2026-10-12). The merged B/C battery passed on macOS arm64 (CLT 21, 2026-10-13): **151 CAUGHT / 43 CONFIRMED / 0 MISSED**, 194 unique executed controls; floors derived from that export. Windows/WSL merged validation remains pending. The battery preserves A–K and adds L–W, actual APSP/SOR qb/floor plants and functional Mesh controls for both owner workers. `--census-out` records executed case identities. See [FAIRNESS.md](FAIRNESS.md). The merged battery re-measured on the shipped-3.3.0 build on 2026-10-27, before and after the session: **151 / 43 / 0** both times, 194 identities. |
 | `savina/ping-pong`, `counting`, `thread-ring`, `fork-join`, `big` × qb, CAF, SObjectizer, floor (+ CAF-detached on ping-pong) | **done**, 84 cells per host: 82 verified + 2 declared `n/a` (a `caf::detached` actor has no spin mode) — first with shipped 3.1.0 (2026-09-04), **re-measured whole on 2026-09-13 with the 3.2.0 candidate `f2779605` in the candidate's own session** (every framework, 9 + 2, both hosts), which is what the tables below show |
-| Document and build-provenance guards (`tools/check-roster.py`, `tools/check-report.py`, `tools/check-build-provenance.py`) | **done**, and negative-controlled: 43 CAUGHT / 5 CONFIRMED / **0 MISSED** (`tools/guards-negative-control.py`, measured on macOS arm64 on 2026-10-17, run by `guards.yml`). Roster and build-provenance controls use explicit sandbox fixtures without timings or compilation; real historical results remain incomplete against the current roster. This control census does not establish complete benchmark results or a native compiler validation. |
+| Document and build-provenance guards (`tools/check-roster.py`, `tools/check-report.py`, `tools/check-build-provenance.py`) | **done**, and negative-controlled: 43 CAUGHT / 5 CONFIRMED / **0 MISSED** (`tools/guards-negative-control.py`, measured on macOS arm64 on 2026-10-17 and again on 2026-10-27 against the thirty-shape macOS results, run by `guards.yml`). Roster and build-provenance controls use explicit sandbox fixtures without timings or compilation; real historical results remain incomplete against the current roster. This control census does not establish complete benchmark results or a native compiler validation. |
 | Feature comparison, cited to the three sources | [docs/FEATURES.md](docs/FEATURES.md) |
 | `savina/fib`, `savina/chameneos` × the same four (+ CAF-detached declared omitted) | **initially measured on Windows and WSL2 with shipped qb 3.1.0**: 16 cells each per host; the direct `results/<host>/savina-fib/` and `savina-chameneos/` directories now hold the `f2779605` candidate field re-measured on 2026-09-13 (the original addition brought the field to **116 cells per host**); on macOS and on the arm64 Linux guest since 2026-09-19, with the candidate as the qb column. Written against the qb branch they produced (`results/<host>/qb-branch-perf-dense-table-growth/`): fib found a 43 s defect in unreleased `develop` and drove three qb commits, and its shipped-3.1.0 cell is a LOGGING figure — nine `LOG_INFO` lines per actor lifetime, 515 819 lines per repetition, 159 / 459 ms (WSL2 / Windows, 2c-spin) against the branch's 7.6 / 10.5 in the same session, CAF 39 / 53, floor 3.4 / 4.0 (`docs/TUNING.md` §11) |
 | `savina/bank-transaction` × the same four (+ CAF-detached declared omitted) | **initially measured on Windows and WSL2 with shipped qb 3.1.0** (2026-09-07): 16 cells per host; the direct `results/<host>/savina-bank-transaction/` directories now hold the `f2779605` candidate field re-measured on 2026-09-13 (the original addition brought the field to **132 cells per host**); on macOS and on the arm64 Linux guest since 2026-09-19, with the candidate as the qb column. The first shape that WAITS for a reply — one `qb::ask` / CAF `request().then()` per transfer, 50 000 of them — and it found five defects on qb's ask path in one afternoon (`docs/TUNING.md` §12, qb `fa1c5ce3`): shipped 3.1.0 measures 14.7 / 9.2 ms (WSL2, 1c / 2c spin) and 25.5 / 29.2 (Windows), qb `develop` before the fixes 9.4 / 5.1 and 13.7 / 8.0, after them **8.1 / 4.6** and **12.9 / 7.6** in the same session (`results/<host>/qb-branch-perf-coro-scope-local-refcount/`), against CAF 41.5 / 36.6 and 57.8 / 57.5, SObjectizer 19.5 / 25.5 and 29.6 / 38.0, floor 1.1 / 6.3 and 3.5 / 32.2 |
 | **The 3.2.0 candidate grid** — qb `develop` × all eight shapes | **done on Windows and WSL2, twice**: at the midpoint (`43f62afe`, 2026-09-07) and at the final commit (**`77b358d8`**, 2026-09-09) — 96 qb cells per host each time (candidate / shipped 3.1.0 / candidate, 9 + 2, one quiet session per host, `results/<host>/qb-branch-develop/`), the fastest framework in all 64 cells both times, every WSL2 cell faster at the end than at the midpoint (ping-pong 1c 66 → 23 ns, ring 1c 39 → 17), the Windows two-core cells level-or-better under the interleaved census; the two `framework=qb` grids below, `docs/TUNING.md` §13 and §13.4. — and **a third time on 2026-09-13**, at the release candidate **`f2779605`**, with the WHOLE field in the same session (`grid-f2779605/`, `grid-shipped-3.1.0-20260913/`, `census-f2779605-field/`; point 7 and §13.5): fastest in all 64 cells, no cell slower than 3.1.0, at or under the raw-thread floor on the two-core census cells — and **a fourth time on 2026-09-19, on the two arm64 hosts**, at **`174e515a`**: `f2779605` plus the four changes that landed after it (the actor arena QB-212, `pin_frame_copy` QB-213, the frame-free `qb::ask` QB-214, `qb::growable_ring` QB-215), against shipped 3.1.0 AND against `f2779605` in one session per host, the whole field beside them (`results/macbook-m4pro-macos-clang21/qb-branch-develop/`, `results/utm-debian13-arm64-g++14/qb-branch-develop/`; §13.9): fastest in all 64 cells again, no cell slower than 3.1.0, fib −22 % and bank-transaction −18 % against `f2779605` on macOS — and two small cells the arena costs, attributed there |
-| **Savina wave A** — `savina/fork-join-create`, `nqueens`, `a-star`, `philosophers`, `barber`, `bndbuffer`, `cigsmok`, `concdict`, `concsll`, `logmap` × qb, CAF, SObjectizer, floor (CAF-detached declared omitted) | **done on Windows and WSL2** (2026-10-11): 160 cells per host, one quiet session per host, **shipped qb 3.2.1** as the qb column (`results/<host>/savina-<shape>/`, rendered in each host's `REPORT.md`, the tables below), **292 cells per host**; the 3.3.0 candidate `73018675` beside it in the same session (`results/<host>/qb-branch-develop/grid-73018675/`) and a 528-launch census per host: level on every cell but fork-join-create at one core on WSL2 (+19 to +25 %), traced to qb's arena and fixed, the fix level with 3.2.1 in a second session (`results/<host>/qb-branch-perf-fjcreate-regression/`). Not yet on macOS or the arm64 guest. `docs/TUNING.md` §21 |
-| Savina waves B and C — eight pipeline/data-parallel shapes and four graph/grid/tree shapes | **Source integrated**: the roster contains 30 specifications, 30 pages and 30 adapters for each of qb, CAF, SObjectizer and the floor. Combined native correctness, controls, sanitizers and the B/C measurement campaign remain pending; source coverage is not a claim of validated or published coverage. [docs/ROADMAP.md](docs/ROADMAP.md) records the outstanding proof. |
+| **Savina wave A** — `savina/fork-join-create`, `nqueens`, `a-star`, `philosophers`, `barber`, `bndbuffer`, `cigsmok`, `concdict`, `concsll`, `logmap` × qb, CAF, SObjectizer, floor (CAF-detached declared omitted) | **done on Windows and WSL2** (2026-10-11): 160 cells per host, one quiet session per host, **shipped qb 3.2.1** as the qb column (`results/<host>/savina-<shape>/`, rendered in each host's `REPORT.md`, the tables below), **292 cells per host**; the 3.3.0 candidate `73018675` beside it in the same session (`results/<host>/qb-branch-develop/grid-73018675/`) and a 528-launch census per host: level on every cell but fork-join-create at one core on WSL2 (+19 to +25 %), traced to qb's arena and fixed, the fix level with 3.2.1 in a second session (`results/<host>/qb-branch-perf-fjcreate-regression/`). `docs/TUNING.md` §21. **On macOS since 2026-10-27**, with shipped 3.3.0 as the qb column, in the thirty-shape session below (§22); not yet on the arm64 guest. |
+| Savina waves B and C — eight pipeline/data-parallel shapes and four graph/grid/tree shapes | **Measured on macOS** (2026-10-27): the twelve shapes × qb, CAF, SObjectizer, floor (CAF-detached declared omitted), 192 cells, one unpinned quiet session with **shipped qb 3.3.0** as the qb column (`results/macbook-m4pro-macos-clang21/savina-<shape>/`, the tables below), the 3.4.0 branch tip `3a771d3b` beside it (`qb-branch-develop/grid-3a771d3b/`), a 1 440-launch candidate census and a 1 152-launch field census on the two-core cells, and every declared form measured (`wave-bc-form-sweep/`: apsp `send`, sieve `place=1` and `local=1`, uct's canonical 200 000 nodes — which qb 3.3.0 holds). qb leads with separate distributions in 13 of the 24 spin cells, is level in 5 and behind in 6, every one of the latter a two-core placement cell (sieve, quicksort, recmatmul) or a compute cell. **Not yet on Windows, WSL2 or the arm64 guest**: the x86 campaign is the Windows host's (`docs/ROADMAP.md`). `docs/TUNING.md` §22 |
 | Linux axis (WSL2 Debian 13 / g++ 14.2) | **run**, the same 132 cells, re-measured with the candidate on 2026-09-13, and the 160 of wave A on 2026-10-11 with shipped 3.2.1 — with the WSL2 caveat below. **A native-arm64 Linux guest** (UTM / QEMU on the Apple M4 Pro, Debian 13 / g++ 14.2, vCPUs 2 and 4) joined on 2026-09-19: the same 132 cells with the candidate `174e515a`, and a guest's park floor of its own (20.8 µs); bare-metal Linux not yet |
-| macOS axis (Apple M4 Pro / AppleClang 21, arm64) | **run**, all 132 cells since 2026-09-19 (84 on 2026-09-05; the 160 of wave A not yet) — **unpinned** (macOS has no verified affinity API; every document says `pinned:false`, and every two-core figure is read from a launch census); the candidate `174e515a` beside shipped 3.1.0 and `f2779605` in the same session, `docs/TUNING.md` §13.9 (§9.13 for the 2026-09-05 session) |
+| macOS axis (Apple M4 Pro / AppleClang 21, arm64) | **run, the whole suite**: all thirty shapes, 484 cells, with **shipped 3.3.0** as the qb column since 2026-10-27 (the eight shapes of 2026-09-19 re-measured, the twenty-two others for the first time) — **unpinned** (macOS has no verified affinity API; every document says `pinned:false`, and every two-core figure is read from a launch census); the 3.4.0 branch tip `3a771d3b` beside it in the same session, `docs/TUNING.md` §22 (§13.9 for the 2026-09-19 session, §9.13 for 2026-09-05) |
 | Seastar | not yet — Linux-only, and its dependencies need root on this host |
 | Cross-language references (Erlang, Pekko, Actix, Orleans) | not yet |
 
@@ -368,73 +368,153 @@ figure and every framework runs it — and it is no longer a caveat. The previou
 five-shape grids (`perf/event-pipe-segmented` `279e6cd4`, `qb-branch-perf-event-pipe-segmented/grid-final/`)
 stay beside the new ones as the A/B that produced QB-43.
 
-The same five shapes on **macOS** — Apple M4 Pro (10 P + 4 E cores), macOS 26.6.2, AppleClang 21.0.0, `-O3 -DNDEBUG`, **unpinned**, 9 repetitions + 2 warmup, one quiet session on 2026-09-19 (`results/macbook-m4pro-macos-clang21/`, all eight shapes, 132 cells). macOS has no verified CPU affinity API, so the harness was run with `--no-pin` and every document carries `pinned:false`. **The qb rows are the 3.2.0 candidate `174e515a`** — `f2779605` plus the arena, the frame-free ask and the ring (QB-212 to QB-215); shipped 3.1.0 and `f2779605` were measured in the same session and sit in `qb-branch-develop/`, read in `docs/TUNING.md` §13.9. A two-core figure on this host is bimodal by launch: the census there is the instrument (ping-pong 2c-spin qb 196 [181 – 213] against CAF 387 and the floor's 238; thread-ring 92 against 192 and 120).
+**The whole suite on macOS** — Apple M4 Pro (10 P + 4 E cores), macOS 26.6.2, AppleClang 21.0.0, `-O3 -DNDEBUG`, **unpinned**, 9 repetitions + 2 warmup, one quiet session on 2026-10-27 (`results/macbook-m4pro-macos-clang21/`, **all thirty shapes, 484 cells**, 480 verified + 2 declared `n/a`; the uct and sieve rows from a second session the same morning, `docs/TUNING.md` §22.1). macOS has no verified CPU affinity API, so the harness was run with `--no-pin` and every document carries `pinned:false`. **The qb rows are shipped 3.3.0** (`e18022dd`, the release of 2026-10-26) — the first field on this host whose qb is the qb a user installs; the 3.4.0 branch tip `3a771d3b` was measured in the same session and sits in `qb-branch-develop/` (the grid below, read in `docs/TUNING.md` §22.3: level at two cores, bank-transaction +11 % at one, attributed by bisection to the ask-registry commit). A two-core figure on this host is bimodal by launch: the census there is the instrument (`qb-branch-develop/census-3.3.0-field-bc/` for the twelve B/C shapes, `census-3a771d3b-vs-3.3.0/` for the candidate; ping-pong 2c-spin reads qb 119 ns by census against the grid's 126). The field of 2026-09-19 (eight shapes, qb = the 3.2.0 candidate `174e515a`, §13.9) is in git history; the host README says where.
 
 `savina/ping-pong` — 1 000 000 round trips, two actors; per round trip:
 
 <!-- check-report: results/macbook-m4pro-macos-clang21 benchmark=savina/ping-pong -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 25 ns** | SObjectizer 138 ns | 4 ns | CAF 264 ns · qb 5.50× |
-| 1 core, park | **qb 25 ns** | SObjectizer 153 ns | 4 ns | CAF 261 ns · CAF-detached 6.33 µs · qb 6.06× |
-| 2 cores, spin | **qb 207 ns** | CAF 386 ns | **229 ns** | SObjectizer 704 ns · qb 1.87× |
-| 2 cores, park | **qb 196 ns** | CAF 386 ns | **4.42 µs** | SObjectizer 5.60 µs · CAF-detached 6.34 µs · qb 1.97× |
+| 1 core, spin | **qb 22 ns** | SObjectizer 125 ns | 4 ns | CAF 251 ns · qb 5.55× |
+| 1 core, park | **qb 23 ns** | SObjectizer 147 ns | 4 ns | CAF 256 ns · CAF-detached 6.38 us · qb 6.38× |
+| 2 cores, spin | **qb 126 ns** | CAF 422 ns | **156 ns** | SObjectizer 578 ns · qb 3.36× |
+| 2 cores, park | **qb 126 ns** | CAF 432 ns | **4.31 us** | SObjectizer 5.58 us · CAF-detached 6.37 us · qb 3.43× |
 
 `savina/counting` — 1 000 000 messages from a producer into one counter, then one retrieve; per message:
 
 <!-- check-report: results/macbook-m4pro-macos-clang21 benchmark=savina/counting -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 5 ns** | SObjectizer 65 ns | 4 ns | CAF 75 ns · qb 12.57× |
-| 1 core, park | **qb 5 ns** | SObjectizer 69 ns | 4 ns | CAF 75 ns · qb 13.70× |
-| 2 cores, spin | **qb 7 ns** | CAF 148 ns | **61 ns** | SObjectizer 280 ns · qb 21.57× |
-| 2 cores, park | **qb 7 ns** | CAF 153 ns | **27 ns** | SObjectizer 172 ns · qb 22.30× |
+| 1 core, spin | **qb 4 ns** | SObjectizer 58 ns | **4 ns** | CAF 73 ns · qb 15.29× |
+| 1 core, park | **qb 4 ns** | SObjectizer 61 ns | **4 ns** | CAF 72 ns · qb 16.12× |
+| 2 cores, spin | **qb 5 ns** | CAF 123 ns | **51 ns** | SObjectizer 218 ns · qb 22.86× |
+| 2 cores, park | **qb 5 ns** | CAF 120 ns | **44 ns** | SObjectizer 149 ns · qb 22.69× |
 
 `savina/thread-ring` — 100 actors in a ring, a token making 1 000 000 hops; per hop:
 
 <!-- check-report: results/macbook-m4pro-macos-clang21 benchmark=savina/thread-ring -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 18 ns** | SObjectizer 60 ns | 5 ns | CAF 123 ns · qb 3.25× |
-| 1 core, park | **qb 19 ns** | SObjectizer 68 ns | 5 ns | CAF 125 ns · qb 3.61× |
-| 2 cores, spin | **qb 89 ns** | CAF 183 ns | **115 ns** | SObjectizer 389 ns · qb 2.06× |
-| 2 cores, park | **qb 84 ns** | CAF 184 ns | **2.45 µs** | SObjectizer 185 ns · qb 2.19× |
+| 1 core, spin | **qb 11 ns** | SObjectizer 55 ns | 3 ns | CAF 119 ns · qb 4.85× |
+| 1 core, park | **qb 11 ns** | SObjectizer 64 ns | 3 ns | CAF 131 ns · qb 5.66× |
+| 2 cores, spin | **qb 60 ns** | CAF 198 ns | **87 ns** | SObjectizer 342 ns · qb 3.29× |
+| 2 cores, park | **qb 61 ns** | SObjectizer 195 ns | **2.46 us** | CAF 202 ns · qb 3.22× |
 
 `savina/fork-join` — 10 000 messages fanned out to each of 60 workers, 600 000 in all, each worker acknowledged once at the end; per message:
 
 <!-- check-report: results/macbook-m4pro-macos-clang21 benchmark=savina/fork-join -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 6 ns** | SObjectizer 47 ns | **27 ns** | CAF 157 ns · qb 8.15× |
-| 1 core, park | **qb 5 ns** | SObjectizer 49 ns | **25 ns** | CAF 147 ns · qb 9.22× |
-| 2 cores, spin | **qb 6 ns** | CAF 108 ns | **30 ns** | SObjectizer 342 ns · qb 18.50× |
-| 2 cores, park | **qb 6 ns** | CAF 107 ns | **23 ns** | SObjectizer 210 ns · qb 18.84× |
+| 1 core, spin | **qb 5 ns** | SObjectizer 47 ns | **20 ns** | CAF 129 ns · qb 9.66× |
+| 1 core, park | **qb 5 ns** | SObjectizer 50 ns | **20 ns** | CAF 133 ns · qb 9.98× |
+| 2 cores, spin | **qb 5 ns** | CAF 114 ns | **23 ns** | SObjectizer 266 ns · qb 21.51× |
+| 2 cores, park | **qb 5 ns** | CAF 118 ns | **22 ns** | SObjectizer 203 ns · qb 23.75× |
 
 `savina/big` — 120 actors each sending 20 000 pings to random peers, every ping answered; per round trip (2 400 000 of them):
 
 <!-- check-report: results/macbook-m4pro-macos-clang21 benchmark=savina/big -->
 | configuration | fastest | second | floor | the rest |
 |---|---|---|---|---|
-| 1 core, spin | **qb 13 ns** | SObjectizer 179 ns | 5 ns | CAF 256 ns · qb 13.97× |
-| 1 core, park | **qb 13 ns** | SObjectizer 181 ns | 6 ns | CAF 255 ns · qb 14.24× |
-| 2 cores, spin | **qb 16 ns** | CAF 375 ns | **48 ns** | SObjectizer 503 ns · qb 23.06× |
-| 2 cores, park | **qb 15 ns** | SObjectizer 376 ns | **38 ns** | CAF 393 ns · qb 24.26× |
+| 1 core, spin | **qb 12 ns** | SObjectizer 140 ns | 11 ns | CAF 255 ns · qb 11.54× |
+| 1 core, park | **qb 12 ns** | SObjectizer 147 ns | **12 ns** | CAF 251 ns · qb 12.21× |
+| 2 cores, spin | **qb 13 ns** | CAF 170 ns | **30 ns** | SObjectizer 356 ns · qb 13.47× |
+| 2 cores, park | **qb 13 ns** | SObjectizer 361 ns | **31 ns** | CAF 378 ns · qb 28.27× |
 
-The **2 cores, park** column used to measure macOS's condition-variable wake rather than a framework — the raw floor is still **4.42 µs per ping-pong round trip** (`baseline__2c-park`), SObjectizer 5.60 µs, `caf-detached` 6.34 µs, and shipped qb 3.1.0 measured 6.91 µs in this same session — and the candidate's cell is the park handshake plus the 50 µs idle-spin floor: a ping-pong never sleeps. The pooled `caf` row is below the floor because it never crosses a core.
+The branch tip on macOS, all thirty shapes (`results/macbook-m4pro-macos-clang21/qb-branch-develop/grid-3a771d3b/`; unpinned — the two-core columns are one launch each, the census in that directory's README is the figure to quote, and §22.3 reads the one-core cells against the field's shipped 3.3.0):
 
-The candidate on macOS, all eight shapes (`results/macbook-m4pro-macos-clang21/qb-branch-develop/grid-174e515a/`; unpinned — the two-core columns are one launch each, the census in that directory's README is the figure to quote):
-
-<!-- check-report: results/macbook-m4pro-macos-clang21/qb-branch-develop/grid-174e515a framework=qb -->
+<!-- check-report: results/macbook-m4pro-macos-clang21/qb-branch-develop/grid-3a771d3b framework=qb -->
 | benchmark | 1 core, spin | 1 core, park | 2 cores, spin | 2 cores, park |
 |---|---|---|---|---|
-| ping-pong | 25 ns | 25 ns | 195 ns | 208 ns |
-| counting | 5 ns | 5 ns | 7 ns | 7 ns |
-| thread-ring | 19 ns | 19 ns | 89 ns | 92 ns |
-| fork-join | 6 ns | 6 ns | 6 ns | 6 ns |
-| big | 13 ns | 13 ns | 17 ns | 16 ns |
-| fib | 70 ns | 73 ns | 45 ns | 50 ns |
-| chameneos | 25 ns | 24 ns | 40 ns | 46 ns |
-| bank-transaction | 82 ns | 83 ns | 77 ns | 67 ns |
+| a-star | 287 ns | 298 ns | 173 ns | 157 ns |
+| apsp | 625 ns | 588 ns | 297 ns | 298 ns |
+| bank-transaction | 90 ns | 93 ns | 64 ns | 64 ns |
+| barber | 3.32 us | 3.32 us | 2.32 us | 2.32 us |
+| big | 12 ns | 12 ns | 13 ns | 13 ns |
+| bitonicsort | 7 ns | 7 ns | 7 ns | 7 ns |
+| bndbuffer | 15.84 us | 15.81 us | 9.27 us | 9.36 us |
+| chameneos | 23 ns | 24 ns | 31 ns | 39 ns |
+| cigsmok | 1.62 us | 1.62 us | 1.57 us | 1.57 us |
+| concdict | 41 ns | 22 ns | 31 ns | 31 ns |
+| concsll | 21.43 us | 21.42 us | 23.12 us | 23.51 us |
+| counting | 4 ns | 4 ns | 6 ns | 5 ns |
+| facloc | 77 ns | 77 ns | 83 ns | 83 ns |
+| fib | 64 ns | 63 ns | 41 ns | 41 ns |
+| filterbank | 45.80 us | 45.18 us | 25.34 us | 25.25 us |
+| fork-join | 5 ns | 5 ns | 5 ns | 5 ns |
+| fork-join-create | 55 ns | 55 ns | 28 ns | 29 ns |
+| logmap | 17 ns | 17 ns | 14 ns | 14 ns |
+| nqueens | 10.80 us | 10.85 us | 5.49 us | 5.41 us |
+| philosophers | 48 ns | 49 ns | 99 ns | 96 ns |
+| ping-pong | 23 ns | 24 ns | 134 ns | 135 ns |
+| piprecision | 8.43 us | 8.44 us | 4.91 us | 5.25 us |
+| quicksort | 43 ns | 42 ns | 26 ns | 27 ns |
+| radixsort | 6 ns | 6 ns | 6 ns | 6 ns |
+| recmatmul | 1.16 ms | 1.17 ms | 674.84 us | 680.62 us |
+| sieve | 508 ns | 515 ns | 528 ns | 505 ns |
+| sor | 36 ns | 36 ns | 19 ns | 19 ns |
+| thread-ring | 12 ns | 12 ns | 62 ns | 65 ns |
+| trapezoid | 23 ns | 23 ns | 11 ns | 11 ns |
+| uct | 136 ns | 140 ns | 96 ns | 99 ns |
+
+## What the twenty-two shapes measured here for the first time say
+
+The ten of wave A (never on this host) and the twelve of waves B and C (never anywhere): per unit of work — an actor, a solution, a node, a meal, a haircut, an item, a round, an operation, a request, a term; a message, a sample, a candidate, a trapezoid, a term, a leaf, a value, a message, a block phase, an update, a node, a customer — with shipped qb 3.3.0 as the qb column, 2026-10-27, unpinned. Each `benchmarks/savina/<shape>.md` page says what its cell measures and where it deviates from Savina; `docs/TUNING.md` §22.2 reads every row, and §22.3's censuses are the two-core figures. Over the 44 spin cells of these twenty-two shapes qb leads with separate distributions in 23, is level in 9 and behind in 12 — every one of the latter a two-core placement cell (sieve, quicksort, recmatmul, cigsmok, a-star) or a compute cell where the frameworks are within 5 % of the floor (concsll, trapezoid, piprecision, recmatmul and bndbuffer at one core).
+
+macOS, one core, spin:
+
+<!-- check-report: results/macbook-m4pro-macos-clang21 cfg=1c-spin -->
+| benchmark | fastest | second | floor | the rest |
+|---|---|---|---|---|
+| fork-join-create | **qb 55 ns** | SObjectizer 463 ns | 30 ns | CAF 675 ns · qb 8.46× |
+| nqueens | **SObjectizer 10.43 us** | CAF 10.52 us | 10.23 us | qb 10.67 us · SObjectizer and CAF: no measurable difference |
+| a-star | **qb 265 ns** | SObjectizer 267 ns | 250 ns | CAF 269 ns · qb and SObjectizer: no measurable difference |
+| philosophers | **qb 48 ns** | SObjectizer 380 ns | 46 ns | CAF 424 ns · qb 7.99× |
+| barber | **qb 3.26 us** | CAF 4.45 us | **3.46 us** | SObjectizer 5.10 us · qb 1.37× |
+| bndbuffer | **SObjectizer 14.80 us** | CAF 14.95 us | 14.43 us | qb 15.50 us · SObjectizer and CAF: no measurable difference |
+| cigsmok | **qb 1.58 us** | SObjectizer 1.62 us | 1.44 us | CAF 1.74 us · qb and SObjectizer: no measurable difference |
+| concdict | **qb 21 ns** | SObjectizer 93 ns | **24 ns** | CAF 294 ns · qb 4.31× |
+| concsll | **SObjectizer 18.58 us** | CAF 19.22 us | **18.97 us** | qb 20.75 us · SObjectizer 1.03× |
+| logmap | **qb 17 ns** | SObjectizer 102 ns | **34 ns** | CAF 348 ns · qb 6.17× |
+| radixsort | **qb 6 ns** | SObjectizer 29 ns | **10 ns** | CAF 73 ns · qb 4.96× |
+| filterbank | **SObjectizer 43.75 us** | CAF 45.40 us | 40.94 us | qb 45.55 us · SObjectizer and CAF: no measurable difference |
+| sieve | **qb 508 ns** | SObjectizer 562 ns | 492 ns | CAF 618 ns · qb 1.11× |
+| trapezoid | **SObjectizer 22 ns** | CAF 22 ns | **22 ns** | qb 23 ns · SObjectizer and CAF: no measurable difference |
+| piprecision | **CAF 7.57 us** | SObjectizer 7.96 us | **8.40 us** | qb 8.23 us · CAF 1.05× |
+| recmatmul | **SObjectizer 1.09 ms** | CAF 1.10 ms | **1.09 ms** | qb 1.15 ms · SObjectizer and CAF: no measurable difference |
+| quicksort | **CAF 42 ns** | qb 42 ns | 40 ns | SObjectizer 44 ns · CAF and qb: no measurable difference |
+| bitonicsort | **qb 7 ns** | SObjectizer 57 ns | **7 ns** | CAF 90 ns · qb 8.52× |
+| apsp | **qb 573 ns** | SObjectizer 1.14 us | 550 ns | CAF 1.52 us · qb 1.99× |
+| sor | **qb 36 ns** | SObjectizer 292 ns | 35 ns | CAF 462 ns · qb 8.12× |
+| uct | **qb 129 ns** | CAF 1.21 us | 59 ns | SObjectizer 1.26 us · qb 9.38× |
+| facloc | **qb 76 ns** | SObjectizer 501 ns | 71 ns | CAF 696 ns · qb 6.61× |
+
+macOS, two cores, spin (one launch each — the census in `qb-branch-develop/` is the figure to quote):
+
+<!-- check-report: results/macbook-m4pro-macos-clang21 cfg=2c-spin -->
+| benchmark | fastest | second | floor | the rest |
+|---|---|---|---|---|
+| fork-join-create | **qb 30 ns** | CAF 689 ns | 27 ns | SObjectizer 1.56 us · qb 23.33× |
+| nqueens | **qb 5.41 us** | CAF 5.47 us | 5.28 us | SObjectizer 5.56 us · qb and CAF: no measurable difference |
+| a-star | **CAF 150 ns** | SObjectizer 158 ns | **151 ns** | qb 163 ns · CAF 1.06× |
+| philosophers | **qb 103 ns** | SObjectizer 964 ns | **183 ns** | CAF 1.06 us · qb 9.37× |
+| barber | **qb 2.15 us** | CAF 4.43 us | 1.51 us | SObjectizer 4.57 us · qb 2.06× |
+| bndbuffer | **CAF 7.93 us** | SObjectizer 7.94 us | **13.65 us** | qb 8.90 us · CAF and SObjectizer: no measurable difference |
+| cigsmok | **SObjectizer 1.01 us** | CAF 1.24 us | **1.31 us** | qb 1.48 us · SObjectizer 1.23× |
+| concdict | **qb 30 ns** | SObjectizer 422 ns | **55 ns** | CAF 584 ns · qb 14.30× |
+| concsll | **SObjectizer 20.45 us** | CAF 20.94 us | **20.54 us** | qb 21.97 us · SObjectizer and CAF: no measurable difference |
+| logmap | **qb 14 ns** | SObjectizer 192 ns | **21 ns** | CAF 522 ns · qb 14.00× |
+| radixsort | **qb 6 ns** | CAF 77 ns | **11 ns** | SObjectizer 102 ns · qb 12.94× |
+| filterbank | **CAF 23.30 us** | qb 24.08 us | 21.13 us | SObjectizer 27.28 us · CAF and qb: no measurable difference |
+| sieve | **CAF 382 ns** | SObjectizer 425 ns | **499 ns** | qb 506 ns · CAF 1.11× |
+| trapezoid | **SObjectizer 11 ns** | CAF 11 ns | 11 ns | qb 11 ns · SObjectizer and CAF: no measurable difference |
+| piprecision | **CAF 4.55 us** | SObjectizer 4.81 us | **8.31 us** | qb 4.85 us · CAF and SObjectizer: no measurable difference |
+| recmatmul | **SObjectizer 550.72 us** | CAF 592.69 us | **653.69 us** | qb 671.21 us · SObjectizer and CAF: no measurable difference |
+| quicksort | **CAF 23 ns** | qb 26 ns | **24 ns** | SObjectizer 27 ns · CAF 1.13× |
+| bitonicsort | **qb 7 ns** | CAF 60 ns | **7 ns** | SObjectizer 112 ns · qb 8.52× |
+| apsp | **qb 289 ns** | SObjectizer 1.43 us | **300 ns** | CAF 1.59 us · qb 4.93× |
+| sor | **qb 24 ns** | SObjectizer 588 ns | 20 ns | CAF 701 ns · qb 24.47× |
+| uct | **qb 92 ns** | CAF 1.16 us | 62 ns | SObjectizer 1.58 us · qb 12.62× |
+| facloc | **qb 85 ns** | CAF 938 ns | 72 ns | SObjectizer 1.53 us · qb 11.02× |
 
 The same five shapes on a **native-arm64 Linux guest** — UTM / QEMU on the same Apple M4 Pro, Debian 13.7, g++ 14.2.0, `-O3 -DNDEBUG`, pinned to vCPUs 2 and 4, 9 repetitions + 2 warmup, one quiet session on 2026-09-19 an hour after the macOS one (`results/utm-debian13-arm64-g++14/`, 132 cells, the qb rows the same candidate `174e515a`). A guest pins a vCPU, not a core, and its cross-vCPU futex wake is the hypervisor's: the **2 cores, park** floor is 20.8 µs per round trip, WSL2's caveat on another hypervisor and another architecture.
 

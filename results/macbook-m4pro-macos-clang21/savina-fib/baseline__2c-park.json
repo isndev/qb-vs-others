@@ -19,10 +19,11 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:18:01Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:57:27Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +31,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. An actor is one `new`, one slot and one `delete`, with no mailbox, no registry and no lifecycle beyond the slot: the floor for what creating and destroying an actor can cost", "a child is allocated on its parent's worker (id = slot * cores + worker), the same static placement qb's addRefActor has: with cores=2 the two sub-trees never balance, so this floor is a bound for the placing frameworks and NOT for the pools", "cores=1 is one thread with every node in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with tens of thousands of nodes in flight never happens inside the window"],
   "failures": [],
-  "work_ns": [1322833.0, 1436583.0, 1523958.0, 2069500.0, 3629333.0, 3308583.0, 3731000.0, 1646500.0, 1695250.0],
-  "total_ns": [1655625.0, 1491542.0, 1577458.0, 2125500.0, 3681667.0, 3362041.0, 3793500.0, 1724250.0, 1755458.0],
-  "outside_window_ns": [332792.0, 54959.0, 53500.0, 56000.0, 52334.0, 53458.0, 62500.0, 77750.0, 60208.0],
+  "work_ns": [3032708.0, 3153916.0, 3089125.0, 3075000.0, 3123875.0, 3506083.0, 3651208.0, 3569833.0, 3637333.0],
+  "total_ns": [3086083.0, 3202500.0, 3137833.0, 3123500.0, 3174791.0, 3559083.0, 3703500.0, 3621708.0, 3689791.0],
+  "outside_window_ns": [53375.0, 48584.0, 48708.0, 48500.0, 50916.0, 53000.0, 52292.0, 51875.0, 52458.0],
   "summary": {
-    "work_min": 1322833.0,
-    "work_p50": 1695250.0,
-    "work_p99": 3722866.6,
-    "work_iqr": 1784625.0
+    "work_min": 3032708.0,
+    "work_p50": 3153916.0,
+    "work_p99": 3650098.0,
+    "work_iqr": 480708.0
   }
 }

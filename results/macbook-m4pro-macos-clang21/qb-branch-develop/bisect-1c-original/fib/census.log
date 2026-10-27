@@ -1,0 +1,16 @@
+
+savina/fib: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  1c-spin
+    cand-orig    median-of-medians     60.9   min     60.5   max     62.4   n=12   [61 61 61 61 61 61 61 61 61 61 60 62]
+    cand-copy    median-of-medians     61.2   min     59.4   max     62.3   n=12   [61 62 60 61 61 61 61 61 59 61 62 62]
+    shipped-orig median-of-medians     61.1   min     59.2   max     61.3   n=12   [59 61 61 61 61 61 61 61 61 61 61 61]
+    shipped-copy median-of-medians     60.6   min     60.0   max     64.7   n=12   [60 60 60 61 61 60 61 60 61 60 62 65]
+
+  1c-park
+    cand-orig    median-of-medians     60.8   min     60.2   max     61.4   n=12   [61 61 61 60 61 61 61 61 61 61 61 61]
+    cand-copy    median-of-medians     61.1   min     60.3   max     61.8   n=12   [62 61 61 61 61 61 60 61 62 62 61 61]
+    shipped-orig median-of-medians     60.8   min     58.7   max     61.9   n=12   [61 61 61 59 59 61 61 60 61 61 62 61]
+    shipped-copy median-of-medians     60.7   min     59.1   max     61.8   n=12   [61 61 62 60 61 61 61 59 60 60 61 59]
+
+launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/bisect-1c-original/fib

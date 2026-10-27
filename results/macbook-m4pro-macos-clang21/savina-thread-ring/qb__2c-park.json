@@ -2,9 +2,9 @@
   "schema": "qvo/result/1",
   "benchmark": "savina/thread-ring",
   "framework": "qb",
-  "framework_version": "3.1.0",
+  "framework_version": "3.3.0",
   "verified": true,
-  "expected_checksum": 11452496497421877006,
+  "expected_checksum": 14531782539718253023,
   "expected_messages": 1000001,
   "work_unit": "hop",
   "work_units": 1000000,
@@ -19,24 +19,25 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:23:05Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:14:07Z"
   },
   "idiom": {
     "source": "qb/src/qb/core/Actor.h forward() + the ping-pong adapter",
     "note": "one Token event forward()ed around the ring in place; actor i on VirtualCore i % cores, so every hop crosses a core at cores=2"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "actor i lives on VirtualCore i % cores: with cores=2 EVERY hop is a cross-core hand-off. CAF and SObjectizer receive the same 2-thread budget but their schedulers decide where each hop runs, so the same cell measures qb's cross-core pipe against their intra-thread hand-off -- see benchmarks/savina/thread-ring.md"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "actor i lives on VirtualCore i % cores: with cores=2 EVERY hop is a cross-core hand-off. CAF and SObjectizer receive the same 2-thread budget but their schedulers decide where each hop runs, so the same cell measures qb's cross-core pipe against their intra-thread hand-off -- see benchmarks/savina/thread-ring.md"],
   "failures": [],
-  "work_ns": [102613875.0, 75558792.0, 88656208.0, 90205167.0, 81569792.0, 78207000.0, 84236042.0, 76428250.0, 109062875.0],
-  "total_ns": [103049625.0, 75962875.0, 89086792.0, 90645583.0, 81994208.0, 78640959.0, 84646583.0, 76839042.0, 109499625.0],
-  "outside_window_ns": [435750.0, 404083.0, 430584.0, 440416.0, 424416.0, 433959.0, 410541.0, 410792.0, 436750.0],
+  "work_ns": [57299458.0, 57293458.0, 60261709.0, 60693458.0, 62443084.0, 59870916.0, 60801291.0, 62484500.0, 61296167.0],
+  "total_ns": [57559583.0, 57549292.0, 60529958.0, 60961000.0, 62717250.0, 60132042.0, 61065417.0, 62765000.0, 61569458.0],
+  "outside_window_ns": [260125.0, 255834.0, 268249.0, 267542.0, 274166.0, 261126.0, 264126.0, 280500.0, 273291.0],
   "summary": {
-    "work_min": 75558792.0,
-    "work_p50": 84236042.0,
-    "work_p99": 108546955.0,
-    "work_iqr": 11998167.0
+    "work_min": 57293458.0,
+    "work_p50": 60693458.0,
+    "work_p99": 62481186.7,
+    "work_iqr": 1425251.0
   }
 }

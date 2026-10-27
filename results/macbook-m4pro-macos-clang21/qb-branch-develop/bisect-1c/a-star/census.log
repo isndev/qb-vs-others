@@ -1,0 +1,26 @@
+
+savina/a-star: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  1c-spin
+    shipped1     median-of-medians    264.9   min    263.6   max    307.6   n=12   [264 299 264 265 265 265 266 264 308 265 267 264]
+    shipped2     median-of-medians    265.1   min    263.8   max    314.4   n=12   [265 314 265 266 265 264 265 265 303 308 265 265]
+    shipped3     median-of-medians    264.5   min    263.7   max    287.8   n=12   [264 264 265 264 264 268 288 264 265 284 264 266]
+    11141        median-of-medians    265.4   min    263.8   max    306.2   n=12   [265 301 264 266 267 265 267 264 264 306 266 265]
+    11142        median-of-medians    266.5   min    260.9   max    299.7   n=12   [300 267 267 264 268 264 265 261 269 290 266 265]
+    11143        median-of-medians    265.2   min    263.9   max    302.2   n=12   [269 268 302 264 264 264 264 266 265 266 266 264]
+    cand1        median-of-medians    264.7   min    263.8   max    274.0   n=12   [264 265 265 264 264 265 265 265 265 274 265 264]
+    cand2        median-of-medians    265.2   min    264.1   max    307.4   n=12   [293 297 266 264 265 266 264 264 307 291 264 264]
+    cand3        median-of-medians    264.7   min    263.8   max    331.8   n=12   [332 265 264 275 264 266 264 264 301 264 265 265]
+
+  1c-park
+    shipped1     median-of-medians    265.5   min    264.0   max    287.5   n=12   [266 265 266 271 287 264 265 266 264 265 264 266]
+    shipped2     median-of-medians    264.8   min    263.7   max    291.3   n=12   [265 264 264 265 291 266 265 267 264 267 289 265]
+    shipped3     median-of-medians    265.7   min    264.7   max    294.9   n=12   [265 266 265 265 274 295 265 265 266 283 265 267]
+    11141        median-of-medians    265.3   min    263.7   max    301.4   n=12   [264 264 264 264 301 268 265 265 266 264 273 266]
+    11142        median-of-medians    264.7   min    263.6   max    281.7   n=12   [265 265 264 264 282 265 267 265 264 264 264 266]
+    11143        median-of-medians    265.3   min    264.4   max    301.2   n=12   [265 265 265 265 266 301 264 265 264 267 266 265]
+    cand1        median-of-medians    264.5   min    264.0   max    301.9   n=12   [302 264 266 265 265 265 265 264 264 264 264 265]
+    cand2        median-of-medians    264.6   min    263.7   max    299.4   n=12   [264 264 265 266 299 299 264 265 264 267 264 265]
+    cand3        median-of-medians    264.2   min    263.8   max    272.2   n=12   [264 264 264 264 271 265 272 264 265 265 264 264]
+
+launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/bisect-1c/a-star

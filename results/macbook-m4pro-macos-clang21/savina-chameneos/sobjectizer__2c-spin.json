@@ -19,10 +19,11 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:23:42Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:15:15Z"
   },
   "idiom": {
     "source": "the big adapter + dev/so_5/disp/thread_pool/pub.hpp",
@@ -30,13 +31,13 @@
   },
   "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the mall and the 100 creatures are placed by the thread_pool, so whether the mall's queue is written cross-core is the dispatcher's decision; qb's cell pins the mall alone on core 0 and every creature on the far side -- see benchmarks/savina/chameneos.md"],
   "failures": [],
-  "work_ns": [254642916.0, 223017958.0, 236176458.0, 240618209.0, 222967416.0, 231077667.0, 235828167.0, 222496041.0, 229896209.0],
-  "total_ns": [255671125.0, 223675000.0, 236504916.0, 240986417.0, 224026166.0, 231437500.0, 236157292.0, 222848041.0, 230257000.0],
-  "outside_window_ns": [1028209.0, 657042.0, 328458.0, 368208.0, 1058750.0, 359833.0, 329125.0, 352000.0, 360791.0],
+  "work_ns": [213731709.0, 224830042.0, 203848833.0, 195608708.0, 193703584.0, 193445000.0, 193815958.0, 199689166.0, 194900250.0],
+  "total_ns": [214056667.0, 225162833.0, 204174166.0, 195927791.0, 193965917.0, 193744333.0, 194110167.0, 199988584.0, 195194750.0],
+  "outside_window_ns": [324958.0, 332791.0, 325333.0, 319083.0, 262333.0, 299333.0, 294209.0, 299418.0, 294500.0],
   "summary": {
-    "work_min": 222496041.0,
-    "work_p50": 231077667.0,
-    "work_p99": 253520939.4,
-    "work_iqr": 13158500.0
+    "work_min": 193445000.0,
+    "work_p50": 195608708.0,
+    "work_p99": 223942175.4,
+    "work_iqr": 10032875.0
   }
 }

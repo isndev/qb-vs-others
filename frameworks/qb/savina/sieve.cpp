@@ -264,8 +264,9 @@ int main(int argc, char **argv) {
         "producer on core 0); place=1 spreads them through a Spawner per core and an extra round "
         "trip per creation. The run's `place` is in its params -- see benchmarks/savina/sieve.md");
     spec.caveats.emplace_back(
-        "qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors): with place=0 every "
-        "filter is on one core, so a run needing more filters than that fails the cell");
+        "qb's actor id is a 24-bit ordinary slot per VirtualCore since 3.3.0 (16 711 679 live actors; "
+        "3.2.1's was a 16-bit slot, 65 534): with place=0 every filter is on one core, so a run "
+        "needing more filters than that fails the cell");
 
     return qvo::run(argc, argv, std::move(spec), savina_sieve_qb::body);
 }

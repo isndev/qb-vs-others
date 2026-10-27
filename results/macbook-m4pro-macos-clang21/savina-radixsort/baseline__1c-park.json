@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/radixsort",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 12889275414389432083,
+  "expected_messages": 6100001,
+  "work_unit": "message",
+  "work_units": 6100000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"bits": 60, "cores": 1, "seed": 2048, "values": 100000, "wait": 0},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:59:24Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the chain cut into `cores` contiguous blocks, qb's placement; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a hand-off is one ring push and one ring pop, and there is no scheduler: the floor for a chain of stable partitions, not for finding the next actor", "the source, the stages and the validation, in pipeline order, are cut into `cores` contiguous blocks -- the placement qb gets -- so with cores=2 a value crosses a core once", "cores=1 is one thread pushing into its own ring and draining it inline when the source or a flushing stage fills it -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [63574584.0, 60505833.0, 63091958.0, 60697250.0, 64063333.0, 61066333.0, 61121125.0, 67655958.0, 66374792.0],
+  "total_ns": [63689292.0, 60618000.0, 63207083.0, 60809000.0, 64175458.0, 61178292.0, 61234208.0, 67775583.0, 66487834.0],
+  "outside_window_ns": [114708.0, 112167.0, 115125.0, 111750.0, 112125.0, 111959.0, 113083.0, 119625.0, 113042.0],
+  "summary": {
+    "work_min": 60505833.0,
+    "work_p50": 63091958.0,
+    "work_p99": 67553464.7,
+    "work_iqr": 2997000.0
+  }
+}

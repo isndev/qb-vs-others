@@ -19,24 +19,25 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:21:41Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:02:43Z"
   },
   "idiom": {
     "source": "CAF 1.1.0 examples/hello_world.cpp + examples/message_passing/dancing_kirby.cpp + caf/stateful_actor.hpp",
     "note": "function-based behaviors, stateful_actor for the cached peer, bare uint64_t on the hot path, one handshake outside the window"
   },
-  "caveats": ["every actor is spawned caf::detached: one OS thread per actor, pinned one per CPU from the harness's set through caf::thread_hook (thread_owner::pool), parked on a condition variable between messages. This is CAF's own placement primitive and the only way to make its ping-pong cross a core: in the work-stealing pool the receiver runs on the sender's worker (worker::delay prepends to the sender's queue), so the plain caf row never pays a cross-core hop. Read the two rows together", "a detached actor has no spin profile, so this variant reports wait=1 as not applicable rather than measuring a pool configuration under a detached label", "CAF 1.1.0 builds itself at C++17 -- its own CMake sets the standard -- while qb and the harness are C++20. Forcing CAF to C++20 was not done: it would measure a build CAF does not ship"],
+  "caveats": ["every actor is spawned caf::detached: one OS thread per actor, pinned one per CPU from the harness's set through caf::thread_hook (thread_owner::pool), parked on a condition variable between messages. This explicit placement makes its ping-pong cross a core when the actors use distinct CPUs. The pool favours local hand-offs but may steal; its actual cross-core hop count is not recorded. Read both rows", "a detached actor has no spin profile, so this variant reports wait=1 as not applicable rather than measuring a pool configuration under a detached label", "QVO requests C++20. CAF declares C++17 as a minimum, not a separate compiler mode; the library compilation command is the authority for its effective language mode"],
   "failures": [],
-  "work_ns": [6303680834.0, 6230361958.0, 6356976750.0, 6301543791.0, 6326761375.0, 6340711500.0, 6331224459.0, 6289861708.0, 6348949708.0],
-  "total_ns": [6303894542.0, 6230573084.0, 6357186333.0, 6301767459.0, 6326964291.0, 6340885125.0, 6331426541.0, 6290093667.0, 6349146125.0],
-  "outside_window_ns": [213708.0, 211126.0, 209583.0, 223668.0, 202916.0, 173625.0, 202082.0, 231959.0, 196417.0],
+  "work_ns": [6497027000.0, 6463034750.0, 6359024625.0, 6372012333.0, 6337392334.0, 6209076583.0, 6440484500.0, 6402796667.0, 6384588459.0],
+  "total_ns": [6497306292.0, 6463257750.0, 6359231875.0, 6372210666.0, 6337614041.0, 6209316000.0, 6440706458.0, 6403002792.0, 6384813292.0],
+  "outside_window_ns": [279292.0, 223000.0, 207250.0, 198333.0, 221707.0, 239417.0, 221958.0, 206125.0, 224833.0],
   "summary": {
-    "work_min": 6230361958.0,
-    "work_p50": 6326761375.0,
-    "work_p99": 6356334586.6,
-    "work_iqr": 39167709.0
+    "work_min": 6209076583.0,
+    "work_p50": 6384588459.0,
+    "work_p99": 6494307620.0,
+    "work_iqr": 81459875.0
   }
 }

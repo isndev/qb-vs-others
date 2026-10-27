@@ -19,10 +19,11 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:18:00Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:54:55Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +31,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Creatures are slots of a vector and the mall has no mailbox: the 100 creatures share one SPSC ring into worker 0, so the 100-producer fan-in the frameworks pay for is engineered out here by placement", "the mall lives on thread 0 and every creature on thread 1 % cores, so with cores=2 every request and every announcement crosses a core -- the same placement qb's cell fixes", "cores=1 is one thread with the mall and the creatures in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 100 creatures in flight is rare"],
   "failures": [],
-  "work_ns": [24704875.0, 23848958.0, 22074875.0, 24009042.0, 24519125.0, 23903833.0, 23181167.0, 23346042.0, 24027334.0],
-  "total_ns": [24761500.0, 23909333.0, 22150667.0, 24137750.0, 24591291.0, 23966459.0, 23252792.0, 23414375.0, 24092292.0],
-  "outside_window_ns": [56625.0, 60375.0, 75792.0, 128708.0, 72166.0, 62626.0, 71625.0, 68333.0, 64958.0],
+  "work_ns": [22435959.0, 20361416.0, 20748000.0, 21677417.0, 22436000.0, 21954500.0, 21529125.0, 22067334.0, 22552458.0],
+  "total_ns": [22488584.0, 20414125.0, 20809833.0, 21720042.0, 22482625.0, 22002500.0, 21582083.0, 22116000.0, 22604000.0],
+  "outside_window_ns": [52625.0, 52709.0, 61833.0, 42625.0, 46625.0, 48000.0, 52958.0, 48666.0, 51542.0],
   "summary": {
-    "work_min": 22074875.0,
-    "work_p50": 23903833.0,
-    "work_p99": 24690015.0,
-    "work_iqr": 681292.0
+    "work_min": 20361416.0,
+    "work_p50": 21954500.0,
+    "work_p99": 22543141.4,
+    "work_iqr": 906834.0
   }
 }

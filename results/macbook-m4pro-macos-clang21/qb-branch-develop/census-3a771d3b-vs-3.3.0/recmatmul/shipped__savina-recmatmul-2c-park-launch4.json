@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/recmatmul",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 15695702070518775688,
+  "expected_messages": 1754,
+  "work_unit": "leaf",
+  "work_units": 512,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"cores": 2, "length": 1024, "threshold": 16384, "wait": 0, "workers": 20},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T06:01:42Z"
+  },
+  "idiom": {
+    "source": "the nqueens adapter (ready handshake, push<> ordered per sender, done-count end) + Actor.h forward() for the master's relay (a-star)",
+    "note": "worker w on VirtualCore floor(w x cores / workers) splits (eight Work push<>ed to the master) or multiplies (the shared kernel), then one Done; the master on core 0 forward()s each created task to worker (srC + scC) % workers"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "worker w lives on VirtualCore floor(w x cores / workers), fixed before start, and Savina's routing fixes which worker each task goes to: at the defaults every leaf goes to workers 0, 4, 8, 12 and 16, so with cores=2 core 0 multiplies 304 of the 512 leaves and core 1 208 -- the best split of those five workers over two cores, and never rebalanced; the pools of CAF and SObjectizer place each worker's demands dynamically"],
+  "failures": [],
+  "work_ns": [345325000.0, 354396500.0, 345650875.0],
+  "total_ns": [347088459.0, 356269000.0, 347435583.0],
+  "outside_window_ns": [1763459.0, 1872500.0, 1784708.0],
+  "summary": {
+    "work_min": 345325000.0,
+    "work_p50": 345650875.0,
+    "work_p99": 354221587.5,
+    "work_iqr": 4535750.0
+  }
+}

@@ -1,0 +1,16 @@
+
+savina/sieve: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  2c-spin
+    qb           median-of-medians    507.6   min    502.1   max    527.9   n=12   [502 505 510 526 509 507 504 506 508 505 510 528]
+    caf          median-of-medians    392.4   min    381.7   max    404.5   n=12   [402 404 391 395 392 400 382 401 392 388 392 392]
+    sobjectizer  median-of-medians    427.8   min    423.7   max    524.1   n=12   [426 430 424 428 430 433 426 427 427 430 427 524]
+    floor        median-of-medians    497.2   min    496.4   max    504.1   n=12   [497 496 498 502 496 497 497 497 497 497 497 504]
+
+  2c-park
+    qb           median-of-medians    506.6   min    504.0   max    524.7   n=12   [507 525 508 506 506 504 510 507 517 507 506 505]
+    caf          median-of-medians    395.3   min    386.3   max    407.7   n=12   [406 402 408 388 389 395 392 399 404 395 386 394]
+    sobjectizer  median-of-medians    439.0   min    435.0   max    444.3   n=12   [440 442 435 442 438 438 439 438 440 444 436 439]
+    floor        median-of-medians    490.2   min    488.5   max    508.2   n=12   [504 489 490 492 490 488 490 491 508 489 491 491]
+
+launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/sieve

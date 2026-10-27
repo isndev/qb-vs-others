@@ -1,0 +1,14 @@
+
+savina/apsp: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    cand         median-of-medians    303.5   min    288.6   max    317.7   n=12   [300 306 309 301 307 289 297 301 311 298 308 318]
+    shipped      median-of-medians    299.0   min    287.2   max    307.3   n=12   [307 306 299 292 291 299 304 297 294 299 287 307]
+    cand vs shipped: 303.5 vs 299.0 (+1.5%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians    303.5   min    299.7   max    310.0   n=12   [301 310 303 304 300 304 309 303 307 303 303 310]
+    shipped      median-of-medians    299.1   min    289.0   max    307.1   n=12   [294 307 298 305 299 296 303 289 300 291 300 300]
+    cand vs shipped: 303.5 vs 299.1 (+1.5%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/apsp

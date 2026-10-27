@@ -1,0 +1,16 @@
+
+savina/a-star: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  1c-spin
+    cand-orig    median-of-medians    264.3   min    263.1   max    305.2   n=12   [263 264 305 264 264 264 265 264 264 264 265 265]
+    cand-copy    median-of-medians    264.8   min    264.1   max    307.9   n=12   [264 308 301 264 264 266 264 265 266 264 265 265]
+    shipped-orig median-of-medians    264.3   min    263.8   max    293.8   n=12   [293 264 294 266 264 264 264 265 264 264 264 268]
+    shipped-copy median-of-medians    264.7   min    263.6   max    295.4   n=12   [266 265 295 265 264 264 264 265 265 264 264 265]
+
+  1c-park
+    cand-orig    median-of-medians    265.2   min    264.0   max    304.7   n=12   [264 264 264 264 266 265 264 283 297 297 305 266]
+    cand-copy    median-of-medians    264.9   min    263.7   max    302.8   n=12   [264 264 264 265 301 266 264 265 299 303 303 265]
+    shipped-orig median-of-medians    266.3   min    264.0   max    298.9   n=12   [264 264 270 287 293 265 265 267 294 265 299 264]
+    shipped-copy median-of-medians    265.1   min    263.6   max    307.0   n=12   [265 265 265 264 287 264 266 265 307 264 303 264]
+
+launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/bisect-1c-original/a-star

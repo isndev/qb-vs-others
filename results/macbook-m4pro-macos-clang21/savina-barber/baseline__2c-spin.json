@@ -1,0 +1,48 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/barber",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 1788098052791974171,
+  "expected_messages": 0,
+  "work_unit": "haircut",
+  "work_units": 5000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"ahr": 1000, "apr": 1000, "cores": 2, "haircuts": 5000, "pace": 0, "room": 5000, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:54:24Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; a customer is a heap node in the factory's worker's slot table, created inside the window and freed after reporting; pace=0: every customer from one Start handler, pace=1: one per self-addressed Start; not an actor framework"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A customer is one `new`, one slot and one `delete`, the waiting room a ring of ids, a message one ring push: the floor for what this coordination costs", "the factory and every customer are on worker 0, the room and the barber on worker 1 % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools", "the run's `pace` is in its params: 0 is the reference's factory, every customer from one handler, refused at cores>=2 above haircuts=65 536 (one ring: a worker inside the loop drains none of its inbound rings); 1 adds n-1 self-addressed Starts to the reported count", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [7530458.0, 7514083.0, 7536291.0, 7542708.0, 7724750.0, 7531541.0, 7526709.0, 7550208.0, 7523333.0],
+  "total_ns": [7569667.0, 7553417.0, 7581958.0, 7582041.0, 7762667.0, 7569583.0, 7565167.0, 7588708.0, 7561500.0],
+  "outside_window_ns": [39209.0, 39334.0, 45667.0, 39333.0, 37917.0, 38042.0, 38458.0, 38500.0, 38167.0],
+  "observed": {
+    "rejections": {"samples": [0, 0, 0, 0, 0, 0, 0, 0, 0], "min": 0, "p50": 0.0, "max": 0},
+    "wakeups": {"samples": [164, 159, 166, 167, 166, 182, 183, 162, 162], "min": 159, "p50": 166.0, "max": 183}
+  },
+  "observed_at_least": {"wakeups": 1},
+  "summary": {
+    "work_min": 7514083.0,
+    "work_p50": 7531541.0,
+    "work_p99": 7710786.6,
+    "work_iqr": 15999.0
+  }
+}

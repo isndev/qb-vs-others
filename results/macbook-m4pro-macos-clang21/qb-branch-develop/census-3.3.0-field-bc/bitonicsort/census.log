@@ -1,0 +1,16 @@
+
+savina/bitonicsort: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  2c-spin
+    qb           median-of-medians      6.9   min      6.6   max      7.4   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    caf          median-of-medians     64.1   min     56.5   max     69.3   n=12   [69 67 67 59 69 65 61 59 58 66 57 63]
+    sobjectizer  median-of-medians    115.9   min    113.0   max    120.0   n=12   [114 117 118 116 113 114 116 117 120 113 117 114]
+    floor        median-of-medians      7.3   min      7.2   max      7.4   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+
+  2c-park
+    qb           median-of-medians      6.8   min      6.7   max      7.2   n=12   [7 7 7 7 7 7 7 7 7 7 7 7]
+    caf          median-of-medians     61.2   min     55.9   max     73.6   n=12   [74 72 57 60 61 69 63 57 61 56 61 63]
+    sobjectizer  median-of-medians    119.6   min    113.1   max    121.3   n=12   [121 117 114 120 121 121 121 121 120 116 116 113]
+    floor        median-of-medians      7.4   min      7.3   max      8.4   n=12   [7 8 7 7 7 7 7 7 7 7 7 7]
+
+launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/bitonicsort

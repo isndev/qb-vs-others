@@ -1,0 +1,48 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bndbuffer",
+  "framework": "caf",
+  "framework_version": "1.1.0",
+  "verified": true,
+  "expected_checksum": 13580315395847872333,
+  "expected_messages": 160080,
+  "work_unit": "item",
+  "work_units": 40000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"buffer": 50, "cons_cost": 25, "consumers": 40, "cores": 1, "items": 1000, "prod_cost": 25, "producers": 40, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:03:35Z"
+  },
+  "idiom": {
+    "source": "the bank-transaction and fib adapters + self->spawn() from a behavior's init (scheduled_actor.hpp) + mail().send() (event_based_mail.hpp)",
+    "note": "Savina's manager, producers and consumers one for one, the manager spawning the others; the bounded buffer is the manager's FIFO and Savina's park/un-park protocol; built-in atoms typed per receiver; placement left to the work-stealing pool"
+  },
+  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "QVO requests C++20. CAF declares C++17 as a minimum, not a separate compiler mode; the library compilation command is the authority for its effective language mode", "the manager, the 40 producers and the 40 consumers are placed by the work-stealing pool; qb's cell pins the manager on core 0 and splits each kind evenly over the cores -- see benchmarks/savina/bndbuffer.md"],
+  "failures": [],
+  "work_ns": [598157417.0, 597659583.0, 598532541.0, 618538542.0, 597546000.0, 617078709.0, 614139334.0, 597660125.0, 597958500.0],
+  "total_ns": [598438500.0, 597952709.0, 598830041.0, 618819042.0, 597800292.0, 617324292.0, 614434500.0, 597975125.0, 598234708.0],
+  "outside_window_ns": [281083.0, 293126.0, 297500.0, 280500.0, 254292.0, 245583.0, 295166.0, 315000.0, 276208.0],
+  "observed": {
+    "buffer_peak": {"samples": [10, 10, 10, 10, 10, 10, 10, 10, 10], "min": 10, "p50": 10.0, "max": 10},
+    "consumer_waits": {"samples": [1600, 1600, 1600, 1600, 1600, 1600, 1600, 1600, 1600], "min": 1600, "p50": 1600.0, "max": 1600},
+    "producer_waits": {"samples": [38040, 38040, 38040, 38040, 38040, 38040, 38040, 38040, 38040], "min": 38040, "p50": 38040.0, "max": 38040}
+  },
+  "summary": {
+    "work_min": 597546000.0,
+    "work_p50": 598157417.0,
+    "work_p99": 618421755.4,
+    "work_iqr": 16479209.0
+  }
+}

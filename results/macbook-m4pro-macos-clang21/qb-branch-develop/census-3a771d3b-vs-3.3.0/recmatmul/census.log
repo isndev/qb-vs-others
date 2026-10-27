@@ -1,0 +1,14 @@
+
+savina/recmatmul: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    cand         median-of-medians 670661.9   min 667696.0   max 675824.1   n=12   [673486 667936 670002 675824 668108 673081 670584 670740 671302 667696 668052 671786]
+    shipped      median-of-medians 670241.9   min 666601.8   max 674192.1   n=12   [670214 674192 668212 670270 672828 667073 668165 670958 666602 670307 671146 668410]
+    cand vs shipped: 670661.9 vs 670241.9 (+0.1%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians 673148.2   min 672351.7   max 675803.5   n=12   [672715 674314 672382 675570 675804 672352 674537 672683 673049 674708 673247 672408]
+    shipped      median-of-medians 674259.4   min 670798.6   max 682007.5   n=12   [675194 674576 670799 675099 672035 673376 672565 671427 674508 674011 674804 682007]
+    cand vs shipped: 673148.2 vs 674259.4 (-0.2%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/recmatmul

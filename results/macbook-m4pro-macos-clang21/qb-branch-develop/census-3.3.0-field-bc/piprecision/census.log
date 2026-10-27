@@ -1,0 +1,16 @@
+
+savina/piprecision: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  2c-spin
+    qb           median-of-medians   4964.3   min   4751.1   max   4971.7   n=12   [4810 4751 4972 4967 4966 4966 4957 4961 4968 4964 4851 4964]
+    caf          median-of-medians   4152.2   min   4087.8   max   4835.1   n=12   [4835 4120 4126 4088 4145 4201 4124 4160 4186 4125 4506 4164]
+    sobjectizer  median-of-medians   4420.3   min   4379.9   max   4865.8   n=12   [4526 4590 4398 4380 4473 4444 4398 4433 4408 4400 4866 4383]
+    floor        median-of-medians   8302.6   min   8295.5   max   8497.5   n=12   [8298 8309 8302 8299 8323 8295 8303 8497 8299 8303 8299 8312]
+
+  2c-park
+    qb           median-of-medians   4955.7   min   4949.4   max   5455.9   n=12   [4956 5456 4950 4956 4963 4965 4955 4963 4951 4953 4949 4952]
+    caf          median-of-medians   4092.9   min   4044.6   max   4410.2   n=12   [4092 4410 4103 4094 4048 4118 4062 4063 4045 4353 4139 4061]
+    sobjectizer  median-of-medians   4405.9   min   4306.4   max   4884.6   n=12   [4438 4505 4485 4402 4362 4393 4473 4306 4885 4371 4352 4410]
+    floor        median-of-medians   7755.3   min   7593.7   max   8394.4   n=12   [7747 8360 7767 7764 7767 7778 7698 8394 7633 7726 7594 7714]
+
+launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/piprecision

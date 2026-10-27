@@ -1,0 +1,46 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/logmap",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 18398876595009951523,
+  "expected_messages": 750040,
+  "work_unit": "term",
+  "work_units": 250000,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"cores": 2, "series": 10, "terms": 25000, "wait": 0},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:59:52Z"
+  },
+  "idiom": {
+    "source": "qb/src/qb/core/Actor.h reply() + qb/llm/qb.llm.md (reply vs forward, push vs send, same-core placement)",
+    "note": "push<Compute> to the computer, which reply()s the received event with the next term; a worker still owing terms reply()s it straight back, so every later hop re-sends the received event (a copy into the pipe, no allocation); held NextTerms are a count; master on VirtualCore 0, series i (worker + computer) on core (1 + i) % cores"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "placement is fixed before start: the master on VirtualCore 0, series i's worker AND computer together on core (1 + i) % cores, so no round trip of a chain crosses a core -- qb.llm.md's rule for actors that talk only to each other; the pools place each worker and computer freely and may split a pair", "the master's NextTerm burst (terms x series pushes from one handler) leaves for a remote core only in the flush that follows the handler, so at cores=2 no remote chain starts before the master has pushed the whole burst; CAF's and SObjectizer's pools can run a worker on the other thread from the first message the master enqueues for it, and the floor's thread 1 drains its ring while the burst is still being sent -- the `held` observation beside the cell says how much of the burst each found waiting"],
+  "failures": [],
+  "work_ns": [3124292.0, 3212917.0, 2994334.0],
+  "total_ns": [3379000.0, 3463166.0, 3257416.0],
+  "outside_window_ns": [254708.0, 250249.0, 263082.0],
+  "observed": {
+    "held": {"samples": [249990, 249990, 249990], "min": 249990, "p50": 249990.0, "max": 249990}
+  },
+  "summary": {
+    "work_min": 2994334.0,
+    "work_p50": 3124292.0,
+    "work_p99": 3211144.5,
+    "work_iqr": 109291.5
+  }
+}

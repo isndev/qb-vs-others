@@ -1,0 +1,18 @@
+== radixsort-1c-spin.sample.txt: 26882 samples at the roots (every thread), self time by function:
+   25.0%   6726  __psynch_cvwait  [libsystem_kernel.dylib]
+   24.2%   6505  __ulock_wait  [libsystem_kernel.dylib]
+   19.3%   5196  __semwait_signal  (in libsystem_kernel.dylib) + 8,4  [0x18791b308,0x18791b304]  []
+    4.4%   1186  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4,...  [0x187917c34,0x187917c30,...]  []
+    1.0%    278  savina_radixsort_qb::StageActor::on(savina_radixsort_qb::Value const&)  (in qvo-qb-savina-radixsort) + 52,272,...  [0x10  []
+    1.0%    256  savina_radixsort_qb::StageActor::on(savina_radixsort_qb::Value const&)  (in qvo-qb-savina-radixsort) + 272,52,...  [0x10  []
+    0.9%    238  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)  (in qvo-qb-savina-radixsort) + 136,  []
+    0.9%    232  savina_radixsort_qb::StageActor::on(savina_radixsort_qb::Value const&)  (in qvo-qb-savina-radixsort) + 52,204,...  [0x10  []
+  inclusive, qb / qvo / adapter frames:
+   25.0%   6726  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.0%   6726  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   24.2%   6505  qb::Main::join()
+   16.8%   4510  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+    1.7%    452  savina_radixsort_qb::StageActor::on(savina_radixsort_qb::Value const&)
+    1.0%    278  savina_radixsort_qb::StageActor::on(savina_radixsort_qb::Value const&)  (in qvo-qb-savina-radixsort) + 52,272,...  [0x10
+    1.0%    256  savina_radixsort_qb::StageActor::on(savina_radixsort_qb::Value const&)  (in qvo-qb-savina-radixsort) + 272,52,...  [0x10
+    0.9%    238  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)  (in qvo-qb-savina-radixsort) + 136,

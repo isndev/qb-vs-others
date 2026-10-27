@@ -2,7 +2,7 @@
   "schema": "qvo/result/1",
   "benchmark": "savina/fib",
   "framework": "qb",
-  "framework_version": "3.1.0",
+  "framework_version": "3.3.0",
   "verified": true,
   "expected_checksum": 18138759588748310478,
   "expected_messages": 114624,
@@ -19,24 +19,25 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:22:57Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:12:28Z"
   },
   "idiom": {
     "source": "qb/llm/qb.llm.md: addRefActor<T>() (same-core child, onInit run synchronously) + kill()",
     "note": "every node is a FibActor created by its parent with addRefActor, answered with one push<Response>, and killed right after; seed s on VirtualCore s % cores"
   },
-  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is built with QB_WITH_LOGGING at its shipped default (ON, level INFO in a release build): whatever qb logs at INFO inside the window is part of the measured cost -- the static shapes log nothing there, but 3.1.0 logs 9 lines per actor lifetime (measured on savina/fib: 515 819 lines, 60.9 MB per repetition) where the 3.2 line logs them at VERBOSE -- and nanolog's writer thread, started before main(), shares the pinned CPU set. This is left ON deliberately: turning it off would improve qb's figure and no other framework gets an equivalent subtraction", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "qb has no cross-core spawn: a child is created on its parent's VirtualCore, so with cores=2 the tree is two independent sub-trees (fib(n-1) on core 0, fib(n-2) on core 1) that never balance -- core 0 does ~62% of the work and the window closes when it does", "qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors); the tree is expanded breadth-first by the FIFO mailbox, so n=23 keeps 57 313 alive on one core at the cores=1 peak and n=24 (92 735) would not fit -- the reason the parameter deviates from Savina's 25"],
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "qb has no cross-core spawn: a child is created on its parent's VirtualCore, so with cores=2 the tree is two independent sub-trees (fib(n-1) on core 0, fib(n-2) on core 1) that never balance -- core 0 does ~62% of the work and the window closes when it does", "qb's actor id is a 16-bit slot per VirtualCore (65 534 live actors); the tree is expanded breadth-first by the FIFO mailbox, so n=23 keeps 57 313 alive on one core at the cores=1 peak and n=24 (92 735) would not fit -- the reason the parameter deviates from Savina's 25"],
   "failures": [],
-  "work_ns": [2514459.0, 2496042.0, 2501125.0, 2721000.0, 2542291.0, 2710208.0, 2697750.0, 2790333.0, 2786125.0],
-  "total_ns": [2897875.0, 2886375.0, 2902584.0, 3112041.0, 2931584.0, 3087250.0, 3076291.0, 3177041.0, 3170417.0],
-  "outside_window_ns": [383416.0, 390333.0, 401459.0, 391041.0, 389293.0, 377042.0, 378541.0, 386708.0, 384292.0],
+  "work_ns": [2433209.0, 2235916.0, 2221959.0, 2215000.0, 2138250.0, 2138625.0, 2169208.0, 2318000.0, 2301958.0],
+  "total_ns": [2744334.0, 2542042.0, 2532625.0, 2524875.0, 2440833.0, 2439500.0, 2475792.0, 2619209.0, 2613667.0],
+  "outside_window_ns": [311125.0, 306126.0, 310666.0, 309875.0, 302583.0, 300875.0, 306584.0, 301209.0, 311709.0],
   "summary": {
-    "work_min": 2496042.0,
-    "work_p50": 2697750.0,
-    "work_p99": 2789996.4,
-    "work_iqr": 206541.0
+    "work_min": 2138250.0,
+    "work_p50": 2221959.0,
+    "work_p99": 2423992.3,
+    "work_iqr": 132750.0
   }
 }

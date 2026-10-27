@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/trapezoid",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 18366218599158302744,
+  "expected_messages": 200,
+  "work_unit": "trapezoid",
+  "work_units": 10000000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "left": 1, "pieces": 10000000, "right": 5, "wait": 0, "workers": 100},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:00:17Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the master (actor 0, thread 0) sends one range per worker actor w (id cores + w) on thread w % cores -- qb's placement; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A work message is one ring message carrying the range, a result one ring message carrying the area's bits, and the integration is the same shared kernel every framework runs: the floor for a fan-out and fan-in of pure computation", "worker w is owned by thread w % cores and the master by thread 0, fixed before the window -- qb's placement exactly: with cores=2 each thread integrates the ranges of the workers it owns, so this floor bounds the placing frameworks and NOT the pools", "cores=1 is one thread with every actor's messages in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [108951208.0, 109256709.0, 108781000.0, 108944959.0, 109104666.0, 108780208.0, 108796500.0, 108870209.0, 108868417.0],
+  "total_ns": [109020625.0, 109326917.0, 108856000.0, 109013167.0, 109218167.0, 108851666.0, 108882250.0, 108961291.0, 108970250.0],
+  "outside_window_ns": [69417.0, 70208.0, 75000.0, 68208.0, 113501.0, 71458.0, 85750.0, 91082.0, 101833.0],
+  "summary": {
+    "work_min": 108780208.0,
+    "work_p50": 108870209.0,
+    "work_p99": 109244545.6,
+    "work_iqr": 154708.0
+  }
+}

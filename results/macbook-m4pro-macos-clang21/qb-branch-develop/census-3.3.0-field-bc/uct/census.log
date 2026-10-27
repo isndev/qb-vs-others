@@ -1,0 +1,16 @@
+
+savina/uct: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  2c-spin
+    qb           median-of-medians     93.7   min     90.2   max     95.4   n=12   [95 95 91 95 94 90 94 90 95 91 93 94]
+    caf          median-of-medians   1211.2   min   1166.8   max   1260.6   n=12   [1212 1211 1172 1176 1212 1245 1222 1174 1261 1167 1222 1187]
+    sobjectizer  median-of-medians   1560.7   min   1520.5   max   1719.7   n=12   [1556 1639 1532 1539 1563 1574 1564 1559 1720 1545 1520 1592]
+    floor        median-of-medians     64.4   min     62.1   max     71.2   n=12   [63 71 64 64 71 71 67 65 64 62 63 71]
+
+  2c-park
+    qb           median-of-medians     91.1   min     89.1   max     94.2   n=12   [90 94 92 89 92 91 91 90 93 89 91 91]
+    caf          median-of-medians   1201.0   min   1171.0   max   1225.7   n=12   [1225 1202 1177 1223 1200 1171 1226 1207 1189 1199 1189 1218]
+    sobjectizer  median-of-medians   1654.9   min   1559.0   max   1745.1   n=12   [1607 1559 1672 1662 1566 1634 1706 1661 1648 1591 1745 1662]
+    floor        median-of-medians     61.4   min     60.3   max     68.3   n=12   [68 61 61 68 61 62 61 61 60 63 63 61]
+
+launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/uct

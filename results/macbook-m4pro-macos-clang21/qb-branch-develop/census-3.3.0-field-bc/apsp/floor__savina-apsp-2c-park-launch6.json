@@ -1,0 +1,46 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/apsp",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 9072176982710404765,
+  "expected_messages": 108072,
+  "work_unit": "block phase",
+  "work_units": 10800,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"block": 50, "cores": 2, "form": 0, "nodes": 300, "wait": 0, "weight": 100},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T06:17:55Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; block-row bi owned by worker bi * cores / grid; a tile travels as a pointer; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Blocks are integers and a tile is one ring push and one ring pop per neighbour; the phase is the spec's compute(), the same as every framework's", "block-row bi lives on worker bi * cores / grid -- qb's placement: at cores=2 a block's row neighbours share its worker and half its column neighbours do not", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [3218750.0, 3224166.0, 3247292.0],
+  "total_ns": [3468000.0, 3452959.0, 3475666.0],
+  "outside_window_ns": [249250.0, 228793.0, 228374.0],
+  "observed": {
+    "ahead": {"samples": [4651, 4425, 5894], "min": 4425, "p50": 4651.0, "max": 5894}
+  },
+  "summary": {
+    "work_min": 3218750.0,
+    "work_p50": 3224166.0,
+    "work_p99": 3246829.5,
+    "work_iqr": 14271.0
+  }
+}

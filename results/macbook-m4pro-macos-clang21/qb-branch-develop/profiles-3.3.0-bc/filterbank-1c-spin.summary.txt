@@ -1,0 +1,18 @@
+== filterbank-1c-spin.sample.txt: 25908 samples at the roots (every thread), self time by function:
+   25.0%   6477  __psynch_cvwait  [libsystem_kernel.dylib]
+   25.0%   6476  __ulock_wait  [libsystem_kernel.dylib]
+   21.4%   5539  __semwait_signal  (in libsystem_kernel.dylib) + 8,4  [0x18791b308,0x18791b304]  []
+   19.0%   4915  qvospec::savina::filterbank::fir_dot(double const*, double const*, unsigned long)  (in qvo-qb-savina-filterbank) + 104,1  []
+    4.9%   1278  qvospec::savina::filterbank::fir_dot(double const*, double const*, unsigned long)  (in qvo-qb-savina-filterbank) + 104,1  []
+    2.8%    714  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4,...  [0x187917c34,0x187917c30,...]  []
+    0.9%    237  qvospec::savina::filterbank::fir_dot(double const*, double const*, unsigned long)  (in qvo-qb-savina-filterbank) + 104,1  []
+    0.1%     37  std::this_thread::sleep_for(std::chrono::duration<long long, std::ratio<1l, 1000000000l>> const&)  (in libc++.1.dylib) +  []
+  inclusive, qb / qvo / adapter frames:
+   25.0%   6477  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.0%   6477  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   25.0%   6476  qb::Main::join()
+   24.9%   6456  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+   24.8%   6433  savina_filterbank_qb::BankStage<savina_filterbank_qb::FirStep>::on(savina_filterbank_qb::Value const&)
+   19.0%   4915  qvospec::savina::filterbank::fir_dot(double const*, double const*, unsigned long)  (in qvo-qb-savina-filterbank) + 104,1
+    4.9%   1278  qvospec::savina::filterbank::fir_dot(double const*, double const*, unsigned long)  (in qvo-qb-savina-filterbank) + 104,1
+    0.9%    237  qvospec::savina::filterbank::fir_dot(double const*, double const*, unsigned long)  (in qvo-qb-savina-filterbank) + 104,1

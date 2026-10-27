@@ -36,7 +36,9 @@ The README's source and result inventories distinguish implemented shapes from m
   eighteen shapes. The first shapes whose cells carry OBSERVATIONS beside the number (FAIRNESS.md
   §0: refused requests, wake-ups, producer waits, work messages). The one shape the candidate lost
   on (fork-join-create at one core, WSL2) was traced to qb's arena and fixed, and the fix measured
-  level with 3.2.1 in a second session (§21.6). Not yet on macOS or the arm64 guest.
+  level with 3.2.1 in a second session (§21.6). On macOS since 2026-10-27 (the next bullet); not
+  yet on the arm64 guest.
+- **The whole suite on macOS at shipped 3.3.0** — thirty shapes, 484 cells, one unpinned quiet session on 2026-10-27 (`results/macbook-m4pro-macos-clang21/`): the first measurement of waves B and C anywhere (192 cells, `docs/TUNING.md` §22), wave A's first on this host, the eight older shapes re-measured; the 3.4.0 branch tip `3a771d3b` beside it in the same session (grids before and after the field, a 1 440-launch two-core census: level; sixteen one-core cells slower, three of them beyond a tail, BISECT_SHORT), the declared forms measured (apsp `send` slower, sieve `place=1` no gain for qb and −38 % for the floor, uct's canonical 200 000 nodes verified by qb 3.3.0), and the first `sample` profile of each B/C shape. Not on Windows, WSL2 or the arm64 guest: that is the x86 session's job.
 - **The two CAF coherence defects, closed** (`docs/TUNING.md` §1.1 and §8). The spin-knob sweep
   was run on both axes — poll budget 100 → 10⁶ at fixed steal interval, steal interval 1 → 10⁶ at
   fixed budget; ten documents in `results/desktop-win11-msvc19/caf-spin-sweep/` — and no
@@ -164,49 +166,53 @@ is left of the pipeline is the train itself.
    g++'s 5.9–9.3 from 2 k to 4 M, so the clang-cl A/B has no premise left.
 
 
-### Savina B/C: source integrated, combined proof pending
+### Savina B/C: measured on macOS, the x86 campaign and the arm64 guest pending
 
 The source roster contains thirty specifications, thirty pages and thirty adapters in each of
-qb, CAF, SObjectizer and the floor. Waves B and C supply the twelve shapes below. This source
-inventory does not establish validated or published thirty-shape coverage. Published datasets
-still cover the earlier eighteen shapes, and the complete-results roster/report controls remain
-red until new complete datasets exist.
+qb, CAF, SObjectizer and the floor. Waves B and C supply the twelve shapes below. **Their first
+measurement is the macOS session of 2026-10-27** (`results/macbook-m4pro-macos-clang21/`,
+`docs/TUNING.md` §22): the twelve × four frameworks × four configurations, 192 cells, in one unpinned
+quiet session with shipped qb 3.3.0 as the qb column, the 3.4.0 branch tip `3a771d3b` beside it,
+a 1 152-launch field census and a 1 440-launch candidate census on the two-core cells, every declared
+form measured, the first `sample` profile of each shape, and the harness battery run twice on the
+field build (151 / 43 / 0 each time). **It is one host.** The complete-results guard
+(`tools/check-roster.py --results`) is green on that host and red on the three others until they
+have documents for the twelve.
 
-| wave | benchmarks | combined acceptance work still needed |
-|---|---|---|
-| B1 | `radixsort`, `filterbank`, `sieve` | Revalidate the shared Mesh dispatch change and wave-A callers; complete applicable sanitizers and supported sieve placement cases. |
-| B2 | `trapezoid`, `piprecision`, `recmatmul` | Complete four-framework native matrices, controls, document guards and sanitizers. The handoff reports Windows roster/report/runner checks, but supplies no complete matrix or sanitizer evidence and no battery census. |
-| B3 | `quicksort`, `bitonicsort` | Complete native matrices, document guards, runner checks and sanitizers. The handoff reports a standalone MSVC battery of 43 CAUGHT / 13 CONFIRMED / 0 MISSED; it does not certify the merged candidate. Quicksort's `n < threshold` leaf-root is refused before the body runs; retain that domain. |
-| C1 | `apsp`, `sor` | Run the new compile-only plants in the actual qb/floor adapter sources, including blind checksum witnesses, protocol rejection and lost-message deadlines; revalidate the final combined source. |
-| C2 | `uct`, `facloc` | Prove the SObjectizer dispatcher-binder ownership repair through complete Windows return and repeated teardown, then revalidate matrices and sanitizers on the combined source; include sieve in the lifetime audit. |
+| wave | benchmarks | measured | still needed |
+|---|---|---|---|
+| B1 | `radixsort`, `filterbank`, `sieve` | macOS, 2026-10-27: qb under the floor on radixsort (5.8 ns a message against 10.8); level with the field on filterbank; behind the pools at two cores on sieve (0.76 ×) by the reference's placement, `place=1` measured (no gain for qb, −40 % for the floor) and `local=1` as a stress | Windows / WSL2 at shipped 3.3.0; the floor's `place` cell decided by the x86 sweep |
+| B2 | `trapezoid`, `piprecision`, `recmatmul` | macOS: compute cells, every framework within 5 % at one core (qb 0.92–0.95 × the best); at two cores the pools balance what static placement does not (recmatmul 0.82 ×) | Windows / WSL2 |
+| B3 | `quicksort`, `bitonicsort` | macOS: bitonicsort 8.5 × the second framework and under the floor; quicksort level at one core, 0.88 × CAF at two (the two seeds' halves) | Windows / WSL2 |
+| C1 | `apsp`, `sor` | macOS: qb 2.0 / 4.9 × SObjectizer on apsp and 8.1 / 24 × on sor, under the floor at two cores on both; apsp `form=1` (`send`) measured slower than `push` in every configuration | Windows / WSL2, with the `form` sweep there |
+| C2 | `uct`, `facloc` | macOS: qb 9.4 / 12.6 × CAF on uct and 6.6 / 11 × on facloc, above the floor's heap node (1.5–2.2 ×); **qb 3.3.0 verifies Savina's canonical 200 000-node uct** (3.2.1 refused it), the common cell stays 60 000 | Windows / WSL2; the UCT cap is a roster decision once every host holds the canonical tree |
 
 The five standalone batteries share the same base. Their additions are merged into unique
 sections L–W with A–K preserved, including positive shuffled arrivals and checksum-only
 witnesses. Actual APSP/SOR qb/floor plants are compiled into `qvoctl-*` control executables from
 the real adapter sources, with no plant path in ordinary benchmark binaries. A separate Mesh
 owner-dispatch control emits functional verdicts without timing fields and compares a compile-only
-reentrant mutant with the fixed dispatcher. Run the complete combined battery, retain stdout and
-exit code, and reconcile every identity in its `--census-out` export with the source inventory
-before deriving another floor. The macOS arm64 merged census is recorded in FAIRNESS.md;
-Windows/WSL validation and the remaining architecture campaign are still required.
+reentrant mutant with the fixed dispatcher. The complete combined battery's macOS census is in
+FAIRNESS.md (2026-10-13, and twice on 2026-10-27 on the 3.3.0 field build); Windows/WSL validation
+and the x86 campaign are still required.
 
 Workload decisions remain visible: UCT's **common `nodes=60000` variant** applies to all four
-frameworks; Savina's **canonical `nodes=200000`** is a separate case, with qb's declared pool
-failure retained until the Actor64 design has a proven capacity solution. Actor64 is design work
-only here. Sieve keeps **canonical `local=1000`**; **`local=1`** is separately labelled
-one-filter-per-prime stress. Facility location's omission of sibling notifications and
-radixsort's 16-bit generator remain documented deviations applied consistently across the field.
+frameworks and every host; Savina's **canonical `nodes=200000`** is a separate document, refused by qb
+3.2.1's 16-bit actor id and verified by 3.3.0's 64-bit one (uct.md). Sieve keeps **canonical
+`local=1000`**; **`local=1`** is separately labelled one-filter-per-prime stress. Facility location's
+omission of sibling notifications and radixsort's 16-bit generator remain documented deviations
+applied consistently across the field.
 
-Publication needs one quiet-host campaign: shipped qb and the candidate in the same session,
-all four frameworks, one and two cores, spin and park, complete documents and launch censuses
-where required. It must include the supported sieve placement sweep and APSP qb push/send forms.
-Windows and WSL2 run sequentially on the Windows host; macOS runs unpinned with its launch census.
-The existing historical eighteen-shape figures cannot supply B/C results. Do not weaken a guard,
-replace a timing output or relabel old data to fill that gap.
+What the x86 campaign owes: shipped qb 3.3.0 and the branch tip in one session per host, all four
+frameworks, one and two cores, spin and park, the launch censuses, the supported sieve placement
+sweep (the floor's cell is decided there) and APSP's qb push/send forms; `perf` on WSL2 and ETW on
+Windows for the first profile of each shape. The arm64 guest owes the same session, plus wave A and
+the eight older shapes at shipped 3.3.0. Do not weaken a guard, replace a timing output or relabel
+old data to fill that gap.
 
-Wave A also left the one-time `concsll` placement experiment, the form sweep for every newly
-published multi-form shape, and the first `perf` / ETW profile of each new shape. These remain
-publication obligations; the source merge does not complete them.
+Wave A also left the one-time `concsll` placement experiment and the form sweep for every newly
+published multi-form shape on x86; macOS measured those forms on 2026-10-27 (TUNING §22.4) and
+profiled concsll's walk (§22.5).
 
 ### Actor creation cost and memory footprint
 

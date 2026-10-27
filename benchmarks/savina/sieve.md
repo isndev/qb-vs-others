@@ -51,6 +51,17 @@ the floor's `main()` say so. CAF and SObjectizer place by their pools: `place=1`
 counterpart there, and their adapters declare it **not applicable** (the harness's third verdict)
 rather than run the pool under a label that says otherwise.
 
+The first sweep, on macOS (2026-10-27, unpinned, shipped qb 3.3.0, `results/macbook-m4pro-macos-clang21/wave-bc-form-sweep/`,
+`docs/TUNING.md` §22.4), answers it one way for qb and the other for the floor: **qb at `place=1`
+reads +8.6 % (2c-spin, separate) and +1.4 % (2c-park, overlapping)** over its `place=0` cell — the
+creation round trip per filter buys nothing on a chain whose work is the divisions — while **the
+floor at `place=1` reads −39.9 / −39.0 %**, its rings costing nothing to spread. So `place=0` is
+qb's cell everywhere, and the floor's cell stays `place=0` too until the x86 sweep says what this
+one did: a one-host, unpinned sweep does not move a default the two pinned hosts measure at. The
+`local=1` stress (one filter per prime: 9 591 creations, 46 M messages) is a labelled side document
+in the same directory: qb 5.40 / 5.42 µs per candidate at one core and 5.89 / 5.68 at two, under the
+floor's 6.60 at every configuration, against CAF's 47.7–71.7 µs and SObjectizer's 28.4–95.4.
+
 At `place=1` the floor's filters alternate between its workers, so its rings form a cycle, and
 workers that each spin on a full ring to the next (`Mesh::send`) would wait forever if every ring of
 the cycle filled at once. A ring asked for fewer messages than its capacity over the whole run can

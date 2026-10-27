@@ -1,0 +1,14 @@
+
+savina/ping-pong: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    cand         median-of-medians    119.0   min    117.7   max    133.4   n=12   [119 120 133 119 119 118 119 120 122 118 121 119]
+    shipped      median-of-medians    119.2   min    118.2   max    126.0   n=12   [118 119 119 118 118 119 120 119 126 120 119 120]
+    cand vs shipped: 119.0 vs 119.2 (-0.2%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians    119.4   min    117.9   max    122.5   n=12   [120 121 118 119 119 119 118 123 120 122 121 118]
+    shipped      median-of-medians    119.5   min    117.1   max    126.4   n=12   [118 119 117 126 122 118 125 118 118 122 120 120]
+    cand vs shipped: 119.4 vs 119.5 (-0.0%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/ping-pong

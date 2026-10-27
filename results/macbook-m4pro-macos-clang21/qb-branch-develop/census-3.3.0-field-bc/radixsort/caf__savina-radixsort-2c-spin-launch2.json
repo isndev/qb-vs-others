@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/radixsort",
+  "framework": "caf",
+  "framework_version": "1.1.0",
+  "verified": true,
+  "expected_checksum": 12889275414389432083,
+  "expected_messages": 6100001,
+  "work_unit": "message",
+  "work_units": 6100000,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"bits": 60, "cores": 2, "seed": 2048, "values": 100000, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T06:04:04Z"
+  },
+  "idiom": {
+    "source": "the thread-ring adapter + caf/type_id.hpp built-in atoms",
+    "note": "the reference's actors one for one, spawned in its order (validation, stages last to first, source); a bare uint64 per value; placement left to the pool"
+  },
+  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "QVO requests C++20. CAF declares C++17 as a minimum, not a separate compiler mode; the library compilation command is the authority for its effective language mode", "the chain's actors are placed by the work-stealing pool: an actor made ready by a mail is prepended to the sender's worker (worker::delay) unless the idle worker steals it, so how much of the chain runs on each worker is the scheduler's decision, where qb and the floor cut it into two contiguous halves -- see benchmarks/savina/radixsort.md"],
+  "failures": [],
+  "work_ns": [503458167.0, 437811750.0, 409288209.0],
+  "total_ns": [503895083.0, 438339500.0, 409702583.0],
+  "outside_window_ns": [436916.0, 527750.0, 414374.0],
+  "summary": {
+    "work_min": 409288209.0,
+    "work_p50": 437811750.0,
+    "work_p99": 502145238.7,
+    "work_iqr": 47084979.0
+  }
+}

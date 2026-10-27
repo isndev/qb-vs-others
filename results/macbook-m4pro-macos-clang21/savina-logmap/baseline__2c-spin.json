@@ -1,0 +1,46 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/logmap",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 18398876595009951523,
+  "expected_messages": 750040,
+  "work_unit": "term",
+  "work_units": 250000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "series": 10, "terms": 25000, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:58:21Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the master is owned by thread 0 and series i -- its worker and computer roles in one slot -- by thread (1 + i) % cores; a request is a push into the owner's own ring and the answer a push back; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A series is one slot of a vector holding its worker's and its computer's state, with no mailbox and no per-actor dispatch: the request and the answer are two pushes into the owner thread's own ring, the held requests a count", "the master lives on thread 0 and series i on thread (1 + i) % cores -- the placement qb's cell fixes -- so no round trip crosses a core; with cores=2 the burst to the even series (i = 0, 2, 4, ...: thread (1 + i) % 2 = 1) and their answers to the master do", "the terms x series NextTerm burst is pushed from the caller's thread, which IS worker 0: a full ring of its own is drained inline (Mesh::send), so at cores=1 the chains run in slices of a ring (65 536 messages) while the burst is still being sent, where a framework's master finishes its handler first; at cores=2 the ring to thread 1 holds 65 536 of its 125 000 NextTerm and the caller spins until thread 1 makes room", "cores=1 is one thread with the master and every series in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [5298334.0, 5469667.0, 5422083.0, 5370917.0, 5133375.0, 4972958.0, 5112792.0, 5507167.0, 5923542.0],
+  "total_ns": [5342208.0, 5513042.0, 5465500.0, 5413667.0, 5175167.0, 5013708.0, 5157375.0, 5550708.0, 5964667.0],
+  "outside_window_ns": [43874.0, 43375.0, 43417.0, 42750.0, 41792.0, 40750.0, 44583.0, 43541.0, 41125.0],
+  "observed": {
+    "held": {"samples": [249980, 249975, 249970, 249970, 249975, 249975, 249975, 249980, 249970], "min": 249970, "p50": 249975.0, "max": 249980}
+  },
+  "summary": {
+    "work_min": 4972958.0,
+    "work_p50": 5370917.0,
+    "work_p99": 5890232.0,
+    "work_iqr": 336292.0
+  }
+}

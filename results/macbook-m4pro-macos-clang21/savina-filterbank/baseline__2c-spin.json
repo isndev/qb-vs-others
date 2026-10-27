@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/filterbank",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 12132386210144776264,
+  "expected_messages": 1419393,
+  "work_unit": "sample",
+  "work_units": 34816,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"channels": 8, "columns": 16384, "cores": 2, "simulations": 34816, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:57:36Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; qb's placement (head on worker 0, bank j on j % cores, the join on the last); not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a hand-off is one ring push and one ring pop, and there is no scheduler: the floor for the bank's filters and its fan-out and fan-in, not for finding the next actor", "the producer, the source and the branches on worker 0, bank j on worker j % cores, the integrator, the combine and the sink on the last worker -- the placement qb gets", "a round reaches the combine as an index into a table the integrator fills (the two share a worker): the least a message carrying `channels` values can be", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [736420000.0, 724723834.0, 735793167.0, 723840958.0, 749765458.0, 730060709.0, 750537875.0, 743475917.0, 719068334.0],
+  "total_ns": [736591708.0, 724895209.0, 735954625.0, 724009084.0, 749933583.0, 730223166.0, 750715500.0, 743644250.0, 719233791.0],
+  "outside_window_ns": [171708.0, 171375.0, 161458.0, 168126.0, 168125.0, 162457.0, 177625.0, 168333.0, 165457.0],
+  "summary": {
+    "work_min": 719068334.0,
+    "work_p50": 735793167.0,
+    "work_p99": 750476081.6,
+    "work_iqr": 18752083.0
+  }
+}

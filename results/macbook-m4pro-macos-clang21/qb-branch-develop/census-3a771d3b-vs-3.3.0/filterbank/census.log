@@ -1,0 +1,14 @@
+
+savina/filterbank: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    cand         median-of-medians  24008.6   min  23758.2   max  24149.8   n=12   [23851 24129 23966 23945 24031 24020 24082 23758 23794 23997 24150 24044]
+    shipped      median-of-medians  24102.7   min  23778.1   max  24306.6   n=12   [24127 24079 24295 24184 24139 24142 24050 23914 24045 24034 23778 24307]
+    cand vs shipped: 24008.6 vs 24102.7 (-0.4%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians  23998.4   min  23851.4   max  24077.1   n=12   [24048 24075 23968 24029 24008 23987 24070 23930 23902 24077 23989 23851]
+    shipped      median-of-medians  24073.3   min  23719.3   max  24220.9   n=12   [23908 24053 24099 23913 24206 24163 23719 23823 24093 23993 24127 24221]
+    cand vs shipped: 23998.4 vs 24073.3 (-0.3%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/filterbank

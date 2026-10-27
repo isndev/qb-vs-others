@@ -311,15 +311,19 @@ exercise self-ring overflow on owner 0 and owner 1 under both wait modes, delive
 Windows and WSL must validate this merged candidate separately. This census establishes
 neither their verdicts nor performance. Retain every stdout, exit code and exported case
 ledger; a new successful census must have zero MISSED and explain any changed identity
-before its applicable floors are recorded.
+before its applicable floors are recorded. The same battery ran twice more on macOS arm64 on
+2026-10-27, on the build that measured the thirty-shape field with shipped qb 3.3.0 — before the
+session and again after the two qb adapter caveats of uct and sieve were amended and the builds
+relinked: **151 CAUGHT / 43 CONFIRMED / 0 MISSED** both times, 194 identities
+(`docs/TUNING.md` §22.1).
 
 The workload variants are explicit across the four main frameworks. UCT's `nodes=60000` is the
-common capacity-limited variant; Savina's canonical `nodes=200000` remains a separate case with
-qb's declared actor-pool failure visible. The Actor64 design is under review; it changes no
-runtime here and supplies no capacity proof. Sieve keeps canonical `local=1000`, with `local=1`
-labelled separately as one-filter-per-prime stress. Facility location retains its documented
-omission of sibling notifications in every framework, and radixsort retains Savina's 16-bit
-input generator. See each shape's page for the resulting work and deviation.
+common comparison variant of every host; Savina's canonical `nodes=200000` is a separate document,
+which qb 3.2.1's 16-bit actor id refused and qb 3.3.0's 64-bit id verifies in every configuration
+(measured on macOS on 2026-10-27, `benchmarks/savina/uct.md`). Sieve keeps canonical `local=1000`,
+with `local=1` labelled separately as one-filter-per-prime stress. Facility location retains its
+documented omission of sibling notifications in every framework, and radixsort retains Savina's
+16-bit input generator. See each shape's page for the resulting work and deviation.
 
 The two document guards have theirs, and it plants in a sandbox copy while hashing the real
 checkout before and after. The following is the document-control census re-measured on

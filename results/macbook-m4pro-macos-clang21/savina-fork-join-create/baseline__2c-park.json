@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/fork-join-create",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 6146260307924830428,
+  "expected_messages": 80004,
+  "work_unit": "actor",
+  "work_units": 40000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"actors": 40000, "cores": 2, "wait": 0, "work": 0},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:58:21Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; creator s on worker s forks its share as heap nodes in its worker's slot table, each freed when it answers; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A forked actor is one `new`, one slot and one `delete`, with no mailbox, no registry and no lifecycle beyond the slot: the floor for what creating and destroying an actor can cost", "a forked actor is allocated on its creator's worker (id = slot * cores + worker), the same static placement qb's addRefActor has: with cores=2 each worker forks and runs its own half, so this floor is a bound for the placing frameworks and NOT for the pools", "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [2467333.0, 752750.0, 1156500.0, 1136875.0, 1149834.0, 1143333.0, 1114791.0, 1245042.0, 1191500.0],
+  "total_ns": [2518334.0, 805208.0, 1208167.0, 1191083.0, 1202875.0, 1195833.0, 1171542.0, 1298083.0, 1240125.0],
+  "outside_window_ns": [51001.0, 52458.0, 51667.0, 54208.0, 53041.0, 52500.0, 56751.0, 53041.0, 48625.0],
+  "summary": {
+    "work_min": 752750.0,
+    "work_p50": 1149834.0,
+    "work_p99": 2369549.7,
+    "work_iqr": 54625.0
+  }
+}

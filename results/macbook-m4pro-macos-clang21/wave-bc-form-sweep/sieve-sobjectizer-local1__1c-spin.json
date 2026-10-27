@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/sieve",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 2004218063233284790,
+  "expected_messages": 46274071,
+  "work_unit": "candidate",
+  "work_units": 49999,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "limit": 100000, "local": 1, "place": 0, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T06:25:25Z"
+  },
+  "idiom": {
+    "source": "the fork-join-create adapter + so_5::send(mbox, mhood_t) redirection (dev/so_5/send_functions.hpp)",
+    "note": "a filter needing a successor introduces a top-level coop holding it on the same thread_pool; a passed candidate is the received message, redirected; thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "every filter is its own coop on the thread_pool, which places it: the spec's `place` axis (where qb and the floor put the filters) has no counterpart, and place=1 is reported not applicable -- see benchmarks/savina/sieve.md", "every filter created inside the window pays one coop registration on top of the agent -- SObjectizer's only way to add an agent at run time; nine at the defaults, one per prime but the first with local=1"],
+  "failures": [],
+  "work_ns": [1419457959.0, 1424895500.0, 1427946958.0, 1408720833.0, 1422217625.0, 1417033917.0, 1411067500.0, 1408887500.0, 1420408250.0],
+  "total_ns": [1423171125.0, 1428820208.0, 1431950292.0, 1412528417.0, 1425961000.0, 1420901333.0, 1415420334.0, 1412591333.0, 1424327958.0],
+  "outside_window_ns": [3713166.0, 3924708.0, 4003334.0, 3807584.0, 3743375.0, 3867416.0, 4352834.0, 3703833.0, 3919708.0],
+  "summary": {
+    "work_min": 1408720833.0,
+    "work_p50": 1419457959.0,
+    "work_p99": 1427702841.4,
+    "work_iqr": 11150125.0
+  }
+}

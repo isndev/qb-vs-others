@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/cigsmok",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 17266270140101833701,
+  "expected_messages": 100401,
+  "work_unit": "round",
+  "work_units": 50000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "rounds": 50000, "smoke": 1000, "smokers": 200, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:54:57Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the arbiter is actor 0 on worker 0, smoker j actor j + 1 on worker (j + 1) % cores; the acknowledgement is pushed before the smoke; not an actor framework"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A round is one ring push to the chosen smoker and one back, a smoker's state one cache line: the floor for what this coordination costs", "the arbiter is on worker 0 and smoker j on worker (j + 1) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [66019000.0, 65643667.0, 65604500.0, 64846417.0, 65090000.0, 65960000.0, 65478583.0, 65241292.0, 66702125.0],
+  "total_ns": [66081459.0, 65704709.0, 65663958.0, 64893084.0, 65142333.0, 66014083.0, 65532375.0, 65302542.0, 66764125.0],
+  "outside_window_ns": [62459.0, 61042.0, 59458.0, 46667.0, 52333.0, 54083.0, 53792.0, 61250.0, 62000.0],
+  "summary": {
+    "work_min": 64846417.0,
+    "work_p50": 65604500.0,
+    "work_p99": 66647475.0,
+    "work_iqr": 718708.0
+  }
+}

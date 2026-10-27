@@ -116,8 +116,12 @@ implemented and measured, and the faster is the table cell:
   tile leaves at the core's next flush. `form=1` publishes with `send`, handed to the peer's ring at
   once and unordered — the protocol needs no order between two generations of one sender (a block
   holds both). A phase's ten tiles are a short burst behind a long handler, between the two cases
-  the reference names, which is why neither form is assumed. Until the quiet-host sweep the
-  adapter's cell is `form=0`.
+  the reference names, which is why neither form is assumed. The adapter's cell is `form=0`, and
+  the first quiet-host sweep agrees: on macOS (2026-10-27, unpinned, shipped qb 3.3.0,
+  `results/macbook-m4pro-macos-clang21/wave-bc-form-sweep/`) `form=1` reads **+2.4 / +1.2 %** at
+  one core (spin / park) and **+5.1 / +11.4 %** at two, every distribution separate from the
+  `form=0` cell — a `send` per neighbour buys nothing the pass-end flush costs on this host, and
+  loses the batching. The x86 sweep is pending (`docs/ROADMAP.md`).
 - **CAF, SObjectizer, the floor**: a mail, a send or a ring push is in the receiver's queue when it
   returns, so `form=0` is already a publication at once, and `form=1` is **not applicable** (exit 3,
   the reason in the document).

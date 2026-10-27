@@ -4,7 +4,7 @@
   "framework": "baseline",
   "framework_version": "in-tree",
   "verified": true,
-  "expected_checksum": 11452496497421877006,
+  "expected_checksum": 14531782539718253023,
   "expected_messages": 1000001,
   "work_unit": "hop",
   "work_units": 1000000,
@@ -19,10 +19,11 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:18:54Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:59:47Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +31,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a hop is one ring push and one ring pop, and there is no scheduler: the floor for a hand-off, not for finding the next actor", "actor i lives on worker i % cores, so with cores=2 every hop crosses a core -- the same placement qb gets, and the worst case for a shard-per-core design", "cores=1 is one thread pushing the token into its own ring and popping it back -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with one token and two workers means one park and one wake per hop"],
   "failures": [],
-  "work_ns": [109208750.0, 114582667.0, 125473334.0, 126585334.0, 96735917.0, 125540875.0, 106224792.0, 123789583.0, 107458500.0],
-  "total_ns": [109276916.0, 114697875.0, 125533250.0, 126649458.0, 96804500.0, 125606375.0, 106292125.0, 123857375.0, 107520417.0],
-  "outside_window_ns": [68166.0, 115208.0, 59916.0, 64124.0, 68583.0, 65500.0, 67333.0, 67792.0, 61917.0],
+  "work_ns": [88910000.0, 87237125.0, 86052209.0, 86717667.0, 88152250.0, 86022417.0, 88085875.0, 87134875.0, 86981417.0],
+  "total_ns": [88966583.0, 87297375.0, 86111083.0, 86796042.0, 88212375.0, 86083792.0, 88151792.0, 87197375.0, 87034958.0],
+  "outside_window_ns": [56583.0, 60250.0, 58874.0, 78375.0, 60125.0, 61375.0, 65917.0, 62500.0, 53541.0],
   "summary": {
-    "work_min": 96735917.0,
-    "work_p50": 114582667.0,
-    "work_p99": 126501777.3,
-    "work_iqr": 18014834.0
+    "work_min": 86022417.0,
+    "work_p50": 87134875.0,
+    "work_p99": 88849380.0,
+    "work_iqr": 1368208.0
   }
 }

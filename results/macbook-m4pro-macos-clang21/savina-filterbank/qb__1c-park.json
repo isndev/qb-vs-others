@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/filterbank",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 12132386210144776264,
+  "expected_messages": 1419393,
+  "work_unit": "sample",
+  "work_units": 34816,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"channels": 8, "columns": 16384, "cores": 1, "simulations": 34816, "wait": 0},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:13:28Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md push<T>() (ordered) + the thread-ring adapter",
+    "note": "the reference's actors one for one, every value and every Exit pushed (ordered); a round to the combine as one event; head on core 0, bank j on core j % cores, the join on the last core"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "the producer, the source and the branches live on core 0, bank j's seven actors on core j % cores and the integrator, the combine and the sink on the last core (filterbank::core_of): with cores=2 each core runs four banks' FIRs. CAF and SObjectizer receive the same budget and their pools place every actor -- see benchmarks/savina/filterbank.md"],
+  "failures": [],
+  "work_ns": [1578595333.0, 1575538875.0, 1580040583.0, 1544653750.0, 1591373459.0, 1582659542.0, 1532263000.0, 1575705875.0, 1603845209.0],
+  "total_ns": [1579586292.0, 1576118417.0, 1580511041.0, 1545119250.0, 1591854292.0, 1583133875.0, 1532761708.0, 1576174167.0, 1604323542.0],
+  "outside_window_ns": [990959.0, 579542.0, 470458.0, 465500.0, 480833.0, 474333.0, 498708.0, 468292.0, 478333.0],
+  "summary": {
+    "work_min": 1532263000.0,
+    "work_p50": 1578595333.0,
+    "work_p99": 1602847469.0,
+    "work_iqr": 7120667.0
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/apsp",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 9072176982710404765,
+  "expected_messages": 108072,
+  "work_unit": "block phase",
+  "work_units": 10800,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"block": 50, "cores": 2, "form": 1, "nodes": 300, "wait": 0, "weight": 100},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:33:26Z"
+  },
+  "idiom": {
+    "source": "the thread-ring adapter + qb/src/qb/core/Actor.h push() / send()",
+    "note": "one actor per block, block-row bi on VirtualCore bi * cores / grid; a tile travels as a pointer into the spec's double buffers; form=0 publishes with push, form=1 with send"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "block-row bi lives on VirtualCore bi * cores / grid: at cores=2 the top half of the grid on core 0 and the bottom half on core 1, so each block's row neighbours share its core and half its column neighbours do not -- the static placement the floor has; the pools place by themselves", "form=0 publishes each generation with push: an event to another core leaves at the core's next flush, after every handler of the pass that produced it -- several blocks' phases on a busy core; form=1 hands it to the peer's ring at once with send. The run's `form` is in its params (benchmarks/savina/apsp.md, \"The publication\")"],
+  "failures": [],
+  "work_ns": [3485333.0, 3516916.0, 3497958.0, 3902584.0, 3547625.0, 4635083.0, 3423542.0, 3460334.0, 3452708.0],
+  "total_ns": [3948125.0, 3975417.0, 3944125.0, 4382084.0, 4136167.0, 5116542.0, 3879417.0, 3899750.0, 3916417.0],
+  "outside_window_ns": [462792.0, 458501.0, 446167.0, 479500.0, 588542.0, 481459.0, 455875.0, 439416.0, 463709.0],
+  "observed": {
+    "ahead": {"samples": [9185, 11107, 10066, 11989, 4061, 12922, 2195, 1959, 7497], "min": 1959, "p50": 9185.0, "max": 12922}
+  },
+  "summary": {
+    "work_min": 3423542.0,
+    "work_p50": 3497958.0,
+    "work_p99": 4576483.1,
+    "work_iqr": 87291.0
+  }
+}

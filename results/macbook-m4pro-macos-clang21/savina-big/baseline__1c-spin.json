@@ -19,24 +19,25 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:17:59Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:54:27Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
     "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; actor a is owned by thread a % cores; not an actor framework and not ranked as one"
   },
-  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are slots of a vector and there is no per-actor mailbox: a worker's inbound ring is shared by every actor it owns, so the 120-producer mailbox contention the frameworks pay for is engineered out here by static placement", "actor a lives on thread a % cores, so with cores=2 roughly half the pings and half the pongs cross a core", "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 120 actors in flight is rare"],
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are slots of a vector and there is no per-actor mailbox: a worker's inbound ring is shared by every actor it owns, so the 120-producer mailbox contention the frameworks pay for is engineered out here by static placement", "actor a lives on thread a % cores, so with cores=2 roughly half the pings and half the pongs cross a core", "cores=1 keeps naturally aligned actor slots; cores>=2 isolates each slot on a cache-line boundary so different workers never write the same actor-state line", "cores=1 is one thread with every actor in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 120 actors in flight is rare"],
   "failures": [],
-  "work_ns": [13064125.0, 12835583.0, 12955667.0, 13137292.0, 13046000.0, 13085791.0, 12929125.0, 12974333.0, 12676292.0],
-  "total_ns": [13155791.0, 12854500.0, 12967292.0, 13148167.0, 13063958.0, 13096292.0, 12940250.0, 12985458.0, 12688042.0],
-  "outside_window_ns": [91666.0, 18917.0, 11625.0, 10875.0, 17958.0, 10501.0, 11125.0, 11125.0, 11750.0],
+  "work_ns": [27604041.0, 27427166.0, 27502083.0, 27518917.0, 27531625.0, 27542916.0, 27627667.0, 28103834.0, 27617583.0],
+  "total_ns": [27612750.0, 27436292.0, 27511958.0, 27526792.0, 27539792.0, 27551459.0, 27637084.0, 28112625.0, 27626250.0],
+  "outside_window_ns": [8709.0, 9126.0, 9875.0, 7875.0, 8167.0, 8543.0, 9417.0, 8791.0, 8667.0],
   "summary": {
-    "work_min": 12676292.0,
-    "work_p50": 12974333.0,
-    "work_p99": 13133171.9,
-    "work_iqr": 135000.0
+    "work_min": 27427166.0,
+    "work_p50": 27542916.0,
+    "work_p99": 28065740.6,
+    "work_iqr": 98666.0
   }
 }

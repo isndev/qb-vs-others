@@ -1,0 +1,18 @@
+== apsp-1c-spin.sample.txt: 26585 samples at the roots (every thread), self time by function:
+   25.2%   6695  __psynch_cvwait  [libsystem_kernel.dylib]
+   22.3%   5930  __ulock_wait  [libsystem_kernel.dylib]
+   19.5%   5172  __semwait_signal  (in libsystem_kernel.dylib) + 8,4  [0x18791b308,0x18791b304]  []
+    4.4%   1165  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4,...  [0x187917c34,0x187917c30,...]  []
+    2.1%    548  qvospec::savina::apsp::Block::compute()  (in qvo-qb-savina-apsp) + 704,656,...  [0x100b7474c,0x100b7471c,...]  []
+    1.9%    492  __semwait_signal  [libsystem_kernel.dylib]
+    1.3%    356  qvospec::savina::apsp::Block::compute()  (in qvo-qb-savina-apsp) + 704,664,...  [0x100b7474c,0x100b74724,...]  []
+    1.1%    303  savina_apsp_qb::BlockActor::on(savina_apsp_qb::TileEvent const&)  [qvo-qb-savina-apsp]
+  inclusive, qb / qvo / adapter frames:
+   25.2%   6695  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.2%   6695  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   23.3%   6204  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+   22.3%   5930  qb::Main::join()
+   21.8%   5791  savina_apsp_qb::BlockActor::on(savina_apsp_qb::TileEvent const&)
+    2.2%    588  qb::Main::start(bool)
+    2.1%    548  qvospec::savina::apsp::Block::compute()  (in qvo-qb-savina-apsp) + 704,656,...  [0x100b7474c,0x100b7471c,...]
+    1.3%    356  qvospec::savina::apsp::Block::compute()  (in qvo-qb-savina-apsp) + 704,664,...  [0x100b7474c,0x100b74724,...]

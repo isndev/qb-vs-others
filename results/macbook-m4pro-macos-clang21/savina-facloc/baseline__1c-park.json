@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/facloc",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 6056148395906018919,
+  "expected_messages": 665514,
+  "work_unit": "customer",
+  "work_units": 100000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"alpha": 2, "cores": 1, "grid": 500, "points": 100000, "seed": 123456, "wait": 0},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:57:27Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; a quadrant is a heap record holding the spec's kernel, on its parent's worker, the root's child k on worker k % cores; a ConfirmExit hands the parent the child's record; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A quadrant is one `new` and one `delete` around the spec's kernel, with no mailbox, no registry and no lifecycle beyond its record: the floor for routing the customers and growing the quadtree", "the producer and the root on worker 0, a quadrant on its parent's worker and the root's child k on worker k % cores -- the same static placement qb has, so with cores=2 this floor bounds the placing frameworks and NOT the pools", "cores=1 is one thread with every quadrant's messages in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [7369708.0, 7268375.0, 7342125.0, 7290417.0, 7267125.0, 7289083.0, 7287291.0, 7283917.0, 7280167.0],
+  "total_ns": [7517167.0, 7415750.0, 7489875.0, 7438041.0, 7414333.0, 7435958.0, 7434166.0, 7431083.0, 7427375.0],
+  "outside_window_ns": [147459.0, 147375.0, 147750.0, 147624.0, 147208.0, 146875.0, 146875.0, 147166.0, 147208.0],
+  "summary": {
+    "work_min": 7267125.0,
+    "work_p50": 7287291.0,
+    "work_p99": 7367501.4,
+    "work_iqr": 10250.0
+  }
+}

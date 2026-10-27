@@ -19,24 +19,25 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:17:57Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:54:24Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
     "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the teller is owned by thread 0 and account a by thread (1 + a) % cores; a deposit is a push and its reply a push back, the continuation a busy flag and a deque per slot; not an actor framework and not ranked as one"
   },
-  "caveats": ["THIS IS NOT A FRAMEWORK. Accounts are slots of a vector with no mailbox, and a transfer has no request frame: the continuation is a flag and a deque the handler reads, so the per-transfer allocation qb::ask and CAF's request().then() pay is engineered out", "the teller lives on thread 0 and account a on thread (1 + a) % cores -- the same placement qb's cell fixes -- so with cores=2 about half the deposits and half the transfers and acknowledgements cross a core", "the 50 000 transfers are pushed into the rings BEFORE worker 0 runs, from the caller's thread, so the teller's burst is the ring capacity the spec keeps N under, not a mailbox that grows", "cores=1 is one thread with the teller and the accounts in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with a thousand accounts in flight is rare"],
+  "caveats": ["THIS IS NOT A FRAMEWORK. Accounts are slots of a vector with no mailbox, and a transfer has no request frame: the continuation is a flag and a deque the handler reads, so the per-transfer allocation qb::ask and CAF's request().then() pay is engineered out", "the teller lives on thread 0 and account a on thread (1 + a) % cores -- the same placement qb's cell fixes -- so with cores=2 about half the deposits and half the transfers and acknowledgements cross a core", "GCC and Clang keep naturally aligned compact account slots at cores<=1 and isolate each inline slot on a cache-line boundary at cores>=2, for both spin and park; deque storage remains separately allocated", "the 50 000 transfers are pushed into the rings BEFORE worker 0 runs, from the caller's thread, so the teller's burst is the ring capacity the spec keeps N under, not a mailbox that grows", "cores=1 is one thread with the teller and the accounts in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with a thousand accounts in flight is rare"],
   "failures": [],
-  "work_ns": [5868958.0, 4110042.0, 5074667.0, 5336750.0, 3970959.0, 5816000.0, 4069167.0, 4183625.0, 4805375.0],
-  "total_ns": [5991375.0, 4186583.0, 5189542.0, 5445458.0, 4041959.0, 5920959.0, 4150042.0, 4295166.0, 4903042.0],
-  "outside_window_ns": [122417.0, 76541.0, 114875.0, 108708.0, 71000.0, 104959.0, 80875.0, 111541.0, 97667.0],
+  "work_ns": [4279084.0, 4332292.0, 4342167.0, 4356833.0, 4464208.0, 4428875.0, 4218667.0, 4199709.0, 4108125.0],
+  "total_ns": [4355375.0, 4403125.0, 4412583.0, 4425584.0, 4536041.0, 4507083.0, 4290416.0, 4267042.0, 4177875.0],
+  "outside_window_ns": [76291.0, 70833.0, 70416.0, 68751.0, 71833.0, 78208.0, 71749.0, 67333.0, 69750.0],
   "summary": {
-    "work_min": 3970959.0,
-    "work_p50": 4805375.0,
-    "work_p99": 5864721.4,
-    "work_iqr": 1226708.0
+    "work_min": 4108125.0,
+    "work_p50": 4332292.0,
+    "work_p99": 4461381.4,
+    "work_iqr": 138166.0
   }
 }

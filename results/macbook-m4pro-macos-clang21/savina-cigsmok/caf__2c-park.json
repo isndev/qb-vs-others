@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/cigsmok",
+  "framework": "caf",
+  "framework_version": "1.1.0",
+  "verified": true,
+  "expected_checksum": 17266270140101833701,
+  "expected_messages": 100401,
+  "work_unit": "round",
+  "work_units": 50000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "rounds": 50000, "smoke": 1000, "smokers": 200, "wait": 0},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:03:50Z"
+  },
+  "idiom": {
+    "source": "the barber adapter + self->spawn() from the arbiter's initialisation (scheduled_actor.hpp)",
+    "note": "the reference's actors one for one, the smokers spawned by the arbiter; built-in atoms typed per receiver; StartedSmoking mailed before the smoke; placement left to the work-stealing pool"
+  },
+  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "QVO requests C++20. CAF declares C++17 as a minimum, not a separate compiler mode; the library compilation command is the authority for its effective language mode", "the smoker mails StartedSmoking before it smokes, which makes the arbiter runnable; in the pool a receiver made ready from a worker is prepended to THAT worker's queue (worker::delay), so the arbiter's next decision runs after the smoke on the same thread unless the other worker steals it -- whether a decision overlaps a smoke is the scheduler's, and is not reported (benchmarks/savina/cigsmok.md)"],
+  "failures": [],
+  "work_ns": [64224875.0, 60454667.0, 62127791.0, 61304167.0, 62289625.0, 62214167.0, 61210833.0, 62547917.0, 60746208.0],
+  "total_ns": [64555125.0, 60768292.0, 62469291.0, 61593500.0, 62644166.0, 62563709.0, 61528875.0, 62792208.0, 61054167.0],
+  "outside_window_ns": [330250.0, 313625.0, 341500.0, 289333.0, 354541.0, 349542.0, 318042.0, 244291.0, 307959.0],
+  "summary": {
+    "work_min": 60454667.0,
+    "work_p50": 62127791.0,
+    "work_p99": 64090718.4,
+    "work_iqr": 1078792.0
+  }
+}

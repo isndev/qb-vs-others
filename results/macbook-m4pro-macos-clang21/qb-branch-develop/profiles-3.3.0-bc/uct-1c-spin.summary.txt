@@ -1,0 +1,18 @@
+== uct-1c-spin.sample.txt: 25754 samples at the roots (every thread), self time by function:
+   25.7%   6606  __psynch_cvwait  [libsystem_kernel.dylib]
+   21.7%   5588  __ulock_wait  [libsystem_kernel.dylib]
+   20.1%   5166  __semwait_signal  (in libsystem_kernel.dylib) + 8,4  [0x18791b308,0x18791b304]  []
+    5.2%   1335  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4  [0x187917c34,0x187917c30]  []
+    2.1%    528  <deduplicated_symbol>  [qvo-qb-savina-uct]
+    1.1%    293  __semwait_signal  [libsystem_kernel.dylib]
+    1.1%    279  _platform_memset  [libsystem_platform.dylib]
+    1.1%    273  qvospec::savina::uct::plan(qvo::Params const&, bool)  (in qvo-qb-savina-uct) + 1756,1856,...  [0x100991b20,0x100991b84,.  []
+  inclusive, qb / qvo / adapter frames:
+   25.7%   6606  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.7%   6606  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   21.7%   5590  qb::Main::join()
+   18.7%   4810  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+   12.2%   3153  savina_uct_qb::NodeActor::generate(unsigned int, bool, unsigned int)
+    7.6%   1969  qb::VirtualCore::__drive_init__(qb::Actor&, qb::io::async::task<bool>&)
+    6.9%   1772  savina_uct_qb::NodeActor::onInit() (.resume)
+    2.5%    636  qb::VirtualCore::removeActor(qb::ActorId, qb::DownReason)

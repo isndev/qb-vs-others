@@ -1,0 +1,16 @@
+
+savina/apsp: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  2c-spin
+    qb           median-of-medians    290.2   min    287.0   max    302.0   n=12   [294 289 302 291 288 302 288 294 288 289 293 287]
+    caf          median-of-medians   1587.9   min   1568.3   max   2106.0   n=12   [1581 1583 1576 1592 1611 2106 1650 1572 1613 1605 1568 1584]
+    sobjectizer  median-of-medians   1447.9   min   1412.4   max   2012.0   n=12   [1427 1417 1508 1423 1424 1764 1445 1451 1412 2012 1674 1454]
+    floor        median-of-medians    298.1   min    296.0   max    303.4   n=12   [297 301 298 303 298 299 297 298 298 296 300 300]
+
+  2c-park
+    qb           median-of-medians    289.6   min    286.3   max    294.7   n=12   [286 290 294 289 288 290 288 288 295 294 289 290]
+    caf          median-of-medians   1584.0   min   1565.7   max   1620.7   n=12   [1580 1588 1600 1567 1608 1573 1603 1582 1621 1581 1566 1586]
+    sobjectizer  median-of-medians   1433.1   min   1393.7   max   1519.5   n=12   [1436 1425 1425 1519 1469 1430 1460 1410 1452 1440 1394 1394]
+    floor        median-of-medians    298.4   min    296.5   max    316.5   n=12   [300 298 298 298 317 299 298 308 298 297 296 299]
+
+launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/apsp

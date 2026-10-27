@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/facloc",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 6056148395906018919,
+  "expected_messages": 665514,
+  "work_unit": "customer",
+  "work_units": 100000,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"alpha": 2, "cores": 2, "grid": 500, "points": 100000, "seed": 123456, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T06:19:51Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; a quadrant is a heap record holding the spec's kernel, on its parent's worker, the root's child k on worker k % cores; a ConfirmExit hands the parent the child's record; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A quadrant is one `new` and one `delete` around the spec's kernel, with no mailbox, no registry and no lifecycle beyond its record: the floor for routing the customers and growing the quadtree", "the producer and the root on worker 0, a quadrant on its parent's worker and the root's child k on worker k % cores -- the same static placement qb has, so with cores=2 this floor bounds the placing frameworks and NOT the pools", "cores=1 is one thread with every quadrant's messages in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [7136084.0, 7171375.0, 7127625.0],
+  "total_ns": [7350500.0, 7395875.0, 7351542.0],
+  "outside_window_ns": [214416.0, 224500.0, 223917.0],
+  "summary": {
+    "work_min": 7127625.0,
+    "work_p50": 7136084.0,
+    "work_p99": 7170669.2,
+    "work_iqr": 21875.0
+  }
+}

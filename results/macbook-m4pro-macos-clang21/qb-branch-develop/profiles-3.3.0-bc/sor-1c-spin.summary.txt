@@ -1,0 +1,18 @@
+== sor-1c-spin.sample.txt: 27004 samples at the roots (every thread), self time by function:
+   25.0%   6764  __psynch_cvwait  [libsystem_kernel.dylib]
+   23.5%   6335  __ulock_wait  [libsystem_kernel.dylib]
+   19.0%   5137  __semwait_signal  (in libsystem_kernel.dylib) + 8,4  [0x18791b308,0x18791b304]  []
+    4.5%   1206  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4,...  [0x187917c34,0x187917c30,...]  []
+    1.6%    426  savina_sor_qb::CellActor::report_if_due()  [qvo-qb-savina-sor]
+    1.5%    417  qb::router::semh<savina_sor_qb::Value, void>::dispatch_trampoline<savina_sor_qb::CellActor>(void*, savina_sor_qb::Value&  [qvo-qb-savina-sor]
+    1.2%    320  __semwait_signal  [libsystem_kernel.dylib]
+    1.1%    292  qvospec::savina::sor::Cell::for_each_neighbour<savina_sor_qb::CellActor::publish()::'lambda'(unsigned int)>(savina_sor_q  []
+  inclusive, qb / qvo / adapter frames:
+   25.0%   6764  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.0%   6764  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   23.5%   6356  qb::Main::join()
+   19.9%   5362  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+   16.2%   4371  qb::router::semh<savina_sor_qb::Value, void>::dispatch_trampoline<savina_sor_qb::CellActor>(void*, savina_sor_qb::Value&
+    1.6%    427  savina_sor_qb::CellActor::report_if_due()
+    1.3%    360  qb::Main::start(bool)
+    1.1%    292  qvospec::savina::sor::Cell::for_each_neighbour<savina_sor_qb::CellActor::publish()::'lambda'(unsigned int)>(savina_sor_q

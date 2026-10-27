@@ -1,0 +1,18 @@
+== piprecision-1c-spin.sample.txt: 25833 samples at the roots (every thread), self time by function:
+   25.0%   6464  __psynch_cvwait  [libsystem_kernel.dylib]
+   23.3%   6019  __ulock_wait  [libsystem_kernel.dylib]
+   21.7%   5602  __semwait_signal  (in libsystem_kernel.dylib) + 8,4,...  [0x18791b308,0x18791b304,...]  []
+    3.2%    818  qvospec::savina::piprecision::bbp_numerator(qvospec::savina::piprecision::Context const&, unsigned int, qvospec::savina:  []
+    2.8%    718  qvospec::savina::piprecision::bbp_numerator(qvospec::savina::piprecision::Context const&, unsigned int, qvospec::savina:  []
+    2.5%    653  qvospec::savina::piprecision::bbp_numerator(qvospec::savina::piprecision::Context const&, unsigned int, qvospec::savina:  []
+    2.5%    643  mach_msg2_trap  (in libsystem_kernel.dylib) + 8,4,...  [0x187917c34,0x187917c30,...]  []
+    2.4%    624  qvospec::savina::piprecision::bbp_numerator(qvospec::savina::piprecision::Context const&, unsigned int, qvospec::savina:  []
+  inclusive, qb / qvo / adapter frames:
+   25.0%   6464  qvo::run(int, char**, qvo::Spec, std::function<qvo::Answer (qvo::Params const&, qvo::Watch&)>)
+   25.0%   6464  std::__thread_proxy[abi:nqe220106]<std::tuple<std::unique_ptr<std::__thread_struct>, qvo::(anonymous namespace)::Deadlin
+   24.7%   6392  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+   24.2%   6251  savina_piprecision_qb::WorkerActor::on(savina_piprecision_qb::Work const&)
+   23.3%   6019  qb::Main::join()
+    3.2%    818  qvospec::savina::piprecision::bbp_numerator(qvospec::savina::piprecision::Context const&, unsigned int, qvospec::savina:
+    2.8%    718  qvospec::savina::piprecision::bbp_numerator(qvospec::savina::piprecision::Context const&, unsigned int, qvospec::savina:
+    2.5%    653  qvospec::savina::piprecision::bbp_numerator(qvospec::savina::piprecision::Context const&, unsigned int, qvospec::savina:

@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/quicksort",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 7393384507177721426,
+  "expected_messages": 3878,
+  "work_unit": "value",
+  "work_units": 1000000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "max": 1152921504606846976, "n": 1000000, "seed": 1024, "threshold": 2048, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:59:21Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; an actor is a heap node in its worker's slot table, a message moves one heap payload by pointer; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. An actor is one `new`, one slot and one `delete`, a message one ring push of a pointer to the values it owns: the floor for moving data between actors that are created per split", "a child is allocated on its parent's worker (id = slot * cores + worker) and the root's two seeds on workers 0 and 1, the same static placement qb's addRefActor has: with cores=2 each half of the first split is sorted on its own worker and never rebalanced, so this floor bounds the placing frameworks and NOT the pools", "cores=1 is one thread with every node in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which at cores=2 happens when one half finishes before the other"],
+  "failures": [],
+  "work_ns": [40150000.0, 40078333.0, 39576333.0, 40039250.0, 40848375.0, 40930542.0, 40920083.0, 40335542.0, 40916542.0],
+  "total_ns": [41821416.0, 41718958.0, 41222750.0, 41680417.0, 42509500.0, 42608209.0, 42588417.0, 42002542.0, 42583334.0],
+  "outside_window_ns": [1671416.0, 1640625.0, 1646417.0, 1641167.0, 1661125.0, 1677667.0, 1668334.0, 1667000.0, 1666792.0],
+  "summary": {
+    "work_min": 39576333.0,
+    "work_p50": 40335542.0,
+    "work_p99": 40929705.3,
+    "work_iqr": 838209.0
+  }
+}

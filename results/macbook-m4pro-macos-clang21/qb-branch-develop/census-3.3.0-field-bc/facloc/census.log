@@ -1,0 +1,16 @@
+
+savina/facloc: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  2c-spin
+    qb           median-of-medians     83.1   min     73.5   max     87.9   n=12   [83 82 83 84 84 88 83 82 83 81 84 73]
+    caf          median-of-medians    826.7   min    479.4   max    977.6   n=12   [939 489 489 479 498 606 938 763 962 958 978 890]
+    sobjectizer  median-of-medians   1551.4   min   1441.5   max   1651.7   n=12   [1549 1555 1634 1441 1571 1453 1544 1652 1541 1553 1567 1487]
+    floor        median-of-medians     70.8   min     69.1   max     73.8   n=12   [70 70 69 73 73 72 70 72 71 70 70 74]
+
+  2c-park
+    qb           median-of-medians     82.1   min     62.9   max     83.7   n=12   [64 83 64 83 84 66 64 82 84 82 83 63]
+    caf          median-of-medians    903.2   min    475.2   max    954.9   n=12   [923 955 953 488 517 910 896 955 475 830 786 916]
+    sobjectizer  median-of-medians   1558.7   min   1529.9   max   1571.6   n=12   [1572 1561 1557 1545 1553 1531 1565 1548 1564 1530 1568 1568]
+    floor        median-of-medians     73.3   min     71.7   max     76.2   n=12   [75 76 73 73 75 74 72 73 73 75 72 72]
+
+launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/facloc

@@ -1,0 +1,26 @@
+
+savina/thread-ring: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  1c-spin
+    shipped1     median-of-medians     11.4   min     11.0   max     11.6   n=12   [11 12 11 11 12 11 11 11 12 11 11 11]
+    shipped2     median-of-medians     11.4   min     11.2   max     11.6   n=12   [11 11 11 11 11 11 11 12 11 11 11 11]
+    shipped3     median-of-medians     11.4   min     11.3   max     11.6   n=12   [11 11 11 12 12 12 11 11 11 11 11 11]
+    11141        median-of-medians     11.4   min     11.3   max     11.7   n=12   [12 12 12 11 11 11 11 11 11 11 11 11]
+    11142        median-of-medians     11.5   min     11.3   max     11.6   n=12   [12 12 11 11 12 11 11 12 11 12 12 12]
+    11143        median-of-medians     11.5   min     11.4   max     11.6   n=12   [11 12 11 12 11 12 11 12 11 11 11 11]
+    cand1        median-of-medians     11.4   min     11.3   max     11.6   n=12   [11 12 11 11 12 12 11 11 11 12 11 11]
+    cand2        median-of-medians     11.5   min     11.3   max     11.6   n=12   [11 12 11 11 11 11 11 12 11 12 12 12]
+    cand3        median-of-medians     11.5   min     11.4   max     13.5   n=12   [14 11 11 12 11 12 12 11 12 12 12 12]
+
+  1c-park
+    shipped1     median-of-medians     11.4   min     11.2   max     11.6   n=12   [11 12 11 12 12 11 11 11 11 11 11 11]
+    shipped2     median-of-medians     11.4   min     11.2   max     11.6   n=12   [11 11 12 12 11 11 11 11 11 11 11 11]
+    shipped3     median-of-medians     11.5   min     11.3   max     11.6   n=12   [12 11 11 11 12 11 11 11 11 11 11 11]
+    11141        median-of-medians     11.5   min     11.4   max     11.6   n=12   [11 11 12 11 12 12 11 12 11 12 11 11]
+    11142        median-of-medians     11.4   min     11.3   max     11.5   n=12   [12 11 11 11 11 11 11 11 11 11 11 11]
+    11143        median-of-medians     11.5   min     11.3   max     11.6   n=12   [11 11 11 12 12 12 11 12 11 12 11 12]
+    cand1        median-of-medians     11.5   min     11.4   max     11.7   n=12   [12 12 12 12 11 12 11 12 12 12 11 12]
+    cand2        median-of-medians     11.5   min     11.4   max     11.6   n=12   [12 12 11 11 11 11 12 12 12 11 12 12]
+    cand3        median-of-medians     11.5   min     11.3   max     12.0   n=12   [12 11 12 11 12 11 11 11 12 12 11 12]
+
+launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/bisect-1c/thread-ring

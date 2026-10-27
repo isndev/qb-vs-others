@@ -19,10 +19,11 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:18:01Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:57:26Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +31,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. It has no supervision, no addressing, no dynamic actor lifetime, no mailbox fairness and no backpressure beyond a full ring. It bounds how much of each framework's cost is inherent to streaming a million messages through one queue", "cores=1 is one thread pushing into a 65536-slot ring and draining it inline whenever it is full -- the floor for single-threaded dispatch, still a real queue", "the threads are pinned one per CPU from the harness's set, exactly as every framework's workers are", "wait=1 busy-polls the rings; wait=0 parks the consumer on a condition variable and the producer notifies it after a push only while it announces itself asleep"],
   "failures": [],
-  "work_ns": [4433833.0, 4379666.0, 4450209.0, 4314750.0, 4363125.0, 4313959.0, 4352584.0, 4347625.0, 4470250.0],
-  "total_ns": [4444416.0, 4389625.0, 4525667.0, 4322667.0, 4370333.0, 4321417.0, 4360042.0, 4359208.0, 4485084.0],
-  "outside_window_ns": [10583.0, 9959.0, 75458.0, 7917.0, 7208.0, 7458.0, 7458.0, 11583.0, 14834.0],
+  "work_ns": [4418458.0, 4442375.0, 4423208.0, 4411750.0, 4408083.0, 4411708.0, 4415000.0, 4404792.0, 4423458.0],
+  "total_ns": [4426792.0, 4450542.0, 4431459.0, 4419833.0, 4416166.0, 4419792.0, 4423209.0, 4412917.0, 4431584.0],
+  "outside_window_ns": [8334.0, 8167.0, 8251.0, 8083.0, 8083.0, 8084.0, 8209.0, 8125.0, 8126.0],
   "summary": {
-    "work_min": 4313959.0,
-    "work_p50": 4363125.0,
-    "work_p99": 4468646.7,
-    "work_iqr": 86208.0
+    "work_min": 4404792.0,
+    "work_p50": 4415000.0,
+    "work_p99": 4440861.6,
+    "work_iqr": 11500.0
   }
 }

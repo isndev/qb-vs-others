@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/bitonicsort",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 2270309388473169468,
+  "expected_messages": 541869,
+  "work_unit": "message",
+  "work_units": 541869,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"cores": 2, "max": 1152921504606846976, "n": 1024, "seed": 2048, "wait": 0},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T06:17:45Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; every actor of the reference network an integer with its state in a vector slot; qb's step placement; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a message is one ring push and one ring pop, and there is no scheduler: the floor for moving 541 869 small messages (at the defaults) through a fixed network", "each step of the network lives whole on one worker and the steps are cut into contiguous halves of equal message weight at cores=2 -- the same placement qb gets -- so a value crosses a worker once", "cores=1 is one thread pushing every message into its own ring and popping it back -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [3973125.0, 3972958.0, 3974042.0],
+  "total_ns": [4702583.0, 4702375.0, 4704333.0],
+  "outside_window_ns": [729458.0, 729417.0, 730291.0],
+  "summary": {
+    "work_min": 3972958.0,
+    "work_p50": 3973125.0,
+    "work_p99": 3974023.7,
+    "work_iqr": 542.0
+  }
+}

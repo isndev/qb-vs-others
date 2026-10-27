@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/nqueens",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 77555313403798665,
+  "expected_messages": 29076,
+  "work_unit": "solution",
+  "work_units": 14200,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "size": 12, "threshold": 4, "wait": 1, "workers": 20},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:26:49Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md (push<> ordered per sender) + the big adapter (ready handshake, actor a on VirtualCore a % cores)",
+    "note": "master on core 0 relays every child item round-robin with push<>; worker w on VirtualCore w % cores runs the shared kernel and pushes items, results and one Done to the master"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "worker w lives on VirtualCore w % cores, fixed before start, and the master hands items out round-robin: qb has no work stealing, so an item lands on the core the rotation names even when the other core is idle -- the balance of the search across cores is the rotation's, and this cell measures it"],
+  "failures": [],
+  "work_ns": [76002083.0, 75969958.0, 76031708.0, 75985750.0, 76240750.0, 77341041.0, 78274583.0, 76878708.0, 75823958.0],
+  "total_ns": [76270333.0, 76236459.0, 76298708.0, 76268084.0, 76519291.0, 77617209.0, 78573208.0, 77159292.0, 76087833.0],
+  "outside_window_ns": [268250.0, 266501.0, 267000.0, 282334.0, 278541.0, 276168.0, 298625.0, 280584.0, 263875.0],
+  "summary": {
+    "work_min": 75823958.0,
+    "work_p50": 76031708.0,
+    "work_p99": 78199899.6,
+    "work_iqr": 892958.0
+  }
+}

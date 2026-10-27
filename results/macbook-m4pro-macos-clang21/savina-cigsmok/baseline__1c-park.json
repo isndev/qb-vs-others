@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/cigsmok",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 17266270140101833701,
+  "expected_messages": 100401,
+  "work_unit": "round",
+  "work_units": 50000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 1, "rounds": 50000, "smoke": 1000, "smokers": 200, "wait": 0},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:55:01Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; the arbiter is actor 0 on worker 0, smoker j actor j + 1 on worker (j + 1) % cores; the acknowledgement is pushed before the smoke; not an actor framework"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A round is one ring push to the chosen smoker and one back, a smoker's state one cache line: the floor for what this coordination costs", "the arbiter is on worker 0 and smoker j on worker (j + 1) % cores -- the static placement qb's cell has, so this floor bounds the placing frameworks and NOT the pools", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [72652000.0, 72047709.0, 79700292.0, 79793416.0, 78029584.0, 71812583.0, 71911250.0, 71858583.0, 73806125.0],
+  "total_ns": [72661750.0, 72056375.0, 79710125.0, 79809083.0, 78103959.0, 71822416.0, 71921542.0, 71868625.0, 73818667.0],
+  "outside_window_ns": [9750.0, 8666.0, 9833.0, 15667.0, 74375.0, 9833.0, 10292.0, 10042.0, 12542.0],
+  "summary": {
+    "work_min": 71812583.0,
+    "work_p50": 72652000.0,
+    "work_p99": 79785966.1,
+    "work_iqr": 6118334.0
+  }
+}

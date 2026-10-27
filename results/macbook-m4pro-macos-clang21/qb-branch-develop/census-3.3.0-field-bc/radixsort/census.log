@@ -1,0 +1,16 @@
+
+savina/radixsort: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  2c-spin
+    qb           median-of-medians      5.8   min      5.7   max      6.0   n=12   [6 6 6 6 6 6 6 6 6 6 6 6]
+    caf          median-of-medians     74.1   min     60.0   max     79.4   n=12   [74 72 60 74 74 79 78 76 76 66 74 79]
+    sobjectizer  median-of-medians     99.3   min     95.8   max    106.2   n=12   [96 101 96 96 101 97 102 97 106 100 99 101]
+    floor        median-of-medians     10.8   min     10.4   max     11.2   n=12   [10 11 11 11 11 11 11 10 11 11 11 11]
+
+  2c-park
+    qb           median-of-medians      5.8   min      5.8   max      6.0   n=12   [6 6 6 6 6 6 6 6 6 6 6 6]
+    caf          median-of-medians     72.7   min     63.5   max     82.0   n=12   [73 68 64 76 72 71 77 77 82 71 76 65]
+    sobjectizer  median-of-medians    104.8   min     98.8   max    110.2   n=12   [105 105 110 99 102 99 107 105 105 106 99 103]
+    floor        median-of-medians     11.3   min     11.1   max     11.8   n=12   [11 11 11 12 11 11 11 11 11 11 12 11]
+
+launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3.3.0-field-bc/radixsort

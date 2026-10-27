@@ -1,0 +1,14 @@
+
+savina/big: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    cand         median-of-medians     13.0   min     12.4   max     15.3   n=12   [13 13 15 13 13 15 13 13 13 13 12 13]
+    shipped      median-of-medians     12.8   min     12.3   max     13.1   n=12   [13 13 13 13 13 13 12 13 13 13 13 13]
+    cand vs shipped: 13.0 vs 12.8 (+1.6%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians     12.7   min     12.6   max     13.2   n=12   [13 13 13 13 13 13 13 13 13 13 13 13]
+    shipped      median-of-medians     12.8   min     12.3   max     13.5   n=12   [13 13 13 12 13 13 13 13 13 13 13 12]
+    cand vs shipped: 12.7 vs 12.8 (-0.1%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/big

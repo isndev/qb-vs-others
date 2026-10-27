@@ -1,0 +1,14 @@
+
+savina/facloc: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    cand         median-of-medians     82.2   min     63.0   max     84.0   n=12   [64 84 84 83 82 64 83 84 65 83 63 64]
+    shipped      median-of-medians     82.6   min     62.1   max    117.4   n=12   [87 117 82 84 62 65 83 83 82 84 64 83]
+    cand vs shipped: 82.2 vs 82.6 (-0.5%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    cand         median-of-medians     83.1   min     65.0   max     87.9   n=12   [88 84 82 83 83 83 83 84 65 87 67 82]
+    shipped      median-of-medians     83.3   min     65.0   max     87.7   n=12   [84 83 65 83 83 82 82 88 84 83 87 85]
+    cand vs shipped: 83.1 vs 83.3 (-0.2%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 48 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot5/out/census-3a771d3b-vs-3.3.0/facloc

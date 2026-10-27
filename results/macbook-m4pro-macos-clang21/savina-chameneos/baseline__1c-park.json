@@ -19,10 +19,11 @@
     "os": "macos",
     "logical_cpus": 14,
     "compiler": "AppleClang",
-    "compiler_version": "21.0.0.21000101",
+    "compiler_version": "21.0.0.21000334",
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
-    "utc": "2026-09-19T12:18:00Z"
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T04:54:56Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
@@ -30,13 +31,13 @@
   },
   "caveats": ["THIS IS NOT A FRAMEWORK. Creatures are slots of a vector and the mall has no mailbox: the 100 creatures share one SPSC ring into worker 0, so the 100-producer fan-in the frameworks pay for is engineered out here by placement", "the mall lives on thread 0 and every creature on thread 1 % cores, so with cores=2 every request and every announcement crosses a core -- the same placement qb's cell fixes", "cores=1 is one thread with the mall and the creatures in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable, which with 100 creatures in flight is rare"],
   "failures": [],
-  "work_ns": [3126000.0, 3116833.0, 3242250.0, 3094417.0, 3172083.0, 3171500.0, 3290875.0, 3180958.0, 3152750.0],
-  "total_ns": [3134625.0, 3126334.0, 3251292.0, 3161708.0, 3180375.0, 3179917.0, 3303166.0, 3196459.0, 3162625.0],
-  "outside_window_ns": [8625.0, 9501.0, 9042.0, 67291.0, 8292.0, 8417.0, 12291.0, 15501.0, 9875.0],
+  "work_ns": [13169500.0, 13226834.0, 13121250.0, 13043250.0, 13107959.0, 13118875.0, 12541417.0, 12909250.0, 13307291.0],
+  "total_ns": [13178000.0, 13235250.0, 13129750.0, 13051458.0, 13116417.0, 13127167.0, 12549458.0, 12916709.0, 13314417.0],
+  "outside_window_ns": [8500.0, 8416.0, 8500.0, 8208.0, 8458.0, 8292.0, 8041.0, 7459.0, 7126.0],
   "summary": {
-    "work_min": 3094417.0,
-    "work_p50": 3171500.0,
-    "work_p99": 3286985.0,
-    "work_iqr": 54958.0
+    "work_min": 12541417.0,
+    "work_p50": 13118875.0,
+    "work_p99": 13300854.4,
+    "work_iqr": 126250.0
   }
 }

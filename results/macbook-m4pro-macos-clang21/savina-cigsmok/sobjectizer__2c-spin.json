@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/cigsmok",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 17266270140101833701,
+  "expected_messages": 100401,
+  "work_unit": "round",
+  "work_units": 50000,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "rounds": 50000, "smoke": 1000, "smokers": 200, "wait": 1},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T05:15:18Z"
+  },
+  "idiom": {
+    "source": "the chameneos adapter + dev/so_5/disp/thread_pool/pub.hpp",
+    "note": "the reference's actors one for one on direct mboxes, payload-free messages as signals; the arbiter and its smokers one coop built before the window; msg_started sent before the smoke; thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "the arbiter and the 200 smokers are placed by the thread_pool, so whether a smoke runs beside the arbiter's next decision or holds the thread it needs is the dispatcher's decision; qb's cell fixes the arbiter on core 0 and smoker j on core (j + 1) % cores -- see benchmarks/savina/cigsmok.md"],
+  "failures": [],
+  "work_ns": [49939292.0, 50562625.0, 51213375.0, 50590458.0, 50296542.0, 50103875.0, 49791083.0, 50989250.0, 51751583.0],
+  "total_ns": [51117208.0, 52916834.0, 51579333.0, 50926750.0, 50659042.0, 50488917.0, 50152125.0, 51360500.0, 52141833.0],
+  "outside_window_ns": [1177916.0, 2354209.0, 365958.0, 336292.0, 362500.0, 385042.0, 361042.0, 371250.0, 390250.0],
+  "summary": {
+    "work_min": 49791083.0,
+    "work_p50": 50562625.0,
+    "work_p99": 51708526.4,
+    "work_iqr": 885375.0
+  }
+}
