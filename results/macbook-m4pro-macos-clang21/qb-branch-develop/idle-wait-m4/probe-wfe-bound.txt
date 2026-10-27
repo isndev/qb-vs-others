@@ -1,0 +1,1 @@
+wfe with no store: n=2000  min 41  p10 1291  median 1292  p90 1292  max 2584 ns

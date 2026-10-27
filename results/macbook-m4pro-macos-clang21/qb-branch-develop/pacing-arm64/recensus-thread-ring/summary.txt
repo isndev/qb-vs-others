@@ -1,0 +1,8 @@
+
+== thread-ring
+  2c-park tip          58.41 [   55.84..   78.07] n=72  copies 58.62 58.03 58.59  (A/A spread 1.0%)
+  2c-park final        59.52 [   56.64..   84.86] n=72  copies 60.08 59.40 59.47  (A/A spread 1.2%)
+  2c-park final/tip: +1.9%  CI [+1.2% .. +3.1%]  SEPARATE
+  2c-spin tip          59.74 [   56.53..   77.85] n=72  copies 59.25 59.82 59.79  (A/A spread 1.0%)
+  2c-spin final        60.11 [   56.90..   80.70] n=72  copies 60.07 59.56 60.37  (A/A spread 1.4%)
+  2c-spin final/tip: +0.6%  CI [-0.7% .. +3.0%]  overlap

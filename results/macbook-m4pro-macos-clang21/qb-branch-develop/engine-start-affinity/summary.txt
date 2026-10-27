@@ -1,0 +1,22 @@
+== BM_Coroutine_SpawnThroughput/coroutines:100/real_time
+  before      10.66 us [    10.51..    11.10] n=24  copies 10.66 10.71 10.60  (A/A spread 1.0%)
+  after        9.07 us [     8.94..     9.60] n=24  copies 9.04 9.09 9.08  (A/A spread 0.5%)
+  after/before: -14.9%  CI [-15.5% .. -14.4%]  SEPARATE
+== BM_Coroutine_SpawnThroughput/coroutines:1000/real_time
+  before      47.85 us [    46.58..    48.67] n=24  copies 47.72 48.01 47.91  (A/A spread 0.6%)
+  after       45.78 us [    43.47..    47.68] n=24  copies 45.62 45.44 46.01  (A/A spread 1.3%)
+  after/before: -4.3%  CI [-5.6% .. -3.3%]  SEPARATE
+== BM_Coroutine_SpawnThroughput/coroutines:5000/real_time
+  before     204.00 us [   199.16..   207.47] n=24  copies 203.98 204.04 204.00  (A/A spread 0.0%)
+  after      203.95 us [   200.95..   207.68] n=24  copies 203.37 203.50 204.37  (A/A spread 0.5%)
+  after/before: -0.0%  CI [-0.9% .. +0.8%]  overlap
+== BM_Engine_Lifecycle/cores:1/real_time
+  before       0.27 us [     0.24..     0.28] n=24  copies 0.28 0.27 0.27  (A/A spread 3.7%)
+  after        0.28 us [     0.25..     0.28] n=24  copies 0.28 0.27 0.26  (A/A spread 6.3%)
+  after/before: +2.5%  CI [-9.5% .. +14.3%]  overlap
+== BM_Engine_Lifecycle/cores:2/real_time
+  before       0.28 us [     0.25..     0.28] n=24  copies 0.28 0.28 0.28  (A/A spread 0.5%)
+  after        0.28 us [     0.25..     0.29] n=24  copies 0.28 0.28 0.27  (A/A spread 5.3%)
+  after/before: +0.4%  CI [-8.2% .. +11.2%]  overlap
+N-slope before : per engine (intercept) 7.53 us, per coroutine 39.3 ns  over N=[100, 1000, 5000]
+N-slope after  : per engine (intercept) 5.54 us, per coroutine 39.7 ns  over N=[100, 1000, 5000]

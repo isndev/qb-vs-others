@@ -1,0 +1,14 @@
+
+savina/ping-pong: per-launch medians, ns per unit -- 24 launches interleaved, 3 rep + 1 warmup each, AB/BA order balanced, unpinned
+
+  2c-spin
+    tip          median-of-medians    128.4   min    125.9   max    133.7   n=24   [130 128 127 126 134 127 128 128 130 129 128 126 132 126 128 127 126 129 130 130 127 128 134 127]
+    shipped      median-of-medians    127.2   min    121.8   max    133.9   n=24   [128 129 128 127 125 127 128 127 133 127 128 126 126 127 128 134 122 127 128 129 128 126 126 126]
+    tip vs shipped: 128.4 vs 127.2 (+1.0%) -- distributions OVERLAP: no measurable difference
+
+  2c-park
+    tip          median-of-medians    128.6   min    125.7   max    152.6   n=24   [128 127 129 129 129 127 130 132 127 130 153 130 128 131 127 128 126 131 130 149 127 129 128 128]
+    shipped      median-of-medians    127.6   min    120.7   max    137.0   n=24   [124 133 127 125 129 129 130 127 131 129 130 126 128 127 126 126 137 121 126 130 128 127 129 128]
+    tip vs shipped: 128.6 vs 127.6 (+0.8%) -- distributions OVERLAP: no measurable difference
+
+launch-census.py: 96 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot6/out/regime-2c/ping-pong

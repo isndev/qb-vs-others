@@ -1,0 +1,26 @@
+
+savina/ping-pong: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  1c-spin
+    shipped1     median-of-medians     22.9   min     22.6   max     23.3   n=12   [23 23 23 23 23 23 23 23 23 23 23 23]
+    shipped2     median-of-medians     22.9   min     22.2   max     23.3   n=12   [22 23 23 23 23 23 23 23 23 22 23 23]
+    shipped3     median-of-medians     22.9   min     22.4   max     23.3   n=12   [23 23 23 23 23 23 23 23 23 23 22 23]
+    tip1         median-of-medians     23.1   min     22.3   max     23.6   n=12   [24 23 23 22 22 23 23 23 23 23 23 23]
+    tip2         median-of-medians     22.7   min     22.2   max     23.2   n=12   [23 23 23 23 23 22 22 22 22 23 23 23]
+    tip3         median-of-medians     22.7   min     22.3   max     23.3   n=12   [23 23 23 23 22 22 23 22 23 23 22 23]
+    gnew1        median-of-medians     22.8   min     22.3   max     23.6   n=12   [24 23 23 23 23 22 23 23 23 23 23 23]
+    gnew2        median-of-medians     22.8   min     22.5   max     23.3   n=12   [23 23 23 23 23 23 23 23 23 23 23 23]
+    gnew3        median-of-medians     22.9   min     22.4   max     23.8   n=12   [24 23 23 23 24 22 23 23 23 23 23 23]
+
+  1c-park
+    shipped1     median-of-medians     22.8   min     22.1   max     23.4   n=12   [23 23 23 22 23 23 23 23 23 23 23 23]
+    shipped2     median-of-medians     23.0   min     22.4   max     23.4   n=12   [22 23 23 23 23 23 23 23 23 23 22 23]
+    shipped3     median-of-medians     23.0   min     22.2   max     23.1   n=12   [23 23 23 23 23 23 22 23 23 23 23 23]
+    tip1         median-of-medians     23.0   min     22.3   max     23.3   n=12   [23 23 23 23 22 23 23 23 23 23 23 22]
+    tip2         median-of-medians     23.0   min     22.6   max     23.3   n=12   [23 23 23 23 23 23 23 23 23 23 23 23]
+    tip3         median-of-medians     23.0   min     22.4   max     24.0   n=12   [23 23 23 23 24 23 23 23 22 23 23 24]
+    gnew1        median-of-medians     23.0   min     22.2   max     23.6   n=12   [23 23 23 23 23 23 22 23 23 23 24 23]
+    gnew2        median-of-medians     23.0   min     22.5   max     23.3   n=12   [23 23 23 22 23 23 23 23 23 23 23 23]
+    gnew3        median-of-medians     23.0   min     22.5   max     23.3   n=12   [23 23 23 23 22 23 23 23 23 23 23 23]
+
+launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot6/out/arena-1c/ping-pong

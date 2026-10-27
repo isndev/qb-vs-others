@@ -1,0 +1,26 @@
+
+savina/big: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  1c-spin
+    shipped1     median-of-medians     12.0   min     11.8   max     12.2   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    shipped2     median-of-medians     12.0   min     11.8   max     12.1   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    shipped3     median-of-medians     12.0   min     11.7   max     13.8   n=12   [12 12 12 14 12 12 12 12 12 12 12 12]
+    tip1         median-of-medians     12.1   min     11.7   max     13.8   n=12   [12 12 12 14 12 14 12 12 12 12 12 12]
+    tip2         median-of-medians     12.0   min     11.8   max     12.4   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    tip3         median-of-medians     12.0   min     11.4   max     12.1   n=12   [12 12 12 12 12 12 11 12 12 12 12 12]
+    gnew1        median-of-medians     13.5   min     13.4   max     14.2   n=12   [14 13 13 14 13 13 14 13 14 14 14 13]
+    gnew2        median-of-medians     13.5   min     13.4   max     13.7   n=12   [13 13 13 14 13 14 14 14 14 13 13 14]
+    gnew3        median-of-medians     13.5   min     13.5   max     13.8   n=12   [14 14 13 14 14 14 14 14 13 14 14 13]
+
+  1c-park
+    shipped1     median-of-medians     12.0   min     11.6   max     13.8   n=12   [12 12 12 14 12 12 12 12 12 12 12 12]
+    shipped2     median-of-medians     12.0   min     11.7   max     12.8   n=12   [12 12 12 12 12 12 12 12 12 12 12 13]
+    shipped3     median-of-medians     12.1   min     11.7   max     12.2   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    tip1         median-of-medians     12.0   min     11.7   max     12.2   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    tip2         median-of-medians     12.1   min     11.7   max     12.3   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    tip3         median-of-medians     12.0   min     11.8   max     12.1   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    gnew1        median-of-medians     13.6   min     13.4   max     14.2   n=12   [13 14 13 14 14 14 13 13 14 14 14 14]
+    gnew2        median-of-medians     13.5   min     13.3   max     13.6   n=12   [14 14 13 13 13 14 14 13 13 14 14 14]
+    gnew3        median-of-medians     13.5   min     13.5   max     13.9   n=12   [14 14 14 13 14 13 14 14 13 13 14 14]
+
+launch-census.py: 216 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot6/out/arena-1c/big

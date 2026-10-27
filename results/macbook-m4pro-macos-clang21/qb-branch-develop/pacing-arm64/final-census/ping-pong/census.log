@@ -1,0 +1,36 @@
+
+savina/ping-pong: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  2c-spin
+    tip1         median-of-medians    120.9   min    117.4   max    125.0   n=12   [117 123 120 121 122 122 120 118 125 122 121 119]
+    tip2         median-of-medians    119.1   min    116.9   max    127.2   n=12   [119 119 120 120 127 117 118 117 118 121 119 120]
+    tip3         median-of-medians    119.7   min    117.8   max    143.1   n=12   [118 143 136 120 122 119 118 123 119 119 126 119]
+    final1       median-of-medians    111.0   min    107.3   max    115.4   n=12   [108 107 110 114 115 112 108 110 108 113 113 115]
+    final2       median-of-medians    110.8   min    108.5   max    128.5   n=12   [111 109 108 117 129 110 111 110 115 111 113 109]
+    final3       median-of-medians    111.7   min    108.1   max    134.2   n=12   [109 111 110 134 111 113 110 114 113 114 112 108]
+
+  2c-park
+    tip1         median-of-medians    120.5   min    117.6   max    147.7   n=12   [123 148 124 118 119 120 123 119 120 118 121 121]
+    tip2         median-of-medians    120.5   min    117.6   max    135.0   n=12   [119 119 121 121 135 120 118 120 120 123 126 127]
+    tip3         median-of-medians    120.0   min    114.7   max    145.5   n=12   [118 120 121 120 115 120 121 145 118 120 128 120]
+    final1       median-of-medians    110.1   min    108.1   max    122.0   n=12   [120 110 113 111 112 112 109 108 109 109 122 110]
+    final2       median-of-medians    110.7   min    108.3   max    122.4   n=12   [112 110 110 111 110 109 122 108 116 119 110 113]
+    final3       median-of-medians    110.6   min    107.7   max    118.9   n=12   [119 108 115 117 109 117 110 110 114 109 110 111]
+
+  1c-spin
+    tip1         median-of-medians     22.9   min     22.4   max     23.3   n=12   [23 22 23 23 23 23 22 23 23 23 23 23]
+    tip2         median-of-medians     22.9   min     22.5   max     23.2   n=12   [23 23 23 23 23 23 23 23 23 23 23 23]
+    tip3         median-of-medians     23.0   min     22.5   max     23.4   n=12   [23 23 23 23 23 23 23 23 23 23 23 23]
+    final1       median-of-medians     23.1   min     22.7   max     23.6   n=12   [23 23 23 23 23 23 23 24 23 23 23 23]
+    final2       median-of-medians     23.1   min     22.5   max     23.5   n=12   [23 23 22 23 23 23 23 23 23 23 23 23]
+    final3       median-of-medians     22.9   min     22.1   max     23.5   n=12   [23 23 23 23 22 23 23 23 23 23 23 23]
+
+  1c-park
+    tip1         median-of-medians     22.9   min     22.3   max     23.3   n=12   [22 23 23 22 23 23 23 23 22 23 23 23]
+    tip2         median-of-medians     22.8   min     22.3   max     23.4   n=12   [22 23 23 23 23 23 23 22 23 23 22 23]
+    tip3         median-of-medians     22.8   min     22.1   max     23.4   n=12   [23 23 22 23 22 23 23 23 23 23 23 23]
+    final1       median-of-medians     22.8   min     22.3   max     23.3   n=12   [23 23 23 23 23 22 23 23 23 22 23 22]
+    final2       median-of-medians     22.9   min     22.2   max     23.8   n=12   [23 23 22 23 23 23 24 22 23 23 23 23]
+    final3       median-of-medians     23.0   min     22.2   max     23.6   n=12   [23 22 23 24 23 23 23 23 23 23 23 23]
+
+launch-census.py: 288 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot6/out/pacing-arm64/final-census/ping-pong

@@ -1,0 +1,5 @@
+tight    round trip ns: median 70.9  min 70.8  max 72.8  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 136.1 b 125.5
+ordered  round trip ns: median 84.1  min 83.7  max 85.5  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 5.7 b 4.0
+yield    round trip ns: median 73.3  min 72.1  max 105.8  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 145.8 b 136.6
+wfe      round trip ns: median 72.5  min 70.0  max 101.3  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 1.1 b 1.1
+bound    wfe with no store, 2000 samples: min 41  p10 1291  median 1333  p90 1334  max 1459 ns

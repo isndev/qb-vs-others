@@ -3768,3 +3768,115 @@ say, in three groups:
   slower beyond its spread does not integrate unexplained.
 - **The first profile of each new shape** was taken this time (§22.5), on macOS only; `perf` on WSL2
   and ETW on Windows are the x86 session's.
+
+## 23. Four optimisation leads asked of the M4 — the idle poll, the launch regime, the arena, the engine start (2026-10-27)
+
+The macOS session of the 3.4.0 branch (`shared/340-20261026`, qb `b67ac7b8` after §22.3's fix) put
+the four open performance leads of the program to the Apple M4 Pro, each with the protocol of §22
+— a quiet host measured before each leg, shipped 3.3.0 and the branch tip in the same session,
+three physical copies a side where a difference is claimed, a seeded launch order, bootstrap 95 %
+intervals of the ratio of medians. Nothing here is a cross-framework cell; the directories are under
+`results/macbook-m4pro-macos-clang21/qb-branch-develop/` and the instruments are qb-only probes.
+
+### 23.1 The idle poll by primitive (QB-181): the `isb` that orders arm64's counter read costs the spin cells 6-8 %, and `wfe` is a power form
+
+`tools/probes/wait-primitives.cpp` is two threads and two lines, a ping-pong of two million round
+trips with ONE thing varied: what sits between two loads of the peer's line (`idle-wait-m4/`, two
+quiet sessions of the host, unpinned):
+
+| between two loads of the peer's line | 10:25 UTC, 5 launches: ns a round trip (min–max), loads a trip | 11:34 UTC, 4 interleaved passes × 3 launches: medians |
+|---|---|---|
+| nothing — the tight poll | 72.0 (71.0–84.4), 133 | 85.7 · 71.1 · 71.9 · 71.5 |
+| `isb; mrs cntvct_el0` — qb's pacing read at floor 0 (`VirtualCore::__pace__`) | 67.4 (66.7–86.9), 4 | **84.3 · 85.9 · 84.5 · 88.0** |
+| `yield` — `qb::spin_loop_pause()` on arm64 | 71.6 (69.8–75.6), 132 | 70.6 · 77.1 · 71.9 · 70.9 |
+| `ldaxr` on the line, then `wfe` | 70.3 (69.3–88.0), 1.1 | 73.6 · 70.2 · 73.6 · 71.5 |
+
+Three readings, one of them a fix. `yield` does nothing on Apple Silicon — 132–140 loads a trip, the
+tight loop's round trip — so `spin_loop_pause()` paces nothing there (it only serves the flush
+backoff). The ordered counter read, qb's pacing of the idle pass since 3.3, is NOT the fastest form
+on the M4: it read 67.4 once and 84–88 in six later passes of two binaries, against 71–72 for the
+tight poll — the x86 finding of §16.2 (a `lfence; rdtsc` between two polls issues the next poll late
+and once, and the round trip wins) does not transfer to arm64's `isb`, a full
+instruction-synchronisation barrier, four to six of which cost a round trip more than the late poll
+gains. Put to qb itself (`pacing-arm64/`, 11:36 UTC: the tip against the same tree whose arm64 read
+drops the `isb`, three physical copies a side, 12 launches of 3 + 1 in one seeded order):
+
+| cell (ns per unit, pooled median; copies' spread) | tip `b67ac7b8` | without the `isb` | ratio, bootstrap 95 % |
+|---|---|---|---|
+| thread-ring 2c-spin | 64.49 (1.3 %) | 60.65 (1.0 %) | **−5.9 %** [−7.4 .. −4.6], separate |
+| thread-ring 2c-park | 61.16 (2.5 %) | 60.51 (3.7 %) | −1.1 % [−2.8 .. +2.5], overlapping |
+| ping-pong 2c-spin | 120.15 (1.9 %) | 110.85 (1.4 %) | **−7.7 %** [−8.3 .. −5.8], separate |
+| ping-pong 2c-park | 120.87 (0.9 %) | 111.10 (0.8 %) | **−8.1 %** [−9.2 .. −6.0], separate |
+| big 2c-spin / 2c-park | — | — | +0.0 / +1.0 %, overlapping |
+| thread-ring, ping-pong, big at 1c (spin and park) | — | — | −0.3 … +0.8 %, all overlapping |
+
+So on Apple Silicon `VirtualCore::__pace__` reads the plain counter (qb `31ccd720`, the x86 read
+and Linux arm64 unchanged — the guest was off, its reading is open); the committed shape's own
+census is `pacing-arm64/final-census/`: ping-pong 2c-spin -7.2 % [-8.4 .. -5.7] and 2c-park -8.0 % [-9.0 .. -6.4] again (separate), big and fib level at one and two cores, thread-ring 1c level; thread-ring 2c read +4.8 % (overlapping) / +3.0 % [+0.3 .. +7.7] on a host at 82-86 % idle with the desktop active (the tip's own copies 8 % apart), and, re-read on a quiet host with 24 launches a copy (`recensus-thread-ring/`), 2c-spin +0.6 % [-0.7 .. +3.0] overlapping, 2c-park +1.9 % [+1.2 .. +3.1] -- three readings of that cell spanning -5.9 .. +1.9 % (spin) and -1.1 .. +3.0 % (park) while the tip itself read 58.4-64.5 ns a hop across them: unresolved by this instrument on this unpinned host, within its between-census spread; the robust finding is ping-pong's. And `wfe` wakes on the peer's store at the
+tight loop's latency with the core asleep in between; without a store it sleeps 1.3 µs (the
+generic-timer event stream: 2 000 samples, p10 1 291, p90 1 334, max two periods). A spinning core
+could wait in `wfe` on arm64 at no latency cost on the ONE line it monitors — and at up to 1.3 µs on
+any other producer's — which is the design constraint QB-181 named: a mailbox with N − 1 producer
+rings needs one line every producer writes after its push (a doorbell, one more store per cross-core
+push) before `wfe` can carry its idle pass, and what it buys is the power of a waiting core, not its
+latency (level). This host cannot count power (`powermetrics` needs root); that form is a
+maintainer's decision. The x86 half (WAITPKG) stays the x86 session's.
+
+### 23.2 The launch regime (QB-1020): one regime per cell on the M4
+
+WSL2 read two regimes ~10 % apart on thread-ring 2c (~75 and ~83 ns a hop), a launch settling in
+one for its life, and a jitter that was meant to break them made the cells slower. Asked of the M4
+with 24 launches of 3 + 1 a side (`regime-2c/`, tip and shipped, AB/BA, 10:31 UTC): the launch
+medians of thread-ring 2c-spin sit in an inter-quartile range 1.1 % wide on the tip (60.7–61.6 ns)
+and 1.6 % on shipped; 2c-park 2.5–2.6 %; ping-pong 2c 1.5–2.5 % — no second mode on either side,
+the widest launches being single slow launches of the host (one 74, one 153 on the tip side, out of
+96). The regime class is a property of the x86 host it was found on, not of qb's loop; nothing on
+the Mac to attribute.
+
+### 23.3 The arena's placement cost (QB-216): gone on the current tree
+
+§13.9 read thread-ring 1c on macOS +1.2 ns (7 %) at the arena commit (`a134ccd6`, 18.4 against 17.2)
+and the four operators routed to `::operator new` removed it. The same question put to the current
+tree, three copies a side, 12 launches of 3 + 1 (`arena-1c/`, 10:33 UTC):
+
+| cell, ns per unit (pooled median; copies' spread) | shipped 3.3.0 | tip `b67ac7b8` | tip, `qb::Actor` → `::operator new` |
+|---|---|---|---|
+| thread-ring 1c-spin | 11.43 (0.6 %) | 11.41 (0.9 %), −0.1 % overlapping | 11.41 (0.3 %), −0.2 % overlapping |
+| thread-ring 1c-park | 11.45 (0.4 %) | 11.44, −0.1 % overlapping | 11.40, −0.4 % overlapping |
+| ping-pong 1c-spin / park | 22.93 / 22.95 | −0.7 / +0.3 %, overlapping | −0.4 / +0.3 %, overlapping |
+| big 1c-spin / park | 12.03 / 12.04 | +0.1 / −0.0 %, overlapping | **+12.4 / +12.3 %**, separate |
+| fib 1c-spin / park | 61.07 / 61.41 | +0.2 / +0.2 %, overlapping | **+28.2 / +26.7 %**, separate |
+
+The cell itself moved 40 % since September (11.4 ns a hop against 17–18) and the arena's cost went
+with it: the three sides overlap within the copies' spread, while the positive controls say the
+variant is real (fib +27 % and big +12 % without the arena). The one heap allocation an actor of
+thread-ring still makes on the tip is a 40-byte block per `addActor` — the factory, at setup, on the
+caller's thread (a malloc-counting shim: 1 003 → 1 108 → 1 313 → 1 718 `malloc` for 100 → 200 →
+400 → 800 actors; fib's 57 000 lifetimes make three) — not a run-time neighbour of the object. The
+"satellite in the arena" experiment has nothing to move; the Linux-guest chameneos bimodality of
+§13.9 stays a separate, unreproduced note.
+
+### 23.4 The engine start (QB-1111): the mask read once, nothing asked of a host that pins nothing -- 2.0 µs an engine on the M4
+
+What a core paid at every start, read in `Main.cpp` and `cpu.cpp`: `place_core` read `inherited_cpus()`
+itself (on Linux a `sched_getaffinity` and a walk of the whole 1 024-bit `cpu_set_t`), the start
+warning read the mask a second time, and `pin_current_thread` made its `thread_policy_set` Mach trap
+on Apple Silicon -- answered `KERN_NOT_SUPPORTED`, taken as success -- once per core per engine,
+`start(false)` adding a `thread_policy_get` for the caller's capture. The branch (qb `5b306879`)
+reads the mask once in `start()` and hands it to the cores, and asks nothing once
+`ThreadPinningSupported()` has said no. Measured on the engine-start benches of `dev/bench`
+(`engine-start-affinity/`, 10:37-10:53 UTC): the preset's binaries before the edit and the same preset
+rebuilt over it, three physical copies a side, 8 rounds in a seeded order, 24 launches a cell:
+
+| cell (real time, median of 24 launches; copies' spread) | before | after | after / before |
+|---|---|---|---|
+| `BM_Coroutine_SpawnThroughput`, 100 coroutines (one engine an iteration) | 10.66 µs (1.0 %) | 9.07 µs (0.5 %) | **-14.9 %** [-15.5 .. -14.4] |
+| 1 000 coroutines | 47.85 µs (0.6 %) | 45.78 µs (1.3 %) | **-4.3 %** [-5.6 .. -3.3] |
+| 5 000 coroutines | 204.0 µs (0.0 %) | 204.0 µs (0.5 %) | -0.0 % [-0.9 .. +0.8], overlapping |
+| `BM_Engine_Lifecycle`, 1 / 2 cores (a start and a join, ~280 µs) | 0.27 / 0.28 ms | 0.28 / 0.28 ms | +2.5 / +0.4 %, overlapping (spread 4-6 %) |
+
+The N-slope says what moved: the per-engine intercept 7.53 -> 5.54 µs, the per-coroutine slope
+39.3 -> 39.7 ns -- a constant 2.0 µs an engine, the trap and the second mask read, and nothing per
+coroutine. The lifecycle cell starts threads and joins them: 280 µs, where 2 µs is under its spread.
+The Linux and MSVC sides of QB-1111 (the 20 000 Ir of mask walks, the `GetThreadGroupAffinity`
+calls) are the x86 session's to count on the same shape.

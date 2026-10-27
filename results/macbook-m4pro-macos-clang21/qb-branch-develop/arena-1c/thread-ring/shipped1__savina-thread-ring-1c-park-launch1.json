@@ -1,0 +1,43 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/thread-ring",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 14531782539718253023,
+  "expected_messages": 1000001,
+  "work_unit": "hop",
+  "work_units": 1000000,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"actors": 100, "cores": 1, "hops": 1000000, "wait": 0},
+  "pinned": false,
+  "cpus": "",
+  "thread_pinning_supported": false,
+  "env": {
+    "host": "macbook-m4pro",
+    "os": "macos",
+    "logical_cpus": 14,
+    "compiler": "AppleClang",
+    "compiler_version": "21.0.0.21000334",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T10:33:09Z"
+  },
+  "idiom": {
+    "source": "qb/src/qb/core/Actor.h forward() + the ping-pong adapter",
+    "note": "one Token event forward()ed around the ring in place; actor i on VirtualCore i % cores, so every hop crosses a core at cores=2"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "THIS PLATFORM HAS NO REAL THREAD PINNING -- qb::CPU::ThreadPinningSupported() is false, so the placement above did not happen and the figure is not comparable with a pinned host", "actor i lives on VirtualCore i % cores: with cores=2 EVERY hop is a cross-core hand-off. CAF and SObjectizer receive the same 2-thread budget but their schedulers decide where each hop runs, so the same cell measures qb's cross-core pipe against their intra-thread hand-off -- see benchmarks/savina/thread-ring.md"],
+  "failures": [],
+  "work_ns": [11429750.0, 11422875.0, 11436208.0],
+  "total_ns": [11676750.0, 11665167.0, 11674917.0],
+  "outside_window_ns": [247000.0, 242292.0, 238709.0],
+  "summary": {
+    "work_min": 11422875.0,
+    "work_p50": 11429750.0,
+    "work_p99": 11436078.8,
+    "work_iqr": 6666.5
+  }
+}

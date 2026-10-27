@@ -1,0 +1,1 @@
+wfe      round-trip ns: median 70.3  min 69.3  max 88.0  (5 reps x 2000000 rounds)

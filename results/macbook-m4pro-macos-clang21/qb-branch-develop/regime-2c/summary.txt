@@ -1,0 +1,15 @@
+regime-2c -- the launch-regime question (Huly QB-1020) asked of the M4 Pro at the branch tip b67ac7b8 and at shipped 3.3.0:
+24 launches of 3 + 1 per side and configuration, AB/BA, unpinned; per launch the median of its 3 repetitions, ns per unit.
+WSL2 g++-14 (QB-1020) read two regimes ~10 % apart (thread-ring 2c ~75 / ~83 ns), a launch settling in one for its life.
+
+thread-ring shipped  2c-park: n=24 median 62.1 IQR [61.4..63.0] (2.5 % wide) min 57.4 max 65.8 | launches: 57.4 59.6 60.1 60.6 60.7 61.1 61.4 61.5 61.5 62.0 62.1 62.1 62.1 62.6 62.6 62.7 62.8 62.9 63.0 63.0 63.2 63.2 63.5 65.8
+thread-ring shipped  2c-spin: n=24 median 61.6 IQR [61.2..61.9] (1.1 % wide) min 60.2 max 66.5 | launches: 60.2 60.2 60.7 61.0 61.0 61.2 61.2 61.2 61.5 61.6 61.6 61.6 61.6 61.6 61.6 61.7 61.7 61.8 61.9 61.9 62.0 62.7 64.7 66.5
+thread-ring tip      2c-park: n=24 median 63.1 IQR [62.3..63.9] (2.6 % wide) min 60.5 max 74.3 | launches: 60.5 60.7 60.8 61.2 61.7 62.3 62.3 62.4 62.5 62.6 62.7 62.9 63.1 63.3 63.3 63.3 63.4 63.6 63.9 64.0 64.8 65.9 66.8 74.3
+thread-ring tip      2c-spin: n=24 median 60.9 IQR [60.7..61.6] (1.6 % wide) min 59.4 max 64.2 | launches: 59.4 59.4 59.5 60.2 60.3 60.6 60.7 60.8 60.8 60.8 60.8 60.8 60.9 61.2 61.3 61.3 61.4 61.6 61.6 62.0 62.1 62.2 62.2 64.2
+ping-pong   shipped  2c-park: n=24 median 127.7 IQR [126.5..129.6] (2.5 % wide) min 120.7 max 137.0 | launches: 120.7 124.3 124.6 125.7 126.1 126.3 126.5 126.7 127.2 127.3 127.3 127.6 127.7 128.3 128.6 128.6 128.7 129.3 129.6 130.1 130.3 131.2 133.5 137.0
+ping-pong   shipped  2c-spin: n=24 median 127.2 IQR [126.5..128.4] (1.5 % wide) min 121.8 max 133.9 | launches: 121.8 125.2 125.7 125.9 126.2 126.4 126.5 126.6 126.7 126.8 127.1 127.1 127.2 127.6 127.7 128.0 128.1 128.3 128.4 128.4 128.6 128.7 133.2 133.9
+ping-pong   tip      2c-park: n=24 median 128.6 IQR [127.7..130.5] (2.2 % wide) min 125.7 max 152.6 | launches: 125.7 126.5 126.8 127.4 127.4 127.4 127.7 127.7 127.8 127.9 128.0 128.6 128.6 128.8 128.9 129.7 130.0 130.4 130.5 130.6 130.7 132.1 149.3 152.6
+ping-pong   tip      2c-spin: n=24 median 128.4 IQR [127.2..129.8] (2.1 % wide) min 125.9 max 133.7 | launches: 125.9 126.2 126.3 126.3 126.5 126.9 127.2 127.3 127.5 127.6 127.6 128.3 128.4 128.4 128.5 129.2 129.3 129.6 129.8 130.0 130.3 132.5 133.7 133.7
+
+Reading: one regime per cell -- the inter-quartile range of the launch medians is 1-3 % wide on both sides, no second mode; the
+widest launches (a 74 and a 153) are single slow launches of the host, not a regime a launch settles in.

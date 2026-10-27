@@ -1,0 +1,36 @@
+
+savina/big: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  2c-spin
+    tip1         median-of-medians     13.4   min     12.7   max     17.4   n=12   [13 16 17 13 13 14 13 13 14 13 14 13]
+    tip2         median-of-medians     13.5   min     12.6   max     16.0   n=12   [13 13 15 14 13 13 15 13 16 13 15 14]
+    tip3         median-of-medians     13.4   min     12.7   max     16.8   n=12   [13 13 14 13 13 13 14 15 17 13 13 14]
+    vmrs1        median-of-medians     13.4   min     12.7   max     17.6   n=12   [14 14 13 13 13 14 13 18 13 13 14 14]
+    vmrs2        median-of-medians     13.2   min     12.6   max     18.5   n=12   [13 13 14 13 13 16 19 14 13 14 13 13]
+    vmrs3        median-of-medians     13.9   min     12.7   max     16.4   n=12   [13 13 14 13 13 16 14 16 14 16 13 14]
+
+  2c-park
+    tip1         median-of-medians     13.3   min     13.1   max     16.8   n=12   [13 17 13 13 13 13 13 13 14 13 14 13]
+    tip2         median-of-medians     13.2   min     13.0   max     14.4   n=12   [13 13 13 14 13 13 14 14 13 13 13 13]
+    tip3         median-of-medians     13.4   min     13.0   max     17.6   n=12   [13 13 16 14 13 15 13 18 16 16 13 13]
+    vmrs1        median-of-medians     13.3   min     13.1   max     17.0   n=12   [13 13 16 14 13 13 13 14 14 17 13 13]
+    vmrs2        median-of-medians     13.3   min     13.0   max     17.1   n=12   [13 17 13 13 13 15 14 14 13 14 13 13]
+    vmrs3        median-of-medians     13.8   min     13.0   max     16.1   n=12   [13 13 15 14 13 14 14 14 14 16 13 13]
+
+  1c-spin
+    tip1         median-of-medians     12.4   min     11.9   max     12.6   n=12   [12 12 12 12 12 12 12 12 13 12 12 12]
+    tip2         median-of-medians     12.4   min     12.0   max     12.5   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    tip3         median-of-medians     12.4   min     11.7   max     12.4   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    vmrs1        median-of-medians     12.4   min     12.1   max     12.4   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    vmrs2        median-of-medians     12.3   min     11.9   max     12.5   n=12   [12 12 12 12 13 12 12 12 12 12 12 12]
+    vmrs3        median-of-medians     12.4   min     11.8   max     12.5   n=12   [12 12 12 12 12 12 13 12 12 12 12 12]
+
+  1c-park
+    tip1         median-of-medians     12.4   min     12.1   max     12.7   n=12   [12 12 12 12 12 12 12 12 13 12 12 12]
+    tip2         median-of-medians     12.3   min     11.7   max     12.4   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    tip3         median-of-medians     12.4   min     12.1   max     12.5   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    vmrs1        median-of-medians     12.4   min     12.2   max     12.5   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+    vmrs2        median-of-medians     12.4   min     11.9   max     12.5   n=12   [12 12 12 12 12 12 12 12 12 12 13 12]
+    vmrs3        median-of-medians     12.4   min     12.0   max     12.4   n=12   [12 12 12 12 12 12 12 12 12 12 12 12]
+
+launch-census.py: 288 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot6/out/pacing-arm64/big

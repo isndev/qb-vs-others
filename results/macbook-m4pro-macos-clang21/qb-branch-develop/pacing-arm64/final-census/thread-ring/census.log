@@ -1,0 +1,36 @@
+
+savina/thread-ring: per-launch medians, ns per unit -- 12 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 20261027, unpinned
+
+  2c-spin
+    tip1         median-of-medians     63.2   min     60.3   max     80.2   n=12   [65 64 61 80 62 60 79 60 60 61 72 68]
+    tip2         median-of-medians     68.3   min     61.8   max     79.0   n=12   [75 68 79 72 72 68 62 77 68 64 63 66]
+    tip3         median-of-medians     63.0   min     59.7   max     75.0   n=12   [73 62 62 73 61 64 75 60 66 61 62 64]
+    final1       median-of-medians     69.1   min     61.0   max     82.2   n=12   [64 80 67 72 76 82 65 65 74 61 69 69]
+    final2       median-of-medians     68.4   min     61.1   max     73.5   n=12   [72 71 66 68 69 61 74 61 65 69 68 69]
+    final3       median-of-medians     66.1   min     59.7   max     98.6   n=12   [78 64 70 65 67 62 61 84 62 99 68 60]
+
+  2c-park
+    tip1         median-of-medians     64.0   min     60.4   max     89.7   n=12   [65 85 66 90 62 61 62 61 63 60 69 78]
+    tip2         median-of-medians     63.6   min     59.8   max     73.1   n=12   [63 73 64 67 62 60 61 64 64 60 60 66]
+    tip3         median-of-medians     65.2   min     61.6   max     81.5   n=12   [71 63 68 71 63 67 65 81 62 65 62 63]
+    final1       median-of-medians     66.4   min     59.9   max     86.3   n=12   [63 66 76 74 65 67 64 60 65 77 86 68]
+    final2       median-of-medians     66.7   min     61.6   max     78.0   n=12   [75 66 62 71 69 70 67 66 67 62 78 65]
+    final3       median-of-medians     65.2   min     58.7   max     75.2   n=12   [64 65 64 70 69 64 75 62 66 71 59 65]
+
+  1c-spin
+    tip1         median-of-medians     11.5   min     11.4   max     11.7   n=12   [12 11 12 12 11 12 12 12 12 12 11 11]
+    tip2         median-of-medians     11.5   min     11.2   max     11.7   n=12   [12 12 12 12 11 11 11 11 11 11 12 11]
+    tip3         median-of-medians     11.5   min     11.3   max     11.6   n=12   [12 12 12 11 12 11 11 12 11 11 11 11]
+    final1       median-of-medians     11.6   min     11.3   max     11.7   n=12   [12 12 12 12 12 12 11 12 11 12 11 11]
+    final2       median-of-medians     11.5   min     11.3   max     11.6   n=12   [12 12 12 12 11 12 11 11 11 11 12 12]
+    final3       median-of-medians     11.6   min     11.3   max     12.0   n=12   [12 12 12 11 12 12 12 12 12 11 11 12]
+
+  1c-park
+    tip1         median-of-medians     11.5   min     11.3   max     11.6   n=12   [11 11 11 11 11 11 12 12 12 12 11 11]
+    tip2         median-of-medians     11.5   min     11.3   max     11.6   n=12   [12 11 12 12 11 12 11 11 11 11 12 12]
+    tip3         median-of-medians     11.4   min     11.3   max     11.6   n=12   [11 11 11 11 11 12 11 12 11 11 11 11]
+    final1       median-of-medians     11.4   min     11.3   max     11.6   n=12   [12 11 11 11 12 11 11 11 11 11 11 12]
+    final2       median-of-medians     11.4   min     11.2   max     11.6   n=12   [11 11 11 11 11 11 11 12 11 11 12 11]
+    final3       median-of-medians     11.5   min     11.3   max     11.7   n=12   [11 11 12 12 11 11 11 11 11 11 11 12]
+
+launch-census.py: 288 launches, 0 not verified -> /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/lot6/out/pacing-arm64/final-census/thread-ring
