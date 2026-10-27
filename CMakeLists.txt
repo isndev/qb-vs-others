@@ -243,6 +243,15 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     set_target_properties(qvoprobe-ask-cost PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "probes")
+    # The ask_any scatter on a long-lived engine (Huly QB-1153, docs/TUNING.md section 24): the
+    # responders are qb's own MarketResponder, from the header qb's ask suites share -- read from the
+    # qb tree being measured, so shipped and candidate build the same probe.
+    add_executable(qvoprobe-ask-any-scatter tools/probes/ask-any-scatter.cpp)
+    target_link_libraries(qvoprobe-ask-any-scatter PRIVATE qb::core)
+    target_include_directories(qvoprobe-ask-any-scatter PRIVATE "${QVO_QB_DIR}/tests/core/shared")
+    set_target_properties(qvoprobe-ask-any-scatter PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        FOLDER "probes")
     # The parked timer wake (Huly QB-196): how late a parked core fires a timer it owns -- the
     # backend's wait granularity (whole milliseconds for epoll/wepoll, the system tick on Windows
     # unless the process raised its resolution, which the probe can do with timeBeginPeriod).

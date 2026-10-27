@@ -3889,3 +3889,31 @@ The N-slope says what moved: the per-engine intercept 7.53 -> 5.54 µs, the per-
 coroutine. The lifecycle cell starts threads and joins them: 280 µs, where 2 µs is under its spread.
 The Linux and MSVC sides of QB-1111 (the 20 000 Ir of mask walks, the `GetThreadGroupAffinity`
 calls) are the x86 session's to count on the same shape.
+
+## 24. The ask_any scatter on a warm engine — the QB-1153 instrument (2026-10-27)
+
+`tools/probes/ask-any-scatter.cpp` (`qvoprobe-ask-any-scatter`) times one `co_await qb::ask_any()` over N
+responders from the asker's side: the request scattered to N actors, the asker resumed on the first reply, the
+N-1 losing exchanges torn down. One engine starts, one coroutine runs the scatters back to back, the elapsed
+time is divided by their count: the cost on a warm engine, with no start or stop inside it. That is the
+quantity the dev/bench cells `Ask_Scatter<Any>/N` cannot isolate, because each of their iterations lives a
+whole engine (start, one scatter round, stop) and a few nanoseconds per responder vanish under the lifecycle.
+
+```
+qvoprobe-ask-any-scatter cross 8 200000   # asker on core 0, responder i on core 1 + i
+qvoprobe-ask-any-scatter same  8 200000   # asker and responders on core 0: no mailbox crossing
+```
+
+The responders are qb's own `qb::test::MarketResponder`, read from `tests/core/shared/AskResponders.h` of the
+qb tree being measured (`QVO_QB_DIR`), a header the ask suites share and that exists unchanged since 3.2: the
+same probe builds against shipped 3.2.1 and against a candidate. Every reply is `2 * seq`, so the winners sum to
+`asks * (asks - 1)`; the probe prints the sum and exits 1 when it differs, and exits 1 when the engine reports an
+error. A `cross` run needs `responders + 1` CPUs that nothing else uses: qb places core i on the i-th CPU the
+process may run on and pins it where the platform can (not on macOS, where launches are interleaved and read as
+distributions with `tools/launch-census.py`).
+
+It is the scratch instrument of the 2026-10-26 arm64 session, folded into one source with the placement as an
+argument: on the M4 the durable engine cost +4.7 % at 8 cross-core responders against 3.2.1 (about +73 ns a
+scatter), +8 to +12 ns per responder from N = 6, while the lifecycle cells read level (Huly QB-1153). The same
+source now builds on every host; the x86 sessions measure the slope with it first, and the M4 re-runs the
+protocol they write.
