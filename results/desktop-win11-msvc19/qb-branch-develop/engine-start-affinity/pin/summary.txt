@@ -1,0 +1,24 @@
+campaign D:\repo\ab-340\w1\qb1111\ab-win-pin: seed 7101, rounds 8, copies 3, reps 3, host TITAN
+BM_Coroutine_SpawnThroughput/coroutines:100/real_time
+   ctl     26.404 us  IQR [26.026 us, 26.681 us]  n=24  copies 26.305 us 26.311 us 26.505 us  A/A 0.76%
+   cand    28.229 us  IQR [26.194 us, 30.637 us]  n=24  copies 28.146 us 26.771 us 30.490 us  A/A 13.21%
+   ratio 1.0691  CI95 [0.9957, 1.1646]  A/A band +-13.21%  -> LEVEL
+BM_Coroutine_SpawnThroughput/coroutines:1000/real_time
+   ctl     80.204 us  IQR [79.369 us, 80.611 us]  n=24  copies 80.571 us 80.204 us 79.834 us  A/A 0.92%
+   cand    79.947 us  IQR [79.739 us, 80.530 us]  n=24  copies 79.938 us 79.803 us 80.435 us  A/A 0.79%
+   ratio 0.9968  CI95 [0.9922, 1.0058]  A/A band +-0.92%  -> LEVEL
+BM_Coroutine_SpawnThroughput/coroutines:5000/real_time
+   ctl    411.167 us  IQR [408.880 us, 412.820 us]  n=24  copies 411.183 us 409.600 us 412.274 us  A/A 0.65%
+   cand   411.413 us  IQR [410.100 us, 413.950 us]  n=24  copies 411.874 us 411.056 us 410.644 us  A/A 0.30%
+   ratio 1.0006  CI95 [0.9973, 1.0077]  A/A band +-0.65%  -> LEVEL
+BM_Engine_Lifecycle/cores:1/real_time
+   ctl      1.837 ms  IQR [1.519 ms, 1.988 ms]  n=24  copies 1.703 ms 1.845 ms 1.837 ms  A/A 7.72%
+   cand     1.756 ms  IQR [1.418 ms, 1.959 ms]  n=24  copies 1.863 ms 1.506 ms 1.818 ms  A/A 19.66%
+   ratio 0.9556  CI95 [0.7954, 1.1411]  A/A band +-19.66%  -> LEVEL
+BM_Engine_Lifecycle/cores:2/real_time
+   ctl      1.984 ms  IQR [1.904 ms, 2.024 ms]  n=24  copies 1.953 ms 2.003 ms 1.984 ms  A/A 2.52%
+   cand     1.966 ms  IQR [1.898 ms, 2.003 ms]  n=24  copies 1.933 ms 1.978 ms 1.992 ms  A/A 2.99%
+   ratio 0.9905  CI95 [0.9571, 1.0224]  A/A band +-2.99%  -> LEVEL
+N-slope ctl  : per engine (intercept) 10.32 us, per coroutine 79.8 ns  over N=[100, 1000, 5000]  (medians 26.40, 80.20, 411.17 us; worst residual 9.92 us)
+N-slope cand : per engine (intercept) 11.31 us, per coroutine 79.6 ns  over N=[100, 1000, 5000]  (medians 28.23, 79.95, 411.41 us; worst residual 10.98 us)
+N-slope delta: per engine +0.98 us (+9.5 %), per coroutine -0.19 ns (-0.2 %)

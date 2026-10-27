@@ -1,0 +1,44 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/sieve",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 1204055234045451859,
+  "expected_messages": 91329,
+  "work_unit": "candidate",
+  "work_units": 49999,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"cores": 2, "limit": 100000, "local": 1000, "place": 1, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "pinned_threads": 1,
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "Titan",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T20:00:28Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; a filter is a heap node its owner allocates on Create, placed as qb places it; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a filter is created by one Create message to the id its creator chose, and a hand-off is one ring push and one ring pop: the floor for a growing chain, not for finding the next actor", "the producer on worker 0, filter f where qb puts it (sieve::core_of_filter): every filter on worker 1 % cores with place=0, filter f on worker (f + 1) % cores with place=1. The run's `place` is in its params", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [56503460.0, 53376896.0, 53430046.0, 53367704.0, 53938719.0, 54038152.0, 54670649.0, 57290505.0, 57883750.0],
+  "total_ns": [59157164.0, 55779447.0, 55941069.0, 55589665.0, 55998858.0, 56207732.0, 57022533.0, 59736786.0, 60333928.0],
+  "outside_window_ns": [2653704.0, 2402551.0, 2511023.0, 2221961.0, 2060139.0, 2169580.0, 2351884.0, 2446281.0, 2450178.0],
+  "summary": {
+    "work_min": 53367704.0,
+    "work_p50": 54038152.0,
+    "work_p99": 57836290.4,
+    "work_iqr": 3073414.0
+  }
+}

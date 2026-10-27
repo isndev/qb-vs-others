@@ -1,0 +1,44 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/uct",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 377508115806614196,
+  "expected_messages": 839956,
+  "work_unit": "node",
+  "work_units": 199990,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"avg": 500, "binomial": 10, "cores": 1, "nodes": 200000, "stdev": 100, "urgent": 50, "wait": 0, "work": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "pinned_threads": 2,
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "Titan",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T20:01:22Z"
+  },
+  "idiom": {
+    "source": "qb/llm/qb.llm.md: addRefActor<T>() (same-core child, onInit run synchronously) + kill(); the fib and fork-join-create adapters",
+    "note": "a granted node creates its children with addRefActor and push<>es each a TryGenerate; a node reports its subtree with one push<Report> and kills itself; the root's child i lives on VirtualCore i % cores, created there by a per-core planter"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration", "qb has no cross-core spawn: a node lives on its parent's VirtualCore, so with cores=2 the root's children i with i % 2 == 0 and their subtrees run on core 0, the others on core 1, and nothing balances the two -- at the defaults 31 145 nodes against 28 845; the pools place every node dynamically -- see benchmarks/savina/uct.md", "the root's children on another core are created by a planter actor of that core on one Plant event per core (created before the window, not counted in the messages): qb's way to create an actor on another VirtualCore", "every node is alive until the tree's report wave; the cap of 60 000 nodes is the common comparison cell for every framework: qb 3.2.1's actor id was a 16-bit slot per VirtualCore (65 534 live actors), which held the default and not Savina's 200 000; since 3.3.0 the id is 64-bit with a 24-bit ordinary slot per VirtualCore (16 711 679), and the canonical 200 000 verifies as a separate document (--param nodes=200000) -- see benchmarks/savina/uct.md"],
+  "failures": [],
+  "work_ns": [32312897.0, 30295172.0, 30730804.0, 30101479.0, 30845698.0, 31122034.0, 30234274.0, 31571288.0, 30012657.0],
+  "total_ns": [41566511.0, 39473621.0, 39802127.0, 39124015.0, 40365771.0, 40568094.0, 39403063.0, 40743703.0, 39166991.0],
+  "outside_window_ns": [9253614.0, 9178449.0, 9071323.0, 9022536.0, 9520073.0, 9446060.0, 9168789.0, 9172415.0, 9154334.0],
+  "summary": {
+    "work_min": 30012657.0,
+    "work_p50": 30730804.0,
+    "work_p99": 32253568.3,
+    "work_iqr": 887760.0
+  }
+}

@@ -1,0 +1,36 @@
+== sieve-place: 4 cells x ['2c-spin', '2c-park'] x 2 pass(es), --cpus 0,2, 9 + 2 warmup, build /home/mbelhadi/ab-340/w1/qvo-x86/bld-wsl/bin -- 2026-10-27T20:00:16Z
+[20:00:17] sieve        qb           place0         2c-spin  rc=0        1s  p50/unit 1904.6 ns
+[20:00:18] sieve        qb           place1         2c-spin  rc=0        1s  p50/unit 1931.3 ns
+[20:00:19] sieve        baseline     place0         2c-spin  rc=0        1s  p50/unit 1940.8 ns
+[20:00:20] sieve        baseline     place1         2c-spin  rc=0        1s  p50/unit 1142.7 ns
+[20:00:21] sieve        qb           place0         2c-park  rc=0        1s  p50/unit 1908.2 ns
+[20:00:22] sieve        qb           place1         2c-park  rc=0        1s  p50/unit 1900.2 ns
+[20:00:23] sieve        baseline     place0         2c-park  rc=0        1s  p50/unit 1850.9 ns
+[20:00:24] sieve        baseline     place1         2c-park  rc=0        1s  p50/unit 1152.8 ns
+[20:00:25] sieve        qb           place0         2c-spin  rc=0        1s  p50/unit 1881.0 ns
+[20:00:26] sieve        qb           place1         2c-spin  rc=0        1s  p50/unit 1898.7 ns
+[20:00:27] sieve        baseline     place0         2c-spin  rc=0        1s  p50/unit 1943.6 ns
+[20:00:28] sieve        baseline     place1         2c-spin  rc=0        1s  p50/unit 1080.8 ns
+[20:00:29] sieve        qb           place0         2c-park  rc=0        1s  p50/unit 1899.3 ns
+[20:00:30] sieve        qb           place1         2c-park  rc=0        1s  p50/unit 1907.1 ns
+[20:00:31] sieve        baseline     place0         2c-park  rc=0        1s  p50/unit 1845.9 ns
+[20:00:31] sieve        baseline     place1         2c-park  rc=0        1s  p50/unit 1155.0 ns
+== done 2026-10-27T20:00:31Z, 0 cell(s) without a verified timing
+== uct-200k: 4 cells x ['2c-spin', '2c-park', '1c-spin', '1c-park'] x 1 pass(es), --cpus 0,2, 9 + 2 warmup, build /home/mbelhadi/ab-340/w1/qvo-x86/bld-wsl/bin -- 2026-10-27T20:00:32Z
+[20:00:32] uct          qb           nodes200000    2c-spin  rc=0        0s  p50/unit 119.8 ns
+[20:00:35] uct          caf          nodes200000    2c-spin  rc=0        3s  p50/unit 1336.0 ns
+[20:00:53] uct          sobjectizer  nodes200000    2c-spin  rc=0       17s  p50/unit 4476.6 ns
+[20:00:53] uct          baseline     nodes200000    2c-spin  rc=0        0s  p50/unit 102.8 ns
+[20:00:54] uct          qb           nodes200000    2c-park  rc=0        0s  p50/unit 122.1 ns
+[20:00:57] uct          caf          nodes200000    2c-park  rc=0        3s  p50/unit 1331.2 ns
+[20:01:08] uct          sobjectizer  nodes200000    2c-park  rc=0       11s  p50/unit 3857.5 ns
+[20:01:09] uct          baseline     nodes200000    2c-park  rc=0        0s  p50/unit 113.2 ns
+[20:01:09] uct          qb           nodes200000    1c-spin  rc=0        1s  p50/unit 152.2 ns
+[20:01:14] uct          caf          nodes200000    1c-spin  rc=0        5s  p50/unit 1954.9 ns
+[20:01:21] uct          sobjectizer  nodes200000    1c-spin  rc=0        7s  p50/unit 2340.0 ns
+[20:01:21] uct          baseline     nodes200000    1c-spin  rc=0        0s  p50/unit 107.5 ns
+[20:01:22] uct          qb           nodes200000    1c-park  rc=0        1s  p50/unit 153.7 ns
+[20:01:27] uct          caf          nodes200000    1c-park  rc=0        5s  p50/unit 1903.2 ns
+[20:01:34] uct          sobjectizer  nodes200000    1c-park  rc=0        7s  p50/unit 2320.9 ns
+[20:01:34] uct          baseline     nodes200000    1c-park  rc=0        0s  p50/unit 110.5 ns
+== done 2026-10-27T20:01:34Z, 0 cell(s) without a verified timing

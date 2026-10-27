@@ -1,0 +1,44 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/uct",
+  "framework": "caf",
+  "framework_version": "1.1.0",
+  "verified": true,
+  "expected_checksum": 377508115806614196,
+  "expected_messages": 839956,
+  "work_unit": "node",
+  "work_units": 199990,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"avg": 500, "binomial": 10, "cores": 1, "nodes": 200000, "stdev": 100, "urgent": 50, "wait": 1, "work": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "pinned_threads": 3,
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "TITAN",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T20:02:59Z"
+  },
+  "idiom": {
+    "source": "the fib and fork-join-create adapters + self->spawn() from a behavior (scheduled_actor.hpp)",
+    "note": "a granted node spawns its children with self->spawn(node_fun) and mails each (tick_atom); requests carry the node's handle to the root; a node mails its subtree's tally to its parent and quits; placement left to the work-stealing pool"
+  },
+  "caveats": ["CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures", "wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark", "in the work-stealing pool an actor made ready by a message sent from a worker is prepended to THAT worker's queue (worker::delay), so sender and receiver stay on one thread until the other worker steals; how many hops cross a core is the scheduler's decision, not the adapter's, and is not reported", "no caf-detached row for this benchmark: one private thread per actor at this actor count would measure the OS scheduler, not CAF (frameworks/caf-detached/README.md)", "QVO requests C++20. CAF declares C++17 as a minimum, not a separate compiler mode; the library compilation command is the authority for its effective language mode", "a node spawned from a worker is enqueued on THAT worker and stolen from there, so with cores=2 the tree's subtrees are balanced dynamically as they grow; qb's cell keeps each of the root's subtrees on one core because qb has no cross-core spawn -- see benchmarks/savina/uct.md"],
+  "failures": [],
+  "work_ns": [599435200.0, 596905300.0, 600022000.0, 594892500.0, 600949700.0, 603522900.0, 597822100.0, 604211700.0, 599159200.0],
+  "total_ns": [610024600.0, 607915200.0, 610388100.0, 606388100.0, 612200500.0, 613853100.0, 608148900.0, 614583700.0, 610033600.0],
+  "outside_window_ns": [10589400.0, 11009900.0, 10366100.0, 11495600.0, 11250800.0, 10330200.0, 10326800.0, 10372000.0, 10874400.0],
+  "summary": {
+    "work_min": 594892500.0,
+    "work_p50": 599435200.0,
+    "work_p99": 604156596.0,
+    "work_iqr": 3127600.0
+  }
+}

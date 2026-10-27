@@ -1,0 +1,24 @@
+campaign /home/mbelhadi/ab-340/w1/qb1111/ab-wsl-free: seed 7101, rounds 8, copies 3, reps 3, host Titan
+BM_Coroutine_SpawnThroughput/coroutines:100/real_time
+   ctl     13.598 us  IQR [13.522 us, 13.685 us]  n=24  copies 13.522 us 13.643 us 13.584 us  A/A 0.89%
+   cand    12.526 us  IQR [12.448 us, 12.575 us]  n=24  copies 12.526 us 12.562 us 12.487 us  A/A 0.60%
+   ratio 0.9212  CI95 [0.9159, 0.9263]  A/A band +-0.89%  -> FASTER
+BM_Coroutine_SpawnThroughput/coroutines:1000/real_time
+   ctl     47.247 us  IQR [46.939 us, 47.841 us]  n=24  copies 47.676 us 47.392 us 47.090 us  A/A 1.24%
+   cand    46.566 us  IQR [45.935 us, 47.125 us]  n=24  copies 46.357 us 46.610 us 46.735 us  A/A 0.81%
+   ratio 0.9856  CI95 [0.9752, 0.9946]  A/A band +-1.24%  -> FASTER
+BM_Coroutine_SpawnThroughput/coroutines:5000/real_time
+   ctl    263.667 us  IQR [262.199 us, 266.522 us]  n=24  copies 262.704 us 265.731 us 264.017 us  A/A 1.15%
+   cand   266.185 us  IQR [265.389 us, 268.259 us]  n=24  copies 266.760 us 267.113 us 265.810 us  A/A 0.49%
+   ratio 1.0095  CI95 [1.0021, 1.0181]  A/A band +-1.15%  -> LEVEL
+BM_Engine_Lifecycle/cores:1/real_time
+   ctl    325.635 us  IQR [323.649 us, 326.675 us]  n=24  copies 326.047 us 325.819 us 325.034 us  A/A 0.31%
+   cand   324.368 us  IQR [323.630 us, 327.323 us]  n=24  copies 327.059 us 323.905 us 325.128 us  A/A 0.97%
+   ratio 0.9961  CI95 [0.9933, 1.0063]  A/A band +-0.97%  -> LEVEL
+BM_Engine_Lifecycle/cores:2/real_time
+   ctl    359.467 us  IQR [358.653 us, 361.112 us]  n=24  copies 359.621 us 360.730 us 359.244 us  A/A 0.41%
+   cand   359.544 us  IQR [358.630 us, 360.501 us]  n=24  copies 358.853 us 360.027 us 359.427 us  A/A 0.33%
+   ratio 1.0002  CI95 [0.9955, 1.0028]  A/A band +-0.41%  -> LEVEL
+N-slope ctl  : per engine (intercept) 2.50 us, per coroutine 52.0 ns  over N=[100, 1000, 5000]  (medians 13.60, 47.25, 263.67 us; worst residual 7.22 us)
+N-slope cand : per engine (intercept) 1.23 us, per coroutine 52.7 ns  over N=[100, 1000, 5000]  (medians 12.53, 46.57, 266.18 us; worst residual 7.38 us)
+N-slope delta: per engine -1.28 us (-50.9 %), per coroutine +0.75 ns (+1.4 %)

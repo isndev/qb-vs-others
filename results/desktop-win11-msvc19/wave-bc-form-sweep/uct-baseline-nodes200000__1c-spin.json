@@ -1,0 +1,44 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/uct",
+  "framework": "baseline",
+  "framework_version": "in-tree",
+  "verified": true,
+  "expected_checksum": 377508115806614196,
+  "expected_messages": 839956,
+  "work_unit": "node",
+  "work_units": 199990,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"avg": 500, "binomial": 10, "cores": 1, "nodes": 200000, "stdev": 100, "urgent": 50, "wait": 1, "work": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "pinned_threads": 4,
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "TITAN",
+    "os": "windows",
+    "logical_cpus": 24,
+    "compiler": "MSVC",
+    "compiler_version": "19.51.36256.0",
+    "build_type": "Release",
+    "cxx_flags": "/DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T20:03:08Z"
+  },
+  "idiom": {
+    "source": "none -- hand-written floor",
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; a node is a heap record on its parent's worker, the root's child i on worker i % cores; a report hands the parent the child's record, read and freed there; not an actor framework and not ranked as one"
+  },
+  "caveats": ["THIS IS NOT A FRAMEWORK. A node is one `new` and one `delete`, with no mailbox, no registry and no lifecycle beyond its record: the floor for growing and ending the tree", "a node lives on its parent's worker and the root's child i on worker i % cores -- the same static placement qb has, so with cores=2 this floor bounds the placing frameworks and NOT the pools, and nothing balances the root's subtrees", "cores=1 is one thread with every node's messages in its own ring -- the floor for single-threaded dispatch, still a real queue", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "failures": [],
+  "work_ns": [41685300.0, 41439200.0, 41827400.0, 40885800.0, 40860600.0, 41315400.0, 41609100.0, 40842400.0, 40865200.0],
+  "total_ns": [55939700.0, 55624900.0, 56080300.0, 54584700.0, 54520400.0, 56659200.0, 55480200.0, 54815600.0, 54520600.0],
+  "outside_window_ns": [14254400.0, 14185700.0, 14252900.0, 13698900.0, 13659800.0, 15343800.0, 13871100.0, 13973200.0, 13655400.0],
+  "summary": {
+    "work_min": 40842400.0,
+    "work_p50": 41315400.0,
+    "work_p99": 41816032.0,
+    "work_iqr": 743900.0
+  }
+}

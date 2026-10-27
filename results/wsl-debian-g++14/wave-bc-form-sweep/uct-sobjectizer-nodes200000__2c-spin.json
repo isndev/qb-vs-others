@@ -1,0 +1,44 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/uct",
+  "framework": "sobjectizer",
+  "framework_version": "5.8.5.1",
+  "verified": true,
+  "expected_checksum": 377508115806614196,
+  "expected_messages": 839956,
+  "work_unit": "node",
+  "work_units": 199990,
+  "repetitions": 9,
+  "warmup": 2,
+  "params": {"avg": 500, "binomial": 10, "cores": 2, "nodes": 200000, "stdev": 100, "urgent": 50, "wait": 1, "work": 0},
+  "pinned": true,
+  "cpus": "0,2",
+  "pinned_threads": 1,
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "Titan",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-27T20:00:53Z"
+  },
+  "idiom": {
+    "source": "the fib and fork-join-create adapters + so_5::introduce_child_coop (environment.hpp) + environment_t::deregister_coop",
+    "note": "a grant registers one child coop holding the node's sibling group on their direct mboxes; the parent deregisters it once all of them have reported; thread_pool(cores) with fifo_t::individual for cores>=2"
+  },
+  "caveats": ["cores>=2 uses the thread_pool dispatcher with exactly `cores` work threads and fifo_t::individual (one demand queue per agent, agents of one coop free to run on different threads); cores=1 uses one_thread. The work threads are pinned one per CPU from the harness's set through a custom so_5::disp::abstract_work_thread_factory_t", "the pool places agents dynamically: which thread runs a given agent's next demand is the dispatcher's decision, so how many hand-offs cross a core is not fixed and not reported, where qb's cell fixes actor a on core a % cores", "wait=1 maps to mpmc combined_lock_factory with a 10 s spin budget (never reached inside a hop); wait=0 maps to simple_lock_factory (mutex + condition variable)", "max_demands_at_once is SObjectizer's shipped default, 4 -- the batching knob CAF spells max-throughput=300 and qb spells draining the pipe; it was not tuned", "Messages derive from so_5::message_t and travel on each agent's DIRECT mbox, the framework's own fast path", "SObjectizer creates agents only inside a cooperation registered with the environment: every grant here registers one child coop of `binomial` agents and its parent deregisters it after their reports -- 5 999 coops per repetition at the defaults -- the framework's own dynamic-agent idiom for a sibling group that ends together", "nodes bind to the same thread_pool as their parent and the pool places them, so with cores=2 the tree is balanced by the dispatcher as it grows; qb's cell keeps each of the root's subtrees on one core because qb has no cross-core spawn -- see benchmarks/savina/uct.md", "SObjectizer's multi-threaded environment runs the FINAL deregistration of every coop on a dedicated thread it starts itself (coop_repo_t::start, dev/so_5/impl/mt_env_infrastructure.cpp), outside the `cores` work-thread budget and inside the pinned CPU set -- see benchmarks/savina/fork-join-create.md, \"The measured window\""],
+  "failures": [],
+  "work_ns": [609744315.0, 670144687.0, 755582433.0, 855496683.0, 895265880.0, 942094818.0, 1036102076.0, 1029235189.0, 1049734096.0],
+  "total_ns": [1012613811.0, 1330479645.0, 1480450769.0, 1610693023.0, 1742858707.0, 1884890234.0, 2017084563.0, 2100737985.0, 2157979327.0],
+  "outside_window_ns": [402869496.0, 660334958.0, 724868336.0, 755196340.0, 847592827.0, 942795416.0, 980982487.0, 1071502796.0, 1108245231.0],
+  "summary": {
+    "work_min": 609744315.0,
+    "work_p50": 895265880.0,
+    "work_p99": 1048643534.4,
+    "work_iqr": 273652756.0
+  }
+}

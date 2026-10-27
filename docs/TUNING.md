@@ -67,6 +67,15 @@ are all in this repository.
   - [22.4 The forms the adapters declared, measured on macOS](#224-the-forms-the-adapters-declared-measured-on-macos)
   - [22.5 The first profile of each new shape](#225-the-first-profile-of-each-new-shape)
   - [22.6 What the session leaves](#226-what-the-session-leaves)
+- [23. Four optimisation leads asked of the M4 — the idle poll, the launch regime, the arena, the engine start (2026-10-27)](#23-four-optimisation-leads-asked-of-the-m4--the-idle-poll-the-launch-regime-the-arena-the-engine-start-2026-10-27)
+  - [23.1 The idle poll by primitive (QB-181): the `isb`-ordered read stays — a plain read wins a ping-pong and loses a streaming producer, on the M4 as on the i9](#231-the-idle-poll-by-primitive-qb-181-the-isb-ordered-read-stays--a-plain-read-wins-a-ping-pong-and-loses-a-streaming-producer-on-the-m4-as-on-the-i9)
+  - [23.2 The launch regime (QB-1020): one regime per cell on the M4](#232-the-launch-regime-qb-1020-one-regime-per-cell-on-the-m4)
+  - [23.3 The arena's placement cost (QB-216): gone on the current tree](#233-the-arenas-placement-cost-qb-216-gone-on-the-current-tree)
+  - [23.4 The engine start (QB-1111): the mask read once, nothing asked of a host that pins nothing -- 2.0 µs an engine on the M4](#234-the-engine-start-qb-1111-the-mask-read-once-nothing-asked-of-a-host-that-pins-nothing----20-µs-an-engine-on-the-m4)
+- [24. The ask_any scatter on a warm engine — the QB-1153 instrument (2026-10-27)](#24-the-ask_any-scatter-on-a-warm-engine--the-qb-1153-instrument-2026-10-27)
+- [25. The x86 session on the 3.4.0 branch tip — the declared forms on MSVC and WSL2, the engine start counted (2026-10-27)](#25-the-x86-session-on-the-340-branch-tip--the-declared-forms-on-msvc-and-wsl2-the-engine-start-counted-2026-10-27)
+  - [25.1 The forms the roster asked of x86: sieve `place`, uct at 200 000 nodes](#251-the-forms-the-roster-asked-of-x86-sieve-place-uct-at-200-000-nodes)
+  - [25.2 The engine start on x86 (QB-1111): 22 500 instructions and 1.2 µs an engine on Linux, level on MSVC](#252-the-engine-start-on-x86-qb-1111-22-500-instructions-and-12-µs-an-engine-on-linux-level-on-msvc)
 
 ---
 
@@ -3681,7 +3690,8 @@ pass-end flush that `push` pays is cheaper than ten unordered hand-overs per pha
 qb pays a creation round trip per filter and gains nothing (+9 % spinning, +1 % parked), while the
 floor, whose rings cost nothing to spread, reads 40 % faster — the floor's `main()` still runs
 `place=0`, the reference's placement, because sieve.md's rule names the quiet-host sweep and this is
-one unpinned host; the x86 sweep decides the floor's cell. **qb 3.3.0 holds Savina's canonical uct**:
+one unpinned host; the x86 sweep decides the floor's cell (§25.1: the floor reads 37–46 % faster at
+`place=1` on both x86 toolchains and qb is level there — the switch is the maintainers' decision). **qb 3.3.0 holds Savina's canonical uct**:
 the 64-bit actor id (`ActorId.h` at `e18022dd`: a 24-bit ordinary slot per VirtualCore, 16 711 679
 against 3.2.1's 65 534) verifies 199 990 live nodes in every configuration, 6–12 % per node over the
 60 000-node cell (the floor's node costs 16–25 % more at that size, CAF's 0–11 %), and the common cap
@@ -3888,7 +3898,7 @@ The N-slope says what moved: the per-engine intercept 7.53 -> 5.54 µs, the per-
 39.3 -> 39.7 ns -- a constant 2.0 µs an engine, the trap and the second mask read, and nothing per
 coroutine. The lifecycle cell starts threads and joins them: 280 µs, where 2 µs is under its spread.
 The Linux and MSVC sides of QB-1111 (the 20 000 Ir of mask walks, the `GetThreadGroupAffinity`
-calls) are the x86 session's to count on the same shape.
+calls) are the x86 session's to count on the same shape — counted and timed in §25.2.
 
 ## 24. The ask_any scatter on a warm engine — the QB-1153 instrument (2026-10-27)
 
@@ -3917,3 +3927,107 @@ argument: on the M4 the durable engine cost +4.7 % at 8 cross-core responders ag
 scatter), +8 to +12 ns per responder from N = 6, while the lifecycle cells read level (Huly QB-1153). The same
 source now builds on every host; the x86 sessions measure the slope with it first, and the M4 re-runs the
 protocol they write.
+
+## 25. The x86 session on the 3.4.0 branch tip — the declared forms on MSVC and WSL2, the engine start counted (2026-10-27)
+
+The x86 half of what §22 and §23 left to this host: the two roster forms QB-244 asked of x86 after the
+macOS sweep (sieve `place`, uct at Savina's cap), measured on both x86 toolchains, and the Linux and MSVC
+sides of QB-1111 counted and timed on the engine-start shape of §23.4. Host: the i9-12900K behind
+`desktop-win11-msvc19` (MSVC 19.51) and `wsl-debian-g++14` (g++ 14.2), one platform at a time, nothing
+else running on the host during a measurement (no build, no other suite). Tip: qb-vs-others `d9893724`
+built against qb `e152216a`, which differs from the branch tip `acbc920a` by Doxygen comments only
+(`crypto.h`); the documents say `e152216a`.
+
+### 25.1 The forms the roster asked of x86: sieve `place`, uct at 200 000 nodes
+
+Side documents `report.py` never renders (`results/<host>/wave-bc-form-sweep/`, 32 a host and a
+`forms.log`), pinned to CPUs 0 and 2 (two P-cores), 9 + 2, ns per unit, p50. Sieve was measured twice in
+the same session (pass 1 / pass 2 below: the second pass is the A/A reading of the first), uct once per
+configuration for the four adapters:
+
+| form | host | 2c-spin | 2c-park | 1c-spin | 1c-park |
+|---|---|---:|---:|---:|---:|
+| sieve, qb `place=0` (the cell) → `place=1` | WSL2 g++ 14 | 1 904.6 / 1 881.0 → 1 931.3 / 1 898.7 (+1.4 / +0.9 %) | 1 908.2 / 1 899.3 → 1 900.2 / 1 907.1 (−0.4 / +0.4 %) | — | — |
+| sieve, qb `place=0` → `place=1` | MSVC 19.51 | 1 880.7 / 1 882.7 → 1 895.9 / 1 902.3 (+0.8 / +1.0 %) | 1 894.4 / 1 887.4 → 1 909.1 / 1 908.1 (+0.8 / +1.1 %) | — | — |
+| sieve, the floor `place=0` (the cell) → `place=1` | WSL2 g++ 14 | 1 940.8 / 1 943.6 → **1 142.7 / 1 080.8 (−41 / −44 %)** | 1 850.9 / 1 845.9 → **1 152.8 / 1 155.0 (−38 / −37 %)** | — | — |
+| sieve, the floor `place=0` → `place=1` | MSVC 19.51 | 1 881.6 / 1 900.0 → **1 061.2 / 1 078.4 (−44 / −43 %)** | 1 993.1 / 1 883.5 → **1 081.1 / 1 076.9 (−46 / −43 %)** | — | — |
+| uct `nodes=200000`, qb | WSL2 g++ 14 | 119.8 | 122.1 | 152.2 | 153.7 |
+| uct `nodes=200000`, CAF / SObjectizer / the floor | WSL2 g++ 14 | 1 336.0 / 4 476.6 / 102.8 | 1 331.2 / 3 857.5 / 113.2 | 1 954.9 / 2 340.0 / 107.5 | 1 903.2 / 2 320.9 / 110.5 |
+| uct `nodes=200000`, qb | MSVC 19.51 | 152.9 | 160.2 | 196.3 | 202.4 |
+| uct `nodes=200000`, CAF / SObjectizer / the floor | MSVC 19.51 | 1 789.1 / 2 797.7 / 202.7 | 1 721.7 / 2 903.7 / 225.0 | 2 997.3 / 2 794.7 / 206.6 | 2 891.4 / 2 870.6 / 223.6 |
+
+Two verdicts. **Spreading the sieve helps the floor on x86 as on the M4 and costs qb nothing here**: at
+`place=1` the floor reads 37–46 % faster on both toolchains (its rings cost nothing to spread, as §22.4
+read on the M4: −40 %), and qb moves by +1.4 % at most — the gap between two passes of the same cell —
+where the M4 read +8.6 % spinning. The floor's faster form is therefore `place=1` on every host measured,
+and the decision §22.4 deferred to this sweep is the maintainers' to take: in this tree the floor's
+`main()` still runs `place=0` (that line and the Placement axis of `benchmarks/savina/sieve.md` are the
+two places a switch touches), and qb's cell stays `place=0` on every host, the reference's placement.
+**qb 3.3.0 holds Savina's canonical uct on x86 too**: `nodes=200000` verifies for the four adapters in
+the four configurations on both toolchains. On WSL2 qb's node, 120–154 ns, is 1.1–1.4 × the floor's heap
+node (103–113) and 11–13 × CAF's; on MSVC qb (153–202) is under the floor (203–225) in every
+configuration — the heap node a floor worker allocates costs more than qb's actor under this CRT — and
+11–15 × CAF. The common cap stays 60 000 as the comparison cell of every host until the next full
+campaign, as §22.4 says.
+
+### 25.2 The engine start on x86 (QB-1111): 22 500 instructions and 1.2 µs an engine on Linux, level on MSVC
+
+The same shape as §23.4, on the same two trees (qb `b67ac7b8` before, `5b306879` after — the branch tip
+`e152216a` on x86 but for comments), qb built standalone with the `benchmarks` preset's cache variables
+on each toolchain, the engine-start benches of `dev/bench` relinked with symbols for the count.
+
+**Counted first** (WSL2, callgrind over the whole process at 20 and at 60 timed iterations, Ir an
+iteration = the difference over 40; one engine an iteration; load-insensitive):
+
+| cell | inherited mask | before | after | Δ Ir an engine |
+|---|---|---:|---:|---:|
+| `BM_Coroutine_SpawnThroughput`, 100 coroutines (`start(false)`) | 1 CPU (`taskset -c 4`) | 227 719 | 205 157 | **−22 562** |
+| 1 000 coroutines | 1 CPU | 883 242 | 861 053 | −22 189 |
+| `BM_Engine_Lifecycle`, 1 core (`start(true)`) | 1 CPU | 146 496 | 141 730 | −4 766 |
+| 100 coroutines | 24 CPUs | 229 940 | 206 413 | −23 527 |
+| 1 000 coroutines | 24 CPUs | 885 024 | 862 739 | −22 285 |
+| `BM_Engine_Lifecycle`, 1 / 2 cores | 24 CPUs | 149 942 / 321 608 | 146 910 / 297 592 | −3 032 / −24 016 |
+
+Where it went, inclusive Ir an engine on a one-CPU mask at `start(false)`: `inherited_cpus` 6 964 → 334,
+`current_thread_affinity` 8 527 → 240, `restore_thread_affinity` 7 719 → 108 — 23 210 → 682, the three
+walks of the 1 024-bit `cpu_set_t` (about 7 k Ir each) now stopping at the mask's last CPU: the 20 008 Ir
+QB-985 counted, confirmed and gone. `start(true)` captures and restores nothing for the caller, so only
+`inherited_cpus` moves there (6 974 → 334), and a two-core engine on the 24-CPU mask reads the mask once
+(26 143 → 1 900) and counts the warning over the span it was handed (`usable_cpus` 27 521 → 19 349). What
+stays: `usable_cpus` is reached only when two or more cores spin at latency 0 (the QB-1082 warning) and
+still costs ~19 300 Ir an engine on Linux — `std::thread::hardware_concurrency()` and the cgroup ceiling,
+`/proc/self/cgroup` then every `cpu.max` from the leaf to the root — a per-start constant that nothing
+in a process's life changes but an operator's quota edit; computing it once per process is a lead, not
+a change made here.
+
+**Then timed**, the way §23.4 was: three physical copies a side, 8 rounds in a seeded order (7101), 3
+repetitions a launch, 60 s of quiet before the rounds, 24 launches a cell, bootstrap 95 % CI of the ratio
+of medians, the A/A band the spread of the three copies' medians; two campaigns a platform — `pin` (a
+one-CPU inherited mask for the spawn cell, two CPUs for the lifecycle cell) and `free` (the 24-CPU mask,
+a user process's shape); `results/<host>/qb-branch-develop/engine-start-affinity/{pin,free}/`:
+
+| cell (real time, median of 24 launches) | campaign | WSL2 g++ 14 before → after | after / before [CI] | MSVC 19.51 before → after | after / before [CI] |
+|---|---|---:|---|---:|---|
+| `BM_Coroutine_SpawnThroughput`, 100 coroutines | pin | 15.42 → 14.24 µs | **0.924 [0.919, 0.929]**, A/A ±1.3 % | 26.40 → 28.23 µs | 1.069 [0.996, 1.165], A/A ±13.2 % — level |
+| 1 000 coroutines | pin | 52.95 → 52.35 | 0.989 [0.969, 1.000], ±1.0 % — level | 80.20 → 79.95 | 0.997 [0.992, 1.006], ±0.9 % — level |
+| 5 000 coroutines | pin | 294.9 → 296.2 | 1.005 [0.998, 1.013] — level | 411.2 → 411.4 | 1.001 [0.997, 1.008] — level |
+| `BM_Engine_Lifecycle`, 1 / 2 cores | pin | 315.6 / 389.6 → 316.0 / 394.7 µs | 1.002 / 1.013 — level | 1.837 / 1.984 → 1.756 / 1.966 ms | 0.956 [0.795, 1.141] / 0.991 — level |
+| 100 coroutines | free | 13.60 → 12.53 µs | **0.921 [0.916, 0.926]**, ±0.9 % | 22.74 → 20.84 µs | 0.916 [0.880, 1.065], ±12.7 % — level |
+| 1 000 coroutines | free | 47.25 → 46.57 | 0.986 [0.975, 0.995], ±1.2 % — at the band's edge | 74.08 → 73.35 | 0.990 [0.977, 1.004], ±1.8 % — level |
+| 5 000 coroutines | free | 263.7 → 266.2 | 1.010 [1.002, 1.018], ±1.2 % — level | 416.1 → 415.7 | 0.999 [0.990, 1.006] — level |
+| `BM_Engine_Lifecycle`, 1 / 2 cores | free | 325.6 / 359.5 → 324.4 / 359.5 µs | 0.996 / 1.000 — level | 1.983 / 2.025 → 1.984 / 2.024 ms | 1.001 / 1.000 — level |
+
+The N-slope on WSL2 says what moved, as it did on the M4: `pin` intercept 2.98 → 1.81 µs an engine
+(−1.17 µs), slope 58.1 → 58.6 ns a coroutine; `free` 2.50 → 1.23 µs (−1.28 µs), 52.0 → 52.7 ns — a
+constant 1.2 µs an engine, the three mask walks, nothing per coroutine (the M4's 2.0 µs held the Mach
+trap as well). The lifecycle cells, 320–390 µs of thread start and join, hold 1.2 µs under their spread.
+On MSVC every cell is level, which is what the change predicts there: the inherited mask is one
+`GetProcessAffinityMask`, no 1 024-bit walk, and `GetThreadGroupAffinity` / `SetThreadGroupAffinity`
+are still made per core wherever the pin exists — that is the feature; QB-1111 removes one mask read a
+core and the warning's, a few hundred ns at most. One fact of method the MSVC campaign adds: the
+100-coroutine cell is bimodal **by physical copy** there (`pin`, after: copies at 28.1 / 26.8 / 30.5 µs;
+`free`, before: 20.6 / 21.9 / 23.3, after: 20.8 / 23.2 / 20.5), where the 1 000- and 5 000-coroutine
+copies hold to ±1 % and the same cell on WSL2 to ±1.3 % — a regime per copy, so per placement of the
+binary and its pages, not per launch or per side: that cell cannot read 1 µs on MSVC, and its N-slope
+(10.3 → 11.3 µs pinned, 4.5 → 3.0 free) is copy noise; the 1 000 / 5 000 cells and the lifecycle cells
+say level to ±1 % (Huly QB-1020, the x86 half).
