@@ -1,0 +1,16 @@
+
+== qb-ping-pong  (savina/ping-pong)
+  2c-spin
+    ctl  median     186.6  IQR [173.9, 198.0]  min 161.7  max 209.8  n=48  copies 186.9 185.4 187.1  band +-0.46%  modes 173.6 x22 / 196.4 x26 (+13.1 %, low-mode share 46 %)
+    var  median     198.6  IQR [193.5, 201.0]  min 187.5  max 209.3  n=48  copies 198.9 194.9 199.5  band +-1.16%  modes 192.7 x21 / 201.4 x27 (+4.5 %, low-mode share 44 %)
+    var/ctl: ratio 1.0645  CI95 [1.0186, 1.0870]  copy band +-1.16%  -> SLOWER
+
+== qb-thread-ring  (savina/thread-ring)
+  2c-park
+    ctl  median     106.3  IQR [101.7, 111.9]  min 88.4  max 123.9  n=48  copies 105.0 106.3 108.5  band +-1.68%
+    var  median     109.6  IQR [105.6, 114.2]  min 98.4  max 130.0  n=48  copies 110.9 110.7 108.2  band +-1.22%
+    var/ctl: ratio 1.0310  CI95 [0.9923, 1.0626]  copy band +-1.68%  -> LEVEL
+  2c-spin
+    ctl  median      96.8  IQR [91.5, 104.5]  min 83.8  max 110.3  n=48  copies 96.5 94.8 97.2  band +-1.22%  modes 92.1 x28 / 104.4 x20 (+13.4 %, low-mode share 58 %)
+    var  median     103.6  IQR [97.9, 108.3]  min 94.5  max 123.1  n=48  copies 102.8 105.3 103.2  band +-1.22%
+    var/ctl: ratio 1.0704  CI95 [1.0329, 1.1124]  copy band +-1.22%  -> SLOWER

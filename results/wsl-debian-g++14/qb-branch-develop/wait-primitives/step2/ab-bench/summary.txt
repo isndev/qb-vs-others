@@ -1,0 +1,12 @@
+quiet 30 s, then 8 round(s) x 6 runs, seed 7101
+  round 1/8 done 08:41:06
+  round 2/8 done 08:41:38
+  round 3/8 done 08:42:10
+  round 4/8 done 08:42:41
+  round 5/8 done 08:43:13
+  round 6/8 done 08:43:45
+  round 7/8 done 08:44:17
+  round 8/8 done 08:44:48
+case                                                                     ctl        cand    delta  A/A ctl  A/A cand  verdict
+BM_Mono_PingPong_Latency/real_time                                    53.561      54.169   +1.13%    0.18%     0.35%  SLOWER
+BM_Multi_PingPong_Latency/real_time                                  172.483     211.188  +22.44%    2.40%     0.75%  SLOWER

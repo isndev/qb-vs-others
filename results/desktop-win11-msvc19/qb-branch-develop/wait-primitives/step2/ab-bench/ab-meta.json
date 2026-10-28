@@ -1,0 +1,13 @@
+{
+ "seed": 7101,
+ "rounds": 8,
+ "copies": 3,
+ "reps": 3,
+ "cases": {
+  "qb-core-bench-ping-pong-latency": "BM_(Multi|Mono)_PingPong_Latency/real_time$"
+ },
+ "ctl": "D:\\repo\\ab-340\\w1\\qb181\\bench-ctl",
+ "cand": "D:\\repo\\ab-340\\w1\\qb181\\bench-var",
+ "host": "TITAN",
+ "started": "2026-10-28T07:47:56Z"
+}

@@ -92,6 +92,7 @@ are all in this repository.
   - [28.2 WSL2 g++ 14.2](#282-wsl2-g-142)
   - [28.3 Windows 11 MSVC 19.51 (HIGH priority, `start /affinity 5`)](#283-windows-11-msvc-1951-high-priority-start-affinity-5)
   - [28.4 Reading, and what it opens](#284-reading-and-what-it-opens)
+  - [28.5 Step 2: the `tpause` pacing on the actor cells — withdrawn on both hosts and both instruments](#285-step-2-the-tpause-pacing-on-the-actor-cells--withdrawn-on-both-hosts-and-both-instruments)
 
 ---
 
@@ -4360,4 +4361,43 @@ screen, not the verdict: `tpause` passes it on both OSes, `umwait` does not. **S
 otherwise — in a scratch copy of the tip, judged against the tip by the census of §27 (three physical
 copies a side, sixteen launches, savina/ping-pong and thread-ring at two cores, the share of each mode per
 copy and per launch) and by `dev/bench`'s `Multi_PingPong`, on both x86 hosts; adopted only if it wins on
-both instruments, withdrawn as QB-1155 was otherwise. Its reading follows here.
+both instruments, withdrawn as QB-1155 was otherwise. Its reading is §28.5: withdrawn.
+
+### 28.5 Step 2: the `tpause` pacing on the actor cells — withdrawn on both hosts and both instruments
+
+A scratch copy of the tip (qb `e152216a`) with one change: `VirtualCore::__pace__` pauses with `tpause` (C0.1) to a
+deadline 40 TSC ticks ahead when CPUID says the host has WAITPKG, and keeps the ordered counter read otherwise
+(`results/<host>/qb-branch-develop/wait-primitives/step2/PATCH.md` is the exact diff; the variant binaries carry
+`tpause`, the control's none, every cell verifies). Judged against the tip the way §27 taught — three physical copies
+a side as six families of `tools/launch-census.py`, 16 launches a family in one seeded interleaving, 3 + 1
+repetitions, CPUs 0 and 2 — on savina/ping-pong (2c-spin) and thread-ring (2c-spin, 2c-park), read by
+`tools/side-summary.py` (pooled medians, the copies' band, the two modes and their shares, a bootstrap 95 % CI of
+the ratio); and by `dev/bench`'s `qb-core-bench-ping-pong-latency` through `ab.py run` (3 copies a side, 8 rounds,
+3 repetitions; `Mono_PingPong_Latency` the one-core anchor). ns per unit; the modes as `centre ×launches`.
+
+| host · cell | tip, copies' medians (pooled; modes) | tpause, copies' medians (pooled; modes) | var / tip [CI 95 %] | copy band | verdict |
+|---|---|---|---|---:|---|
+| WSL2 · ping-pong 2c-spin | 153.2 / 154.4 / 157.1 (155.0; 153.0 ×37 / 167.7 ×11) | 182.4 / 180.3 / 181.5 (181.1; one mode) | **1.168** [1.150, 1.199] | ±1.3 % | SLOWER |
+| WSL2 · thread-ring 2c-spin | 86.8 / 87.6 / 89.5 (87.9) | 98.6 / 98.2 / 98.5 (98.3; 97.9 ×40 / 101.5 ×8) | **1.118** [1.095, 1.133] | ±1.6 % | SLOWER |
+| WSL2 · thread-ring 2c-park | 88.0 / 85.4 / 88.2 (87.0) | 97.2 / 97.4 / 98.2 (97.5; 97.8 ×44 / 105.8 ×4) | **1.121** [1.099, 1.137] | ±1.6 % | SLOWER |
+| WSL2 · dev/bench `Multi_PingPong_Latency` | 172.483 ms | 211.188 ms | **+22.44 %** | A/A 2.4 / 0.8 % | SLOWER |
+| WSL2 · dev/bench `Mono_PingPong_Latency` (1c) | 53.561 ms | 54.169 ms | +1.13 % | A/A 0.2 / 0.4 % | SLOWER, small |
+| MSVC · ping-pong 2c-spin | 186.9 / 185.4 / 187.1 (186.6; 173.6 ×22 / 196.4 ×26) | 198.9 / 194.9 / 199.5 (198.6; 192.7 ×21 / 201.4 ×27) | **1.065** [1.019, 1.087] | ±1.2 % | SLOWER |
+| MSVC · thread-ring 2c-spin | 96.5 / 94.8 / 97.2 (96.8; 92.1 ×28 / 104.4 ×20) | 102.8 / 105.3 / 103.2 (103.6; one mode) | **1.070** [1.033, 1.112] | ±1.2 % | SLOWER |
+| MSVC · thread-ring 2c-park | 105.0 / 106.3 / 108.5 (106.3) | 110.9 / 110.7 / 108.2 (109.6) | 1.031 [0.992, 1.063] | ±1.7 % | LEVEL |
+| MSVC · dev/bench `Multi_PingPong_Latency` | 228.591 ms | 232.732 ms | **+1.81 %** | A/A 0.7 / 0.6 % | SLOWER |
+| MSVC · dev/bench `Mono_PingPong_Latency` (1c) | 59.644 ms | 59.543 ms | −0.17 % | A/A 0.7 / 0.4 % | level |
+
+**The probe's gain inverts on the actor cells**, as QB-180 saw with `pause` (level on a raw ping-pong, +9 / +20 % on
+the cells). The ordered read costs ~11 ns and lets the next poll issue the instant it completes; `tpause` to a
+40-tick deadline stalls the poll for the whole 12.5 ns whatever the peer did meanwhile, and the actor's hop pays that
+stall on top of the crossing — on WSL2 ping-pong +26 ns a unit, two pauses a round trip; on Windows, whose crossing is
+the slower, +12 ns. The one thing the variant does that the ticket wished for, it does at that price: the two launch
+regimes of §27 shrink or vanish (every WSL2 copy of the variant is unimodal on ping-pong; on MSVC the two modes close
+from +13 % to +4.5 %), because the fixed pause de-phases the two cores' polls — the jitter prototype of QB-1020 bought
+the same decorrelation the same way and was discarded for the same reason. `umwait` was ruled out by the probe already
+(§28.4: a wake from C0.1 costs more than a paced round trip). **The ordered counter read stays the pacing primitive on
+x86 as on arm64 (§23.1)**; the WAITPKG lead closes on this dossier (Huly QB-181, its Canceled child), and the x86
+branch of the probe stays — the screen the next primitive goes through first. Documents:
+`results/<host>/qb-branch-develop/wait-primitives/step2/` (the two census families, `side-summary.txt`, the `ab.py`
+campaign under `ab-bench/`, `PATCH.md`).

@@ -1,0 +1,12 @@
+
+savina/ping-pong: per-launch medians, ns per unit -- 16 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 7101, cpus 0,2
+
+  2c-spin
+    ctl-c1       median-of-medians    186.9   min    168.8   max    206.6   n=16   [169 179 176 190 201 206 195 169 196 186 207 183 188 188 170 185]
+    ctl-c2       median-of-medians    185.4   min    161.8   max    209.8   n=16   [210 197 183 176 197 162 182 173 167 187 195 197 198 176 165 206]
+    ctl-c3       median-of-medians    187.1   min    161.7   max    200.4   n=16   [200 199 167 200 189 199 200 170 198 162 185 184 191 173 184 164]
+    var-c1       median-of-medians    198.9   min    187.5   max    206.5   n=16   [192 190 203 202 200 199 187 200 201 199 195 195 191 206 199 193]
+    var-c2       median-of-medians    194.9   min    190.6   max    206.3   n=16   [191 192 191 199 191 194 197 191 196 206 204 201 194 200 199 194]
+    var-c3       median-of-medians    199.5   min    191.8   max    209.3   n=16   [209 192 200 194 199 198 192 205 201 198 194 202 198 203 201 205]
+
+launch-census.py: 96 launches, 0 not verified -> D:\repo\ab-340\w1\qb181\census-win\qb-ping-pong
