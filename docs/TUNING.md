@@ -82,6 +82,11 @@ are all in this repository.
   - [26.3 MSVC 19.51: level across cores, +4 % on one](#263-msvc-1951-level-across-cores-4--on-one)
   - [26.4 The instructions: shipped 3.3.0 carries the slope, the branch adds nothing](#264-the-instructions-shipped-330-carries-the-slope-the-branch-adds-nothing)
   - [26.5 Three ISAs, one instruction count — and the protocol for the M4](#265-three-isas-one-instruction-count--and-the-protocol-for-the-m4)
+- [27. The launch regime on x86 (QB-1020): two modes inside every copy on WSL2, a launch and a copy effect on MSVC, the floor without qb's regime (2026-10-28)](#27-the-launch-regime-on-x86-qb-1020-two-modes-inside-every-copy-on-wsl2-a-launch-and-a-copy-effect-on-msvc-the-floor-without-qbs-regime-2026-10-28)
+  - [27.1 The instrument: a census per physical copy](#271-the-instrument-a-census-per-physical-copy)
+  - [27.2 WSL2 g++ 14.2 (07:14–07:59 UTC+1)](#272-wsl2-g-142-07140759-utc1)
+  - [27.3 MSVC 19.51 (08:57–09:02 UTC+1, HIGH process priority)](#273-msvc-1951-08570902-utc1-high-process-priority)
+  - [27.4 What the two hosts say](#274-what-the-two-hosts-say)
 
 ---
 
@@ -4199,3 +4204,81 @@ quiet host; a bimodal cell read with `tools/launch-census.py` as every 2c cell i
 documents under `results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-any-scatter/{p,e,same}/`. The
 expected reading if arm64 does not hide the count: 3.3.0 ≈ tip > 3.2.1 from N = 1; parity would be a fact
 of the ISA, said as such, not an absence of cost.
+
+## 27. The launch regime on x86 (QB-1020): two modes inside every copy on WSL2, a launch and a copy effect on MSVC, the floor without qb's regime (2026-10-28)
+
+Lot T7 (2026-10-12) found two regimes about 10 % apart on thread-ring at two cores under WSL2, a launch
+settling in one for its life, and a jitter meant to break them made the cells slower (Huly QB-1020). The M4
+showed no second mode (§23.2). QB-1111's MSVC campaign then read a regime per PHYSICAL COPY on a one-core
+lifecycle cell (§25.2). The question this session asks of the two x86 hosts: is the regime of a two-core cell
+a property of the **launch** — the pairing of threads, caches and arrival the host gives one process — or of
+the **copy** — the placement of the binary and its pages?
+
+### 27.1 The instrument: a census per physical copy
+
+`tools/launch-census.py` with **three byte-identical copies** of the tip's binary (qb-vs-others `d9893724`
+against qb `e152216a`, the 2026-10-27 builds of §25) as three labelled families, **16 launches a family** in
+one seeded interleaving (7101), 3 + 1 repetitions a launch, pinned to CPUs 0 and 2 (the field's pinning),
+nothing else on the host; `tools/regime-summary.py` then reads each cell **per copy**: the per-launch
+medians (the census's own figure, `work_p50 / work_units`), their IQR, and a two-cluster split (one-dimensional
+two-means from the extremes) — a copy is called **BIMODAL** when the two centres are at least three
+within-cluster spreads apart and each holds at least three of the sixteen launches — and per configuration the
+copies' band (half the spread of their medians) and a verdict: *LAUNCH* when every copy is bimodal with the
+same two centres (within 2 %), *COPY* when unimodal copies sit apart by more than their IQR, *flat* or *mixed*
+otherwise. qb first, then the raw-thread floor, the witness with no qb loop. Documents:
+`results/<host>/qb-branch-develop/launch-regime/<family>/` (one JSON a launch, `launch-order.jsonl`,
+`census.log`) and `regimes.txt` beside them, the classifier's reading.
+
+### 27.2 WSL2 g++ 14.2 (07:14–07:59 UTC+1)
+
+ns per unit; the modes as `centre ×launches`:
+
+| cell | copy medians | modes per copy | pooled IQR | copy band | verdict |
+|---|---|---|---:|---:|---|
+| qb thread-ring 2c-spin | 90.5 / 90.8 / 89.8 | 89.4 ×10 / 96.6 ×6 · 90.2 ×13 / 97.4 ×3 · 88.9 ×10 / 92.7 ×6 | 3.8 % | ±0.5 % | **LAUNCH**: two modes inside every copy, the same two across copies |
+| qb thread-ring 2c-park | 89.1 / 91.6 / 90.3 | 89.3 ×13 / 97.5 ×3 · — · 88.7 ×9 / 94.9 ×7 | 5.2 % | ±1.4 % | mixed (two copies bimodal, +7–9 %) |
+| qb ping-pong 2c-spin | 175.9 / 181.0 / 173.2 | 170.8 ×10 / 187.9 ×6 · 172.8 ×7 / 185.6 ×9 · 171.7 ×12 / 190.0 ×4 | 8.9 % | ±2.2 % | **LAUNCH**: +7 to +11 % between the two modes, in every copy |
+| floor thread-ring 2c-spin | 114.7 / 115.4 / 115.5 | — · — · 113.0 ×7 / 116.4 ×9 (+3 %) | 2.3 % | ±0.3 % | flat but one copy's two modes 3 % apart |
+| floor thread-ring 2c-park | 13 062 / 13 078 / 13 090 | — · 13 047 ×11 / 13 370 ×5 · 13 042 ×11 / 13 369 ×5 (+2.5 %) | 1.7 % | ±0.1 % | the condition-variable park: **13 µs a hop**, a futex wake through Hyper-V |
+| floor ping-pong 2c-spin | 184.3 / 181.7 / 184.3 | 183.5 ×12 / 190.8 ×4 · — · 180.7 ×9 / 190.8 ×7 | 3.2 % | ±0.7 % | mixed (+4 to +6 %) |
+
+### 27.3 MSVC 19.51 (08:57–09:02 UTC+1, HIGH process priority)
+
+| cell | copy medians | modes per copy | pooled IQR | copy band | verdict |
+|---|---|---|---:|---:|---|
+| qb thread-ring 2c-spin | 95.7 / 96.0 / 91.1 | 93.2 ×9 / 102.1 ×7 · 92.9 ×9 / 102.8 ×7 · 88.1 ×9 / 102.0 ×7 | 10.8 % | ±2.6 % | two modes in every copy (+10 to +16 %), the LOW mode of one copy 5 % under the others': a launch regime with a copy offset |
+| qb thread-ring 2c-park | 107.9 / 107.8 / 103.5 | 98.3 ×7 / 110.9 ×9 · — (91.8–124.4) · 96.6 ×8 / 112.7 ×8 | 11.6 % | ±2.0 % | mixed (+13 to +17 %) |
+| qb ping-pong 2c-spin | 191.4 / 179.8 / 187.5 | 168.3 ×7 / 197.4 ×9 · — (159–195) · — (165–231) | 12.7 % | ±3.1 % | wide: 158 to 231 ns across the three copies |
+| floor thread-ring 2c-spin | 113.0 / 111.7 / 111.0 | — · 110.7 ×11 / 115.3 ×5 · 110.6 ×12 / 119.9 ×4 | 4.4 % | ±0.9 % | mixed, small (+4 to +8 %) |
+| floor thread-ring 2c-park | 246.1 / 256.7 / 257.5 | 230.7 ×9 / 273.6 ×7 · — · — | 8.6 % | ±2.2 % | the park on Windows: **0.25 µs a hop** against 13 µs on WSL2 |
+| floor ping-pong 2c-spin | 195.6 / 192.6 / 195.4 | — · 191.5 ×10 / 204.7 ×6 · 189.9 ×8 / 201.3 ×8 | 5.4 % | ±0.8 % | mixed (+6 to +7 %) |
+
+### 27.4 What the two hosts say
+
+**On WSL2 the regime is the launch's.** qb's two-core cells carry two modes inside every physical copy, and
+the two modes are the same from copy to copy (the copies' medians agree to ±0.5 % on thread-ring, ±2.2 % on
+ping-pong): which pairing of threads, caches and arrival the host hands that process decides its regime for
+its life, and the binary's placement decides nothing visible. The floor's spin cells carry no regime of that
+size (IQR 2–3 %, one copy at +3 %): the class is qb's idle poll meeting the host's scheduling, not the host
+alone — which is also why the M4 shows none (§23.2) and why a jitter in the poll could not remove it without
+paying for it (QB-1020, 2026-10-12).
+
+**On MSVC the two effects coexist.** Every copy of thread-ring 2c-spin has its two modes, +10 to +16 %
+apart, AND one copy's low mode sits 5 % under the other two's: the copy effect §25.2 read on the one-core
+spawn cell is there at two cores as well, under a larger launch effect; ping-pong at two cores spans 158 to
+231 ns across the copies. The floor's spin cells are tighter (4–5 % IQR) with modes a third the size.
+
+**The consequence for the method, now with its numbers.** A two-core x86 cell is a distribution, read by a
+census of at least sixteen launches and never by one launch; the copies' A/A band of `ab.py` and
+`tools/scatter-ab.py` bounds the copy effect only, and on these cells the launch effect is the larger. A field
+grid's 9 + 2 repetitions live inside ONE launch, i.e. inside one regime: a two-core figure of §25.1 or of a
+grid is regime-conditional, by 3.8 % (thread-ring spin, g++) to 10.8 % (MSVC) of IQR, which the census
+quantifies and a single launch cannot. For QB-1020 the jitter prototype stays discarded; the one lead that
+could move these regimes is the pacing primitive of the idle poll (QB-181: `tpause` / `umwait`, WAITPKG being
+exposed to WSL2 and to a native Windows process on this host), and this census — the share of each mode per
+copy and per launch — is the instrument that judges it.
+
+**A host fact aside.** The floor's `wait=0` hop costs 13.06 µs on WSL2 (its condition variable is a futex
+wake through the hypervisor) and 0.25 µs on Windows (`WaitOnAddress` / the condition variable of the CRT):
+the floor's park form is not comparable across the two OSes of one machine, and qb's park cell at 90 ns a hop
+never parks on a two-core ping-pong — its 50 µs idle spin covers every hop.

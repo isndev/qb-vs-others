@@ -1,0 +1,14 @@
+
+savina/thread-ring: per-launch medians, ns per unit -- 16 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 7101, cpus 0,2
+
+  2c-spin
+    c1           median-of-medians    113.0   min    106.0   max    121.4   n=16   [110 115 115 106 110 113 111 113 118 112 113 118 121 107 112 113]
+    c2           median-of-medians    111.7   min    107.8   max    118.7   n=16   [119 110 114 112 114 115 111 115 108 112 113 111 110 111 110 109]
+    c3           median-of-medians    111.0   min    108.0   max    124.2   n=16   [115 113 111 122 110 108 112 110 110 116 117 110 108 109 108 124]
+
+  2c-park
+    c1           median-of-medians    246.1   min    209.0   max    287.5   n=16   [274 287 228 220 260 285 244 209 236 249 222 265 241 280 227 264]
+    c2           median-of-medians    256.7   min    242.7   max    306.1   n=16   [255 248 255 257 256 251 261 306 268 246 260 258 276 264 255 243]
+    c3           median-of-medians    257.5   min    227.0   max    281.9   n=16   [260 282 227 265 259 237 282 258 241 249 241 257 281 255 276 248]
+
+launch-census.py: 96 launches, 0 not verified -> D:\repo\ab-340\w1\qb1020\census-win\baseline-thread-ring

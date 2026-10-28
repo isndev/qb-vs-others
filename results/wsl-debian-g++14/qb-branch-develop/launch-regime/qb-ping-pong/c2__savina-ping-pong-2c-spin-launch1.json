@@ -1,0 +1,44 @@
+{
+  "schema": "qvo/result/1",
+  "benchmark": "savina/ping-pong",
+  "framework": "qb",
+  "framework_version": "3.3.0",
+  "verified": true,
+  "expected_checksum": 6535945399557740267,
+  "expected_messages": 2000000,
+  "work_unit": "round trip",
+  "work_units": 1000000,
+  "repetitions": 3,
+  "warmup": 1,
+  "params": {"cores": 2, "messages": 1000000, "wait": 1},
+  "pinned": true,
+  "cpus": "0,2",
+  "pinned_threads": 2,
+  "thread_pinning_supported": true,
+  "env": {
+    "host": "Titan",
+    "os": "linux",
+    "logical_cpus": 24,
+    "compiler": "GNU",
+    "compiler_version": "14.2.0",
+    "build_type": "Release",
+    "cxx_flags": "-O3 -DNDEBUG",
+    "cxx_flags_scope": "directory-global-and-config",
+    "utc": "2026-10-28T06:15:36Z"
+  },
+  "idiom": {
+    "source": "qb/tests/core/benchmark/messaging/ping-pong-latency.cpp",
+    "note": "send<> hot path, require<>() bootstrap, busy-spin cores -- qb's own benchmark idiom"
+  },
+  "caveats": ["qb's VirtualCores are pinned one per CPU from the harness's set -- the mechanism qb is built on. CAF and SObjectizer are given the same treatment through their own APIs (caf::thread_hook, so_5 work-thread factory), so the CPU budget is identical and no framework is measured with its placement mechanism switched off", "wait=1 maps to setLatency(0) (busy-spin, 100% CPU per core); wait=0 maps to a park cap on a condition variable that is signalled on every enqueue", "qb is compiled with QB_WITH_LOGGING enabled. Logging work emitted inside the workload window is included; the runtime log level is not inferred from the build configuration"],
+  "failures": [],
+  "work_ns": [176409839.0, 190666539.0, 184860855.0],
+  "total_ns": [176942927.0, 191299690.0, 185317900.0],
+  "outside_window_ns": [533088.0, 633151.0, 457045.0],
+  "summary": {
+    "work_min": 176409839.0,
+    "work_p50": 184860855.0,
+    "work_p99": 190550425.3,
+    "work_iqr": 7128350.0
+  }
+}

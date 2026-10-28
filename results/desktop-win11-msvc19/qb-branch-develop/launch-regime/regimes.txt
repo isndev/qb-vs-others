@@ -1,0 +1,38 @@
+
+== qb-thread-ring  (savina/thread-ring, 96 verified launches)
+  2c-park
+    c1   median     107.9  IQR [98.7, 110.4]  min 94.7  max 115.2  n=16  BIMODAL modes 98.3 x7 / 110.9 x9  (+12.9 %, separation 5.1)
+    c2   median     107.8  IQR [100.2, 111.0]  min 91.8  max 124.4  n=16  unimodal (largest gap 11.1 ns)
+    c3   median     103.5  IQR [96.3, 112.6]  min 91.1  max 120.3  n=16  BIMODAL modes 96.6 x8 / 112.7 x8  (+16.7 %, separation 3.7)
+    pooled median     106.6  IQR [98.6, 111.0] (11.6 % wide)  copy band +-2.04%  -> mixed (two modes in some copies only)
+  2c-spin
+    c1   median      95.7  IQR [92.9, 101.4]  min 89.7  max 106.1  n=16  BIMODAL modes 93.2 x9 / 102.1 x7  (+9.6 %, separation 3.7)
+    c2   median      96.0  IQR [92.4, 102.5]  min 87.8  max 108.1  n=16  BIMODAL modes 92.9 x9 / 102.8 x7  (+10.7 %, separation 3.6)
+    c3   median      91.1  IQR [88.5, 101.3]  min 82.9  max 107.6  n=16  BIMODAL modes 88.1 x9 / 102.0 x7  (+15.7 %, separation 4.8)
+    pooled median      95.7  IQR [91.1, 101.4] (10.8 % wide)  copy band +-2.56%  -> mixed (two modes in some copies only)
+
+== qb-ping-pong  (savina/ping-pong, 48 verified launches)
+  2c-spin
+    c1   median     191.4  IQR [170.5, 196.9]  min 158.2  max 210.0  n=16  BIMODAL modes 168.3 x7 / 197.4 x9  (+17.3 %, separation 4.6)
+    c2   median     179.8  IQR [169.9, 183.6]  min 159.2  max 195.2  n=16  unimodal (largest gap 9.9 ns)
+    c3   median     187.5  IQR [176.8, 201.3]  min 164.5  max 231.0  n=16  unimodal (largest gap 25.9 ns)
+    pooled median     181.7  IQR [172.4, 195.6] (12.7 % wide)  copy band +-3.09%  -> mixed (two modes in some copies only)
+
+== baseline-thread-ring  (savina/thread-ring, 96 verified launches)
+  2c-park
+    c1   median     246.1  IQR [227.6, 271.5]  min 209.0  max 287.5  n=16  BIMODAL modes 230.7 x9 / 273.6 x7  (+18.6 %, separation 3.8)
+    c2   median     256.7  IQR [252.2, 263.3]  min 242.7  max 306.1  n=16  unimodal (largest gap 29.9 ns)
+    c3   median     257.5  IQR [242.8, 273.2]  min 227.0  max 281.9  n=16  unimodal (largest gap 10.7 ns)
+    pooled median     256.5  IQR [242.9, 265.0] (8.6 % wide)  copy band +-2.20%  -> mixed (two modes in some copies only)
+  2c-spin
+    c1   median     113.0  IQR [109.9, 115.3]  min 106.0  max 121.4  n=16  unimodal (largest gap 3.0 ns)
+    c2   median     111.7  IQR [110.0, 113.9]  min 107.8  max 118.7  n=16  BIMODAL modes 110.7 x11 / 115.3 x5  (+4.2 %, separation 3.0)
+    c3   median     111.0  IQR [109.3, 115.9]  min 108.0  max 124.2  n=16  BIMODAL modes 110.6 x12 / 119.9 x4  (+8.4 %, separation 3.8)
+    pooled median     112.1  IQR [109.9, 114.9] (4.4 % wide)  copy band +-0.90%  -> mixed (two modes in some copies only)
+
+== baseline-ping-pong  (savina/ping-pong, 48 verified launches)
+  2c-spin
+    c1   median     195.6  IQR [191.9, 199.6]  min 186.3  max 207.8  n=16  unimodal (largest gap 6.3 ns)
+    c2   median     192.6  IQR [189.9, 203.4]  min 189.1  max 207.0  n=16  BIMODAL modes 191.5 x10 / 204.7 x6  (+6.9 %, separation 5.5)
+    c3   median     195.4  IQR [188.7, 202.1]  min 184.4  max 206.5  n=16  BIMODAL modes 189.9 x8 / 201.3 x8  (+6.0 %, separation 3.3)
+    pooled median     195.2  IQR [191.0, 201.6] (5.4 % wide)  copy band +-0.77%  -> mixed (two modes in some copies only)

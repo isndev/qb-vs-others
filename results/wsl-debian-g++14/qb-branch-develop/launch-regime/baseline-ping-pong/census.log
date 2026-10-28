@@ -1,0 +1,9 @@
+
+savina/ping-pong: per-launch medians, ns per unit -- 16 launches interleaved, 3 rep + 1 warmup each, seeded shuffle 7101, cpus 0,2
+
+  2c-spin
+    c1           median-of-medians    184.3   min    179.5   max    195.4   n=16   [195 183 190 188 182 181 182 187 186 186 180 184 185 190 183 184]
+    c2           median-of-medians    181.7   min    172.7   max    188.2   n=16   [178 185 182 182 188 185 181 182 180 183 182 186 181 181 179 173]
+    c3           median-of-medians    184.3   min    172.9   max    194.4   n=16   [184 187 180 184 188 187 182 180 193 181 173 179 185 194 193 193]
+
+launch-census.py: 48 launches, 0 not verified -> /home/mbelhadi/ab-340/w1/qb1020/census-wsl/baseline-ping-pong
