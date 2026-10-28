@@ -1,0 +1,24 @@
+{
+ "seed": 7101,
+ "rounds": 8,
+ "copies": 3,
+ "asks": 200000,
+ "mode": "same",
+ "pool": [],
+ "pinned": false,
+ "platform": "darwin",
+ "responders": [
+  1,
+  2,
+  4,
+  8
+ ],
+ "sides": {
+  "v321": "/private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/qb1153-arm64/build-v3.2.1/bin/qvoprobe-ask-any-scatter",
+  "v330": "/private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/qb1153-arm64/build-v3.3.0/bin/qvoprobe-ask-any-scatter",
+  "tip": "/private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev/bc4e69bb-6d6b-4ad1-8f5c-4b212f82b7f6/scratchpad/qb1153-arm64/build-f5ac0890/bin/qvoprobe-ask-any-scatter"
+ },
+ "quiet": 30,
+ "tag": "M4 Pro same (N=1,2,4,8)",
+ "host": "macbook-m4pro"
+}

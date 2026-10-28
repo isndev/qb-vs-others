@@ -1,0 +1,51 @@
+campaign /Users/mbelhadi/repo/qb-dev/qb-vs-others/results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-any-scatter/p: seed 7101, rounds 8, copies 3, asks 200000, mode cross, UNPINNED (the macOS form); control v321, candidates ['v330', 'tip']
+ns per ask_any (median over rounds x copies; copies' medians; A/A band = spread of the copies' medians)
+N=1 responders (cross, unpinned)
+   v321      370.6 ns  IQR [364.0, 399.3]  n=24  copies 368.8 372.9 368.3  A/A +-0.62%
+   v330      337.3 ns  IQR [327.1, 353.3]  n=24  copies 334.8 341.6 335.3  A/A +-1.01%
+   tip       350.4 ns  IQR [338.0, 368.1]  n=24  copies 348.3 354.2 348.9  A/A +-0.85%
+   ratio v330/v321 0.9101  CI95 [0.8778, 0.9435]  A/A band +-1.01%  -> FASTER
+   ratio tip/v321 0.9455  CI95 [0.9111, 0.9753]  A/A band +-0.85%  -> FASTER
+N=2 responders (cross, unpinned)
+   v321      466.6 ns  IQR [452.5, 504.3]  n=24  copies 461.8 454.6 484.5  A/A +-3.25%
+   v330      455.8 ns  IQR [437.2, 475.2]  n=24  copies 448.6 472.8 455.8  A/A +-2.65%
+   tip       455.1 ns  IQR [447.4, 480.6]  n=24  copies 448.0 469.3 462.4  A/A +-2.30%
+   ratio v330/v321 0.9767  CI95 [0.9354, 1.0204]  A/A band +-3.25%  -> LEVEL
+   ratio tip/v321 0.9751  CI95 [0.9406, 1.0239]  A/A band +-3.25%  -> LEVEL
+N=3 responders (cross, unpinned)
+   v321      603.8 ns  IQR [584.7, 633.5]  n=24  copies 626.7 590.2 603.8  A/A +-3.01%
+   v330      590.5 ns  IQR [571.5, 634.8]  n=24  copies 601.4 585.4 585.8  A/A +-1.37%
+   tip       586.6 ns  IQR [566.5, 599.7]  n=24  copies 577.4 584.1 588.9  A/A +-0.99%
+   ratio v330/v321 0.9781  CI95 [0.9285, 1.0261]  A/A band +-3.01%  -> LEVEL
+   ratio tip/v321 0.9717  CI95 [0.9113, 1.0014]  A/A band +-3.01%  -> LEVEL
+N=4 responders (cross, unpinned)
+   v321      803.4 ns  IQR [769.1, 816.4]  n=24  copies 793.5 814.0 795.0  A/A +-1.29%
+   v330      791.4 ns  IQR [776.4, 818.6]  n=24  copies 794.8 791.2 788.9  A/A +-0.37%
+   tip       795.8 ns  IQR [778.7, 811.8]  n=24  copies 778.7 812.7 800.5  A/A +-2.12%
+   ratio v330/v321 0.9850  CI95 [0.9685, 1.0242]  A/A band +-1.29%  -> LEVEL
+   ratio tip/v321 0.9906  CI95 [0.9718, 1.0226]  A/A band +-2.12%  -> LEVEL
+N=5 responders (cross, unpinned)
+   v321     1031.1 ns  IQR [1007.7, 1050.0]  n=24  copies 1030.5 1026.4 1041.3  A/A +-0.73%
+   v330     1018.2 ns  IQR [994.8, 1040.7]  n=24  copies 1002.6 1019.0 1023.3  A/A +-1.01%
+   tip      1028.5 ns  IQR [1005.5, 1038.2]  n=24  copies 1013.9 1028.5 1032.8  A/A +-0.92%
+   ratio v330/v321 0.9874  CI95 [0.9723, 1.0047]  A/A band +-1.01%  -> LEVEL
+   ratio tip/v321 0.9975  CI95 [0.9817, 1.0140]  A/A band +-0.92%  -> LEVEL
+N=6 responders (cross, unpinned)
+   v321     1176.8 ns  IQR [1162.4, 1196.8]  n=24  copies 1182.5 1176.4 1180.3  A/A +-0.25%
+   v330     1233.8 ns  IQR [1213.6, 1248.0]  n=24  copies 1244.5 1228.7 1221.4  A/A +-0.94%
+   tip      1227.1 ns  IQR [1204.5, 1239.8]  n=24  copies 1231.0 1224.3 1224.9  A/A +-0.27%
+   ratio v330/v321 1.0485  CI95 [1.0293, 1.0622]  A/A band +-0.94%  -> SLOWER
+   ratio tip/v321 1.0427  CI95 [1.0237, 1.0536]  A/A band +-0.27%  -> SLOWER
+N=7 responders (cross, unpinned)
+   v321     1375.8 ns  IQR [1330.3, 1413.9]  n=24  copies 1368.2 1370.4 1406.6  A/A +-1.40%
+   v330     1401.5 ns  IQR [1387.4, 1423.5]  n=24  copies 1385.2 1411.2 1402.2  A/A +-0.92%
+   tip      1400.4 ns  IQR [1382.3, 1412.6]  n=24  copies 1399.9 1404.1 1394.3  A/A +-0.35%
+   ratio v330/v321 1.0187  CI95 [0.9994, 1.0491]  A/A band +-1.40%  -> LEVEL
+   ratio tip/v321 1.0179  CI95 [0.9984, 1.0479]  A/A band +-1.40%  -> LEVEL
+slope v321 : 173.7 ns per responder, intercept 137.8 ns  (least squares over N=[1, 2, 3, 4, 5, 6, 7])
+slope v330 : 184.9 ns per responder, intercept 93.2 ns  (least squares over N=[1, 2, 3, 4, 5, 6, 7])
+slope tip  : 183.4 ns per responder, intercept 101.1 ns  (least squares over N=[1, 2, 3, 4, 5, 6, 7])
+slope delta (v330 - v321): +11.2 ns per responder (+6.4 %)
+per-N delta of the medians (v330 - v321), and per responder: N=1: -33.3 ns (-33.30/resp)  N=2: -10.8 ns (-5.42/resp)  N=3: -13.2 ns (-4.40/resp)  N=4: -12.0 ns (-3.01/resp)  N=5: -12.9 ns (-2.59/resp)  N=6: +57.0 ns (+9.51/resp)  N=7: +25.7 ns (+3.67/resp)
+slope delta (tip - v321): +9.7 ns per responder (+5.6 %)
+per-N delta of the medians (tip - v321), and per responder: N=1: -20.2 ns (-20.20/resp)  N=2: -11.6 ns (-5.80/resp)  N=3: -17.1 ns (-5.70/resp)  N=4: -7.6 ns (-1.89/resp)  N=5: -2.6 ns (-0.52/resp)  N=6: +50.3 ns (+8.38/resp)  N=7: +24.6 ns (+3.51/resp)

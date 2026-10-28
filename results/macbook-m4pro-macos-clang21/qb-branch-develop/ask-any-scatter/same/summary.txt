@@ -1,0 +1,33 @@
+campaign /Users/mbelhadi/repo/qb-dev/qb-vs-others/results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-any-scatter/same: seed 7101, rounds 8, copies 3, asks 200000, mode same, UNPINNED (the macOS form); control v321, candidates ['v330', 'tip']
+ns per ask_any (median over rounds x copies; copies' medians; A/A band = spread of the copies' medians)
+N=1 responders (same, unpinned)
+   v321      272.4 ns  IQR [264.4, 282.9]  n=24  copies 267.6 275.4 273.7  A/A +-1.43%
+   v330      244.2 ns  IQR [239.0, 250.8]  n=24  copies 244.1 239.7 247.5  A/A +-1.61%
+   tip       257.0 ns  IQR [250.7, 274.5]  n=24  copies 256.4 251.4 274.5  A/A +-4.50%
+   ratio v330/v321 0.8965  CI95 [0.8725, 0.9211]  A/A band +-1.61%  -> FASTER
+   ratio tip/v321 0.9435  CI95 [0.9140, 0.9868]  A/A band +-4.50%  -> FASTER
+N=2 responders (same, unpinned)
+   v321      352.7 ns  IQR [341.0, 359.0]  n=24  copies 344.6 347.9 363.2  A/A +-2.68%
+   v330      321.9 ns  IQR [316.9, 332.8]  n=24  copies 323.1 323.5 319.0  A/A +-0.70%
+   tip       328.4 ns  IQR [322.1, 338.4]  n=24  copies 329.6 326.6 326.5  A/A +-0.47%
+   ratio v330/v321 0.9128  CI95 [0.8963, 0.9487]  A/A band +-2.68%  -> FASTER
+   ratio tip/v321 0.9312  CI95 [0.9136, 0.9612]  A/A band +-2.68%  -> FASTER
+N=4 responders (same, unpinned)
+   v321      518.5 ns  IQR [508.6, 527.6]  n=24  copies 521.0 513.5 512.9  A/A +-0.78%
+   v330      485.5 ns  IQR [480.4, 498.0]  n=24  copies 484.6 492.4 486.4  A/A +-0.81%
+   tip       492.1 ns  IQR [482.7, 495.6]  n=24  copies 484.8 493.4 492.9  A/A +-0.87%
+   ratio v330/v321 0.9365  CI95 [0.9279, 0.9563]  A/A band +-0.81%  -> FASTER
+   ratio tip/v321 0.9493  CI95 [0.9314, 0.9615]  A/A band +-0.87%  -> FASTER
+N=8 responders (same, unpinned)
+   v321      829.5 ns  IQR [817.6, 837.5]  n=24  copies 826.4 820.8 840.1  A/A +-1.17%
+   v330      812.6 ns  IQR [807.6, 820.5]  n=24  copies 813.0 815.2 809.7  A/A +-0.34%
+   tip       817.0 ns  IQR [809.4, 832.4]  n=24  copies 829.2 814.0 816.2  A/A +-0.93%
+   ratio v330/v321 0.9796  CI95 [0.9725, 0.9925]  A/A band +-1.17%  -> FASTER
+   ratio tip/v321 0.9849  CI95 [0.9754, 1.0022]  A/A band +-1.17%  -> LEVEL
+slope v321 : 79.6 ns per responder, intercept 194.7 ns  (least squares over N=[1, 2, 4, 8])
+slope v330 : 81.4 ns per responder, intercept 160.9 ns  (least squares over N=[1, 2, 4, 8])
+slope tip  : 80.5 ns per responder, intercept 171.9 ns  (least squares over N=[1, 2, 4, 8])
+slope delta (v330 - v321): +1.8 ns per responder (+2.2 %)
+per-N delta of the medians (v330 - v321), and per responder: N=1: -28.2 ns (-28.20/resp)  N=2: -30.8 ns (-15.38/resp)  N=4: -32.9 ns (-8.23/resp)  N=8: -16.9 ns (-2.11/resp)
+slope delta (tip - v321): +0.9 ns per responder (+1.1 %)
+per-N delta of the medians (tip - v321), and per responder: N=1: -15.4 ns (-15.40/resp)  N=2: -24.3 ns (-12.13/resp)  N=4: -26.3 ns (-6.58/resp)  N=8: -12.5 ns (-1.57/resp)
