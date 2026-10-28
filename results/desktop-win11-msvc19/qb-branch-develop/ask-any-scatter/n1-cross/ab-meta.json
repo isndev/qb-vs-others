@@ -1,0 +1,33 @@
+{
+ "seed": 7101,
+ "rounds": 8,
+ "copies": 3,
+ "asks": 200000,
+ "mode": "cross",
+ "pool": [
+  0,
+  2,
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  16,
+  18,
+  20
+ ],
+ "pinned": true,
+ "platform": "win32",
+ "responders": [
+  1,
+  2
+ ],
+ "sides": {
+  "v330": "D:\\repo\\ab-340\\w1\\qb1153\\bld-win-v330\\bin\\qvoprobe-ask-any-scatter.exe",
+  "tip": "D:\\repo\\ab-340\\w1\\qb1153\\bld-win-tip\\bin\\qvoprobe-ask-any-scatter.exe"
+ },
+ "quiet": 30,
+ "tag": "qb1153-n1-cross-win",
+ "host": "TITAN"
+}

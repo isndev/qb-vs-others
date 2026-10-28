@@ -82,6 +82,7 @@ are all in this repository.
   - [26.3 MSVC 19.51: level across cores, +4 % on one](#263-msvc-1951-level-across-cores-4--on-one)
   - [26.4 The instructions: shipped 3.3.0 carries the slope, the branch adds nothing](#264-the-instructions-shipped-330-carries-the-slope-the-branch-adds-nothing)
   - [26.5 Three ISAs, one instruction count — and the protocol for the M4](#265-three-isas-one-instruction-count--and-the-protocol-for-the-m4)
+  - [26.6 Three hosts: the M4 Pro's three faces, and the tip against 3.3.0 at N = 1](#266-three-hosts-the-m4-pros-three-faces-and-the-tip-against-330-at-n--1)
 - [27. The launch regime on x86 (QB-1020): two modes inside every copy on WSL2, a launch and a copy effect on MSVC, the floor without qb's regime (2026-10-28)](#27-the-launch-regime-on-x86-qb-1020-two-modes-inside-every-copy-on-wsl2-a-launch-and-a-copy-effect-on-msvc-the-floor-without-qbs-regime-2026-10-28)
   - [27.1 The instrument: a census per physical copy](#271-the-instrument-a-census-per-physical-copy)
   - [27.2 WSL2 g++ 14.2 (07:14–07:59 UTC+1)](#272-wsl2-g-142-07140759-utc1)
@@ -4209,7 +4210,85 @@ responders the M4 Pro's E-cores, read apart; `same` N = 1, 2, 4, 8), 3 copies, 8
 quiet host; a bimodal cell read with `tools/launch-census.py` as every 2c cell is on that host; the
 documents under `results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-any-scatter/{p,e,same}/`. The
 expected reading if arm64 does not hide the count: 3.3.0 ≈ tip > 3.2.1 from N = 1; parity would be a fact
-of the ISA, said as such, not an absence of cost.
+of the ISA, said as such, not an absence of cost. The M4 ran it the same day: §26.6.
+
+### 26.6 Three hosts: the M4 Pro's three faces, and the tip against 3.3.0 at N = 1
+
+The protocol of §26.5 run on the M4 Pro (Apple clang 21.0.0, `-O3 -DNDEBUG`, 2026-10-28 06:39:38–06:44:38 UTC,
+the three builds' flags identical but for the version defines, `tools/scatter-ab.py --no-pin`, 3 physical
+copies a side, 8 rounds, 200 000 asks a launch, the host quiet at the start — idle ≥ 92 % over three 5-s windows,
+load < 3): shipped 3.2.1 the control, shipped 3.3.0 and the tip (qb `f5ac0890`) the candidates; the documents
+under `results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-any-scatter/{p,e,same}/`. Median ns per
+`ask_any`, the ratio against 3.2.1 with its CI, the A/A band of the copies:
+
+| campaign | N | 3.2.1 | 3.3.0 | tip | 3.3.0 / 3.2.1 [CI 95 %] | A/A | verdict | tip / 3.2.1 |
+|---|---:|---:|---:|---:|---|---:|---|---:|
+| `p` cross | 1 | 370.6 | 337.3 | 350.4 | 0.910 [0.878, 0.944] | ±1.0 % | FASTER | 0.946 |
+| | 2 | 466.6 | 455.8 | 455.1 | 0.977 [0.935, 1.020] | ±3.3 % | LEVEL | 0.975 |
+| | 3 | 603.8 | 590.5 | 586.6 | 0.978 [0.929, 1.026] | ±3.0 % | LEVEL | 0.972 |
+| | 4 | 803.4 | 791.4 | 795.8 | 0.985 [0.969, 1.024] | ±1.3 % | LEVEL | 0.991 |
+| | 5 | 1 031.1 | 1 018.2 | 1 028.5 | 0.987 [0.972, 1.005] | ±1.0 % | LEVEL | 0.998 |
+| | 6 | 1 176.8 | 1 233.8 | 1 227.1 | **1.049 [1.029, 1.062]** | ±0.9 % | **SLOWER** | 1.043 |
+| | 7 | 1 375.8 | 1 401.5 | 1 400.4 | 1.019 [0.999, 1.049] | ±1.4 % | LEVEL | 1.018 |
+| `e` cross | 8 | 1 807.0 | 1 682.8 | 1 693.2 | 0.931 [0.906, 0.958] | ±0.9 % | FASTER | 0.937 |
+| | 9 | 2 023.6 | 1 971.2 | 1 950.4 | 0.974 [0.925, 1.025] | ±3.2 % | LEVEL | 0.964 |
+| | 10 | 2 439.9 | 2 396.6 | 2 357.0 | 0.982 [0.944, 1.005] | ±1.1 % | LEVEL | 0.966 |
+| `same` | 1 | 272.4 | 244.2 | 257.0 | 0.897 [0.873, 0.921] | ±1.6 % | FASTER | 0.944 |
+| | 2 | 352.7 | 321.9 | 328.4 | 0.913 [0.896, 0.949] | ±2.7 % | FASTER | 0.931 |
+| | 4 | 518.5 | 485.5 | 492.1 | 0.937 [0.928, 0.956] | ±0.8 % | FASTER | 0.949 |
+| | 8 | 829.5 | 812.6 | 817.0 | 0.980 [0.973, 0.993] | ±1.2 % | FASTER | 0.985 |
+
+Least squares over N = 1…7, `cross`: slope 173.7 → **184.9** ns a responder for 3.3.0 (+11.2 ns, +6.4 %),
+183.4 for the tip, the intercept 137.8 → 93.2 → 101.1 ns; `same` over N = 1, 2, 4, 8: slope 79.6 → 81.4 (+1.8
+ns, +2.2 %), the intercept 194.7 → 160.9 → 171.9 ns. The three-point `e` slope is not readable (its intercepts
+are negative; each 3.3.0 median sits under 3.2.1's). The three hosts, 3.2.1 → shipped 3.3.0 (on x86 the tip,
+which is 3.3.0 + 5 Ir, §26.4):
+
+| host · toolchain | `cross` slope, ns a responder | `cross` intercept | `same` slope | `same` intercept | at N = 1 | the cells SLOWER |
+|---|---:|---:|---:|---:|---|---|
+| WSL2 · g++ 14.2 | 121.9 → 134.5 (**+12.5**) | 272 → 287 | 102.2 → 113.8 (**+11.7**) | 122 → 126 | +6.2 % / +7.0 % | every one |
+| Windows 11 · MSVC 19.51 | 242.9 → 238.0 (−4.9) | 345 → 361 | 141.8 → 148.0 (**+6.2**) | 244 → 241 | level / level | `cross` 4, `same` 4 and 8 |
+| macOS · Apple clang 21, M4 Pro | 173.7 → 184.9 (**+11.2**) | 138 → **93** | 79.6 → 81.4 (+1.8) | 195 → **161** | −9.0 % / −10.4 % | `cross` 6 |
+| instructions (g++, `same`) | | | 1 375 → 1 544 Ir (**+169**) | 2 400 → 2 337 Ir (−63) | +111 Ir on a plain ask | |
+
+**One instruction count, three readings — and arm64's is the one §26.5 did not predict.** The per-responder
+slope of shipped 3.3.0 is there on the M4 where there is a crossing, +11.2 ns against +12.5 under g++: the same
+169 instructions, at nearly the same price a responder on both P-cores. What hides it at small N is the
+intercept, 45 ns lower in 3.3.0 than in 3.2.1 (the −63 Ir of §26.4 buy more on the M4 than on x86) — the lines
+cross between N = 4 and N = 6, where the cell turns SLOWER (+4.9 %), then the E-cores enter from N = 7 and the
+crossing cost of a slower core swamps a per-responder difference of 11 ns. Without a crossing the M4 shows no
+slope at all (+1.8 ns a responder, under its A/A band) and a 34-ns lower intercept: the wide core retires the
+registry's extra instructions beside the mailbox work it already had. The prediction "3.3.0 ≈ tip > 3.2.1 from
+N = 1" is wrong in time on this ISA; it is right in instructions, which is the quantity QB-1171's trims are
+sized in, and the M4 is the host where their time gain will be the smallest and must still be proved (§26.5).
+
+**The tip against shipped 3.3.0 at N = 1 — a fact of the M4, not of x86.** The M4 session read, unattributed,
+the tip above 3.3.0 at N = 1: `cross` 337.3 → 350.4 ns (+13.1 ns, +3.9 %, every tip copy above every 3.3.0
+copy), `same` 244.2 → 257.0 (+12.8 ns, +5.2 %, one tip copy outlying — its A/A ±4.5 %), decaying with N in
+`same` (+6.5, +6.6, +4.4 ns at N = 2, 4, 8) and gone from N = 2 in `cross` (within ±1 %). On x86 the two trees
+differ by 0 Ir at the intercept (§26.4) and, timed the same day on both toolchains, 3.3.0 the control and the
+tip `e152216a` the candidate, same protocol, `same` N = 1, 2, 4 and `cross` N = 1, 2
+(`results/{wsl-debian-g++14,desktop-win11-msvc19}/qb-branch-develop/ask-any-scatter/n1-{same,cross}/`):
+
+| host | `cross` N = 1 | `cross` N = 2 | `same` N = 1 | `same` N = 2 | `same` N = 4 |
+|---|---|---|---|---|---|
+| WSL2 · g++ 14.2 | 413.8 → 406.6, 0.983 [0.958, 1.015], LEVEL | 532.4 → 528.5, 0.993, LEVEL | 244.1 → 240.1, **0.984 [0.969, 0.997], FASTER** | 364.6 → 364.9, 1.001, LEVEL | 582.0 → 593.0, 1.019 [1.008, 1.025], SLOWER |
+| Windows 11 · MSVC 19.51 | 642.5 → 632.5, 0.984 [0.935, 1.036], LEVEL | 820.5 → 834.9, 1.018 [0.987, 1.043], LEVEL | 380.2 → 384.4, 1.011 [0.988, 1.025], LEVEL | 529.9 → 530.9, 1.002, LEVEL | 814.0 → 828.7, 1.018 [1.002, 1.031], SLOWER |
+
+No x86 toolchain reproduces the +13 ns: under g++ the tip is 4 ns FASTER at `same` N = 1 and level at `cross`
+N = 1; under MSVC it is level at both N = 1 cells (+4 ns on one core, inside the band; −10 ns across cores) and at
+N = 2. The one cell the two x86 toolchains agree on is another one: the tip above 3.3.0 at `same` N = 4 by the same
++1.8 % (+11.0 ns under g++, +14.8 under MSVC — +3 to +4 ns a responder where the count says +5 Ir: a stall of the
+branch's registry step, not instructions), the x86 baseline QB-1171 reads its trims against. The
+point is therefore a fact of arm64 or of Apple clang's code generation on one of the five commits between
+`v3.3.0` and `f5ac0890` that touch qb-core — the two registry commits first (`c16f1fa9` QB-1114, `b67ac7b8`
+QB-1154: the only ones on the ask files, both written for MSVC's and Apple clang's codegen), then `3a771d3b`
+(QB-1151, the character pipe), `5b306879` (QB-1111, the engine start) and `31ccd720` / `e152216a` (QB-181, the
+arm64 poll, withdrawn). It is not a residue of 3.3.0 and QB-1153 closes without it; it is recorded on **QB-1171**
+as the arm64 baseline the three trims are read against, with its bisection for the M4: the probe built against
+`v3.3.0`, `c16f1fa9`, `b67ac7b8` and the tip, `--no-pin`, `cross` N = 1 and `same` N = 1 alone, 3 copies, 8
+rounds — four sides, two cells, about twenty minutes on a quiet host — the first commit whose cell moves by the
+13 ns names the cause.
 
 ## 27. The launch regime on x86 (QB-1020): two modes inside every copy on WSL2, a launch and a copy effect on MSVC, the floor without qb's regime (2026-10-28)
 

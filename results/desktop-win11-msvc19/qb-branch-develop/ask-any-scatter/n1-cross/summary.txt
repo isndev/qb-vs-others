@@ -1,0 +1,10 @@
+campaign D:\repo\ab-340\w1\qb1153\n1-win-cross: seed 7101, rounds 8, copies 3, asks 200000, mode cross, pool [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]; control v330, candidates ['tip']
+ns per ask_any (median over rounds x copies; copies' medians; A/A band = spread of the copies' medians)
+N=1 responders (cross, CPUs [0, 2])
+   v330      642.5 ns  IQR [630.5, 677.5]  n=24  copies 641.7 633.6 665.0  A/A +-2.45%
+   tip       632.5 ns  IQR [614.9, 666.6]  n=24  copies 631.2 624.4 649.5  A/A +-1.99%
+   ratio tip/v330 0.9844  CI95 [0.9350, 1.0360]  A/A band +-2.45%  -> LEVEL
+N=2 responders (cross, CPUs [0, 2, 4])
+   v330      820.5 ns  IQR [804.1, 854.4]  n=24  copies 821.4 820.8 820.5  A/A +-0.05%
+   tip       834.9 ns  IQR [808.5, 859.5]  n=24  copies 853.8 821.2 838.0  A/A +-1.94%
+   ratio tip/v330 1.0176  CI95 [0.9866, 1.0430]  A/A band +-1.94%  -> LEVEL

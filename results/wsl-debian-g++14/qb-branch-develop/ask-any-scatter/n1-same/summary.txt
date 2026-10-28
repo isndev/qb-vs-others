@@ -1,0 +1,18 @@
+campaign /home/mbelhadi/ab-340/w1/qb1153/n1-wsl-same: seed 7101, rounds 8, copies 3, asks 200000, mode same, pool [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]; control v330, candidates ['tip']
+ns per ask_any (median over rounds x copies; copies' medians; A/A band = spread of the copies' medians)
+N=1 responders (same, CPUs [0])
+   v330      244.1 ns  IQR [240.8, 247.5]  n=24  copies 244.7 242.9 244.0  A/A +-0.36%
+   tip       240.1 ns  IQR [236.6, 242.9]  n=24  copies 241.2 240.6 239.3  A/A +-0.38%
+   ratio tip/v330 0.9838  CI95 [0.9693, 0.9971]  A/A band +-0.38%  -> FASTER
+N=2 responders (same, CPUs [0])
+   v330      364.6 ns  IQR [361.4, 369.6]  n=24  copies 363.5 363.2 366.8  A/A +-0.48%
+   tip       364.9 ns  IQR [362.1, 367.6]  n=24  copies 364.8 365.1 365.2  A/A +-0.05%
+   ratio tip/v330 1.0010  CI95 [0.9896, 1.0095]  A/A band +-0.48%  -> LEVEL
+N=4 responders (same, CPUs [0])
+   v330      582.0 ns  IQR [577.9, 589.0]  n=24  copies 581.6 580.7 588.8  A/A +-0.70%
+   tip       593.0 ns  IQR [589.6, 599.0]  n=24  copies 594.7 592.0 593.0  A/A +-0.23%
+   ratio tip/v330 1.0189  CI95 [1.0078, 1.0251]  A/A band +-0.70%  -> SLOWER
+slope v330 : 112.1 ns per responder, intercept 135.4 ns  (least squares over N=[1, 2, 4])
+slope tip  : 117.1 ns per responder, intercept 126.1 ns  (least squares over N=[1, 2, 4])
+slope delta (tip - v330): +5.0 ns per responder (+4.5 %)
+per-N delta of the medians (tip - v330), and per responder: N=1: -4.0 ns (-3.95/resp)  N=2: +0.3 ns (+0.17/resp)  N=4: +11.0 ns (+2.75/resp)

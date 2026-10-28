@@ -1,0 +1,34 @@
+{
+ "seed": 7101,
+ "rounds": 8,
+ "copies": 3,
+ "asks": 200000,
+ "mode": "same",
+ "pool": [
+  0,
+  2,
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  16,
+  18,
+  20
+ ],
+ "pinned": true,
+ "platform": "linux",
+ "responders": [
+  1,
+  2,
+  4
+ ],
+ "sides": {
+  "v330": "/home/mbelhadi/ab-340/w1/qb1153/bld-wsl-v330/bin/qvoprobe-ask-any-scatter",
+  "tip": "/home/mbelhadi/ab-340/w1/qb1153/bld-wsl-tip/bin/qvoprobe-ask-any-scatter"
+ },
+ "quiet": 30,
+ "tag": "qb1153-n1-same-wsl",
+ "host": "Titan"
+}

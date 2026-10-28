@@ -1,0 +1,18 @@
+campaign D:\repo\ab-340\w1\qb1153\n1-win-same: seed 7101, rounds 8, copies 3, asks 200000, mode same, pool [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]; control v330, candidates ['tip']
+ns per ask_any (median over rounds x copies; copies' medians; A/A band = spread of the copies' medians)
+N=1 responders (same, CPUs [0])
+   v330      380.2 ns  IQR [378.0, 391.0]  n=24  copies 379.6 382.0 380.2  A/A +-0.31%
+   tip       384.4 ns  IQR [377.8, 391.9]  n=24  copies 386.9 382.2 384.4  A/A +-0.60%
+   ratio tip/v330 1.0108  CI95 [0.9884, 1.0252]  A/A band +-0.60%  -> LEVEL
+N=2 responders (same, CPUs [0])
+   v330      529.9 ns  IQR [523.9, 540.5]  n=24  copies 536.5 524.8 527.5  A/A +-1.11%
+   tip       530.9 ns  IQR [524.1, 543.5]  n=24  copies 534.5 535.2 530.2  A/A +-0.47%
+   ratio tip/v330 1.0019  CI95 [0.9872, 1.0195]  A/A band +-1.11%  -> LEVEL
+N=4 responders (same, CPUs [0])
+   v330      814.0 ns  IQR [804.3, 831.4]  n=24  copies 817.4 812.8 815.6  A/A +-0.28%
+   tip       828.7 ns  IQR [818.9, 836.9]  n=24  copies 824.1 832.5 831.4  A/A +-0.50%
+   ratio tip/v330 1.0181  CI95 [1.0018, 1.0313]  A/A band +-0.50%  -> SLOWER
+slope v330 : 144.2 ns per responder, intercept 238.2 ns  (least squares over N=[1, 2, 4])
+slope tip  : 148.2 ns per responder, intercept 235.4 ns  (least squares over N=[1, 2, 4])
+slope delta (tip - v330): +4.0 ns per responder (+2.8 %)
+per-N delta of the medians (tip - v330), and per responder: N=1: +4.1 ns (+4.10/resp)  N=2: +1.0 ns (+0.50/resp)  N=4: +14.8 ns (+3.69/resp)

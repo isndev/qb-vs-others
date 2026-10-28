@@ -1,0 +1,10 @@
+campaign /home/mbelhadi/ab-340/w1/qb1153/n1-wsl-cross: seed 7101, rounds 8, copies 3, asks 200000, mode cross, pool [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]; control v330, candidates ['tip']
+ns per ask_any (median over rounds x copies; copies' medians; A/A band = spread of the copies' medians)
+N=1 responders (cross, CPUs [0, 2])
+   v330      413.8 ns  IQR [398.3, 429.1]  n=24  copies 419.5 402.5 416.4  A/A +-2.05%
+   tip       406.6 ns  IQR [400.4, 415.6]  n=24  copies 406.9 403.9 408.5  A/A +-0.57%
+   ratio tip/v330 0.9826  CI95 [0.9577, 1.0147]  A/A band +-2.05%  -> LEVEL
+N=2 responders (cross, CPUs [0, 2, 4])
+   v330      532.4 ns  IQR [519.9, 548.0]  n=24  copies 520.0 531.2 545.2  A/A +-2.37%
+   tip       528.5 ns  IQR [516.5, 547.1]  n=24  copies 523.0 530.0 531.6  A/A +-0.81%
+   ratio tip/v330 0.9927  CI95 [0.9667, 1.0168]  A/A band +-2.37%  -> LEVEL
