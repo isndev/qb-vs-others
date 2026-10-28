@@ -3673,7 +3673,7 @@ the other form, "separate" when the [min, p99] ranges do not overlap:
 |---|---:|---:|---:|---:|---|
 | apsp, qb `form=1` (`send` per neighbour) against the `push` cell | 572.7 → 586.6 (+2.4 %) | 572.4 → 579.1 (+1.2 %) | 289.4 → 304.1 (+5.1 %) | 290.6 → 323.9 (+11.4 %) | `form=0` stays; every pair separate |
 | sieve, qb `place=1` (filters spread by a Spawner per core) | — | — | 506.0 → 549.5 (+8.6 %) | 522.8 → 529.9 (+1.4 %, overlapping) | `place=0` stays for qb |
-| sieve, the floor at `place=1` | — | — | 498.5 → 299.4 (**−39.9 %**) | 491.6 → 299.9 (**−39.0 %**) | the floor's faster form; its cell stays `place=0` until the x86 sweep (below) |
+| sieve, the floor at `place=1` | — | — | 498.5 → 299.4 (**−39.9 %**) | 491.6 → 299.9 (**−39.0 %**) | the floor's faster form; its cell is `place=1` on every host since 2026-10-28 (§25.1) |
 | sieve `local=1`, the one-filter-per-prime stress (9 591 filters, 46 M messages), qb | 507.8 → 5 403.9 | 505.8 → 5 420.3 | 506.0 → 5 894.3 | 522.8 → 5 684.2 | a labelled stress, never a cell |
 | sieve `local=1`, CAF / SObjectizer / the floor | 71.3 µs / 28.4 µs / 6.60 µs | 71.7 / 31.2 / 6.60 | 47.7 / 95.4 / 6.60 | 52.3 / 92.7 / 6.59 | qb under the raw-thread floor at every configuration (0.82–0.89 ×); CAF 8–13 ×, SObjectizer 5–16 × slower than qb |
 | uct `nodes=200000`, Savina's canonical cap, qb | 128.6 → 136.5 (+6.1 %) | 129.0 → 138.5 (+7.4 %) | 91.8 → 102.5 (+11.7 %) | 90.8 → 101.3 (+11.5 %) | **verifies in every configuration with 3.3.0**; 3.2.1 refused it (uct.md) |
@@ -3688,10 +3688,10 @@ long handler**: apsp's `form=1` is slower in every configuration, most at two pa
 pass-end flush that `push` pays is cheaper than ten unordered hand-overs per phase — the cell stays
 `form=0` on every host. **Spreading qb's sieve does not help qb and does help the floor**: at `place=1`
 qb pays a creation round trip per filter and gains nothing (+9 % spinning, +1 % parked), while the
-floor, whose rings cost nothing to spread, reads 40 % faster — the floor's `main()` still runs
-`place=0`, the reference's placement, because sieve.md's rule names the quiet-host sweep and this is
-one unpinned host; the x86 sweep decides the floor's cell (§25.1: the floor reads 37–46 % faster at
-`place=1` on both x86 toolchains and qb is level there — the switch is the maintainers' decision). **qb 3.3.0 holds Savina's canonical uct**:
+floor, whose rings cost nothing to spread, reads 40 % faster — the floor's `main()` ran `place=0`,
+the reference's placement, until the x86 sweep confirmed this one (§25.1: the floor reads 37–46 %
+faster at `place=1` on both x86 toolchains and qb is level there); since 2026-10-28 the floor's cell
+is `place=1` on every host and qb's stays `place=0` (Huly QB-244). **qb 3.3.0 holds Savina's canonical uct**:
 the 64-bit actor id (`ActorId.h` at `e18022dd`: a 24-bit ordinary slot per VirtualCore, 16 711 679
 against 3.2.1's 65 534) verifies 199 990 live nodes in every configuration, 6–12 % per node over the
 60 000-node cell (the floor's node costs 16–25 % more at that size, CAF's 0–11 %), and the common cap
@@ -3960,9 +3960,11 @@ Two verdicts. **Spreading the sieve helps the floor on x86 as on the M4 and cost
 `place=1` the floor reads 37–46 % faster on both toolchains (its rings cost nothing to spread, as §22.4
 read on the M4: −40 %), and qb moves by +1.4 % at most — the gap between two passes of the same cell —
 where the M4 read +8.6 % spinning. The floor's faster form is therefore `place=1` on every host measured,
-and the decision §22.4 deferred to this sweep is the maintainers' to take: in this tree the floor's
-`main()` still runs `place=0` (that line and the Placement axis of `benchmarks/savina/sieve.md` are the
-two places a switch touches), and qb's cell stays `place=0` on every host, the reference's placement.
+and the decision §22.4 deferred to this sweep was taken on 2026-10-28 (Huly QB-244): the floor's
+`main()` runs `place=1` and the Placement axis of `benchmarks/savina/sieve.md` says so; qb's cell stays
+`place=0` on every host, the reference's placement. No x86 field document moves with it — the wave-B/C
+shapes have no field grid on the two x86 hosts yet, and these sweep documents are their measurement of
+both forms; the M4's field cells of the floor's sieve are re-measured at the new form (the Mac's lot).
 **qb 3.3.0 holds Savina's canonical uct on x86 too**: `nodes=200000` verifies for the four adapters in
 the four configurations on both toolchains. On WSL2 qb's node, 120–154 ns, is 1.1–1.4 × the floor's heap
 node (103–113) and 11–13 × CAF's; on MSVC qb (153–202) is under the floor (203–225) in every

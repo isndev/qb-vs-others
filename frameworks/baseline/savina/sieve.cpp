@@ -137,23 +137,29 @@ int main(int argc, char **argv) {
     spec.framework         = QVO_FRAMEWORK_ID;
     spec.framework_version = QVO_FRAMEWORK_VERSION;
     spec.params            = qvospec::savina::sieve::params();
-    // The placement of this cell: qb's (benchmarks/savina/sieve.md), the floor bounding qb.
-    spec.params["place"]   = 0;
+    // The placement of this cell: the floor's faster declared form (benchmarks/savina/sieve.md, Placement).
+    // FAIRNESS.md 1.1 gives a witness its best form: at place=1 the floor's rings spread the filters for
+    // nothing (-39 / -40 % on the M4, -37 to -46 % on MSVC and WSL2: docs/TUNING.md 22.4 and 25.1), where
+    // qb pays a creation round trip per filter and gains nothing, so qb's cell stays place=0, the reference's
+    // placement, and on this shape the floor no longer mirrors qb's placement (decided 2026-10-28, Huly QB-244).
+    spec.params["place"]   = 1;
     spec.expected          = qvospec::savina::sieve::expected;
     spec.expected_messages = qvospec::savina::sieve::expected_messages;
     spec.work_unit         = qvospec::savina::sieve::kWorkUnit;
     spec.work_units        = qvospec::savina::sieve::work_units;
     spec.idiom_source      = "none -- hand-written floor";
     spec.idiom_note        = "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; "
-                             "a filter is a heap node its owner allocates on Create, placed as qb "
-                             "places it; not an actor framework and not ranked as one";
+                             "a filter is a heap node its owner allocates on Create, placed by the mapping qb "
+                             "uses (sieve::core_of_filter) for the run's place -- 1 in this cell, where qb's "
+                             "cell runs 0; not an actor framework and not ranked as one";
     spec.caveats           = {
         "THIS IS NOT A FRAMEWORK. Actors are integers, a filter is created by one Create message "
         "to the id its creator chose, and a hand-off is one ring push and one ring pop: the floor "
         "for a growing chain, not for finding the next actor",
-        "the producer on worker 0, filter f where qb puts it (sieve::core_of_filter): every filter "
-        "on worker 1 % cores with place=0, filter f on worker (f + 1) % cores with place=1. The "
-        "run's `place` is in its params",
+        "the producer on worker 0, filter f where qb would put it at the same place "
+        "(sieve::core_of_filter): every filter on worker 1 % cores with place=0, filter f on worker "
+        "(f + 1) % cores with place=1. This cell runs place=1, the floor's faster form on every host "
+        "measured; qb's cell runs place=0. The run's `place` is in its params",
         "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"};
 
     return qvo::run(argc, argv, std::move(spec), savina_sieve_baseline::body);

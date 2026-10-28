@@ -29,7 +29,7 @@ it.
 |---|---|---|---|
 | `limit` | 100 000 | 100 000 (`N`) | no deviation; the candidates are the odd numbers from 3 below it |
 | `local` | 1 000 | 1 000 (`M`) | no deviation; the primes one filter holds — `local=1` is the one-filter-per-prime sieve |
-| `place` | 0 | n/a | where the frameworks that place put the filters, a **declared axis** — see below |
+| `place` | 0 for qb's cell, 1 for the floor's | n/a | where the frameworks that place put the filters, a **declared axis** — see below |
 | `cores` | 2 | n/a | the producer on core 0, the first filter on core `1 % cores` |
 | `wait` | 1 (spin) | n/a | spin/park; both values are always measured and published |
 
@@ -44,10 +44,10 @@ the producer. That is `place=0`, the cell's default. `place=1` is what a qb prog
 chain spread does: filter `f` lives on core `(f + 1) % cores`, created by a `Spawner` actor that
 core holds (one per core, made before start) — the creator sends `Spawn`, holds the candidates and
 the Exit it would pass on until the answer names the new filter, then pushes them in order: one
-round trip per creation. Following FAIRNESS.md §1.1 both forms are implemented and the table cell
-runs the faster as measured on the quiet host (the measurement campaign's form sweep, `place=0`
-against `place=1` at two cores); until then the cell runs the reference's `place=0`, and qb's and
-the floor's `main()` say so. CAF and SObjectizer place by their pools: `place=1` has no
+round trip per creation. Following FAIRNESS.md §1.1 both forms are implemented and each table cell
+runs the faster as measured on the quiet hosts (the form sweeps of 2026-10-27, `place=0` against
+`place=1` at two cores, on the M4, on MSVC and on WSL2): qb's cell is the reference's `place=0`, the
+floor's is `place=1`, and each `main()` says so. CAF and SObjectizer place by their pools: `place=1` has no
 counterpart there, and their adapters declare it **not applicable** (the harness's third verdict)
 rather than run the pool under a label that says otherwise.
 
@@ -55,9 +55,12 @@ The first sweep, on macOS (2026-10-27, unpinned, shipped qb 3.3.0, `results/macb
 `docs/TUNING.md` §22.4), answers it one way for qb and the other for the floor: **qb at `place=1`
 reads +8.6 % (2c-spin, separate) and +1.4 % (2c-park, overlapping)** over its `place=0` cell — the
 creation round trip per filter buys nothing on a chain whose work is the divisions — while **the
-floor at `place=1` reads −39.9 / −39.0 %**, its rings costing nothing to spread. So `place=0` is
-qb's cell everywhere, and the floor's cell stays `place=0` too until the x86 sweep says what this
-one did: a one-host, unpinned sweep does not move a default the two pinned hosts measure at. The
+floor at `place=1` reads −39.9 / −39.0 %**, its rings costing nothing to spread. The x86 sweep
+(2026-10-27, pinned, the 3.4.0 branch tip, `results/{desktop-win11-msvc19,wsl-debian-g++14}/wave-bc-form-sweep/`,
+`docs/TUNING.md` §25.1) read the same: the floor −37 to −46 % at `place=1` on MSVC and on WSL2, qb
++1.4 % at most. So `place=0` is qb's cell everywhere, and **the floor's cell is `place=1` everywhere
+since 2026-10-28** (Huly QB-244): a witness runs its best declared form, and on this shape the floor
+no longer mirrors qb's placement — both placements of each stay in the sweeps' side documents. The
 `local=1` stress (one filter per prime: 9 591 creations, 46 M messages) is a labelled side document
 in the same directory: qb 5.40 / 5.42 µs per candidate at one core and 5.89 / 5.68 at two, under the
 floor's 6.60 at every configuration, against CAF's 47.7–71.7 µs and SObjectizer's 28.4–95.4.
@@ -76,7 +79,7 @@ of the cycle carries and declares the run not applicable only when every one rea
 | qb | everything on VirtualCore 0; a filter is an `addRefActor<FilterActor>` child of its predecessor | `place=0`: the producer on VirtualCore 0, every filter on VirtualCore 1; `place=1`: filter `f` on VirtualCore `(f + 1) % 2`, created by that core's `Spawner` |
 | CAF | `max-threads=1` | `=2`, both pinned; every filter `self->spawn`ed by its predecessor, placed by the work-stealing pool |
 | SObjectizer | `one_thread` dispatcher | `thread_pool` with 2 pinned work threads and `fifo_t::individual`; every filter its own top-level coop on that pool |
-| floor | one thread | qb's placement for the run's `place`; a filter is a heap node its worker allocates when its first message, Create, arrives |
+| floor | one thread | the run's `place` through the mapping qb uses (`sieve::core_of_filter`) — its cell runs `place=1`, filter `f` on worker `(f + 1) % 2`; a filter is a heap node its worker allocates when its first message, Create, arrives |
 
 ## The adapters
 
