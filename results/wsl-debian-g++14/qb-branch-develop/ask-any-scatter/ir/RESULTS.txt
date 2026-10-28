@@ -1,0 +1,272 @@
+== QB-1153 Ir per ask_any, 2026-10-27T21:31:28+01:00, nproc=24
+   v321: binary carries 504 text symbols
+   v321 same1 asks=5000 rc=0 Ir=22117122 responders=1 asks=5000  18794.8 ns/ask_any  (checksum 24995000)
+   v321 same1 asks=20000 rc=0 Ir=78742006 responders=1 asks=20000  14743.5 ns/ask_any  (checksum 399980000)
+RESULT v321 same1 Ir/ask=3774
+           Ir/iter           small           large  function (inclusive)
+            3775.0        18912064        75537064  ???:qb::VirtualCore::__workflow__()
+            1428.0         7144997        28564997  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+            1182.0         5911371        23641371  ???:qb::VirtualCore::__receive__()
+            1091.0         5459225        21824225  ???:ask_any_scatter_probe::Asker::onInit()::{lambda(qb::ScopedCoroContext)#1}::operator()(ask_any_scatter_prob
+            1020.0         5101151        20401151  ???:qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+             983.0         4922510        19667510  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+             902.0         4510635        18040635  ???:qb::router::memh<qb::Event, true, void>::EventResolver<qb::test::Ping>::resolve(qb::Event&) const
+             811.0         4056402        16221402  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+             779.0         3895635        15580635  ???:qb::detail::ask_deliver(unsigned long, qb::ActorId, qb::Event&)
+             736.0         3680635        14720635  ???:void qb::router::semh<qb::test::Ping, void>::dispatch_trampoline<ask_any_scatter_probe::Asker>(void*, qb::
+             676.0         3380635        13520635  ???:qb::detail::ask_awaiter<qb::test::Ping>::deliver_thunk(void*, qb::Event&)
+             396.0         2081513         8021513  free
+             304.0         1609785         6169785  ???:operator delete(void*, unsigned long)
+             292.0         1547767         5927767  ???:operator delete(void*)
+             274.0         1370000         5480000  ???:std::_Sp_counted_ptr_inplace<qb::io::async::when_any_vector_awaiter<qb::test::Ping>::state_t, std::allocat
+             269.0         1346528         5381528  ???:qb::io::async::when_any_vector_awaiter<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>
+             207.0         1196066         4301066  ???:operator new(unsigned long)
+             169.0          845000         3380000  ???:qb::io::async::task<qb::test::Ping>::~task()
+             155.0          937613         3262613  malloc
+             155.0          775000         3100000  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+             138.0          690000         2760000  ???:void qb::router::semh<qb::test::Ping, void>::dispatch_trampoline<qb::test::Market>(void*, qb::test::Ping&)
+             133.0          674582         2669582  ???:operator new(unsigned long, std::align_val_t)
+              88.0          440000         1760000  ???:std::vector<qb::io::async::task<qb::test::Ping>, std::allocator<qb::io::async::task<qb::test::Ping> > >::~
+              81.0          405081         1620081  ???:qb::io::async::detail::CoroutineFrameAllocator::deallocate(void*, unsigned long)
+              80.0          402201         1602201  ???:operator delete(void*, unsigned long, std::align_val_t)
+              76.0          382343         1522343  ???:operator delete(void*, std::align_val_t)
+              68.0          340000         1360000  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+              66.0          330958         1320958  ???:qb::ask_operation<qb::test::Ping>::operator qb::io::async::task<qb::test::Ping>() &&
+              66.0          330000         1320000  ???:qb::Actor::reply(qb::Event&) const
+              60.0          300492         1200492  ???:qb::io::async::task<qb::test::Ping> qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::Act
+              60.0          300000         1200000  ???:qb::io::async::CoroutineScheduler::schedule_resume(std::__n4861::coroutine_handle<void>)
+              52.0          260000         1040000  ???:qb::io::async::task<qb::test::Ping>::await_resume()
+              50.0          250000         1000000  ???:qb::VirtualCore::reply(qb::Event&)
+              44.0          221596          881596  ???:qb::detail::ask_take(qb::ActorId, qb::detail::ask_slot*)
+              43.0          215000          860000  ???:qb::detail::ask_unregister(unsigned long)
+              39.0          195000          780000  ???:qb::VirtualCore::send(qb::Event const&)
+              37.0          185491          740491  ???:qb::io::async::task<void>::promise_type::final_suspend()::final_awaiter::await_suspend(std::__n4861::corou
+              12.0          331309          511309  __memset_avx2_unaligned_erms
+               8.0           40000          160000  ???:qb::io::async::task<qb::test::Ping>::promise_type::final_suspend()::final_awaiter::await_suspend(std::__n4
+               5.0           25000          100000  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+   v321 same4 asks=5000 rc=0 Ir=42751951 responders=4 asks=5000  31947.6 ns/ask_any  (checksum 24995000)
+   v321 same4 asks=20000 rc=0 Ir=161258230 responders=4 asks=20000  28031.3 ns/ask_any  (checksum 399980000)
+RESULT v321 same4 Ir/ask=7900
+           Ir/iter           small           large  function (inclusive)
+            7900.3        39541860       158046860  ???:qb::VirtualCore::__workflow__()
+            3417.0        17087046        68342046  ???:qb::VirtualCore::__receive__()
+            3255.0        16276826        65101826  ???:qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+            3164.0        15827071        63287071  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+            2915.0        14575447        58300447  ???:qb::router::memh<qb::Event, true, void>::EventResolver<qb::test::Ping>::resolve(qb::Event&) const
+            2423.0        12115447        48460447  ???:qb::detail::ask_deliver(unsigned long, qb::ActorId, qb::Event&)
+            2251.0        11255447        45020447  ???:void qb::router::semh<qb::test::Ping, void>::dispatch_trampoline<ask_any_scatter_probe::Asker>(void*, qb::
+            2201.0        11011999        44026999  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+            2065.0        10325447        41300447  ???:qb::detail::ask_awaiter<qb::test::Ping>::deliver_thunk(void*, qb::Event&)
+            1771.0         8861245        35426245  ???:ask_any_scatter_probe::Asker::onInit()::{lambda(qb::ScopedCoroContext)#1}::operator()(ask_any_scatter_prob
+            1473.0         7364831        29459831  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+             565.0         2827500        11302500  ???:qb::io::async::when_any_vector_awaiter<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>
+             552.0         2760000        11040000  ???:void qb::router::semh<qb::test::Ping, void>::dispatch_trampoline<qb::test::Market>(void*, qb::test::Ping&)
+             552.0         2760000        11040000  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+             478.0         2390000         9560000  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+             404.0         2123908         8183908  free
+             308.0         1630524         6250524  ???:operator delete(void*, unsigned long)
+             296.0         1480050         5920050  ???:std::_Sp_counted_ptr_inplace<qb::io::async::when_any_vector_awaiter<qb::test::Ping>::state_t, std::allocat
+             296.0         1568431         6008431  ???:operator delete(void*)
+             264.0         1322395         5282395  ???:qb::ask_operation<qb::test::Ping>::operator qb::io::async::task<qb::test::Ping>() &&
+             264.0         1320000         5280000  ???:qb::Actor::reply(qb::Event&) const
+             243.0         1215081         4860081  ???:qb::io::async::detail::CoroutineFrameAllocator::deallocate(void*, unsigned long)
+             216.0         1241092         4481092  ???:operator new(unsigned long)
+             200.0         1000000         4000000  ???:qb::VirtualCore::reply(qb::Event&)
+             199.0          995000         3980000  ???:qb::io::async::task<qb::test::Ping>::~task()
+             176.0          881702         3521702  ???:qb::detail::ask_take(qb::ActorId, qb::detail::ask_slot*)
+             172.0          860000         3440000  ???:qb::detail::ask_unregister(unsigned long)
+             164.0          982270         3442270  malloc
+             156.0          780000         3120000  ???:qb::VirtualCore::send(qb::Event const&)
+             155.0          775000         3100000  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+             133.0          677510         2672510  ???:operator new(unsigned long, std::align_val_t)
+              88.0          440000         1760000  ???:std::vector<qb::io::async::task<qb::test::Ping>, std::allocator<qb::io::async::task<qb::test::Ping> > >::~
+              80.0          402124         1602124  ???:operator delete(void*, unsigned long, std::align_val_t)
+              76.0          383051         1523051  ???:operator delete(void*, std::align_val_t)
+              60.0          300492         1200492  ???:qb::io::async::task<qb::test::Ping> qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::Act
+              60.0          300000         1200000  ???:qb::io::async::CoroutineScheduler::schedule_resume(std::__n4861::coroutine_handle<void>)
+              52.0          260000         1040000  ???:qb::io::async::task<qb::test::Ping>::await_resume()
+              37.0          185299          740299  ???:qb::io::async::task<void>::promise_type::final_suspend()::final_awaiter::await_suspend(std::__n4861::corou
+              11.0          326320          491320  __memset_avx2_unaligned_erms
+               8.0           40000          160000  ???:qb::io::async::task<qb::test::Ping>::promise_type::final_suspend()::final_awaiter::await_suspend(std::__n4
+== QB-1153 Ir per ask_any, 2026-10-28T05:06:41+01:00, nproc=24 sides=[tip] cells=[same1 same4]
+   tip: binary carries 641 text symbols
+   tip same1 asks=5000 rc=0 Ir=22343679 responders=1 asks=5000  18339.1 ns/ask_any  (checksum 24995000)
+   tip same1 asks=20000 rc=0 Ir=80632294 responders=1 asks=20000  14130.3 ns/ask_any  (checksum 399980000)
+RESULT tip same1 Ir/ask=3885
+           Ir/iter           small           large  function (inclusive)
+            3886.1        19467374        77759049  ???:void qb::VirtualCore::__workflow_loop__<false>()
+            3886.1        19467377        77759052  ???:qb::VirtualCore::__workflow__()
+            1492.0         7464495        29844495  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+            1222.0         6111410        24441410  ???:qb::VirtualCore::__receive__()
+            1154.0         5773740        23083740  ???:ask_any_scatter_probe::Asker::onInit()::{lambda(qb::ScopedCoroContext)#1}::operator()(ask_any_scatter_prob
+            1082.0         5418016        21648016  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+            1064.0         5321197        21281197  ???:qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+             942.0         4710546        18840546  ???:qb::router::memh<qb::Event, true, void>::EventResolver<qb::test::Ping>::resolve(qb::Event&) const
+             857.0         4285878        17140878  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+             828.0         4140546        16560546  ???:qb::detail::ask_deliver(unsigned long, qb::ActorId, qb::Event&)
+             790.0         3950546        15800546  ???:void qb::router::semh<qb::test::Ping, void>::dispatch_trampoline<ask_any_scatter_probe::Asker>(void*, qb::
+             729.0         3645546        14580546  ???:qb::detail::ask_awaiter<qb::test::Ping>::deliver_thunk(void*, qb::Event&)
+             396.0         2080837         8020837  free
+             304.0         1611614         6171614  ???:operator delete(void*, unsigned long)
+             292.0         1461261         5841261  ???:qb::io::async::when_any_vector_awaiter<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>
+             292.0         1550198         5930198  ???:operator delete(void*)
+             284.0         1420000         5680000  ???:std::_Sp_counted_ptr_inplace<qb::io::async::when_any_vector_awaiter<qb::test::Ping>::state_t, std::allocat
+             273.0         1365000         5460000  ???:std::vector<qb::io::async::task<qb::test::Ping>, std::allocator<qb::io::async::task<qb::test::Ping> > >::~
+             244.0         1227470         4887470  ???:qb::ask_operation<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>)
+             207.0         1201225         4306225  ???:operator new(unsigned long)
+             166.0          830000         3320000  ???:qb::io::async::task<qb::test::Ping>::~task()
+             155.0          942716         3267716  malloc
+             152.0          760000         3040000  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+             133.0          672755         2667755  ???:operator new(unsigned long, std::align_val_t)
+             120.0          600000         2400000  ???:void qb::router::semh<qb::test::Ping, void>::dispatch_trampoline<qb::test::MarketResponder<qb::Actor> >(vo
+              90.0          450169         1800169  ???:std::vector<qb::io::async::task<qb::test::Ping>, std::allocator<qb::io::async::task<qb::test::Ping> > >::r
+              86.0          430000         1720000  ???:qb::detail::ask_unregister(unsigned long)
+              81.0          405108         1620108  ???:qb::io::async::detail::CoroutineFrameAllocator::deallocate(void*, unsigned long)
+              80.0          400794         1600794  ???:operator delete(void*, unsigned long, std::align_val_t)
+              76.0          381561         1521561  ???:operator delete(void*, std::align_val_t)
+              70.0          350000         1400000  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+              69.0          347692         1382692  ???:qb::detail::ask_take(qb::ActorId, qb::detail::ask_slot*)
+              67.0          335964         1340964  ???:qb::ask_operation<qb::test::Ping>::operator qb::io::async::task<qb::test::Ping>() &&
+              62.0          310000         1240000  ???:qb::io::async::schedule_via_current(std::__n4861::coroutine_handle<void>)
+              60.0          300493         1200493  ???:qb::io::async::task<qb::test::Ping> qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::Act
+              53.0          265000         1060000  ???:qb::Actor::reply(qb::Event&) const
+              52.0          260000         1040000  ???:qb::io::async::task<qb::test::Ping>::await_resume()
+              41.0          205000          820000  ???:qb::VirtualCore::reply(qb::Event&)
+              37.0          185404          740404  ???:qb::io::async::task<void>::promise_type::final_suspend()::final_awaiter::await_suspend(std::__n4861::corou
+              37.0          185000          740000  ???:qb::VirtualCore::reply_local(qb::Event&)
+   tip same4 asks=5000 rc=0 Ir=45595441 responders=4 asks=5000  34399.9 ns/ask_any  (checksum 24995000)
+   tip same4 asks=20000 rc=0 Ir=173598661 responders=4 asks=20000  31926.9 ns/ask_any  (checksum 399980000)
+RESULT tip same4 Ir/ask=8533
+           Ir/iter           small           large  function (inclusive)
+            8534.4        42712879       170728752  ???:void qb::VirtualCore::__workflow_loop__<false>()
+            8534.4        42712882       170728755  ???:qb::VirtualCore::__workflow__()
+            3784.7        18925728        75695728  ???:qb::VirtualCore::__receive__()
+            3626.7        18135515        72535515  ???:qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+            3599.7        18005968        72000968  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+            3270.7        16353767        65413767  ???:qb::router::memh<qb::Event, true, void>::EventResolver<qb::test::Ping>::resolve(qb::Event&) const
+            2814.7        14073767        56293767  ???:qb::detail::ask_deliver(unsigned long, qb::ActorId, qb::Event&)
+            2662.7        13313767        53253767  ???:void qb::router::semh<qb::test::Ping, void>::dispatch_trampoline<ask_any_scatter_probe::Asker>(void*, qb::
+            2325.7        11628767        46513767  ???:qb::detail::ask_awaiter<qb::test::Ping>::deliver_thunk(void*, qb::Event&)
+            2310.0        11557082        46207082  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+            1885.0         9431345        37706345  ???:ask_any_scatter_probe::Asker::onInit()::{lambda(qb::ScopedCoroContext)#1}::operator()(ask_any_scatter_prob
+            1570.0         7849733        31399733  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+             976.0         4887201        19527201  ???:qb::ask_operation<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>)
+             722.0         3610000        14440000  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+             646.0         3230000        12920000  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+             624.0         3122505        12482505  ???:qb::io::async::when_any_vector_awaiter<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>
+             480.0         2400000         9600000  ???:void qb::router::semh<qb::test::Ping, void>::dispatch_trampoline<qb::test::MarketResponder<qb::Actor> >(vo
+             442.0         2210000         8840000  ???:qb::ask_operation<qb::test::Ping>::~ask_operation()
+             404.0         2123245         8183245  free
+             344.0         1720000         6880000  ???:qb::detail::ask_unregister(unsigned long)
+             308.0         1631879         6251879  ???:operator delete(void*, unsigned long)
+             306.0         1530050         6120050  ???:std::_Sp_counted_ptr_inplace<qb::io::async::when_any_vector_awaiter<qb::test::Ping>::state_t, std::allocat
+             296.0         1570626         6010626  ???:operator delete(void*)
+             295.0         1475050         5900050  ???:std::vector<qb::io::async::task<qb::test::Ping>, std::allocator<qb::io::async::task<qb::test::Ping> > >::~
+             273.0         1367882         5462882  ???:qb::detail::ask_take(qb::ActorId, qb::detail::ask_slot*)
+             268.0         1342400         5362400  ???:qb::ask_operation<qb::test::Ping>::operator qb::io::async::task<qb::test::Ping>() &&
+             243.0         1215189         4860189  ???:qb::io::async::detail::CoroutineFrameAllocator::deallocate(void*, unsigned long)
+             216.0         1246718         4486718  ???:operator new(unsigned long)
+             212.0         1060000         4240000  ???:qb::Actor::reply(qb::Event&) const
+             196.0          980000         3920000  ???:qb::io::async::task<qb::test::Ping>::~task()
+             164.0          987819         3447819  malloc
+             164.0          820000         3280000  ???:qb::VirtualCore::reply(qb::Event&)
+             152.0          760000         3040000  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+             148.0          740000         2960000  ???:qb::VirtualCore::reply_local(qb::Event&)
+             147.0          735000         2940000  ???:qb::detail::(anonymous namespace)::ask_table::obsolete(unsigned long, qb::ActorId) const [clone .constprop
+             133.0          675936         2670936  ???:operator new(unsigned long, std::align_val_t)
+             132.0          660000         2640000  ???:qb::io::async::CoroutineScheduler::forget(std::__n4861::coroutine_handle<void>)
+              93.0          465000         1860000  ???:std::vector<qb::io::async::task<qb::test::Ping>, std::allocator<qb::io::async::task<qb::test::Ping> > >::r
+              80.0          400794         1600794  ???:operator delete(void*, unsigned long, std::align_val_t)
+              76.0          382346         1522346  ???:operator delete(void*, std::align_val_t)
+== done 2026-10-28T05:06:43+01:00
+== QB-1153 Ir per ask_any, 2026-10-28T05:11:57+01:00, nproc=24 sides=[v330] cells=[same1 same4]
+   v330: binary carries 643 text symbols
+   v330 same1 asks=5000 rc=0 Ir=22320060 responders=1 asks=5000  18601.5 ns/ask_any  (checksum 24995000)
+   v330 same1 asks=20000 rc=0 Ir=80537522 responders=1 asks=20000  14180.4 ns/ask_any  (checksum 399980000)
+RESULT v330 same1 Ir/ask=3881
+           Ir/iter           small           large  function (inclusive)
+            3881.1        19443257        77659018  ???:void qb::VirtualCore::__workflow_loop__<false>()
+            3881.1        19443260        77659021  ???:qb::VirtualCore::__workflow__()
+            1492.0         7464512        29844512  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+            1214.0         6071464        24281464  ???:qb::VirtualCore::__receive__()
+            1154.0         5773756        23083756  ???:ask_any_scatter_probe::Asker::onInit()::{lambda(qb::ScopedCoroContext)#1}::operator()(ask_any_scatter_prob
+            1077.0         5393996        21548996  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+            1056.0         5281251        21121251  ???:qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+             934.0         4670600        18680600  ???:qb::router::memh<qb::Event, true, void>::EventResolver<qb::test::Ping>::resolve(qb::Event&) const
+             857.0         4285894        17140894  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+             820.0         4100600        16400600  ???:qb::detail::ask_deliver(unsigned long, qb::ActorId, qb::Event&)
+             782.0         3910600        15640600  ???:void qb::router::semh<qb::test::Ping, void>::dispatch_trampoline<ask_any_scatter_probe::Asker>(void*, qb::
+             721.0         3605600        14420600  ???:qb::detail::ask_awaiter<qb::test::Ping>::deliver_thunk(void*, qb::Event&)
+             396.0         2080665         8020665  free
+             304.0         1611675         6171675  ???:operator delete(void*, unsigned long)
+             292.0         1461261         5841261  ???:qb::io::async::when_any_vector_awaiter<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>
+             292.0         1550256         5930256  ???:operator delete(void*)
+             284.0         1420000         5680000  ???:std::_Sp_counted_ptr_inplace<qb::io::async::when_any_vector_awaiter<qb::test::Ping>::state_t, std::allocat
+             273.0         1365000         5460000  ???:std::vector<qb::io::async::task<qb::test::Ping>, std::allocator<qb::io::async::task<qb::test::Ping> > >::~
+             247.0         1243396         4948396  ???:qb::ask_operation<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>)
+             207.0         1201234         4306234  ???:operator new(unsigned long)
+             166.0          830000         3320000  ???:qb::io::async::task<qb::test::Ping>::~task()
+             155.0          942415         3267415  malloc
+             152.0          760000         3040000  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+             133.0          672488         2667488  ???:operator new(unsigned long, std::align_val_t)
+             120.0          600000         2400000  ???:void qb::router::semh<qb::test::Ping, void>::dispatch_trampoline<qb::test::MarketResponder<qb::Actor> >(vo
+              90.0          450185         1800185  ???:std::vector<qb::io::async::task<qb::test::Ping>, std::allocator<qb::io::async::task<qb::test::Ping> > >::r
+              81.0          405108         1620108  ???:qb::io::async::detail::CoroutineFrameAllocator::deallocate(void*, unsigned long)
+              80.0          400794         1600794  ???:operator delete(void*, unsigned long, std::align_val_t)
+              78.0          390000         1560000  ???:qb::detail::ask_unregister(unsigned long)
+              76.0          381532         1521532  ???:operator delete(void*, std::align_val_t)
+              72.0          363807         1443807  ???:qb::detail::ask_take(qb::ActorId, qb::detail::ask_slot*)
+              70.0          350000         1400000  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+              67.0          335964         1340964  ???:qb::ask_operation<qb::test::Ping>::operator qb::io::async::task<qb::test::Ping>() &&
+              62.0          310000         1240000  ???:qb::io::async::schedule_via_current(std::__n4861::coroutine_handle<void>)
+              60.0          300493         1200493  ???:qb::io::async::task<qb::test::Ping> qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::Act
+              53.0          265000         1060000  ???:qb::Actor::reply(qb::Event&) const
+              52.0          260000         1040000  ???:qb::io::async::task<qb::test::Ping>::await_resume()
+              41.0          205000          820000  ???:qb::VirtualCore::reply(qb::Event&)
+              37.0          185458          740458  ???:qb::io::async::task<void>::promise_type::final_suspend()::final_awaiter::await_suspend(std::__n4861::corou
+              37.0          185000          740000  ???:qb::VirtualCore::reply_local(qb::Event&)
+   v330 same4 asks=5000 rc=0 Ir=45500511 responders=4 asks=5000  35269.0 ns/ask_any  (checksum 24995000)
+   v330 same4 asks=20000 rc=0 Ir=173214497 responders=4 asks=20000  30135.9 ns/ask_any  (checksum 399980000)
+RESULT v330 same4 Ir/ask=8514
+           Ir/iter           small           large  function (inclusive)
+            8514.3        42613707       170328707  ???:void qb::VirtualCore::__workflow_loop__<false>()
+            8514.3        42613710       170328710  ???:qb::VirtualCore::__workflow__()
+            3752.7        18765601        75055601  ???:qb::VirtualCore::__receive__()
+            3594.7        17975388        71895388  ???:qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+            3579.7        17906728        71601728  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+            3238.7        16193640        64773640  ???:qb::router::memh<qb::Event, true, void>::EventResolver<qb::test::Ping>::resolve(qb::Event&) const
+            2782.7        13913640        55653640  ???:qb::detail::ask_deliver(unsigned long, qb::ActorId, qb::Event&)
+            2630.7        13153640        52613640  ???:void qb::router::semh<qb::test::Ping, void>::dispatch_trampoline<ask_any_scatter_probe::Asker>(void*, qb::
+            2310.0        11557083        46207083  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+            2293.7        11468640        45873640  ???:qb::detail::ask_awaiter<qb::test::Ping>::deliver_thunk(void*, qb::Event&)
+            1885.0         9431345        37706345  ???:ask_any_scatter_probe::Asker::onInit()::{lambda(qb::ScopedCoroContext)#1}::operator()(ask_any_scatter_prob
+            1570.0         7849733        31399733  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+             988.0         4948088        19768088  ???:qb::ask_operation<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>)
+             698.0         3490000        13960000  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+             624.0         3122505        12482505  ???:qb::io::async::when_any_vector_awaiter<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>
+             622.0         3110000        12440000  ???:qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Pi
+             480.0         2400000         9600000  ???:void qb::router::semh<qb::test::Ping, void>::dispatch_trampoline<qb::test::MarketResponder<qb::Actor> >(vo
+             418.0         2090000         8360000  ???:qb::ask_operation<qb::test::Ping>::~ask_operation()
+             404.0         2123145         8183145  free
+             312.0         1560000         6240000  ???:qb::detail::ask_unregister(unsigned long)
+             308.0         1632086         6252086  ???:operator delete(void*, unsigned long)
+             306.0         1530102         6120102  ???:std::_Sp_counted_ptr_inplace<qb::io::async::when_any_vector_awaiter<qb::test::Ping>::state_t, std::allocat
+             296.0         1570830         6010830  ???:operator delete(void*)
+             295.0         1475052         5900052  ???:std::vector<qb::io::async::task<qb::test::Ping>, std::allocator<qb::io::async::task<qb::test::Ping> > >::~
+             285.0         1428958         5703958  ???:qb::detail::ask_take(qb::ActorId, qb::detail::ask_slot*)
+             268.0         1342400         5362400  ???:qb::ask_operation<qb::test::Ping>::operator qb::io::async::task<qb::test::Ping>() &&
+             243.0         1215189         4860189  ???:qb::io::async::detail::CoroutineFrameAllocator::deallocate(void*, unsigned long)
+             216.0         1246839         4486839  ???:operator new(unsigned long)
+             212.0         1060000         4240000  ???:qb::Actor::reply(qb::Event&) const
+             196.0          980000         3920000  ???:qb::io::async::task<qb::test::Ping>::~task()
+             164.0          987845         3447845  malloc
+             164.0          820000         3280000  ???:qb::VirtualCore::reply(qb::Event&)
+             152.0          760000         3040000  ???:qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb:
+             148.0          740000         2960000  ???:qb::VirtualCore::reply_local(qb::Event&)
+             147.0          735000         2940000  ???:qb::detail::(anonymous namespace)::ask_table::obsolete(unsigned long, qb::ActorId) const [clone .constprop
+             133.0          675419         2670419  ???:operator new(unsigned long, std::align_val_t)
+             132.0          660000         2640000  ???:qb::io::async::CoroutineScheduler::forget(std::__n4861::coroutine_handle<void>)
+              93.0          465000         1860000  ???:std::vector<qb::io::async::task<qb::test::Ping>, std::allocator<qb::io::async::task<qb::test::Ping> > >::r
+              80.0          400794         1600794  ???:operator delete(void*, unsigned long, std::align_val_t)
+              76.0          382288         1522288  ???:operator delete(void*, std::align_val_t)
+== done 2026-10-28T05:12:00+01:00

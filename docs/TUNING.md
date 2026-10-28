@@ -76,6 +76,12 @@ are all in this repository.
 - [25. The x86 session on the 3.4.0 branch tip — the declared forms on MSVC and WSL2, the engine start counted (2026-10-27)](#25-the-x86-session-on-the-340-branch-tip--the-declared-forms-on-msvc-and-wsl2-the-engine-start-counted-2026-10-27)
   - [25.1 The forms the roster asked of x86: sieve `place`, uct at 200 000 nodes](#251-the-forms-the-roster-asked-of-x86-sieve-place-uct-at-200-000-nodes)
   - [25.2 The engine start on x86 (QB-1111): 22 500 instructions and 1.2 µs an engine on Linux, level on MSVC](#252-the-engine-start-on-x86-qb-1111-22-500-instructions-and-12-µs-an-engine-on-linux-level-on-msvc)
+- [26. The ask_any scatter on x86 — the slope on WSL2 and MSVC, attributed to shipped 3.3.0 (2026-10-28)](#26-the-ask_any-scatter-on-x86--the-slope-on-wsl2-and-msvc-attributed-to-shipped-330-2026-10-28)
+  - [26.1 The protocol: `tools/scatter-ab.py`](#261-the-protocol-toolsscatter-abpy)
+  - [26.2 WSL2 g++ 14.2: slower at every N, with and without a crossing](#262-wsl2-g-142-slower-at-every-n-with-and-without-a-crossing)
+  - [26.3 MSVC 19.51: level across cores, +4 % on one](#263-msvc-1951-level-across-cores-4--on-one)
+  - [26.4 The instructions: shipped 3.3.0 carries the slope, the branch adds nothing](#264-the-instructions-shipped-330-carries-the-slope-the-branch-adds-nothing)
+  - [26.5 Three ISAs, one instruction count — and the protocol for the M4](#265-three-isas-one-instruction-count--and-the-protocol-for-the-m4)
 
 ---
 
@@ -3914,9 +3920,11 @@ qvoprobe-ask-any-scatter cross 8 200000   # asker on core 0, responder i on core
 qvoprobe-ask-any-scatter same  8 200000   # asker and responders on core 0: no mailbox crossing
 ```
 
-The responders are qb's own `qb::test::MarketResponder`, read from `tests/core/shared/AskResponders.h` of the
-qb tree being measured (`QVO_QB_DIR`), a header the ask suites share and that exists unchanged since 3.2: the
-same probe builds against shipped 3.2.1 and against a candidate. Every reply is `2 * seq`, so the winners sum to
+The responders are qb's own `qb::test::Market`, read from `tests/core/shared/AskResponders.h` of the qb
+tree being measured (`QVO_QB_DIR`), a header the ask suites share — the name every tree since 3.2 carries (a
+class in 3.2.1, the `MarketResponder<qb::Actor>` instantiation since 3.3.0, the same ten-line body), so the
+same probe builds against shipped 3.2.1, shipped 3.3.0 and a candidate; the template name alone does not, as
+the x86 session found (§26). Every reply is `2 * seq`, so the winners sum to
 `asks * (asks - 1)`; the probe prints the sum and exits 1 when it differs, and exits 1 when the engine reports an
 error. A `cross` run needs `responders + 1` CPUs that nothing else uses: qb places core i on the i-th CPU the
 process may run on and pins it where the platform can (not on macOS, where launches are interleaved and read as
@@ -3925,8 +3933,8 @@ distributions with `tools/launch-census.py`).
 It is the scratch instrument of the 2026-10-26 arm64 session, folded into one source with the placement as an
 argument: on the M4 the durable engine cost +4.7 % at 8 cross-core responders against 3.2.1 (about +73 ns a
 scatter), +8 to +12 ns per responder from N = 6, while the lifecycle cells read level (Huly QB-1153). The same
-source now builds on every host; the x86 sessions measure the slope with it first, and the M4 re-runs the
-protocol they write.
+source now builds on every host; the x86 sessions measure the slope with it first (§26: the slope is shipped
+3.3.0's, counted in instructions), and the M4 re-runs the protocol they write (§26.5).
 
 ## 25. The x86 session on the 3.4.0 branch tip — the declared forms on MSVC and WSL2, the engine start counted (2026-10-27)
 
@@ -4033,3 +4041,161 @@ copies hold to ±1 % and the same cell on WSL2 to ±1.3 % — a regime per copy,
 binary and its pages, not per launch or per side: that cell cannot read 1 µs on MSVC, and its N-slope
 (10.3 → 11.3 µs pinned, 4.5 → 3.0 free) is copy noise; the 1 000 / 5 000 cells and the lifecycle cells
 say level to ±1 % (Huly QB-1020, the x86 half).
+
+## 26. The ask_any scatter on x86 — the slope on WSL2 and MSVC, attributed to shipped 3.3.0 (2026-10-28)
+
+The §24 instrument run on the two x86 hosts of this repository, the i9-12900K under WSL2 (g++ 14.2) and
+under Windows 11 (MSVC 19.51), with `tools/scatter-ab.py` driving it; then the same probe under callgrind,
+with shipped 3.3.0 as a third tree, to say WHERE the cost is and WHEN it came. The short form: **the tip is
+slower than 3.2.1 per responder on x86, by an instruction count that shipped 3.3.0 already carries** — the
+3.4.0 branch adds nothing measurable to it — and the three toolchains read the same instructions three ways.
+
+### 26.1 The protocol: `tools/scatter-ab.py`
+
+The driver is the A/B shape of `dev/agent/METHOD.md` §8 applied to the probe: `qvoprobe-ask-any-scatter`
+built against each tree (the first `--side` is the control, every other a candidate), **three physical copies
+of each binary** (a copy per page placement; the DLLs beside a Windows build copied with it), **8 rounds**,
+every (N, side, copy) launched **once per round in a seeded shuffled order** (seed 7101), **200 000 asks a
+launch**, the process **pinned to the first N + 1 CPUs of a pool** before each launch (Windows: the driver's
+own affinity mask, inherited; Linux: `taskset`), so that qb's core i lands on a CPU of its own. A smoke launch
+of every copy comes first, then 30 s of quiet. Every launch's line is parsed and its checksum checked: a
+non-zero exit, an unparsable line or a refused checksum is a functional red that stops the campaign
+(`RED.txt`, exit 3). `launches.tsv` keeps every raw launch; `summary.txt` / `summary.json` give, per N, each
+side's median over rounds × copies, the copies' medians (the **A/A band** is half their spread), each
+candidate's ratio of medians over the control with a **bootstrap 95 % CI** and a verdict (SLOWER / FASTER
+only when the CI excludes 1 AND the move exceeds the A/A band), and the **per-responder slope** of each side
+(least squares of the median over N) with the delta. `--no-pin` is the macOS form (FAIRNESS.md §1.4: nothing
+pins there; the driver refuses `--pool` on Darwin and records `pinned: false`).
+
+Three campaigns a host, pool `0,2,4,6,8,10,12,14,16,18,20` (one thread per physical core: 0–14 the eight
+P-cores, 16–20 three E-cores): **`p`** — `cross`, N = 1…7, the asker and up to seven responders each on a
+P-core; **`e`** — `cross`, N = 8, 9, 10, the responders beyond eight on E-cores, a different core type, so
+its slope is read apart from `p`'s and never pooled with it; **`same`** — N = 1, 2, 4, 8 on CPU 0 alone: the
+same machinery with no mailbox crossing, the control of the crossing cost. The binaries: the probe (with the
+`qb::test::Market` name, §24) against `v3.2.1` (`git archive`) and against the branch tip qb `e152216a`
+(`f5ac0890` at the time of writing differs from it on this path by nothing: QB-1139 renames the embedded
+loop's symbols), qb-core only, Release, the same flags on both sides of a host (`-O3 -DNDEBUG -std=c++20
+-fPIE` under g++, `/O2 /DNDEBUG` under MSVC; only the version definitions differ, read in
+`compile_commands.json`). Documents: `results/<host>/qb-branch-develop/ask-any-scatter/{p,e,same}/`
+(`launches.tsv`, `ab-meta.json`, `summary.json`, `summary.txt`).
+
+### 26.2 WSL2 g++ 14.2: slower at every N, with and without a crossing
+
+2026-10-27 21:25–21:29 UTC+1, nothing else on the host. Median ns per `ask_any`, 3.2.1 → tip, the ratio with
+its CI, the A/A band of the copies:
+
+| campaign | N | 3.2.1 | tip | ratio [CI 95 %] | A/A | verdict |
+|---|---:|---:|---:|---|---:|---|
+| `p` cross | 1 | 408.0 | 433.5 | 1.062 [1.044, 1.076] | ±0.7 % | SLOWER |
+| | 2 | 526.8 | 567.3 | 1.077 [1.050, 1.106] | ±1.8 % | SLOWER |
+| | 3 | 621.1 | 668.5 | 1.076 [1.058, 1.105] | ±3.1 % | SLOWER |
+| | 4 | 750.2 | 819.5 | 1.092 [1.079, 1.110] | ±0.4 % | SLOWER |
+| | 5 | 861.3 | 949.4 | 1.102 [1.091, 1.116] | ±0.7 % | SLOWER |
+| | 6 | 1 008.0 | 1 092.9 | 1.084 [1.068, 1.101] | ±0.8 % | SLOWER |
+| | 7 | 1 145.1 | 1 244.4 | 1.087 [1.065, 1.102] | ±1.7 % | SLOWER |
+| `same` | 1 | 219.6 | 234.9 | 1.070 [1.064, 1.078] | ±0.5 % | SLOWER |
+| | 2 | 331.6 | 357.4 | 1.078 [1.067, 1.091] | ±1.1 % | SLOWER |
+| | 4 | 529.7 | 583.0 | 1.101 [1.085, 1.110] | ±1.0 % | SLOWER |
+| | 8 | 938.6 | 1 034.9 | 1.103 [1.092, 1.110] | ±0.4 % | SLOWER |
+| `e` cross | 8 | 1 447.1 | 1 584.5 | 1.095 [1.015, 1.150] | ±4.8 % | SLOWER |
+| | 9 | 1 796.0 | 2 004.8 | 1.116 [1.036, 1.208] | ±3.7 % | SLOWER |
+| | 10 | 2 042.9 | 2 104.4 | 1.030 [0.982, 1.124] | ±3.1 % | LEVEL |
+
+Slopes: **`cross` 121.9 → 134.5 ns per responder (+12.5 ns, +10.3 %)**, intercept 272.4 → 287.2 ns;
+**`same` 102.2 → 113.8 ns per responder (+11.7 ns, +11.4 %)**, intercept 121.7 → 125.7 ns. Every CI is
+outside its A/A band, from N = 1 on, in both placements. So on this toolchain the cost is **per exchange**:
+it is there with one responder, it is there with no mailbox crossing, and it does not wait for a regime at
+N ≥ 6 — three things the M4's first reading (§24: parity at N = 4, +4.7 % at 8) did not show. The `e` cells
+are noisier (the E-cores) and read the same direction.
+
+### 26.3 MSVC 19.51: level across cores, +4 % on one
+
+2026-10-28 05:15–05:21 UTC+1, HIGH process priority, nothing else on the host:
+
+| campaign | N | 3.2.1 | tip | ratio [CI 95 %] | A/A | verdict |
+|---|---:|---:|---:|---|---:|---|
+| `p` cross | 1 | 673.5 | 667.0 | 0.990 [0.967, 1.023] | ±1.8 % | LEVEL |
+| | 2 | 843.0 | 843.3 | 1.000 [0.959, 1.022] | ±1.6 % | LEVEL |
+| | 3 | 1 022.0 | 1 034.3 | 1.012 [0.954, 1.032] | ±3.9 % | LEVEL |
+| | 4 | 1 229.2 | 1 266.8 | 1.031 [1.004, 1.054] | ±1.4 % | SLOWER |
+| | 5 | 1 512.8 | 1 493.4 | 0.987 [0.937, 1.034] | ±1.8 % | LEVEL |
+| | 6 | 1 785.3 | 1 767.3 | 0.990 [0.946, 1.080] | ±4.7 % | LEVEL |
+| | 7 | 2 149.0 | 2 119.4 | 0.986 [0.952, 1.059] | ±2.2 % | LEVEL |
+| `same` | 1 | 386.2 | 389.4 | 1.008 [0.988, 1.022] | ±1.8 % | LEVEL |
+| | 2 | 529.4 | 534.2 | 1.009 [0.991, 1.021] | ±0.4 % | LEVEL |
+| | 4 | 809.5 | 837.9 | 1.035 [1.022, 1.040] | ±0.5 % | SLOWER |
+| | 8 | 1 379.5 | 1 424.0 | 1.032 [1.024, 1.044] | ±0.8 % | SLOWER |
+| `e` cross | 8 | 2 650.1 | 2 403.5 | 0.907 [0.744, 0.980] | ±9.3 % | FASTER |
+| | 9 | 3 337.8 | 2 884.9 | 0.864 [0.749, 1.055] | ±12.2 % | LEVEL |
+| | 10 | 4 028.4 | 3 054.8 | 0.758 [0.682, 0.852] | ±10.3 % | FASTER |
+
+Slopes: **`cross` 242.9 → 238.0 ns per responder (−4.9 ns, −2.0 %)**, intercept 344.7 → 361.1 ns;
+**`same` 141.8 → 148.0 ns per responder (+6.2 ns, +4.4 %)**, intercept 244.4 → 241.2 ns. Across cores
+MSVC reads level (one cell at +3 %, the rest inside their bands); on one core the slope moves by +4.4 %,
+a third of g++'s. Two facts about this host rather than about qb: MSVC's crossing costs **243 ns a
+responder against g++'s 122** on the same silicon, so a fixed instruction surcharge is a smaller share of
+it; and on the E-cores 3.2.1's copies spread 9–12 % (one regime per physical copy, the fact of §25.2 and
+Huly QB-1020) while the tip's hold to 2–7 % and read 10–24 % faster — the 3.3 idle path, not this ticket's
+question, and not pooled into any slope.
+
+### 26.4 The instructions: shipped 3.3.0 carries the slope, the branch adds nothing
+
+Callgrind over the whole process (WSL2, g++ 14.2), the `same` cells at N = 1 and N = 4, at 5 000 and at
+20 000 asks: **Ir per ask = the difference over 15 000** (the engine's start and stop, the actors' creation
+and the process cancel out), deterministic and load-insensitive; `callgrind_annotate` without `--inclusive`
+gives each function's SELF cost per ask the same way, and the two cells split it into an intercept and a
+per-responder slope (`tools/cgselfdiff.py`, `tools/cgslope.py`; the tables are in
+`results/wsl-debian-g++14/qb-branch-develop/ask-any-scatter/ir/`). The `cross` cell is not counted:
+valgrind serialises the N + 1 spinning cores and the run had not finished after 7 h 30 — and the slowdown is
+measured without a crossing, so `same` is the right cell. A third tree, **shipped 3.3.0** (`git archive
+v3.3.0`), built and counted the same way, says when the cost came:
+
+| tree | Ir per `ask_any` = intercept + slope × N | per responder | Δ slope |
+|---|---|---:|---:|
+| 3.2.1 | 2 400 + 1 375 N | 1 375 | — |
+| **3.3.0** | 2 337 + 1 544 N | 1 544 | **+169 (+12.3 %)** |
+| tip `e152216a` | 2 337 + 1 549 N | 1 549 | +5 |
+
+**The whole slope is 3.3.0's.** The branch's two registry commits (QB-1114, QB-1154 — the only ones to
+touch the ask files after `v3.3.0`) move it by +5 Ir (`ask_unregister` +8, `ask_take` −3): they were
+codegen fixes for MSVC and Apple clang, not instruction counts, and on g++ they are neutral. The +12.3 % in
+instructions is the +11.4 % in time of §26.2. Where the 169 go, 3.2.1 → 3.3.0, self Ir per responder:
+
+| source | Ir / responder | what it is |
+|---|---:|---|
+| `ask_take` 44 → 71, `ask_unregister` 43 → 78 (86 on the tip) | **+62** (+70) | the per-owner registry: each take and each release resolve the current core → the owner directory → the 256-FIFO page → the slot's queue, where 3.2.1 had one free list |
+| `ask_table::obsolete` 0 → 49, **called N − 1 times an ask** (slope +49, intercept −49) | **+49 per losing reply** | a reply whose entry is already released is classified an obsolete response of its owner and consumed (`aada8851`, 3.3.0), where 3.2.1 returned `false` from a null `find`; declared `QB_NOINLINE` as a cold miss — `ask_any` makes it the warm path, N − 1 times a scatter |
+| `ask_operation::await_suspend` 0 → 114 (out of line), `~ask_operation` 0 → 34, the `ask_task` body 158 + 62 → 63 + 39 | **+30 net** | the shape: the self-ask compare (QB-1100) and the `tracking_on()` test (QB-71) take `await_suspend` out of the coroutine body; two call frames more an exchange |
+| `CoroutineScheduler::forget` +18, `~cancellation_token` +16, `cancellation_token::release` −12 | **+22 per losing branch** | the `when_any` reclaim goes through `forget` |
+| `VirtualCore::send` 39 → 0, `reply_local` 0 → 37, `VirtualCore::reply` 11 → 4, `Actor::reply` 16 → 12 | **−13** | the 3.3 reply path is shorter |
+| the intercept (per ask, not per responder) | **−63** | the loop's pass −57, `ask_any`'s vectors +107 (the targets copied, `reserve`, the destructor), the shared state −26, the rest |
+
+Four decisions of 3.3.0, each buying a correction: ids per owner (a reply to a dead incarnation is never
+confused with a live one), the consumption of obsolete replies (without it `qb::answer` answered its own
+late reply as a request), the self-ask (QB-1100), the suspension tracking (QB-71). Their price on x86:
+**+169 Ir per responder of an `ask_any`**, +12 ns under g++; on a plain ask (N = 1) +111 Ir, +3 %.
+
+### 26.5 Three ISAs, one instruction count — and the protocol for the M4
+
+The same +169 Ir read three ways: **+10–11 %** per responder under g++ (both placements), **+4.4 %** on one
+core and level across cores under MSVC (whose crossing is twice as expensive to begin with), and on the M4
+parity at N = 4 and +4.7 % at 8 in the first session (§24). An ISA that hides a fixed instruction surcharge
+behind wider issue or a cheaper call frame reports a smaller time; the instructions are there on every one.
+
+Three trims of the warm path are sized without changing a semantic: (a) an inline fast path of `obsolete`
+(generation below the entry's and the same owner), ≤ 15–20 Ir per losing reply; (b) the owner's FIFO
+remembered in the entry at take, so release does not resolve directory → page again, ≤ 25 Ir an ask; (c)
+`await_suspend` inlinable again, the self-ask engagement and the tracking test behind one cold call, ≤ 20 Ir.
+Ceiling ≤ 60 of the 169 Ir, about 4 of the 12 ns, each needing its own A/B on the three ISAs. The x86
+session's recommendation, recorded on Huly QB-1153: **the residue accepted for 3.4.0 phase 1 with this
+measurement** (the cause is established and it is the price of corrections already shipped), the three trims
+one ticket of phase 2 — the maintainers' decision.
+
+The protocol the M4 re-runs, now with three trees so that 3.3.0 arbitrates: the probe built against
+`v3.2.1`, `v3.3.0` and the tip with the same flags; `tools/scatter-ab.py --no-pin --side v321=… --side
+v330=… --side tip=…` for the three campaigns (`cross` N = 1…7; `cross` N = 8, 9, 10 — beyond eight
+responders the M4 Pro's E-cores, read apart; `same` N = 1, 2, 4, 8), 3 copies, 8 rounds, 200 000 asks, a
+quiet host; a bimodal cell read with `tools/launch-census.py` as every 2c cell is on that host; the
+documents under `results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-any-scatter/{p,e,same}/`. The
+expected reading if arm64 does not hide the count: 3.3.0 ≈ tip > 3.2.1 from N = 1; parity would be a fact
+of the ISA, said as such, not an absence of cost.

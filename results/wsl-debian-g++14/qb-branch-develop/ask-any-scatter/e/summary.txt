@@ -1,0 +1,18 @@
+campaign /home/mbelhadi/ab-340/w1/qb1153/ab-wsl-e: seed 7101, rounds 8, copies 3, asks 200000, mode cross, pool [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+ns per ask_any (median over rounds x copies; copies' medians; A/A band = spread of the copies' medians)
+N=8 responders (cross, CPUs [0, 2, 4, 6, 8, 10, 12, 14, 16])
+   ctl      1447.1 ns  IQR [1404.5, 1562.7]  n=24  copies 1459.8 1494.1 1418.2  A/A +-2.60%
+   cand     1584.5 ns  IQR [1444.2, 1671.6]  n=24  copies 1625.7 1469.1 1615.8  A/A +-4.84%
+   ratio 1.0949  CI95 [1.0152, 1.1501]  A/A band +-4.84%  -> SLOWER
+N=9 responders (cross, CPUs [0, 2, 4, 6, 8, 10, 12, 14, 16, 18])
+   ctl      1796.0 ns  IQR [1686.4, 1926.2]  n=24  copies 1804.5 1781.1 1788.5  A/A +-0.65%
+   cand     2004.8 ns  IQR [1907.8, 2178.3]  n=24  copies 1977.2 2102.7 1955.6  A/A +-3.72%
+   ratio 1.1163  CI95 [1.0360, 1.2082]  A/A band +-3.72%  -> SLOWER
+N=10 responders (cross, CPUs [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+   ctl      2042.9 ns  IQR [1925.0, 2166.6]  n=24  copies 1959.0 2084.1 2089.6  A/A +-3.13%
+   cand     2104.4 ns  IQR [2031.7, 2290.8]  n=24  copies 2054.1 2174.1 2162.8  A/A +-2.77%
+   ratio 1.0301  CI95 [0.9821, 1.1236]  A/A band +-3.13%  -> LEVEL
+slope ctl  : 297.9 ns per responder, intercept -919.3 ns  (least squares over N=[8, 9, 10])
+slope cand : 260.0 ns per responder, intercept -442.1 ns  (least squares over N=[8, 9, 10])
+slope delta (cand - ctl): -37.9 ns per responder (-12.7 %)
+per-N delta of the medians, and per responder: N=8: +137.4 ns (+17.17/resp)  N=9: +208.8 ns (+23.20/resp)  N=10: +61.5 ns (+6.15/resp)

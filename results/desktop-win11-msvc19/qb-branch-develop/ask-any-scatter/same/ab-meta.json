@@ -1,0 +1,33 @@
+{
+ "seed": 7101,
+ "rounds": 8,
+ "copies": 3,
+ "asks": 200000,
+ "mode": "same",
+ "pool": [
+  0,
+  2,
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  16,
+  18,
+  20
+ ],
+ "responders": [
+  1,
+  2,
+  4,
+  8
+ ],
+ "sides": {
+  "ctl": "D:\\repo\\ab-340\\w1\\qb1153\\bld-win-v321\\bin\\qvoprobe-ask-any-scatter.exe",
+  "cand": "D:\\repo\\ab-340\\w1\\qb1153\\bld-win-tip\\bin\\qvoprobe-ask-any-scatter.exe"
+ },
+ "quiet": 30,
+ "tag": "qb1153-same-win",
+ "host": "TITAN"
+}

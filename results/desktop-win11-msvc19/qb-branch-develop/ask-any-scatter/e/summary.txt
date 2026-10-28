@@ -1,0 +1,18 @@
+campaign D:\repo\ab-340\w1\qb1153\ab-win-e: seed 7101, rounds 8, copies 3, asks 200000, mode cross, pool [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+ns per ask_any (median over rounds x copies; copies' medians; A/A band = spread of the copies' medians)
+N=8 responders (cross, CPUs [0, 2, 4, 6, 8, 10, 12, 14, 16])
+   ctl      2650.1 ns  IQR [2388.1, 4162.5]  n=24  copies 2938.1 2428.9 2739.6  A/A +-9.29%
+   cand     2403.5 ns  IQR [2217.8, 2535.4]  n=24  copies 2673.3 2325.6 2349.8  A/A +-7.40%
+   ratio 0.9069  CI95 [0.7441, 0.9803]  A/A band +-9.29%  -> FASTER
+N=9 responders (cross, CPUs [0, 2, 4, 6, 8, 10, 12, 14, 16, 18])
+   ctl      3337.8 ns  IQR [2873.2, 4093.9]  n=24  copies 3780.3 2968.2 3337.8  A/A +-12.17%
+   cand     2884.9 ns  IQR [2677.1, 3779.5]  n=24  copies 2850.8 2843.6 2950.3  A/A +-1.87%
+   ratio 0.8643  CI95 [0.7485, 1.0548]  A/A band +-12.17%  -> LEVEL
+N=10 responders (cross, CPUs [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+   ctl      4028.4 ns  IQR [3529.4, 4853.0]  n=24  copies 3401.8 4096.6 4249.0  A/A +-10.34%
+   cand     3054.8 ns  IQR [2821.1, 3205.1]  n=24  copies 3009.9 3100.4 2984.8  A/A +-1.92%
+   ratio 0.7583  CI95 [0.6824, 0.8520]  A/A band +-10.34%  -> FASTER
+slope ctl  : 689.2 ns per responder, intercept -2863.6 ns  (least squares over N=[8, 9, 10])
+slope cand : 325.7 ns per responder, intercept -149.8 ns  (least squares over N=[8, 9, 10])
+slope delta (cand - ctl): -363.5 ns per responder (-52.7 %)
+per-N delta of the medians, and per responder: N=8: -246.6 ns (-30.83/resp)  N=9: -452.8 ns (-50.31/resp)  N=10: -973.6 ns (-97.36/resp)

@@ -1,0 +1,39 @@
+  dSlope   slopeA   slopeB |    dIcpt    icptA    icptB  function (self Ir: intercept + slope x N)
+  +114.0      0.0    114.0 |     +0.0      0.0      0.0  qb::ask_operation<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>)
+   -95.0    158.0     63.0 |     -9.0    134.0    125.0  qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Ping, std::chrono::duration<long, st
+   +49.0      0.0     49.0 |    -49.0      0.0    -49.0  qb::detail::(anonymous namespace)::ask_table::obsolete(unsigned long, qb::ActorId) const [clone .constprop.0]
+   +43.0     43.0     86.0 |     +0.0      0.0      0.0  qb::detail::ask_unregister(unsigned long)
+   +34.0      0.0     34.0 |    -16.0      0.0    -16.0  qb::ask_operation<qb::test::Ping>::~ask_operation()
+   -39.0     39.0      0.0 |     +0.0      0.0      0.0  qb::VirtualCore::send(qb::Event const&)
+   +37.0      0.0     37.0 |     +0.0      0.0      0.0  qb::VirtualCore::reply_local(qb::Event&)
+   -23.0     62.0     39.0 |    +23.0    -62.0    -39.0  qb::detail::ask_task(qb::detail::ask_task<qb::test::Ping>(qb::ScopedCoroContext, qb::ActorId, qb::test::Ping, std::chrono::duration<long, st
+    +0.0      0.0      0.0 |    +62.0      0.0     62.0  qb::io::async::schedule_via_current(std::__n4861::coroutine_handle<void>)
+    -1.9     52.9     51.0 |    -57.1    294.1    237.0  qb::VirtualCore::__workflow__()
+    +0.0      0.0      0.0 |    -60.0     60.0      0.0  qb::io::async::CoroutineScheduler::schedule_resume(std::__n4861::coroutine_handle<void>)
+   +18.0      0.0     18.0 |    -18.0      0.0    -18.0  qb::io::async::CoroutineScheduler::forget(std::__n4861::coroutine_handle<void>)
+   +24.0     44.0     68.0 |     +1.0      0.0      1.0  qb::detail::ask_take(qb::ActorId, qb::detail::ask_slot*)
+    +6.0      0.0      6.0 |    +34.0     88.0    122.0  std::vector<qb::io::async::task<qb::test::Ping>, std::allocator<qb::io::async::task<qb::test::Ping> > >::~vector()
+    +5.0      0.0      5.0 |    +34.0      0.0     34.0  std::vector<qb::ActorId, std::allocator<qb::ActorId> >::vector(std::vector<qb::ActorId, std::allocator<qb::ActorId> > const&)
+   +16.0      0.0     16.0 |    +10.0      0.0     10.0  qb::io::async::cancellation_token::~cancellation_token()
+   -12.0     12.0      0.0 |    -15.0     15.0      0.0  qb::io::async::cancellation_token::release(qb::io::async::cancellation_token::state*)
+    +0.0      0.0      0.0 |    +39.0      0.0     39.0  std::vector<qb::io::async::task<qb::test::Ping>, std::allocator<qb::io::async::task<qb::test::Ping> > >::reserve(unsigned long)
+    -6.0      6.0      0.0 |    -26.0     46.0     20.0  std::_Sp_counted_ptr_inplace<qb::io::async::when_any_vector_awaiter<qb::test::Ping>::state_t, std::allocator<void>, (__gnu_cxx::_Lock_policy
+    -5.0      5.0      0.0 |    -27.0    119.0     92.0  ask_any_scatter_probe::Asker::onInit()::{lambda(qb::ScopedCoroContext)#1}::operator()(ask_any_scatter_probe::Asker::onInit()::{lambda(qb::Sc
+   -12.0    113.0    101.0 |     +8.0    -69.0    -61.0  qb::io::async::when_any_vector_awaiter<qb::test::Ping>::reclaim_branch(qb::io::async::when_any_vector_awaiter<qb::test::Ping>::state_t&, uns
+    +9.0      0.0      9.0 |     +9.0      0.0      9.0  qb::io::async::task<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>)
+   +10.0      0.0     10.0 |     +0.0      0.0      0.0  qb::io::async::task<void>::~task()
+    +2.0     49.0     51.0 |    -15.0    162.0    147.0  qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb::ActorId> >, qb::test::Ping, std::
+    +2.0     95.0     97.0 |    +11.0     95.0    106.0  qb::io::async::when_any_vector_awaiter<qb::test::Ping>::await_suspend(std::__n4861::coroutine_handle<void>)
+    -7.0     11.0      4.0 |     +0.0      0.0      0.0  qb::VirtualCore::reply(qb::Event&)
+    +0.0     13.0     13.0 |    +13.0     14.0     27.0  std::_Sp_counted_base<(__gnu_cxx::_Lock_policy)2>::_M_release()
+    +0.0      9.0      9.0 |    -12.0     31.0     19.0  qb::io::async::when_any_vector_awaiter<qb::test::Ping>::~when_any_vector_awaiter()
+    +3.0     34.0     37.0 |     -3.0    -34.0    -37.0  qb::io::async::when_any_vector_awaiter<qb::test::Ping>::run_one(qb::io::async::when_any_vector_awaiter<qb::test::Ping>::run_one(std::shared_
+    +4.0     74.0     78.0 |     +0.0     44.0     44.0  qb::VirtualCore::__receive_events__(std::span<EventBucket, 18446744073709551615ul>)
+    -4.0     16.0     12.0 |     +0.0      0.0      0.0  qb::Actor::reply(qb::Event&) const
+    -4.0     85.0     81.0 |     +0.0     18.0     18.0  qb::detail::ask_deliver(unsigned long, qb::ActorId, qb::Event&)
+    +4.0     28.0     32.0 |     +0.0      0.0      0.0  qb::router::memh<qb::Event, true, void>::EventResolver<qb::test::Ping>::resolve(qb::Event&) const
+    +2.2    113.2    115.4 |     -2.2    -80.2    -82.4  qb::io::async::detail::flat_ptr_set::erase(void*)
+    +0.0      0.0      0.0 |     -4.0    162.0    158.0  qb::VirtualCore::__receive__()
+    +0.0     57.0     57.0 |     +4.0    162.0    166.0  qb::io::async::when_any_vector_awaiter<qb::test::Ping>::run_one(qb::io::async::when_any_vector_awaiter<qb::test::Ping>::run_one(std::shared_
+    +0.0      0.0      0.0 |     +2.0    103.0    105.0  qb::ask_any(qb::ask_any<qb::test::Ping>(qb::ScopedCoroContext, std::vector<qb::ActorId, std::allocator<qb::ActorId> >, qb::test::Ping, std::
+  +174.1   1375.1   1549.2 |    -63.2   2399.9   2336.7  TOTAL over every annotated function

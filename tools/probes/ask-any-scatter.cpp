@@ -15,9 +15,11 @@
 //   cross  the asker on core 0, responder i on core 1 + i: every leg crosses a core (the QB-1153 shape).
 //   same   the asker and the N responders on core 0: the same machinery with no mailbox crossing.
 //
-// The responders are qb's own `qb::test::MarketResponder` (qb/tests/core/shared/AskResponders.h, the
-// header the ask and resilience suites share; it exists unchanged since 3.2), so the probe builds
-// against any qb tree that carries it -- shipped 3.2.1 and the branch tip alike. One line on stdout:
+// The responders are qb's own `qb::test::Market` (qb/tests/core/shared/AskResponders.h, the header the
+// ask and resilience suites share): the name every tree since 3.2 carries -- a class in 3.2.1, the
+// `MarketResponder<qb::Actor>` instantiation since 3.3.0, the same ten-line body (`qb::answer` of
+// `2 * seq`) on both sides -- so the probe builds against shipped 3.2.1, shipped 3.3.0 and the branch
+// tip alike (the template name alone does not: QB-1153's x86 session found it). One line on stdout:
 //
 //   responders=N asks=M  X ns/ask_any  (checksum C)
 //
@@ -125,8 +127,7 @@ main(int argc, char **argv) {
         qb::Main                 engine;
         std::vector<qb::ActorId> targets;
         for (unsigned i = 0; i < n; ++i)
-            targets.push_back(engine.addActor<qb::test::MarketResponder<qb::Actor>>(
-                static_cast<qb::CoreId>(cross ? 1 + i : 0)));
+            targets.push_back(engine.addActor<qb::test::Market>(static_cast<qb::CoreId>(cross ? 1 + i : 0)));
         engine.addActor<Asker>(0, targets, asks, std::ref(out));
         engine.start();
         engine.join();

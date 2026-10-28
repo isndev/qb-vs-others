@@ -1,0 +1,34 @@
+campaign D:\repo\ab-340\w1\qb1153\ab-win-p: seed 7101, rounds 8, copies 3, asks 200000, mode cross, pool [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+ns per ask_any (median over rounds x copies; copies' medians; A/A band = spread of the copies' medians)
+N=1 responders (cross, CPUs [0, 2])
+   ctl       673.5 ns  IQR [659.4, 701.6]  n=24  copies 687.7 671.8 670.7  A/A +-1.27%
+   cand      667.0 ns  IQR [652.4, 684.1]  n=24  copies 668.7 656.8 680.5  A/A +-1.78%
+   ratio 0.9904  CI95 [0.9670, 1.0226]  A/A band +-1.78%  -> LEVEL
+N=2 responders (cross, CPUs [0, 2, 4])
+   ctl       843.0 ns  IQR [827.8, 909.9]  n=24  copies 841.2 836.2 863.3  A/A +-1.61%
+   cand      843.3 ns  IQR [817.7, 859.8]  n=24  copies 829.1 851.2 845.3  A/A +-1.31%
+   ratio 1.0004  CI95 [0.9589, 1.0220]  A/A band +-1.61%  -> LEVEL
+N=3 responders (cross, CPUs [0, 2, 4, 6])
+   ctl      1022.0 ns  IQR [1002.0, 1184.5]  n=24  copies 1092.9 1016.5 1013.9  A/A +-3.89%
+   cand     1034.3 ns  IQR [1024.8, 1062.5]  n=24  copies 1040.1 1039.1 1032.8  A/A +-0.35%
+   ratio 1.0120  CI95 [0.9543, 1.0324]  A/A band +-3.89%  -> LEVEL
+N=4 responders (cross, CPUs [0, 2, 4, 6, 8])
+   ctl      1229.2 ns  IQR [1203.2, 1262.4]  n=24  copies 1220.8 1254.6 1225.6  A/A +-1.38%
+   cand     1266.8 ns  IQR [1242.0, 1307.0]  n=24  copies 1261.0 1262.7 1282.5  A/A +-0.85%
+   ratio 1.0305  CI95 [1.0042, 1.0540]  A/A band +-1.38%  -> SLOWER
+N=5 responders (cross, CPUs [0, 2, 4, 6, 8, 10])
+   ctl      1512.8 ns  IQR [1458.3, 1604.3]  n=24  copies 1517.2 1497.1 1551.9  A/A +-1.81%
+   cand     1493.4 ns  IQR [1458.9, 1569.2]  n=24  copies 1520.1 1468.6 1520.4  A/A +-1.71%
+   ratio 0.9872  CI95 [0.9367, 1.0343]  A/A band +-1.81%  -> LEVEL
+N=6 responders (cross, CPUs [0, 2, 4, 6, 8, 10, 12])
+   ctl      1785.3 ns  IQR [1660.9, 1913.7]  n=24  copies 1677.2 1795.8 1844.2  A/A +-4.65%
+   cand     1767.3 ns  IQR [1697.2, 1859.0]  n=24  copies 1772.7 1753.8 1795.5  A/A +-1.18%
+   ratio 0.9899  CI95 [0.9459, 1.0795]  A/A band +-4.65%  -> LEVEL
+N=7 responders (cross, CPUs [0, 2, 4, 6, 8, 10, 12, 14])
+   ctl      2149.0 ns  IQR [2052.2, 2236.6]  n=24  copies 2085.1 2132.6 2177.6  A/A +-2.17%
+   cand     2119.4 ns  IQR [2058.0, 2237.1]  n=24  copies 2119.4 2119.2 2140.5  A/A +-0.50%
+   ratio 0.9862  CI95 [0.9523, 1.0588]  A/A band +-2.17%  -> LEVEL
+slope ctl  : 242.9 ns per responder, intercept 344.7 ns  (least squares over N=[1, 2, 3, 4, 5, 6, 7])
+slope cand : 238.0 ns per responder, intercept 361.1 ns  (least squares over N=[1, 2, 3, 4, 5, 6, 7])
+slope delta (cand - ctl): -4.9 ns per responder (-2.0 %)
+per-N delta of the medians, and per responder: N=1: -6.5 ns (-6.45/resp)  N=2: +0.3 ns (+0.15/resp)  N=3: +12.3 ns (+4.08/resp)  N=4: +37.5 ns (+9.38/resp)  N=5: -19.4 ns (-3.88/resp)  N=6: -18.0 ns (-3.00/resp)  N=7: -29.6 ns (-4.23/resp)
