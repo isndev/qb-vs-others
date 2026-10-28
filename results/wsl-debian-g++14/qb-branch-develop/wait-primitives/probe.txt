@@ -1,0 +1,23 @@
+== qb181 wait-primitives WSL2 2026-10-28T08:20:57+01:00 load 0.00 0.00 0.15  12th Gen Intel(R) Core(TM) i9-12900K kernel 6.6.87.2-microsoft-standard-WSL2
+== all modes, tpause 40 ticks, 5 x 2000000
+x86-64: waitpkg yes, threads pinned to CPUs 0 and 2, tpause 40 ticks
+tight    round trip ns: median 149.5  min 142.6  max 153.6  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 334.8 b 653.0
+ordered  round trip ns: median 138.0  min 129.8  max 144.0  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 5.5 b 7.6
+pause    round trip ns: median 136.0  min 133.7  max 137.5  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 2.1 b 2.8
+tpause   round trip ns: median 117.5  min 113.9  max 129.9  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 2.3 b 3.0
+umwait   round trip ns: median 431.6  min 408.4  max 461.3  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 1.0 b 1.0
+bound    umwait with no store, 2000 samples: min 169  p10 3243  median 31496  p90 31497  max 240149 ns
+rc=0
+== tpause 20 ticks
+x86-64: waitpkg yes, threads pinned to CPUs 0 and 2, tpause 20 ticks
+tpause   round trip ns: median 143.8  min 141.6  max 145.8  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 2.8 b 3.5
+rc=0
+== tpause 80 ticks
+x86-64: waitpkg yes, threads pinned to CPUs 0 and 2, tpause 80 ticks
+tpause   round trip ns: median 121.0  min 117.9  max 123.6  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 2.3 b 3.0
+rc=0
+== tpause 160 ticks
+x86-64: waitpkg yes, threads pinned to CPUs 0 and 2, tpause 160 ticks
+tpause   round trip ns: median 115.3  min 113.9  max 117.3  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 1.6 b 2.0
+rc=0
+== done 2026-10-28T08:21:10+01:00 load 0.44 0.10 0.18

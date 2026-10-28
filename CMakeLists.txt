@@ -308,9 +308,10 @@ if(QVO_BUILD_PROBES AND "qb" IN_LIST QVO_ENABLED_FRAMEWORKS)
     set_target_properties(qvoprobe-raw-ring PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "probes")
-    # No qb in it either: what an idle poll of a peer's line costs on arm64 by primitive (a tight poll,
-    # qb's ordered counter read, `yield`, `ldaxr` + `wfe`), docs/TUNING.md section 23. arm64 only for
-    # real; elsewhere the same source builds to a stub that says so and exits 2.
+    # No qb in it either: what an idle poll of a peer's line costs by primitive -- on arm64 (a tight poll,
+    # qb's ordered counter read, `yield`, `ldaxr` + `wfe`), docs/TUNING.md section 23, and on x86-64 (the
+    # same with `lfence; rdtsc`, `pause`, and WAITPKG's `tpause` and `umonitor` / `umwait`), section 28.
+    # Those two ISAs for real; elsewhere the same source builds to a stub that says so and exits 2.
     add_executable(qvoprobe-wait-primitives tools/probes/wait-primitives.cpp)
     target_link_libraries(qvoprobe-wait-primitives PRIVATE Threads::Threads)
     set_target_properties(qvoprobe-wait-primitives PROPERTIES

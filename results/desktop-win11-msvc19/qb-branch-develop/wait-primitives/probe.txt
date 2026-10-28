@@ -1,0 +1,23 @@
+== qb181 wait-primitives Windows 2026-10-28T08:21:19.8571896+01:00 cpu=12th Gen Intel(R) Core(TM) i9-12900K load=4%
+== all modes, tpause 40 ticks, 5 x 2000000
+x86-64: waitpkg yes, threads pinned to CPUs 0 and 2, tpause 40 ticks
+tight    round trip ns: median 92.7  min 75.7  max 108.7  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 339.7 b 300.9
+ordered  round trip ns: median 86.5  min 79.8  max 91.9  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 10.5 b 11.8
+pause    round trip ns: median 67.9  min 64.0  max 69.7  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 1.2 b 1.2
+tpause   round trip ns: median 48.0  min 46.9  max 48.9  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 1.0 b 1.0
+umwait   round trip ns: median 195.1  min 172.0  max 222.1  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 1.0 b 1.0
+bound    umwait with no store, 2000 samples: min 100  p10 1200  median 393300  p90 1004100  max 1162900 ns
+rc=0
+== tpause 20 ticks
+x86-64: waitpkg yes, threads pinned to CPUs 0 and 2, tpause 20 ticks
+tpause   round trip ns: median 99.5  min 98.8  max 107.7  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 2.5 b 2.5
+rc=0
+== tpause 80 ticks
+x86-64: waitpkg yes, threads pinned to CPUs 0 and 2, tpause 80 ticks
+tpause   round trip ns: median 95.9  min 82.9  max 105.2  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 1.8 b 1.9
+rc=0
+== tpause 160 ticks
+x86-64: waitpkg yes, threads pinned to CPUs 0 and 2, tpause 160 ticks
+tpause   round trip ns: median 110.6  min 109.3  max 110.7  (5 launches x 2000000 rounds)  loads of the peer's line per trip: a 1.9 b 1.4
+rc=0
+== done 2026-10-28T08:21:30.9772773+01:00 load=0%

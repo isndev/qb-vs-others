@@ -87,6 +87,11 @@ are all in this repository.
   - [27.2 WSL2 g++ 14.2 (07:14–07:59 UTC+1)](#272-wsl2-g-142-07140759-utc1)
   - [27.3 MSVC 19.51 (08:57–09:02 UTC+1, HIGH process priority)](#273-msvc-1951-08570902-utc1-high-process-priority)
   - [27.4 What the two hosts say](#274-what-the-two-hosts-say)
+- [28. The idle poll's pacing primitive on x86 (QB-181): `tpause` beats the ordered read on the raw ping-pong of both OSes, `umwait` loses three times over (2026-10-28)](#28-the-idle-polls-pacing-primitive-on-x86-qb-181-tpause-beats-the-ordered-read-on-the-raw-ping-pong-of-both-oses-umwait-loses-three-times-over-2026-10-28)
+  - [28.1 The instrument: the x86-64 branch of `qvoprobe-wait-primitives`](#281-the-instrument-the-x86-64-branch-of-qvoprobe-wait-primitives)
+  - [28.2 WSL2 g++ 14.2](#282-wsl2-g-142)
+  - [28.3 Windows 11 MSVC 19.51 (HIGH priority, `start /affinity 5`)](#283-windows-11-msvc-1951-high-priority-start-affinity-5)
+  - [28.4 Reading, and what it opens](#284-reading-and-what-it-opens)
 
 ---
 
@@ -4282,3 +4287,77 @@ copy and per launch — is the instrument that judges it.
 wake through the hypervisor) and 0.25 µs on Windows (`WaitOnAddress` / the condition variable of the CRT):
 the floor's park form is not comparable across the two OSes of one machine, and qb's park cell at 90 ns a hop
 never parks on a two-core ping-pong — its 50 µs idle spin covers every hop.
+
+## 28. The idle poll's pacing primitive on x86 (QB-181): `tpause` beats the ordered read on the raw ping-pong of both OSes, `umwait` loses three times over (2026-10-28)
+
+QB-180 fixed the idle pass of a spinning core with a clock read: ~11–13 ns of ORDERED work between two
+polls of the peer's ring (`lfence; rdtsc` — the next poll issues late, once, and the producer's line is
+not kept snooped), where nothing (+25 %), `lfence` alone (+7 / +14 %) and `pause` (33 ns on Golden Cove,
++9 / +20 %) had all cost the two-core cells. QB-181 asks whether the primitive built for exactly this —
+WAITPKG's `tpause` (a pause of a chosen length) and `umonitor` / `umwait` (a sleep until the line is
+written) — does better. The M4 half answered for arm64 (§23.1: the ordered read stays). This is the x86
+half, on an i9-12900K that exposes WAITPKG to WSL2 and to a native Windows process alike (CPUID.(7,0):ECX[5]).
+
+### 28.1 The instrument: the x86-64 branch of `qvoprobe-wait-primitives`
+
+The arm64 probe of §23 (two 128-byte lines, a ping-pong of N round trips, what sits between two loads of
+the peer's line varied) gains an x86-64 branch with six modes — `tight` (nothing), `ordered` (`lfence;
+rdtsc`, qb's pacing read), `pause`, `tpause` (C0.1, to a deadline `ticks` TSC ticks ahead; 40 by default,
+~13 ns at this host's 3.2 GHz TSC: the clock read's own length), `umwait` (`umonitor` on the peer's line
+then `umwait` C0.1 to a far deadline), `bound` (`umwait` with nobody storing, 2 000 samples, a 1 ms
+deadline) — the two threads pinned to the first two CPUs of the process's affinity set (CPUs 0 and 2
+here: two P-cores), WAITPKG read at start. Campaign: every mode at 40 ticks, 5 launches × 2 M round
+trips; then `tpause` at 20, 80 and 160 ticks; then, because the first Windows axis was not monotonic, a
+**repeat census** — six processes a mode, interleaved (`ordered`, `tpause` 40, `pause`, `tpause` 80),
+3 launches × 2 M each — to read the per-process regime §27 taught us to expect. Documents:
+`results/<host>/qb-branch-develop/wait-primitives/{probe.txt,probe-repeat.txt}`.
+
+### 28.2 WSL2 g++ 14.2
+
+ns per round trip (median of the launches; `loads` = loads of the peer's line per round trip, A / B):
+
+| mode | campaign (5 × 2 M) | loads | repeat census, 6 processes (median of 3 launches each) |
+|---|---:|---|---|
+| tight | 149.5 (142.6–153.6) | 335 / 653 | — |
+| ordered (`lfence; rdtsc`) | 138.0 (129.8–144.0) | 5.5 / 7.6 | 131.3 · 155.2 · 167.7 · 146.7 · 140.9 · 155.2 → **~151** |
+| pause | 136.0 (133.7–137.5) | 2.1 / 2.8 | 120.7 · 131.9 · 137.6 · 141.2 · 140.8 · 139.1 → ~137 |
+| tpause 40 ticks | **117.5** (113.9–129.9) | 2.3 / 3.0 | 128.4 · 115.1 · 122.8 · 111.2 · 120.3 · 114.7 → **~118** |
+| tpause 20 / 80 / 160 | 143.8 / 121.0 / 115.3 | 2.8 / 2.3 / 1.6 | 80 ticks: 110.3 · 111.8 · 121.1 · 117.0 · 112.4 · 125.3 → ~114 |
+| umwait on the line | 431.6 (408.4–461.3) | 1.0 / 1.0 | — |
+| bound (umwait, no store) | min 169 ns, p10 3.2 µs, **median 31.5 µs**, p90 31.5 µs, max 240 µs | | the hypervisor's tick wakes it |
+
+### 28.3 Windows 11 MSVC 19.51 (HIGH priority, `start /affinity 5`)
+
+| mode | campaign (5 × 2 M) | loads | repeat census, 6 processes |
+|---|---:|---|---|
+| tight | 92.7 (75.7–108.7) | 340 / 301 | — |
+| ordered | 86.5 (79.8–91.9) | 10.5 / 11.8 | 163.4 · 141.8 · 135.4 · 136.3 · 134.9 · 115.3 → **~136** |
+| pause | 67.9 (64.0–69.7) | 1.2 / 1.2 | 97.9 · 89.4 · 74.7 · 78.4 · 80.6 · 80.8 → ~80 |
+| tpause 40 ticks | 48.0 (46.9–48.9) | 1.0 / 1.0 | 96.1 · 105.6 · 48.2 · 93.8 · 86.9 · 70.2 → **~90** |
+| tpause 20 / 80 / 160 | 99.5 / 95.9 / 110.6 | 2.5 / 1.8 / 1.9 | 80 ticks: 89.6 · 96.7 · 91.2 · 69.3 · 92.8 · 92.8 → ~92 |
+| umwait on the line | 195.1 (172.0–222.1) | 1.0 / 1.0 | — |
+| bound (umwait, no store) | min 100 ns, p10 1.2 µs, median 393 µs, p90 1.0 ms (the deadline), max 1.16 ms | | |
+
+### 28.4 Reading, and what it opens
+
+**The per-process regime is in the probe too.** On Windows the ordered read spans 115 to 163 ns across six
+processes (and read 86.5 in the campaign's one process), `tpause` 40 spans 48 to 106; on WSL2 the ordered
+read spans 131 to 168. One process is one regime (§27); the repeat census is the figure, the campaign a
+sample of it. **Across processes `tpause` beats the ordered read on both OSes**: WSL2 ~118 against ~151
+(−22 %), Windows ~90 against ~136 (−33 %); `pause` sits with `tpause` on Windows (~80) and behind it on
+WSL2 (~137). The length axis says 40 ticks is enough — 20 (6 ns) is too short on both hosts (144 / 100),
+80 changes little, 160 helps WSL2 and hurts Windows. **`umwait` loses three times over** (432 / 195 ns a
+round trip): a wake from C0.1 costs ~130–150 ns a leg, more than a whole paced round trip, so a hardware
+wait on the line cannot carry an idle pass whose peer answers in tens of nanoseconds; its wake bound with
+no store is the hypervisor's tick on WSL2 (31.5 µs) and the deadline on Windows — the doorbell design of
+the ticket would also need a wake that cheap, and it is not.
+
+**What the probe can and cannot say.** It is a two-thread ping-pong on one line; the actor's idle pass
+polls N − 1 producer rings and runs its bookkeeping, and QB-180 found `pause` costing the two-core cells
++9 / +20 % where the ordered read was level — the probe reads `pause` level or better. The probe is the
+screen, not the verdict: `tpause` passes it on both OSes, `umwait` does not. **Step 2 opens**: a variant of
+`VirtualCore::__pace__` — `tpause` to a 40-tick deadline when WAITPKG is present, the ordered read
+otherwise — in a scratch copy of the tip, judged against the tip by the census of §27 (three physical
+copies a side, sixteen launches, savina/ping-pong and thread-ring at two cores, the share of each mode per
+copy and per launch) and by `dev/bench`'s `Multi_PingPong`, on both x86 hosts; adopted only if it wins on
+both instruments, withdrawn as QB-1155 was otherwise. Its reading follows here.
