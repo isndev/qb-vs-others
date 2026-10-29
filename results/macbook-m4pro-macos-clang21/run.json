@@ -1,6 +1,6 @@
 {
   "schema": "qvo/run/1",
-  "run_id": "2a570880d2654f8d8642ad0ae97da42c",
+  "run_id": "ad1eb5a3ff544f6cb0c1176feced7635",
   "host": "macbook-m4pro",
   "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "cpus": "unpinned",
@@ -2722,30 +2722,6 @@
       "status": "ok"
     },
     {
-      "benchmark": "savina/sieve",
-      "framework": "baseline",
-      "config": "2c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/sieve",
-      "framework": "baseline",
-      "config": "2c-park",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/sieve",
-      "framework": "baseline",
-      "config": "1c-spin",
-      "status": "ok"
-    },
-    {
-      "benchmark": "savina/sieve",
-      "framework": "baseline",
-      "config": "1c-park",
-      "status": "ok"
-    },
-    {
       "benchmark": "savina/uct",
       "framework": "baseline",
       "config": "2c-spin",
@@ -2911,9 +2887,33 @@
       "benchmark": "savina/uct",
       "framework": "sobjectizer",
       "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/sieve",
+      "framework": "baseline",
+      "config": "1c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/sieve",
+      "framework": "baseline",
+      "config": "1c-park",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/sieve",
+      "framework": "baseline",
+      "config": "2c-spin",
+      "status": "ok"
+    },
+    {
+      "benchmark": "savina/sieve",
+      "framework": "baseline",
+      "config": "2c-park",
       "status": "ok"
     }
   ],
-  "merged_partial_runs": 1,
+  "merged_partial_runs": 5,
   "status": "complete"
 }

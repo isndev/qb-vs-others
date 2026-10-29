@@ -10,7 +10,7 @@
   "work_units": 49999,
   "repetitions": 9,
   "warmup": 2,
-  "params": {"cores": 1, "limit": 100000, "local": 1000, "place": 0, "wait": 1},
+  "params": {"cores": 1, "limit": 100000, "local": 1000, "place": 1, "wait": 1},
   "pinned": false,
   "cpus": "",
   "thread_pinning_supported": false,
@@ -23,21 +23,21 @@
     "build_type": "Release",
     "cxx_flags": "-O3 -DNDEBUG",
     "cxx_flags_scope": "directory-global-and-config",
-    "utc": "2026-10-27T06:21:52Z"
+    "utc": "2026-10-28T22:20:31Z"
   },
   "idiom": {
     "source": "none -- hand-written floor",
-    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; a filter is a heap node its owner allocates on Create, placed as qb places it; not an actor framework and not ranked as one"
+    "note": "raw pinned threads + one bounded SPSC ring per (worker, worker) pair; a filter is a heap node its owner allocates on Create, placed by the mapping qb uses (sieve::core_of_filter) for the run's place -- 1 in this cell, where qb's cell runs 0; not an actor framework and not ranked as one"
   },
-  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a filter is created by one Create message to the id its creator chose, and a hand-off is one ring push and one ring pop: the floor for a growing chain, not for finding the next actor", "the producer on worker 0, filter f where qb puts it (sieve::core_of_filter): every filter on worker 1 % cores with place=0, filter f on worker (f + 1) % cores with place=1. The run's `place` is in its params", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
+  "caveats": ["THIS IS NOT A FRAMEWORK. Actors are integers, a filter is created by one Create message to the id its creator chose, and a hand-off is one ring push and one ring pop: the floor for a growing chain, not for finding the next actor", "the producer on worker 0, filter f where qb would put it at the same place (sieve::core_of_filter): every filter on worker 1 % cores with place=0, filter f on worker (f + 1) % cores with place=1. This cell runs place=1, the floor's faster form on every host measured; qb's cell runs place=0. The run's `place` is in its params", "wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable"],
   "failures": [],
-  "work_ns": [24209833.0, 24550292.0, 24680666.0, 24118000.0, 24637375.0, 24354709.0, 24623958.0, 24609375.0, 24647291.0],
-  "total_ns": [24378375.0, 24747209.0, 24869542.0, 24294500.0, 24843167.0, 24533416.0, 24817709.0, 24787958.0, 24818167.0],
-  "outside_window_ns": [168542.0, 196917.0, 188876.0, 176500.0, 205792.0, 178707.0, 193751.0, 178583.0, 170876.0],
+  "work_ns": [24662084.0, 24640167.0, 24658709.0, 24618583.0, 24616292.0, 24665208.0, 24660917.0, 24935333.0, 24713959.0],
+  "total_ns": [24828292.0, 24799500.0, 24817167.0, 24776875.0, 24773625.0, 24822917.0, 24822041.0, 25100958.0, 24877583.0],
+  "outside_window_ns": [166208.0, 159333.0, 158458.0, 158292.0, 157333.0, 157709.0, 161124.0, 165625.0, 163624.0],
   "summary": {
-    "work_min": 24118000.0,
-    "work_p50": 24609375.0,
-    "work_p99": 24677996.0,
-    "work_iqr": 282666.0
+    "work_min": 24616292.0,
+    "work_p50": 24660917.0,
+    "work_p99": 24917623.1,
+    "work_iqr": 25041.0
   }
 }

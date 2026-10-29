@@ -4368,16 +4368,16 @@ Median, minimum, IQR and p99 are total durations per repetition; the per-unit co
 | `sobjectizer` 5.8.5.1 | yes | 28.30 ms | 566 ns | 27.98 ms | 387.83 us | 28.64 ms |
 | `caf` 1.1.0 | yes | 30.93 ms | 619 ns | 30.61 ms | 192.50 us | 36.40 ms |
 | | | | | | | |
-| `baseline` in-tree *(floor)* | yes | 24.68 ms | 494 ns | 24.19 ms | 53.79 us | 24.74 ms |
+| `baseline` in-tree *(floor)* | yes | 24.62 ms | 492 ns | 24.02 ms | 320.00 us | 24.73 ms |
 
 `qb` is **1.12x** faster than `sobjectizer` in this configuration.
 
-`qb` costs **1.02x the floor** — that multiple is what being a framework costs on this workload.
+`qb` costs **1.03x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
 - *(baseline)* THIS IS NOT A FRAMEWORK. Actors are integers, a filter is created by one Create message to the id its creator chose, and a hand-off is one ring push and one ring pop: the floor for a growing chain, not for finding the next actor
-- *(baseline)* the producer on worker 0, filter f where qb puts it (sieve::core_of_filter): every filter on worker 1 % cores with place=0, filter f on worker (f + 1) % cores with place=1. The run's `place` is in its params
+- *(baseline)* the producer on worker 0, filter f where qb would put it at the same place (sieve::core_of_filter): every filter on worker 1 % cores with place=0, filter f on worker (f + 1) % cores with place=1. This cell runs place=1, the floor's faster form on every host measured; qb's cell runs place=0. The run's `place` is in its params
 - *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
 - *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
 - *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
@@ -4409,7 +4409,7 @@ Median, minimum, IQR and p99 are total durations per repetition; the per-unit co
 | `sobjectizer` 5.8.5.1 | yes | 28.10 ms | 562 ns | 27.87 ms | 121.46 us | 28.31 ms |
 | `caf` 1.1.0 | yes | 30.92 ms | 618 ns | 30.64 ms | 250.62 us | 31.39 ms |
 | | | | | | | |
-| `baseline` in-tree *(floor)* | yes | 24.61 ms | 492 ns | 24.12 ms | 282.67 us | 24.68 ms |
+| `baseline` in-tree *(floor)* | yes | 24.66 ms | 493 ns | 24.62 ms | 25.04 us | 24.92 ms |
 
 `qb` is **1.11x** faster than `sobjectizer` in this configuration.
 
@@ -4418,7 +4418,7 @@ Median, minimum, IQR and p99 are total durations per repetition; the per-unit co
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
 - *(baseline)* THIS IS NOT A FRAMEWORK. Actors are integers, a filter is created by one Create message to the id its creator chose, and a hand-off is one ring push and one ring pop: the floor for a growing chain, not for finding the next actor
-- *(baseline)* the producer on worker 0, filter f where qb puts it (sieve::core_of_filter): every filter on worker 1 % cores with place=0, filter f on worker (f + 1) % cores with place=1. The run's `place` is in its params
+- *(baseline)* the producer on worker 0, filter f where qb would put it at the same place (sieve::core_of_filter): every filter on worker 1 % cores with place=0, filter f on worker (f + 1) % cores with place=1. This cell runs place=1, the floor's faster form on every host measured; qb's cell runs place=0. The run's `place` is in its params
 - *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
 - *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
 - *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
@@ -4450,16 +4450,16 @@ Median, minimum, IQR and p99 are total durations per repetition; the per-unit co
 | `sobjectizer` 5.8.5.1 | yes | 21.89 ms | 438 ns | 21.35 ms | 387.17 us | 22.21 ms |
 | `qb` 3.3.0 | yes | 26.14 ms | 523 ns | 25.23 ms | 601.75 us | 26.45 ms |
 | | | | | | | |
-| `baseline` in-tree *(floor)* | yes | 24.58 ms | 492 ns | 24.11 ms | 48.42 us | 24.73 ms |
+| `baseline` in-tree *(floor)* | yes | 14.17 ms | 283 ns | 14.03 ms | 109.67 us | 14.54 ms |
 
 `caf` is **1.13x** faster than `sobjectizer` in this configuration.
 
-`caf` sits **below the floor** (0.79x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`caf` costs **1.37x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
 - *(baseline)* THIS IS NOT A FRAMEWORK. Actors are integers, a filter is created by one Create message to the id its creator chose, and a hand-off is one ring push and one ring pop: the floor for a growing chain, not for finding the next actor
-- *(baseline)* the producer on worker 0, filter f where qb puts it (sieve::core_of_filter): every filter on worker 1 % cores with place=0, filter f on worker (f + 1) % cores with place=1. The run's `place` is in its params
+- *(baseline)* the producer on worker 0, filter f where qb would put it at the same place (sieve::core_of_filter): every filter on worker 1 % cores with place=0, filter f on worker (f + 1) % cores with place=1. This cell runs place=1, the floor's faster form on every host measured; qb's cell runs place=0. The run's `place` is in its params
 - *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
 - *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
 - *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark
@@ -4491,16 +4491,16 @@ Median, minimum, IQR and p99 are total durations per repetition; the per-unit co
 | `sobjectizer` 5.8.5.1 | yes | 21.23 ms | 425 ns | 20.97 ms | 242.67 us | 21.54 ms |
 | `qb` 3.3.0 | yes | 25.30 ms | 506 ns | 25.20 ms | 187.00 us | 25.58 ms |
 | | | | | | | |
-| `baseline` in-tree *(floor)* | yes | 24.93 ms | 499 ns | 24.79 ms | 250.79 us | 25.59 ms |
+| `baseline` in-tree *(floor)* | yes | 14.18 ms | 284 ns | 13.71 ms | 521.88 us | 14.87 ms |
 
 `caf` is **1.11x** faster than `sobjectizer` in this configuration.
 
-`caf` sits **below the floor** (0.77x) — which means it is not paying the cost the floor measures, not that it beats raw threads at it; its caveats below say what it does instead.
+`caf` costs **1.35x the floor** — that multiple is what being a framework costs on this workload.
 
 <details><summary>Caveats recorded by the implementations themselves</summary>
 
 - *(baseline)* THIS IS NOT A FRAMEWORK. Actors are integers, a filter is created by one Create message to the id its creator chose, and a hand-off is one ring push and one ring pop: the floor for a growing chain, not for finding the next actor
-- *(baseline)* the producer on worker 0, filter f where qb puts it (sieve::core_of_filter): every filter on worker 1 % cores with place=0, filter f on worker (f + 1) % cores with place=1. The run's `place` is in its params
+- *(baseline)* the producer on worker 0, filter f where qb would put it at the same place (sieve::core_of_filter): every filter on worker 1 % cores with place=0, filter f on worker (f + 1) % cores with place=1. This cell runs place=1, the floor's faster form on every host measured; qb's cell runs place=0. The run's `place` is in its params
 - *(baseline)* wait=1 busy-polls the rings; wait=0 parks an idle worker on a condition variable
 - *(caf)* CAF's scheduler is a work-stealing pool. 'cores' is a thread BUDGET; the workers are pinned one per CPU via caf::thread_hook so the CPU set matches qb's exactly, but CAF still steals across them and places every runnable actor dynamically, which qb's statically placed actors cannot do -- a scheduler that balances against one that does not is part of what this cell measures
 - *(caf)* wait=1 and wait=0 are the SAME configuration for CAF -- its shipped defaults (aggressive-poll-attempts=100, steal-interval=10); the sweep in docs/TUNING.md section 1 found every more aggressive profile slower and no profile was invented for this benchmark

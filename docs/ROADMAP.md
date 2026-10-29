@@ -181,7 +181,7 @@ have documents for the twelve.
 
 | wave | benchmarks | measured | still needed |
 |---|---|---|---|
-| B1 | `radixsort`, `filterbank`, `sieve` | macOS, 2026-10-27: qb under the floor on radixsort (5.8 ns a message against 10.8); level with the field on filterbank; behind the pools at two cores on sieve (0.76 ×) by the reference's placement, `place=1` measured (no gain for qb, −40 % for the floor) and `local=1` as a stress | Windows / WSL2 at shipped 3.3.0; the floor's `place` cell decided by the x86 sweep |
+| B1 | `radixsort`, `filterbank`, `sieve` | macOS, 2026-10-27: qb under the floor on radixsort (5.8 ns a message against 10.8); level with the field on filterbank; behind the pools at two cores on sieve (0.76 ×) by the reference's placement, `place=1` measured (no gain for qb, −40 % for the floor) and `local=1` as a stress; the floor's cell `place=1` on every host since 2026-10-28 (QB-244, decided after the x86 sweep), re-measured on macOS that night | Windows / WSL2 at shipped 3.3.0 |
 | B2 | `trapezoid`, `piprecision`, `recmatmul` | macOS: compute cells, every framework within 5 % at one core (qb 0.92–0.95 × the best); at two cores the pools balance what static placement does not (recmatmul 0.82 ×) | Windows / WSL2 |
 | B3 | `quicksort`, `bitonicsort` | macOS: bitonicsort 8.5 × the second framework and under the floor; quicksort level at one core, 0.88 × CAF at two (the two seeds' halves) | Windows / WSL2 |
 | C1 | `apsp`, `sor` | macOS: qb 2.0 / 4.9 × SObjectizer on apsp and 8.1 / 24 × on sor, under the floor at two cores on both; apsp `form=1` (`send`) measured slower than `push` in every configuration | Windows / WSL2, with the `form` sweep there |

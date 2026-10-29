@@ -5,8 +5,10 @@ Apple M4 Pro (10 performance + 4 efficiency cores, 48 GB, on AC), macOS 26.6.2 (
 **The whole Savina suite — thirty shapes, 484 cells — with shipped qb 3.3.0 as the qb column**, measured
 in one quiet session on **2026-10-27, 04:54:23–05:21:46 UTC** (480 verified + 2 declared `n/a`,
 `caf-detached` has no spin mode; the uct and sieve rows re-measured in a second session the same
-morning, 06:21:49–06:32:08 UTC, see below), one manifest (`run.json`, `merged_partial_runs` 1 for that
-second session). qb is **v3.3.0 as released** (`e18022dd`, frozen by `git archive`), CAF 1.1.0,
+morning, 06:21:49–06:32:08 UTC, and the floor's four sieve cells in a third, on 2026-10-28, at its
+`place=1` form — see below), one manifest (`run.json`, `merged_partial_runs` 5: 1 for that second
+session, 4 for the third, which ran one `--config` at a time). qb is **v3.3.0 as released**
+(`e18022dd`, frozen by `git archive`), CAF 1.1.0,
 SObjectizer 5.8.5.1 and the raw-thread floor, all from the harness tree `13169b7d` (the
 `qb-3.3.0-field` tag) under `build-shipped`; the 3.4.0 branch tip qb `3a771d3b` was measured beside it
 in the same session and lives in `qb-branch-develop/grid-3a771d3b/`. The twenty-two shapes of Savina
@@ -33,7 +35,7 @@ fails if it drifts.
 | directory | what it is |
 |---|---|
 | `savina-ping-pong/` | **20 cells** — 18 verified + 2 declared `n/a` (`caf-detached` has no spin mode); 2026-10-27, qb = shipped 3.3.0. |
-| the other 29 `savina-<shape>/` | **16 cells** each, all verified, same session (`uct`, `sieve`: the second session); `caf-detached` declares itself omitted from them. |
+| the other 29 `savina-<shape>/` | **16 cells** each, all verified, same session (`uct`, `sieve`: the second session; the floor's four `sieve` cells: the third, `place=1`); `caf-detached` declares itself omitted from them. |
 | `wave-bc-form-sweep/` | the forms the adapters declare, measured as side documents (`report.py` never renders them): sieve `place=1` (qb, floor) and `local=1` (all four), apsp `form=1`, uct `nodes=200000` (all four), concdict and concsll `form=1` (qb, CAF), logmap's SObjectizer individual binding — 58 documents, `docs/TUNING.md` §22.4. |
 | `qb-branch-develop/` | **the 3.4.0 branch tip on this host** (2026-10-27): `grid-3a771d3b/` and `grid-3a771d3b-pass2/` (qb `3a771d3b`, the five commits over v3.3.0, before and after the field), `census-3a771d3b-vs-3.3.0/` (every shape, two cores, 12 interleaved launches of 3 + 1), `census-3.3.0-field-bc/` (the field's two-core cells of the twelve B/C shapes, four binaries in a seeded order), `bisect-1c/` (the one-core cells the grid read slower: three physical copies per side over three builds). Its README carries the tables; the earlier cohorts (`grid-174e515a/` and its controls and censuses, 2026-09-19) stay beside them. |
 
@@ -42,7 +44,12 @@ fails if it drifts.
 files exists at the parent of the commit that replaced them, 13169b7d:
 `git show 13169b7d:results/macbook-m4pro-macos-clang21/savina-fib/qb__1c-spin.json` reads one, and
 `git archive 13169b7d results/macbook-m4pro-macos-clang21 | tar -x` restores the directory as it
-was. The field of 2026-09-05 (five shapes, 7 + 2, shipped 3.1.0) is at `30838d50`, as before:
+was. The floor's four sieve cells of the second session (`place=0`, its form until the roster decision of
+2026-10-28, Huly QB-244) were replaced by the third session's `place=1` cells; they and the manifest that
+listed them exist at the parent of the commit that replaced them, 25347122:
+`git show 25347122:results/macbook-m4pro-macos-clang21/savina-sieve/baseline__2c-spin.json` reads one,
+`git show 25347122:results/macbook-m4pro-macos-clang21/run.json` the manifest (`merged_partial_runs` 1).
+The field of 2026-09-05 (five shapes, 7 + 2, shipped 3.1.0) is at `30838d50`, as before:
 
 | directory at `30838d50` | what it is |
 |---|---|
@@ -56,7 +63,7 @@ was. The field of 2026-09-05 (five shapes, 7 + 2, shipped 3.1.0) is at `30838d50
 | `qb-branch-perf-event-pipe-segmented/axis-k/launch-census/` | the same A/B as a 12-launch census — the figure to quote. |
 
 What the 2026-09-05 and 2026-09-19 sessions said stays in `docs/TUNING.md` §9.13 and §13.9; the
-2026-10-27 session is §22.
+2026-10-27 session is §22, and the floor's sieve cells of 2026-10-28 are read in §22.4.
 
 **Residual load during the 2026-10-27 session**, since it is part of the measurement — measured
 before and after every leg by a guard that waited for 60 s (then 30 s) of quiet before each
@@ -68,3 +75,13 @@ logical cores busy at the first guard, 0.7–1.0 from the field on; Docker Deskt
 registry container) 0–14 % of a core; `duetexpertd` 72 % of a core for the seconds before leg A and
 nothing after. CPU idle over the ten seconds before each leg: 86.4 % (A), 95.0 % (C, the field),
 93.6 % (A2), 94.0 % (D), 94.7 % (E1), 94.4 % (E2); 1-minute load 2.96 before A, 1.4–2.6 from then on.
+
+**The third session, 2026-10-28, 23:20–23:23 CET (22:20–22:23 UTC)**: the floor alone, savina/sieve,
+`tools/run.py --only baseline --benchmark savina/sieve --repetitions 9 --warmup 2 --no-pin`, one `--config`
+at a time into a fresh `--out` (`merged_partial_runs` 3 there), on a quiet host — CPU idle 96 %, 1-minute
+load 1.1. Its four documents carry the floor's caveat and idiom text of `bfb33489`, the commit that moved
+the cell to `place=1`, and the field's toolchain (AppleClang 21.0.0.21000334, `-O3 -DNDEBUG`); they were
+merged here under `run.py`'s partial-merge rule — same platform, CPU set, repetitions and warmup, the
+manifest's host compared un-pseudonymised and pseudonymised again (`docs/TUNING.md` §21.1), each
+re-measured cell listed after the cells it did not touch, the run id the last invocation's. The raw
+documents are attached to Huly QB-1143 (`sieve-floor-grid-m4-20261028.json`).

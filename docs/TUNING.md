@@ -3403,6 +3403,8 @@ spec comment of `uct.h`; nothing a measurement depends on), the builds relinked 
 field build, three in the candidate's; `fib` byte-identical before and after) and every document of
 both rows re-produced under the amended text, the logmap precedent of §21.4. The harness battery was
 run again on the rebuilt field build at the end: **151 / 43 / 0**, 194 identities (06:32:22–06:32:56 UTC).
+A third session, on 2026-10-28, re-measured the floor's four sieve field cells at `place=1` after the
+roster decision of that day (Huly QB-244; §22.4).
 
 ### 22.2 The field, shape by shape — twenty-two shapes new to this host
 
@@ -3429,7 +3431,9 @@ repetitions, and a two-core verdict is read from the censuses of §22.3 where th
   `place=0` puts every filter on the first filter's core and the second core runs only the producer,
   so qb's two-core cell is its one-core cell; the pools spread the chain. `place=1` does not recover
   it (§22.4: +9 / +1 %), and the floor, with qb's placement, reads the same 499 / 492 — the floor
-  spread by `place=1` reads 299 / 300, −40 %.
+  spread by `place=1` reads 299 / 300, −40 %. Those floor figures are its `place=0` cell of this session;
+  the cell is `place=1` since 2026-10-28, re-measured that night at 493.2 / 492.4 ns at one core and
+  283.5 / 283.5 at two (§22.4).
 - **trapezoid** (a trapezoid; 10 M of them over 100 workers) — 22.6 / 22.5 ns at one core against
   21.5 for CAF, SObjectizer and the floor alike (0.95 ×, separate: +5 % on a 21.5-ns integrand,
   with 200 messages per repetition); at two cores 11.1 / 11.2 against 10.9–11.0, overlapping. A
@@ -3675,9 +3679,10 @@ The census agrees with the grid in every ranking, and tightens it: the twelve la
 radixsort span 5.7–6.0 ns, of its apsp 287–302, of its sor 18.3–19.3 — and the sor grid cell's 24.0
 (§22.2) is a launch the census never revisits. Where qb is first it is under the floor (radixsort,
 bitonicsort, apsp, sor); where a pool is first the floor sits with qb (sieve, quicksort, recmatmul:
-qb's placement without qb reads the same), or qb and the floor both trail (piprecision: the floor
-gains nothing from its second worker, 8.3 µs against 8.4 at one — not explained here); where the
-floor is first it is its heap node against an actor (uct, facloc) or its ring chain against a
+qb's placement without qb reads the same — for sieve the floor's `place=0` form, the one this census
+measured; its cell is `place=1` since 2026-10-28, §22.4), or qb and the floor both trail (piprecision:
+the floor gains nothing from its second worker, 8.3 µs against 8.4 at one — not explained here); where
+the floor is first it is its heap node against an actor (uct, facloc) or its ring chain against a
 pipeline of actors (filterbank).
 
 ### 22.4 The forms the adapters declared, measured on macOS
@@ -3691,7 +3696,7 @@ the other form, "separate" when the [min, p99] ranges do not overlap:
 |---|---:|---:|---:|---:|---|
 | apsp, qb `form=1` (`send` per neighbour) against the `push` cell | 572.7 → 586.6 (+2.4 %) | 572.4 → 579.1 (+1.2 %) | 289.4 → 304.1 (+5.1 %) | 290.6 → 323.9 (+11.4 %) | `form=0` stays; every pair separate |
 | sieve, qb `place=1` (filters spread by a Spawner per core) | — | — | 506.0 → 549.5 (+8.6 %) | 522.8 → 529.9 (+1.4 %, overlapping) | `place=0` stays for qb |
-| sieve, the floor at `place=1` | — | — | 498.5 → 299.4 (**−39.9 %**) | 491.6 → 299.9 (**−39.0 %**) | the floor's faster form; its cell is `place=1` on every host since 2026-10-28 (§25.1) |
+| sieve, the floor at `place=1` | — | — | 498.5 → 299.4 (**−39.9 %**) | 491.6 → 299.9 (**−39.0 %**) | the floor's faster form; its cell is `place=1` on every host since 2026-10-28 (§25.1), this host's re-measured at it (below) |
 | sieve `local=1`, the one-filter-per-prime stress (9 591 filters, 46 M messages), qb | 507.8 → 5 403.9 | 505.8 → 5 420.3 | 506.0 → 5 894.3 | 522.8 → 5 684.2 | a labelled stress, never a cell |
 | sieve `local=1`, CAF / SObjectizer / the floor | 71.3 µs / 28.4 µs / 6.60 µs | 71.7 / 31.2 / 6.60 | 47.7 / 95.4 / 6.60 | 52.3 / 92.7 / 6.59 | qb under the raw-thread floor at every configuration (0.82–0.89 ×); CAF 8–13 ×, SObjectizer 5–16 × slower than qb |
 | uct `nodes=200000`, Savina's canonical cap, qb | 128.6 → 136.5 (+6.1 %) | 129.0 → 138.5 (+7.4 %) | 91.8 → 102.5 (+11.7 %) | 90.8 → 101.3 (+11.5 %) | **verifies in every configuration with 3.3.0**; 3.2.1 refused it (uct.md) |
@@ -3709,12 +3714,41 @@ qb pays a creation round trip per filter and gains nothing (+9 % spinning, +1 % 
 floor, whose rings cost nothing to spread, reads 40 % faster — the floor's `main()` ran `place=0`,
 the reference's placement, until the x86 sweep confirmed this one (§25.1: the floor reads 37–46 %
 faster at `place=1` on both x86 toolchains and qb is level there); since 2026-10-28 the floor's cell
-is `place=1` on every host and qb's stays `place=0` (Huly QB-244). **qb 3.3.0 holds Savina's canonical uct**:
+is `place=1` on every host and qb's stays `place=0` (Huly QB-244), and this host's four field cells were
+re-measured at it that night (below). **qb 3.3.0 holds Savina's canonical uct**:
 the 64-bit actor id (`ActorId.h` at `e18022dd`: a 24-bit ordinary slot per VirtualCore, 16 711 679
 against 3.2.1's 65 534) verifies 199 990 live nodes in every configuration, 6–12 % per node over the
 60 000-node cell (the floor's node costs 16–25 % more at that size, CAF's 0–11 %), and the common cap
 stays 60 000 as the comparison cell of every host until the maintainers decide otherwise (the x86
 waves were measured at it).
+
+**The floor's sieve field cell at `place=1`, re-measured on 2026-10-28.** The roster decision of that
+day (Huly QB-244: qb's cell `place=0`, the floor's `place=1`, on every host) left this host's four
+field documents of the floor at the old form, and the Mac re-measured them the same day, 23:20–23:23
+CET (22:20–22:23 UTC), on a quiet host (CPU idle 96 %, 1-minute load 1.1): `tools/run.py --only baseline
+--benchmark savina/sieve --repetitions 9 --warmup 2 --no-pin`, one `--config` at a time, from a tree
+carrying `bfb33489` (the documents' caveat and idiom text is that commit's), the field's toolchain;
+every document verified, merged into `results/macbook-m4pro-macos-clang21/` under `run.py`'s
+partial-merge rule (`run.json`: `merged_partial_runs` 1 → 5; the host README has the session and the
+`git show` of the documents replaced). p50 per repetition and per candidate, the `place=0` cell of the
+second session of 2026-10-27 → the `place=1` cell, "separate" as above:
+
+| configuration | `place=0` cell (2026-10-27) | `place=1` cell (2026-10-28) | change |
+|---|---:|---:|---|
+| 1c-spin | 24.61 ms, 492.2 ns | 24.66 ms, 493.2 ns | +0.2 %, overlapping |
+| 1c-park | 24.68 ms, 493.7 ns | 24.62 ms, 492.4 ns | −0.3 %, overlapping |
+| 2c-spin | 24.93 ms, 498.5 ns | 14.18 ms, 283.5 ns | **−43.1 %**, separate |
+| 2c-park | 24.58 ms, 491.6 ns | 14.17 ms, 283.5 ns | **−42.3 %**, separate |
+
+At one core the two forms are one placement — filter `f` on worker `(f + 1) % 1`, worker 0 — and the
+re-measure is level with the cell it replaces; at two cores the spread chain is 42–43 % faster, and
+5 % under leg D's side documents of the same form (299.4 / 299.9 ns, 2026-10-27; overlapping at spin,
+separate at park — two sessions, and a two-core cell on this host is one launch, bimodal by launch, so
+the 5 % is no finding). What it moves in the field (`REPORT.md`): at two cores the pools no longer sit
+below the floor — CAF's 382 / 389 ns read 1.35 / 1.37 × the floor's 283.5, where they read 0.77 / 0.79 ×
+the `place=0` cell — and qb's `place=0` cell, 506 / 523 ns, is 1.78 / 1.84 × it; at one core qb costs
+1.03 × the floor in both modes (1.03 / 1.02 × before). The field census of §22.3 measured the floor at
+`place=0` and was not re-run, so the floor's two-core `place=1` figures are these one-launch cells.
 
 ### 22.5 The first profile of each new shape
 
@@ -3768,14 +3802,18 @@ say, in three groups:
 
 - **The x86 half of waves B and C** — Windows / MSVC and WSL2 / g++ at shipped 3.3.0, in the same
   shape as this session (the field, the branch tip beside it, the forms, the censuses), on the
-  Windows host's calendar (Huly QB-246 / QB-247). The adapters' defaults are unchanged by this host:
-  apsp `form=0`, sieve `place=0` for qb and the floor, uct's common cap 60 000.
+  Windows host's calendar (Huly QB-246 / QB-247). The adapters' defaults were unchanged by this host's
+  session: apsp `form=0`, sieve `place=0` for qb (and for the floor until 2026-10-28: its cell is
+  `place=1` on every host since, §22.4 and §25.1), uct's common cap 60 000.
 - **The arm64 Linux guest** (`results/utm-debian13-arm64-g++14/`) has not run waves A, B or C, nor the
   shipped 3.3.0 field; its last session is the 2026-09-19 candidate. It is a second quiet session on
   the same machine once the guest is up, never concurrent with a macOS one.
-- **The floor's sieve placement**: `place=1` is the floor's faster form here (−38 %) and `place=0`
-  stays its cell until the x86 sweep says the same; a one-host, unpinned sweep does not change a
-  default the two pinned hosts measure at (sieve.md).
+- **The floor's sieve placement**, settled since: `place=1` was the floor's faster form here (−38 %)
+  and `place=0` stayed its cell until the x86 sweep said the same, since a one-host, unpinned sweep does
+  not change a default the two pinned hosts measure at (sieve.md); the x86 sweep did (§25.1), the floor's
+  cell is `place=1` on every host since 2026-10-28 (Huly QB-244), and this host's four field cells were
+  re-measured at it that night — 283.5 ns per candidate at two cores against the `place=0` cell's
+  498.5 / 491.6, level at one (§22.4).
 - **Where the pools lead qb at two cores, and it is placement**: sieve 2c (0.78 × CAF: every filter on
   one core by the reference's own shape), quicksort 2c (0.88 ×: two seeds, two halves of unequal
   size, each kept on its core), recmatmul 2c (0.82 ×: twenty workers' leaves placed `w % cores`),
@@ -3783,9 +3821,10 @@ say, in three groups:
   CAF computing 190 fewer terms) and a-star 2c (0.92 ×). Each is a shape where a work-stealing pool
   rebalances what qb's static placement cannot move, and the floor — qb's placement without qb —
   reads the same as qb in sieve, quicksort and recmatmul: the cost is the placement, not the
-  framework. What a qb program does about it is the question of the actor-placement axis
-  (QB-216, the arena's placement effects on arm64) and of the B/C shapes' own pages; nothing here is
-  a defect of a hot path.
+  framework (in sieve, the floor's `place=0` cell of this session; spread at `place=1`, its cell since
+  2026-10-28, it reads 283.5 ns, under every framework, §22.4). What a qb program does about it is the
+  question of the actor-placement axis (QB-216, the arena's placement effects on arm64) and of the B/C
+  shapes' own pages; nothing here is a defect of a hot path.
 - **Where qb is behind at one core on compute-dominated cells** — concsll (0.90 ×, the same walk
   9–10 % slower in qb's binary, level on x86), trapezoid (0.95 ×, +1.1 ns on a 21.5-ns integrand),
   recmatmul 1c (0.95 ×), bndbuffer 1c (0.94 ×), piprecision 1c (0.92 × CAF), nqueens 1c (0.98 ×) —
@@ -3984,7 +4023,9 @@ and the decision §22.4 deferred to this sweep was taken on 2026-10-28 (Huly QB-
 `main()` runs `place=1` and the Placement axis of `benchmarks/savina/sieve.md` says so; qb's cell stays
 `place=0` on every host, the reference's placement. No x86 field document moves with it — the wave-B/C
 shapes have no field grid on the two x86 hosts yet, and these sweep documents are their measurement of
-both forms; the M4's field cells of the floor's sieve are re-measured at the new form (the Mac's lot).
+both forms; the M4's four field cells of the floor's sieve were re-measured at the new form on
+2026-10-28 (§22.4): 493.2 / 492.4 ns per candidate at one core, level with the `place=0` cell's
+492.2 / 493.7, and 283.5 / 283.5 at two, −43 / −42 % against its 498.5 / 491.6 (spin / park).
 **qb 3.3.0 holds Savina's canonical uct on x86 too**: `nodes=200000` verifies for the four adapters in
 the four configurations on both toolchains. On WSL2 qb's node, 120–154 ns, is 1.1–1.4 × the floor's heap
 node (103–113) and 11–13 × CAF's; on MSVC qb (153–202) is under the floor (203–225) in every

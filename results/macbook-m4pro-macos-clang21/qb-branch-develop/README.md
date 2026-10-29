@@ -26,7 +26,7 @@ session had to redo are in `docs/TUNING.md` §22.1; `grid-3a771d3b/session.log` 
 | directory | when (UTC) | what |
 |---|---|---|
 | `grid-3a771d3b/` | 04:48:28–04:53:29 (uct, sieve: 06:23:00–06:23:03) | **the branch tip**, `--only qb`, 120 cells, 120 / 120 verified — README.md's macOS `framework=qb` grid; `session.log`, `run-leg-A.log`. |
-| `../savina-<shape>/` (the field) | 04:54:23–05:21:46 (uct, sieve rows: 06:21:49–06:22:06) | **484 cells, every framework**, qb = shipped 3.3.0, 0 unverified, 2 declared `n/a` — a fresh `../run.json` (`merged_partial_runs` 1: the second session's two rows); the same-session control of the branch tip, and the published field. |
+| `../savina-<shape>/` (the field) | 04:54:23–05:21:46 (uct, sieve rows: 06:21:49–06:22:06) | **484 cells, every framework**, qb = shipped 3.3.0, 0 unverified, 2 declared `n/a` — a fresh `../run.json` (`merged_partial_runs` 1: the second session's two rows; 5 since the floor's four sieve cells were re-measured at `place=1` on 2026-10-28, `../README.md`); the same-session control of the branch tip, and the published field. |
 | `grid-3a771d3b-pass2/` | 05:22:41–05:27:35 (uct, sieve: 06:23:44–06:23:45) | the branch tip again, after the field, 120 / 120 verified — the per-cell repeatability column below. |
 | `../wave-bc-form-sweep/` | 05:28:29–05:39:04 (uct, sieve: 06:24:26–06:30:07) | leg D, the declared forms on the shipped build: 58 side documents, `docs/TUNING.md` §22.4. |
 | `census-3a771d3b-vs-3.3.0/<shape>/` | 05:41:56–06:03:00 (uct, sieve: 06:30:48–06:30:55) | **the two-core comparison**: 12 interleaved launches of 3 + 1 in AB/BA order, branch tip against shipped, every shape, 2c-spin and 2c-park — 1 440 launches, 0 unverified; `census.log` per shape. |
@@ -51,7 +51,9 @@ a-star's +8–14 % and fib's +5 % of the grids are the host's slow one-core mode
 
 ## Shipped 3.3.0 and the branch tip, same session (ns per unit, p50)
 
-The field columns are `../savina-<shape>/` of this same session; `~` marks a pair whose [min, p99]
+The field columns are `../savina-<shape>/` of this same session (the floor's sieve figures are its `place=0`
+cells of this session, which `../savina-sieve/` replaced with the `place=1` cells of 2026-10-28; `../README.md`
+says where the old documents are); `~` marks a pair whose [min, p99]
 ranges overlap (`~A` / `~A2`: one of the two passes); the census column is the two-core instrument
 (median of twelve launch medians, branch tip vs shipped, `~` when the twelve-launch ranges overlap).
 
@@ -194,6 +196,9 @@ ranges overlap (`~A` / `~A2`: one of the two passes); the census column is the t
 | sor | **18.5 / 18.6** | 704.1 / 710.9 | 585.9 / 587.1 | 20.1 / 20.6 |
 | uct | 93.7 / 91.1 | 1 211 / 1 201 | 1 561 / 1 655 | **64.4 / 61.4** |
 | facloc | 83.1 / 82.1 | 826.7 / 903.2 | 1 551 / 1 559 | **70.8 / 73.3** |
+
+The floor's sieve row is its `place=0` form, the one this census measured; the floor's cell is `place=1`
+since 2026-10-28 and has no census on this host (`docs/TUNING.md` §22.4).
 
 ## The one-core bisection (ns per unit, median of 36 launch medians over three copies; bootstrap 95 % CI of the ratio)
 
