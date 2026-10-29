@@ -3,7 +3,7 @@
 Apple M4 Pro (10 performance + 4 efficiency cores, 48 GB, on AC), macOS 26.6.2 (25G83), AppleClang
 21.0.0 (clang-2100.3.34.2), CMake 4.4.3, `-O3 -DNDEBUG`, **9 repetitions + 2 warmup**, **unpinned**.
 **The whole Savina suite — thirty shapes, 484 cells — with shipped qb 3.3.0 as the qb column**, measured
-in one quiet session on **2026-10-27, 04:54:23–05:21:46 UTC** (480 verified + 2 declared `n/a`,
+in one quiet session on **2026-10-27, 04:54:23–05:21:46 UTC** (482 verified + 2 declared `n/a`,
 `caf-detached` has no spin mode; the uct and sieve rows re-measured in a second session the same
 morning, 06:21:49–06:32:08 UTC, and the floor's four sieve cells in a third, on 2026-10-28, at its
 `place=1` form — see below), one manifest (`run.json`, `merged_partial_runs` 5: 1 for that second

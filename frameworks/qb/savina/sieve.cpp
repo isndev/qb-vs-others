@@ -244,8 +244,8 @@ int main(int argc, char **argv) {
     spec.framework         = QVO_FRAMEWORK_ID;
     spec.framework_version = QVO_FRAMEWORK_VERSION;
     spec.params            = qvospec::savina::sieve::params();
-    // The placement this adapter's table cell runs: the reference's (place=0) until the quiet-host
-    // measurement of both forms names the faster one (benchmarks/savina/sieve.md).
+    // The placement this adapter's table cell runs: the reference's, place=0, on every host -- the
+    // form sweeps of 2026-10-27 read qb no faster at place=1 (benchmarks/savina/sieve.md, Huly QB-244).
     spec.params["place"]   = 0;
     spec.expected          = qvospec::savina::sieve::expected;
     spec.expected_messages = qvospec::savina::sieve::expected_messages;

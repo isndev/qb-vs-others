@@ -86,8 +86,9 @@ of the cycle carries and declares the run not applicable only when every one rea
 - **qb**: every candidate and every Exit is a `push` — ordered: a composite that overtook its
   smallest factor would reach the end of the chain and be kept as a prime. A filter's `Counts` are
   its own members, handed to its slot at teardown; the primes it holds are a vector the body owns.
-  qb's actor id is a 16-bit slot per VirtualCore: with `place=0` every filter is on one core, so a
-  run needing more than 65 534 filters fails the cell (`qvo::fail`) rather than report.
+  qb's actor id is a 24-bit ordinary slot per VirtualCore since 3.3.0 (16 711 679 live actors; 3.2.1's
+  was a 16-bit slot, 65 534): with `place=0` every filter is on one core, so a run needing more
+  filters than that fails the cell (`qvo::fail`) rather than report.
 - **CAF**: a candidate is a bare `uint64`, the Exit `close_atom`; a filter spawns its successor
   with `self->spawn`, as `fib.md`'s nodes do, and quits behind its Exit.
 - **SObjectizer**: a filter that needs a successor introduces a new **top-level** coop holding it —
