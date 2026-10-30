@@ -1,0 +1,145 @@
+{
+ "counts": {
+  "gated": 128,
+  "metrics": 150,
+  "recorded_only": 22
+ },
+ "generated_utc": "2026-10-24T22:48:12Z",
+ "host": {
+  "cpu": "Apple M4 Pro",
+  "id": "macos-arm64",
+  "logical_cores": 14,
+  "platform": "Darwin 25.6.0 arm64",
+  "qb_commit": "8ff79c9a",
+  "root_commit": "5f4e4ef7",
+  "sampled_from": "the machine running bench-baseline.py, NOT necessarily the machine that produced the runs -- verify before trusting these four fields"
+ },
+ "method": {
+  "aggregate": "median of per-run medians; per-run value is the median over --benchmark_repetitions",
+  "contender_runs": 3,
+  "floor_pct": 3.0,
+  "gate_max_spread_pct": 6.0,
+  "independent_runs": 15,
+  "required_metric_holdout_compared": [],
+  "required_metrics": [],
+  "safety": 2.5,
+  "spread_pct": "max |run - centre| / centre, in percent -- the worst deviation observed across the independent runs",
+  "threshold_pct": "max(3.0, spread_pct * 2.5) for gated metrics"
+ },
+ "metrics": {
+  "qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::All>/responders:8/real_time::asks_issued_per_s": {
+   "direction": "higher",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 5.625,
+   "threshold_pct": 14.06,
+   "value": 4610440.62271686
+  },
+  "qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::All>/responders:8/real_time::items_per_second": {
+   "direction": "higher",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 5.625,
+   "threshold_pct": 14.06,
+   "value": 4610440.62271686
+  },
+  "qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::All>/responders:8/real_time::real_time": {
+   "direction": "lower",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 5.96,
+   "threshold_pct": 14.9,
+   "value": 34703841.36640599
+  },
+  "qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::All>/responders:8/real_time::scatters_per_s": {
+   "direction": "higher",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 5.625,
+   "threshold_pct": 14.06,
+   "value": 576305.0778396075
+  },
+  "qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::Any>/responders:8/real_time::asks_issued_per_s": {
+   "direction": "higher",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 5.759,
+   "threshold_pct": 14.4,
+   "value": 5172345.402000121
+  },
+  "qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::Any>/responders:8/real_time::items_per_second": {
+   "direction": "higher",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 5.759,
+   "threshold_pct": 14.4,
+   "value": 5172345.402000121
+  },
+  "qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::Any>/responders:8/real_time::real_time": {
+   "direction": "lower",
+   "gate": false,
+   "runs": 15,
+   "spread_pct": 6.111,
+   "threshold_pct": null,
+   "value": 30933742.347935382
+  },
+  "qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::Any>/responders:8/real_time::scatters_per_s": {
+   "direction": "higher",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 5.759,
+   "threshold_pct": 14.4,
+   "value": 646543.1752500151
+  },
+  "qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::items_per_second": {
+   "direction": "higher",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 5.414,
+   "threshold_pct": 13.54,
+   "value": 5210811.938126599
+  },
+  "qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::real_time": {
+   "direction": "lower",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 5.724,
+   "threshold_pct": 14.31,
+   "value": 9595433.608754665
+  },
+  "qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::round_trips_per_s": {
+   "direction": "higher",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 5.414,
+   "threshold_pct": 13.54,
+   "value": 5210811.938126599
+  },
+  "qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_SameCore/real_time::items_per_second": {
+   "direction": "higher",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 0.777,
+   "threshold_pct": 3.0,
+   "value": 12142030.853293143
+  },
+  "qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_SameCore/real_time::real_time": {
+   "direction": "lower",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 0.771,
+   "threshold_pct": 3.0,
+   "value": 4117927.272968433
+  },
+  "qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_SameCore/real_time::round_trips_per_s": {
+   "direction": "higher",
+   "gate": true,
+   "runs": 15,
+   "spread_pct": 0.777,
+   "threshold_pct": 3.0,
+   "value": 12142030.853293141
+  }
+ },
+ "note": "Composite v6 root 5f4e4ef7 / qb 8ff79c9a; binaries built from that tree (benchmarks preset, AppleClang 21); 15 runs x 5 repetitions, 2026-10-24 night, quiet desktop session | QB-1171: filtered to the qb-core-bench-ask-* metrics for an Ask-only comparison",
+ "schema": 1
+}

@@ -94,6 +94,12 @@ are all in this repository.
   - [28.3 Windows 11 MSVC 19.51 (HIGH priority, `start /affinity 5`)](#283-windows-11-msvc-1951-high-priority-start-affinity-5)
   - [28.4 Reading, and what it opens](#284-reading-and-what-it-opens)
   - [28.5 Step 2: the `tpause` pacing on the actor cells — withdrawn on both hosts and both instruments](#285-step-2-the-tpause-pacing-on-the-actor-cells--withdrawn-on-both-hosts-and-both-instruments)
+- [29. The ask registry's second trim on the M4 (QB-1171): seven placement families, the static path, and the N = 1 point bisected (2026-10-30)](#29-the-ask-registrys-second-trim-on-the-m4-qb-1171-seven-placement-families-the-static-path-and-the-n--1-point-bisected-2026-10-30)
+  - [29.1 What the commit changes, and its static path on Apple clang](#291-what-the-commit-changes-and-its-static-path-on-apple-clang)
+  - [29.2 The census: seven placement families on the commit](#292-the-census-seven-placement-families-on-the-commit)
+  - [29.3 The dev/bench ask cells](#293-the-devbench-ask-cells)
+  - [29.4 The N = 1 point of §26.6: the 3.3.0 control's placement, not a commit](#294-the-n--1-point-of-266-the-330-controls-placement-not-a-commit)
+  - [29.5 Documents](#295-documents)
 
 ---
 
@@ -4521,3 +4527,136 @@ x86 as on arm64 (§23.1)**; the WAITPKG lead closes on this dossier (Huly QB-181
 branch of the probe stays — the screen the next primitive goes through first. Documents:
 `results/<host>/qb-branch-develop/wait-primitives/step2/` (the two census families, `side-summary.txt`, the `ab.py`
 campaign under `ab-bench/`, `PATCH.md`).
+
+## 29. The ask registry's second trim on the M4 (QB-1171): seven placement families, the static path, and the N = 1 point bisected (2026-10-30)
+
+§26.5 sized three trims of the `ask_any` warm path; the x86 session read them on Huly QB-1171 (2026-10-28) by
+callgrind and by a **placement census** — the same sources built seven ways (four g++ alignment families, three
+MSVC `/FUNCTIONPADMIN` relinks), each measured alone, each cell read across the families: **trim 2 entered**
+(−20 Ir a release, neutral or better in every cell, never robustly slower), trim 1 did not (no robust time gain,
+two cells leaning slower), trim 3 was placement and MSVC refuses its forced inlining (C4714). The rule asks both
+ISAs; this section is the arm64 half, read on the commit itself (qb `p2/qb-1171-ask-fifo-in-slot` `5fd96137` over
+`develop` `ea0760f6`), and the bisection of §26.6's N = 1 point.
+
+### 29.1 What the commit changes, and its static path on Apple clang
+
+`ask_table::take` resolves the owner's free FIFO (`owner_queue`: the current-core compare, the directory, the band
+test, the page) and now records its address in the ask's slot (`ask_slot::queue`, an opaque `void *`); the
+release of a bound entry pushes straight into it, read beside `slot->owner`, with no core compare and no
+directory walk — FIFO pages never move once created. Unbound entries (no slot: the codec tests) walk the
+directories. The registry entry stays 16 bytes (`static_assert`); `ask_slot` grows from 32 to 40 bytes in every
+asking frame. Read in the f0 probe binaries (`objdump`, `results/<host>/qb-branch-develop/ask-registry-trims/
+static-path/`):
+
+| path, Apple clang 21 / arm64 | `develop` | trim 2 |
+|---|---:|---:|
+| `ask_unregister`, the release of a bound entry, entry to `ret` | 87 | **61** |
+| `ask_take`, the take of a bound entry, entry to `ret` | 28 | 27 |
+| function bodies `ask_take` / `ask_unregister` | 100 / 142 | 102 / 110 |
+
+The release loses the current-core load and compare, the directory load, the band test, the page-index shift,
+the bound compare, the page load and its null test, and two saved registers. The take swaps a branchless
+`csel`/`cinc` for the store and a not-taken `cbz` — once its bound branch is `[[likely]]`: without the attribute
+Apple clang laid the bound path out as a taken `b` into the tail the unbound path fell into, and the commit was
+re-measured from that build on. `/usr/bin/time -l` agrees in direction (5 942 → 5 822 instructions an `ask_any`
+at `same` N = 1) but its launches spread by ±1 %, ±100 instructions: the static count is the figure.
+
+### 29.2 The census: seven placement families on the commit
+
+The probe built against `develop` (`git archive ea0760f6`) and against trim 2 (the same tree with the commit's
+`Actor.h` / `Actor.cpp`), each linked against its OWN qb libraries (the tree is the probe's `add_subdirectory`),
+Release `-O3 -DNDEBUG`, one family's flag on both sides through `CMAKE_CXX_FLAGS`: f0 none, f1
+`-falign-functions=32`, f2 `-falign-functions=64`, f3 `-falign-loops=32`, f4 `-falign-functions=16`, f5
+`-falign-loops=64`, f6 `-falign-functions=32 -falign-loops=32` (Apple clang ignores `-falign-jumps`); 14 builds,
+0 warnings, each side's code checked in its binary. `tools/scatter-ab.py --no-pin`, the pilot's cells (`same`
+N = 1, 2, 4, 8; `cross` N = 1, 2, 4), 3 physical copies a side, 8 rounds in the seeded order 7101, 200 000 asks a
+launch; five windows of 2–3 minutes between 08:16:08 and 08:33:40 UTC under the shared bench marker, each opened
+only once no compiler, linker or test process had run for 15 s (load 4.1–8.1 at the starts, the desktop's
+WindowServer the top process). Each cell is read as the x86 census was: **robust** when the seven families fall
+on one side of 1 with at least one CI excluding it, **placement** when CIs exclude 1 on both sides, **leans**
+when CIs exclude 1 on one side only with a family on the other, **level** otherwise. Ratio trim 2 / `develop`,
+▼ a CI below 1 (faster), ▲ above:
+
+| cell | median of the 7 ratios | reading | f0 | f1 | f2 | f3 | f4 | f5 | f6 |
+|---|---:|---|---:|---:|---:|---:|---:|---:|---:|
+| `same` N = 1 | 1.002 | placement | 0.963 ▼ | 1.002 | 1.002 | 1.032 ▲ | 0.960 ▼ | 1.045 ▲ | 0.999 |
+| `same` N = 2 | 0.990 | placement | 0.990 | 0.987 ▼ | 0.977 ▼ | 1.017 ▲ | 0.967 ▼ | 1.045 ▲ | 1.007 |
+| `same` N = 4 | 0.992 | leans faster | 0.972 ▼ | 1.000 | 0.992 | 1.000 | 0.981 ▼ | 0.995 | 0.984 ▼ |
+| `same` N = 8 | 0.995 | leans faster | 1.004 | 1.001 | 0.988 ▼ | 0.995 | 0.992 ▼ | 1.000 | 0.988 ▼ |
+| `cross` N = 1 | 0.985 | placement | 0.963 ▼ | 0.986 | 0.985 | 1.052 | 0.977 | 1.083 ▲ | 0.981 |
+| `cross` N = 2 | 0.984 | leans faster | 0.984 | 0.982 | 0.960 ▼ | 1.041 | 0.982 | 1.062 | 0.995 |
+| `cross` N = 4 | 0.998 | leans faster | 0.974 ▼ | 1.001 | 1.003 | 0.990 | 1.013 | 0.998 | 0.971 ▼ |
+
+**No cell is robustly slower in any family; four lean faster; three are placement.** The two families that read
+trim 2 slower are both loop-alignment ones (f3, f5), and there it is the control that moved: `develop` at `same`
+N = 1 spans 238–255 ns over its seven builds of one source and sits at its two lowest in f3 and f5 (240.1,
+238.2), while trim 2 spans 244–251 and sits at its usual 248–249 there. Read as medians of the family medians:
+`same` N = 1 246.3 → 246.0 ns, N = 4 491.4 → 486.0 (−1.1 %), N = 8 813.8 → 810.4; `cross` N = 1 379.0 → 373.6
+(−1.4 %), N = 4 816.0 → 806.4 (−1.2 %) — trim 2's narrower spread over the families says its warm path is the less
+placement-sensitive of the two. **Neutral or better on the probe, as on both x86 toolchains.**
+
+### 29.3 The dev/bench ask cells
+
+The gated ask cells of `dev/bench` (`qb-core-bench-ask-roundtrip` `SameCore` / `CrossCore`, `qb-core-bench-ask-all-fanout`
+`Scatter<All|Any>/responders:8`), each side built from its own tree by `dev/bench/ab.py build` with the `benchmarks`
+preset's flags (Release, `QB_ENABLE_NATIVE_ARCH`) and linked against its own libraries (the control's
+`ask_unregister` 142 instructions, the candidate's 110, read in each binary), `ab.py run`: 3 physical copies a
+side, 8 rounds in the seeded order 7101, 3 repetitions a run. The round trips were then read as the probe was,
+over six families of both sides (b0 the preset's flags; b1 `-falign-functions=32`, b2 `=64`, b4 `=16`; b3
+`-falign-loops=32`, b5 `=64`), each in its own window under the marker (08:49–10:38 UTC). Ratio trim 2 /
+`develop` of the medians over 24 runs a side, bootstrap 95 % CI:
+
+| cell | b0 | b1 | b2 | b3 | b4 | b5 | median | reading |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| `BM_Ask_RoundTrip_SameCore` | 0.971 ▼ | 0.966 ▼ | 0.960 ▼ | 0.958 ▼ | 0.972 ▼ | 0.988 ▼ | **0.969** | **robust faster** |
+| `BM_Ask_RoundTrip_CrossCore` | 1.045 ▲ | 1.029 ▲ | 0.982 | 0.979 ▼ | 1.011 | 0.981 | 0.996 | placement |
+| `Scatter<All>/8` (b0 only) | 1.037 [0.84, 1.24] | | | | | | | level (A/A ±10 %) |
+| `Scatter<Any>/8` (b0 only) | 0.948 [0.87, 1.16] | | | | | | | level (A/A ±9 %) |
+
+The one-core round trip is 3.1 % faster in every family (4.13–4.24 → 4.02–4.12 ms, CIs below 1); the two-core one
+moves with the build, both ways, around parity — the cell §23.1's pacing read was withdrawn on, where the asker's
+idle poll and the responder's reply meet in phase; its first family (b0, the preset's own flags) read +4.5 %, which
+is why the census was run before any verdict. **Against the recorded baseline** (`dev/bench/baseline/macos-arm64.json`,
+qb `8ff79c9a`, 2026-10-24, filtered to the 13 gated ask metrics; `bench-run.sh --runs 3` then `bench-compare.py`, the
+control's binaries and the candidate's measured in two windows of the same session): `develop` itself reads
+`CrossCore` 10.92 ms against 9.60 (+13.8 %, threshold 14.3 %) and `Scatter<All>` +15.2 % (threshold 14.9 %, FAIL);
+trim 2 reads `CrossCore` 11.11 (+15.8 %, FAIL), `SameCore` 4.22 (within its 3 %), both scatters within and faster
+than `develop` (37.5 / 31.4 ms against 40.0 / 34.1). The `CrossCore` drift is `develop`'s, against a baseline recorded
+before QB-1114 and QB-1154 changed this path; the difference between the two trees there is the placement above. A
+first gate run, taken as the desktop's system daemons woke at the end of the b0 window (load 14), read every cell
++10 to +180 % and is kept, discarded, under `dev-bench/gate-run-1-contaminated/`.
+
+**With §29.2: neutral or better on the M4 on both instruments — trim 2 enters**, the second ISA of the rule
+satisfied; the x86 families are to be re-run by the pilot on the commit itself.
+
+### 29.4 The N = 1 point of §26.6: the 3.3.0 control's placement, not a commit
+
+§26.6 read the tip above shipped 3.3.0 at N = 1 on the M4 (`same` 244.2 → 257.0 ns, `cross` 337.3 → 350.4) and
+named the bisection. Run as named — the probe against `v3.3.0` (`e18022dd`), `c16f1fa9` (QB-1114), `b67ac7b8`
+(QB-1154) and `develop` `ea0760f6`, default flags, `--no-pin`, N = 1 alone, 3 copies a side, 8 rounds — in three
+passes on three seeds (7101, 7202, 7303) inside the windows of §29.2, pooled (72 launches a side, bootstrap 95 %
+CI of the ratio of medians over 3.3.0):
+
+| side | `same` N = 1 (passes A / B / C) | ratio [CI 95 %] | `cross` N = 1 (passes A / B / C) | ratio [CI 95 %] |
+|---|---|---|---|---|
+| 3.3.0 | **253.9** (253.9 / 252.8 / 254.3) | — | **355.8** (360.0 / 352.8 / 360.7) | — |
+| `c16f1fa9` | 247.6 (249.9 / 246.2 / 247.3) | 0.975 [0.966, 0.986] | 352.4 (360.3 / 359.8 / 342.3) | 0.991 [0.967, 1.029] |
+| `b67ac7b8` | 253.6 (253.8 / 253.4 / 254.6) | 0.999 [0.991, 1.008] | 357.0 (367.4 / 348.7 / 361.8) | 1.004 [0.978, 1.036] |
+| `develop` | 252.5 (253.8 / 251.8 / 252.0) | 0.995 [0.987, 1.005] | 364.1 (363.9 / 371.4 / 356.9) | 1.023 [0.987, 1.050] |
+
+**The point does not reproduce, and no commit steps.** `develop` is level with 3.3.0 at `same` N = 1 in each pass
+and pooled; at `cross` N = 1 its passes span 357–371 ns around 3.3.0's 353–361 and the pooled CI holds 1; the two
+registry commits are level or faster (`c16f1fa9`'s split shape is 2.5 % FASTER at `same` N = 1 — the shape QB-1154
+replaced for the bank-transaction stall it caused at one core, a different workload). What moved is the 3.3.0
+build: 244.2 ns at `same` N = 1 in the session of §26.6, 253.9 today from the same source and flags — the 17-ns
+spread §29.2 measures over seven builds of one tree. A one-build control at N = 1 on this core sits anywhere in
+that band; §26.6's +13 ns was its low end. Nothing to attribute: the arm64 baseline the trims are read against is
+3.3.0 = `develop` at N = 1.
+
+### 29.5 Documents
+
+`results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-registry-trims/`: `f0-same/` … `f6-cross/` (each
+`ab-meta.json`, `launches.tsv`, `summary.json`, `summary.txt`), `census.txt` / `census.json` (the reading above,
+by the x86 census's rules), `bisect-n1-{A,B,C}-{same,cross}/` and
+`bisect-n1-pooled.txt`, `static-path/` (the four listings, `summary.txt`, the `/usr/bin/time` counts),
+`dev-bench/` (`fam-b0/` … `fam-b5/`: `ab.py` runs, `ab-meta.json`, `summary.txt`; `census.txt`; `gate-run-develop/`, `gate-run-2/` with `compare.txt`, the filtered baseline), and `scripts/` (the build, campaign, window and census scripts the session ran).

@@ -1,0 +1,27 @@
+QB-1171 trim 2 on Apple clang 21.0.0 / arm64 -- the static path of the two registry entry points an ask crosses
+(take on the send, release on the resume), read in the probe binaries of family f0 (default flags) with
+`objdump -d --no-show-raw-insn --disassemble-symbols=<symbol>`; the listings beside this file.
+qb-core is one TU, so `ask_take` / `ask_unregister` carry the inlined `ask_table::take` / `ask_table::release`.
+
+function body (all paths)       develop ea0760f6   trim 2
+  qb::detail::ask_take                 100            102
+  qb::detail::ask_unregister           142            110
+
+warm path of a BOUND entry, instructions executed from entry to ret (the owner's FIFO already non-empty):
+  ask_take       28 -> 27   the record (`str x22, [x19, #0x8]`, then a not-taken `cbz x19`) replaces the
+                            branchless cmp/csel/mov/cinc that chose between the slot and the raw owner; the
+                            bound branch is [[likely]]: without it Apple clang laid the bound path out as a
+                            taken `b` into the tail the unbound path fell into (same count, one taken jump)
+  ask_unregister 87 -> 61   gone: the current-core load and compare, the directory load, the service-band
+                            test (cmp/cset x2, and, ands, csel), the page-index shift, the directory-size
+                            compare, the page load and its null test; the frame saves two registers fewer
+                            (x21/x22: `sub sp, sp, #0x40` + three stp -> two stp)
+  both calls keep their two TLV thunk calls (`blr x8`), unchanged.
+
+x86 (the pilot's callgrind count, g++ 14, Huly QB-1171 2026-10-28): ask_unregister 344 -> 264 Ir at same N = 4,
+-20 Ir a release.
+
+instructions-retired-usr-bin-time.txt: `/usr/bin/time -l` over whole probe processes (same N = 1 and 4, 50 000
+and 200 000 asks, five launches a point): 5 942 -> 5 822 and 11 808 -> 11 639 instructions an ask_any, but the
+launches of one point spread by +-1 % (+-100 instructions an ask): the direction agrees, the size does not
+resolve a 26-instruction change -- the static count above is the figure.

@@ -1,0 +1,3 @@
+case                                                                     ctl        cand    delta  A/A ctl  A/A cand  verdict
+BM_Ask_RoundTrip_CrossCore/real_time                                  10.982      10.785   -1.80%    2.84%     2.32%  no measurable difference
+BM_Ask_RoundTrip_SameCore/real_time                                    4.227       4.057   -4.00%    0.39%     0.73%  FASTER

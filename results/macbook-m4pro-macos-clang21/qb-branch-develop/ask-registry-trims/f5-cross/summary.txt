@@ -1,0 +1,18 @@
+campaign /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev--claude-worktrees-qb-1171-ask-trim-963d9d/cab4149a-7b98-4639-a892-dcfcdcc8aff0/scratchpad/qbvo/results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-registry-trims/f5-cross: seed 7101, rounds 8, copies 3, asks 200000, mode cross, UNPINNED (the macOS form); control develop, candidates ['trim2']
+ns per ask_any (median over rounds x copies; copies' medians; A/A band = spread of the copies' medians)
+N=1 responders (cross, unpinned)
+   develop     373.4 ns  IQR [366.6, 392.5]  n=24  copies 371.9 392.3 375.0  A/A +-2.72%
+   trim2     404.4 ns  IQR [378.2, 426.7]  n=24  copies 404.9 389.7 410.8  A/A +-2.61%
+   ratio trim2/develop 1.0832  CI95 [1.0136, 1.1112]  A/A band +-2.72%  -> SLOWER
+N=2 responders (cross, unpinned)
+   develop     478.4 ns  IQR [469.0, 503.4]  n=24  copies 475.4 486.0 482.2  A/A +-1.09%
+   trim2     508.2 ns  IQR [476.7, 520.1]  n=24  copies 484.9 509.9 522.2  A/A +-3.67%
+   ratio trim2/develop 1.0623  CI95 [0.9963, 1.0893]  A/A band +-3.67%  -> LEVEL
+N=4 responders (cross, unpinned)
+   develop     805.3 ns  IQR [783.6, 821.9]  n=24  copies 798.7 798.5 807.3  A/A +-0.55%
+   trim2     804.0 ns  IQR [791.9, 821.9]  n=24  copies 807.0 820.8 793.5  A/A +-1.69%
+   ratio trim2/develop 0.9984  CI95 [0.9770, 1.0244]  A/A band +-1.69%  -> LEVEL
+slope develop: 146.8 ns per responder, intercept 209.9 ns  (least squares over N=[1, 2, 4])
+slope trim2: 135.3 ns per responder, intercept 256.5 ns  (least squares over N=[1, 2, 4])
+slope delta (trim2 - develop): -11.4 ns per responder (-7.8 %)
+per-N delta of the medians (trim2 - develop), and per responder: N=1: +31.0 ns (+31.05/resp)  N=2: +29.8 ns (+14.90/resp)  N=4: -1.2 ns (-0.31/resp)

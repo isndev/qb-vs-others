@@ -1,0 +1,22 @@
+campaign /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev--claude-worktrees-qb-1171-ask-trim-963d9d/cab4149a-7b98-4639-a892-dcfcdcc8aff0/scratchpad/qbvo/results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-registry-trims/f0-same: seed 7101, rounds 8, copies 3, asks 200000, mode same, UNPINNED (the macOS form); control develop, candidates ['trim2']
+ns per ask_any (median over rounds x copies; copies' medians; A/A band = spread of the copies' medians)
+N=1 responders (same, unpinned)
+   develop     253.5 ns  IQR [248.0, 256.5]  n=24  copies 254.3 248.9 253.6  A/A +-1.06%
+   trim2     244.1 ns  IQR [237.8, 250.2]  n=24  copies 240.6 238.6 253.0  A/A +-3.00%
+   ratio trim2/develop 0.9629  CI95 [0.9385, 0.9871]  A/A band +-3.00%  -> FASTER
+N=2 responders (same, unpinned)
+   develop     326.8 ns  IQR [317.7, 331.8]  n=24  copies 331.2 323.4 325.6  A/A +-1.21%
+   trim2     323.5 ns  IQR [316.0, 327.8]  n=24  copies 321.1 321.9 326.5  A/A +-0.84%
+   ratio trim2/develop 0.9901  CI95 [0.9682, 1.0120]  A/A band +-1.21%  -> LEVEL
+N=4 responders (same, unpinned)
+   develop     499.4 ns  IQR [493.1, 509.0]  n=24  copies 502.1 498.3 496.9  A/A +-0.53%
+   trim2     485.6 ns  IQR [480.2, 490.8]  n=24  copies 489.0 485.2 483.1  A/A +-0.60%
+   ratio trim2/develop 0.9725  CI95 [0.9577, 0.9851]  A/A band +-0.60%  -> FASTER
+N=8 responders (same, unpinned)
+   develop     813.2 ns  IQR [810.0, 824.9]  n=24  copies 826.2 809.2 814.7  A/A +-1.04%
+   trim2     816.5 ns  IQR [811.6, 825.2]  n=24  copies 823.6 810.5 817.6  A/A +-0.80%
+   ratio trim2/develop 1.0040  CI95 [0.9957, 1.0103]  A/A band +-1.04%  -> LEVEL
+slope develop: 80.4 ns per responder, intercept 171.6 ns  (least squares over N=[1, 2, 4, 8])
+slope trim2: 81.9 ns per responder, intercept 160.4 ns  (least squares over N=[1, 2, 4, 8])
+slope delta (trim2 - develop): +1.5 ns per responder (+1.8 %)
+per-N delta of the medians (trim2 - develop), and per responder: N=1: -9.4 ns (-9.40/resp)  N=2: -3.2 ns (-1.62/resp)  N=4: -13.8 ns (-3.44/resp)  N=8: +3.2 ns (+0.41/resp)

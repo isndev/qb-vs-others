@@ -1,0 +1,10 @@
+campaign /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev--claude-worktrees-qb-1171-ask-trim-963d9d/cab4149a-7b98-4639-a892-dcfcdcc8aff0/scratchpad/qbvo/results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-registry-trims/bisect-n1-B-same: seed 7202, rounds 8, copies 3, asks 200000, mode same, UNPINNED (the macOS form); control v330, candidates ['c16f', 'b67a', 'tip']
+ns per ask_any (median over rounds x copies; copies' medians; A/A band = spread of the copies' medians)
+N=1 responders (same, unpinned)
+   v330      252.8 ns  IQR [249.8, 256.6]  n=24  copies 256.6 252.3 251.3  A/A +-1.05%
+   c16f      246.2 ns  IQR [243.4, 249.6]  n=24  copies 245.3 243.6 248.0  A/A +-0.89%
+   b67a      253.4 ns  IQR [250.1, 254.5]  n=24  copies 253.2 251.8 253.9  A/A +-0.42%
+   tip       251.8 ns  IQR [248.6, 255.8]  n=24  copies 249.4 254.0 251.9  A/A +-0.90%
+   ratio c16f/v330 0.9741  CI95 [0.9581, 0.9845]  A/A band +-1.05%  -> FASTER
+   ratio b67a/v330 1.0024  CI95 [0.9834, 1.0103]  A/A band +-1.05%  -> LEVEL
+   ratio tip/v330 0.9960  CI95 [0.9806, 1.0095]  A/A band +-1.05%  -> LEVEL

@@ -1,0 +1,12 @@
+QB-1171 point 4 -- the N = 1 bisection on the M4 Pro, three passes pooled (A seed 7101, B 7202, C 7303; 3 copies x 8 rounds a pass, 200 000 asks a launch, --no-pin)
+ns per ask_any: each side's median over 72 launches; per-pass medians; the ratio over shipped 3.3.0 with a bootstrap 95 % CI (4000 resamples, seed 1171)
+same N = 1
+   v330    253.9 ns  n=72  passes 253.9 / 252.8 / 254.3
+   c16f    247.6 ns  n=72  passes 249.9 / 246.2 / 247.3   ratio 0.9752 CI95 [0.9658, 0.9856]
+   b67a    253.6 ns  n=72  passes 253.8 / 253.4 / 254.6   ratio 0.9988 CI95 [0.9911, 1.0081]
+   tip     252.5 ns  n=72  passes 253.8 / 251.8 / 252.0   ratio 0.9945 CI95 [0.9872, 1.0046]
+cross N = 1
+   v330    355.8 ns  n=72  passes 360.0 / 352.8 / 360.7
+   c16f    352.4 ns  n=72  passes 360.3 / 359.8 / 342.3   ratio 0.9906 CI95 [0.9665, 1.0291]
+   b67a    357.0 ns  n=72  passes 367.4 / 348.7 / 361.8   ratio 1.0035 CI95 [0.9779, 1.0358]
+   tip     364.1 ns  n=72  passes 363.9 / 371.4 / 356.9   ratio 1.0233 CI95 [0.9868, 1.0502]

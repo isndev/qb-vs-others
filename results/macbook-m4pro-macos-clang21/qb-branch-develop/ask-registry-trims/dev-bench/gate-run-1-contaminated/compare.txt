@@ -1,0 +1,35 @@
+baseline: /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev--claude-worktrees-qb-1171-ask-trim-963d9d/cab4149a-7b98-4639-a892-dcfcdcc8aff0/scratchpad/qbvo/results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-registry-trims/dev-bench/baseline-macos-arm64-ask-only.json
+  host macos-arm64 (Apple M4 Pro), 15 runs, qb 8ff79c9a
+  13 gated metrics, 22 recorded-only
+contender: /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev--claude-worktrees-qb-1171-ask-trim-963d9d/cab4149a-7b98-4639-a892-dcfcdcc8aff0/scratchpad/qbvo/results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-registry-trims/dev-bench/gate-run (3 run(s))
+
+REGRESSIONS (13):
+  qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::All>/responders:8/real_time::real_time
+      baseline 34.704M -> 96.898M   +179.2%  (threshold 14.9%)
+  qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::All>/responders:8/real_time::asks_issued_per_s
+      baseline 4.610M -> 1.651M   +64.2%  (threshold 14.1%)
+  qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::All>/responders:8/real_time::items_per_second
+      baseline 4.610M -> 1.651M   +64.2%  (threshold 14.1%)
+  qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::All>/responders:8/real_time::scatters_per_s
+      baseline 576.305k -> 206.402k   +64.2%  (threshold 14.1%)
+  qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::Any>/responders:8/real_time::asks_issued_per_s
+      baseline 5.172M -> 3.393M   +34.4%  (threshold 14.4%)
+  qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::Any>/responders:8/real_time::items_per_second
+      baseline 5.172M -> 3.393M   +34.4%  (threshold 14.4%)
+  qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::Any>/responders:8/real_time::scatters_per_s
+      baseline 646.543k -> 424.157k   +34.4%  (threshold 14.4%)
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::real_time
+      baseline 9.595M -> 12.765M   +33.0%  (threshold 14.3%)
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::items_per_second
+      baseline 5.211M -> 3.917M   +24.8%  (threshold 13.5%)
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::round_trips_per_s
+      baseline 5.211M -> 3.917M   +24.8%  (threshold 13.5%)
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_SameCore/real_time::real_time
+      baseline 4.118M -> 4.562M   +10.8%  (threshold 3.0%)
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_SameCore/real_time::items_per_second
+      baseline 12.142M -> 10.959M   +9.7%  (threshold 3.0%)
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_SameCore/real_time::round_trips_per_s
+      baseline 12.142M -> 10.959M   +9.7%  (threshold 3.0%)
+
+compared 13 gated metrics: 0 within threshold, 13 regressed, 0 improved, 0 missing
+VERDICT: FAIL
