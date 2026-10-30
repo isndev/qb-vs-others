@@ -1,0 +1,13 @@
+{
+ "seed": 7101,
+ "rounds": 8,
+ "copies": 3,
+ "reps": 3,
+ "cases": {
+  "qb-core-bench-ask-roundtrip": "^BM_Ask_RoundTrip_(SameCore|CrossCore)/real_time$"
+ },
+ "ctl": "/private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev--claude-worktrees-qb-1171-ask-trim-963d9d/cab4149a-7b98-4639-a892-dcfcdcc8aff0/scratchpad/bench/ctl-b5",
+ "cand": "/private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev--claude-worktrees-qb-1171-ask-trim-963d9d/cab4149a-7b98-4639-a892-dcfcdcc8aff0/scratchpad/bench/cand-b5",
+ "host": "macbook-m4pro",
+ "started": "2026-10-30T10:32:42Z"
+}

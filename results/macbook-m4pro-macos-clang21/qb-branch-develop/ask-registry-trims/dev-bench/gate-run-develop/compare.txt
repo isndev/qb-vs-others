@@ -1,0 +1,11 @@
+baseline: /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev--claude-worktrees-qb-1171-ask-trim-963d9d/cab4149a-7b98-4639-a892-dcfcdcc8aff0/scratchpad/qbvo/results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-registry-trims/dev-bench/baseline-macos-arm64-ask-only.json
+  host macos-arm64 (Apple M4 Pro), 15 runs, qb 8ff79c9a
+  13 gated metrics, 22 recorded-only
+contender: /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev--claude-worktrees-qb-1171-ask-trim-963d9d/cab4149a-7b98-4639-a892-dcfcdcc8aff0/scratchpad/qbvo/results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-registry-trims/dev-bench/gate-run-develop (3 run(s))
+
+REGRESSIONS (1):
+  qb-core-bench-ask-all-fanout::BM_Ask_Scatter<ScatterMode::All>/responders:8/real_time::real_time
+      baseline 34.704M -> 39.987M   +15.2%  (threshold 14.9%)
+
+compared 13 gated metrics: 12 within threshold, 1 regressed, 0 improved, 0 missing
+VERDICT: FAIL

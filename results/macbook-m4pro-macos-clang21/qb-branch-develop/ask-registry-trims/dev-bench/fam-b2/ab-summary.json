@@ -1,0 +1,20 @@
+[
+ {
+  "case": "BM_Ask_RoundTrip_CrossCore/real_time",
+  "ctl": 10.982350048109673,
+  "cand": 10.785071935970336,
+  "delta_pct": -1.7963196517606275,
+  "aa_ctl_pct": 2.838326641964074,
+  "aa_cand_pct": 2.3222762195131574,
+  "verdict": "no measurable difference"
+ },
+ {
+  "case": "BM_Ask_RoundTrip_SameCore/real_time",
+  "ctl": 4.226608709600496,
+  "cand": 4.0574281230755,
+  "delta_pct": -4.002750151456239,
+  "aa_ctl_pct": 0.3904207380963099,
+  "aa_cand_pct": 0.7265239145553051,
+  "verdict": "FASTER"
+ }
+]

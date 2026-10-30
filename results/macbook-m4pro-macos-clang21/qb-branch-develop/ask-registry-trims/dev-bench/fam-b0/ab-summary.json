@@ -1,0 +1,38 @@
+[
+ {
+  "case": "BM_Ask_RoundTrip_CrossCore/real_time",
+  "ctl": 10.916858158544839,
+  "cand": 11.4089903779901,
+  "delta_pct": 4.508002323544528,
+  "aa_ctl_pct": 3.2685021350197525,
+  "aa_cand_pct": 2.4075113314830925,
+  "verdict": "SLOWER"
+ },
+ {
+  "case": "BM_Ask_RoundTrip_SameCore/real_time",
+  "ctl": 4.2430486006571115,
+  "cand": 4.1200688043606055,
+  "delta_pct": -2.8983829286673832,
+  "aa_ctl_pct": 2.4024539963507943,
+  "aa_cand_pct": 1.8715483416610545,
+  "verdict": "FASTER"
+ },
+ {
+  "case": "BM_Ask_Scatter<ScatterMode::All>/responders:8/real_time",
+  "ctl": 43.816382768620485,
+  "cand": 45.42513708829095,
+  "delta_pct": 3.6715817646695195,
+  "aa_ctl_pct": 10.03154144095042,
+  "aa_cand_pct": 11.202593100043615,
+  "verdict": "no measurable difference"
+ },
+ {
+  "case": "BM_Ask_Scatter<ScatterMode::Any>/responders:8/real_time",
+  "ctl": 42.20163670077274,
+  "cand": 40.003375731258664,
+  "delta_pct": -5.208947191078544,
+  "aa_ctl_pct": 9.240641794131351,
+  "aa_cand_pct": 6.543973390789739,
+  "verdict": "no measurable difference"
+ }
+]

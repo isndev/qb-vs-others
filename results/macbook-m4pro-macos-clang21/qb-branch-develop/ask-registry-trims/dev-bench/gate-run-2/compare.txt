@@ -1,0 +1,15 @@
+baseline: /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev--claude-worktrees-qb-1171-ask-trim-963d9d/cab4149a-7b98-4639-a892-dcfcdcc8aff0/scratchpad/qbvo/results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-registry-trims/dev-bench/baseline-macos-arm64-ask-only.json
+  host macos-arm64 (Apple M4 Pro), 15 runs, qb 8ff79c9a
+  13 gated metrics, 22 recorded-only
+contender: /private/tmp/claude-501/-Users-mbelhadi-repo-qb-dev--claude-worktrees-qb-1171-ask-trim-963d9d/cab4149a-7b98-4639-a892-dcfcdcc8aff0/scratchpad/qbvo/results/macbook-m4pro-macos-clang21/qb-branch-develop/ask-registry-trims/dev-bench/gate-run-2 (3 run(s))
+
+REGRESSIONS (3):
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::real_time
+      baseline 9.595M -> 11.113M   +15.8%  (threshold 14.3%)
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::items_per_second
+      baseline 5.211M -> 4.499M   +13.7%  (threshold 13.5%)
+  qb-core-bench-ask-roundtrip::BM_Ask_RoundTrip_CrossCore/real_time::round_trips_per_s
+      baseline 5.211M -> 4.499M   +13.7%  (threshold 13.5%)
+
+compared 13 gated metrics: 10 within threshold, 3 regressed, 0 improved, 0 missing
+VERDICT: FAIL
